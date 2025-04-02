@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { 
@@ -26,11 +27,11 @@ interface NavIcon {
 
 const icons: NavIcon[] = [
   { icon: <Home className="w-12 h-12" strokeWidth={1.5} />, label: "Benvenuto", bgColor: "bg-blue-200", path: "/welcome" },
+  { icon: <Book className="w-12 h-12" strokeWidth={1.5} />, label: "Storia", bgColor: "bg-teal-200", path: "/storia" },
   { icon: <Coffee className="w-12 h-12" strokeWidth={1.5} />, label: "Check-in", bgColor: "bg-amber-200", path: "/checkin" },
   { icon: <MapPin className="w-12 h-12" strokeWidth={1.5} />, label: "Posizione", bgColor: "bg-green-200", path: "/location" },
   { icon: <Wifi className="w-12 h-12" strokeWidth={1.5} />, label: "Wifi", bgColor: "bg-purple-200", path: "/wifi" },
   { icon: <Bus className="w-12 h-12" strokeWidth={1.5} />, label: "Trasporti", bgColor: "bg-orange-200", path: "/transport" },
-  { icon: <Book className="w-12 h-12" strokeWidth={1.5} />, label: "Storia", bgColor: "bg-teal-200", path: "/storia" },
   { icon: <Utensils className="w-12 h-12" strokeWidth={1.5} />, label: "Attività", bgColor: "bg-pink-200", path: "/activities" },
   { icon: <User className="w-12 h-12" strokeWidth={1.5} />, label: "Equipaggiamenti", bgColor: "bg-indigo-200", path: "/equipment" },
   { icon: <ShoppingCart className="w-12 h-12" strokeWidth={1.5} />, label: "Shopping", bgColor: "bg-red-200", path: "/shopping" },
