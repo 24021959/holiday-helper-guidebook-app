@@ -45,7 +45,7 @@ const Index: React.FC = () => {
                 alt="EVA AI Technologies Logo" 
                 className="h-8 md:h-10" 
               />
-              <h1 className="text-white font-bold text-xl md:text-2xl">Welcome Book</h1>
+              <h1 className="text-white font-bold text-xl md:text-2xl tracking-wide">Welcome Book</h1>
             </div>
           </div>
           
