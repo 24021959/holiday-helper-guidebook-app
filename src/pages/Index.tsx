@@ -37,14 +37,15 @@ const Index: React.FC = () => {
         </div>
       ) : (
         <div className="flex-1 flex flex-col">
-          {/* Logo at the top */}
+          {/* Logo and Welcome Book text at the top */}
           <div className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 py-4 px-4 text-center shadow-lg relative overflow-hidden">
-            <div className="relative z-10 flex justify-center">
+            <div className="relative z-10 flex items-center justify-center gap-3">
               <img 
                 src="/lovable-uploads/f001bbd0-3515-4169-944c-9a037d5ddae8.png" 
                 alt="EVA AI Technologies Logo" 
-                className="h-12 md:h-16"
+                className="h-8 md:h-10" 
               />
+              <h1 className="text-white font-bold text-xl md:text-2xl">Welcome Book</h1>
             </div>
           </div>
           
