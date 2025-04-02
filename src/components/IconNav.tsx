@@ -19,7 +19,7 @@ import {
   Hotel,
   Bike,
   Coffee as CoffeeIcon,
-  Key,
+  Map,
   Info
 } from "lucide-react";
 
@@ -36,7 +36,7 @@ const icons: NavIcon[] = [
   { icon: <Hotel className="w-12 h-12" strokeWidth={1.5} />, label: "Servizi hotel", bgColor: "bg-amber-200", path: "/servizi-hotel" },
   { icon: <CoffeeIcon className="w-12 h-12" strokeWidth={1.5} />, label: "Servizi esterni", bgColor: "bg-green-200", path: "/servizi-esterni" },
   { icon: <Utensils className="w-12 h-12" strokeWidth={1.5} />, label: "Ristorante", bgColor: "bg-purple-200", path: "/ristorante" },
-  { icon: <Key className="w-12 h-12" strokeWidth={1.5} />, label: "Check-in", bgColor: "bg-orange-200", path: "/checkin" },
+  { icon: <Map className="w-12 h-12" strokeWidth={1.5} />, label: "Scopri il territorio", bgColor: "bg-orange-200", path: "/scopri-territorio" },
   { icon: <MapPin className="w-12 h-12" strokeWidth={1.5} />, label: "Posizione", bgColor: "bg-pink-200", path: "/location" },
   { icon: <Wifi className="w-12 h-12" strokeWidth={1.5} />, label: "Wifi", bgColor: "bg-indigo-200", path: "/wifi" },
   { icon: <Bike className="w-12 h-12" strokeWidth={1.5} />, label: "Attività", bgColor: "bg-red-200", path: "/activities" },
