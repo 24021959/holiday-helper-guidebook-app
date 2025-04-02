@@ -30,7 +30,7 @@ const Index: React.FC = () => {
             <CardContent className="p-6">
               <h2 className="text-2xl font-bold text-center mb-8 text-gray-800 flex items-center justify-center">
                 <span className="mr-2">🌍</span> 
-                Seleziona la tua lingua / Select your language
+                Seleziona la tua lingua / Select your language / Choisissez votre langue / Seleccione su idioma / Wählen Sie Ihre Sprache
               </h2>
               <LanguageSelector onSelectLanguage={handleLanguageSelect} />
             </CardContent>
