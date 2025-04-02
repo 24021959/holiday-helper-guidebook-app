@@ -53,37 +53,15 @@ const Index: React.FC = () => {
         </div>
       ) : (
         <div className="flex-1 flex flex-col">
-          {/* Logo and Welcome Book text at the top */}
-          <div className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 py-4 px-4 text-center shadow-lg relative overflow-hidden">
-            <div className="relative z-10 flex items-center justify-center">
-              <h1 className="text-white font-bold text-xl md:text-2xl tracking-wide">Welcome Book</h1>
-            </div>
+          {/* Grande header con "Welcome Book" */}
+          <div className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 py-8 text-center shadow-md">
+            <h1 className="text-white font-bold text-3xl md:text-4xl tracking-wider">WELCOME BOOK</h1>
           </div>
           
-          {/* Icon Navigation */}
-          <IconNav />
-          
-          {/* Content Area */}
-          <div className="flex-1 p-4 mx-auto max-w-4xl w-full">
-            <Card className="bg-white shadow-lg border-0 rounded-xl overflow-hidden mt-4 transform transition-all duration-300 hover:shadow-xl">
-              <div className="bg-gradient-to-r from-emerald-500 to-teal-600 h-2"></div>
-              <CardContent className="p-6">
-                <h2 className="text-2xl font-bold mb-4 text-emerald-800 flex items-center">
-                  <span className="text-3xl mr-2">👋</span> Benvenuto!
-                </h2>
-                <p className="text-gray-700 leading-relaxed">
-                  Seleziona una delle icone sopra per esplorare il Welcome Book e scoprire tutti i servizi e le informazioni per rendere il tuo soggiorno indimenticabile.
-                </p>
-                
-                {/* Aggiungiamo una sezione decorativa */}
-                <div className="mt-6 p-4 bg-emerald-50 rounded-lg border border-emerald-100">
-                  <h3 className="text-lg font-medium text-emerald-700 mb-2">Consiglio del giorno</h3>
-                  <p className="text-emerald-600 text-sm">
-                    Visita la sezione "Attività" per scoprire le esperienze più popolari nella zona e prenotare in anticipo per evitare code!
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Contenitore principale */}
+          <div className="flex-1 py-6">
+            {/* Grid con le icone */}
+            <IconNav />
           </div>
           
           {/* Footer con logo */}
