@@ -32,7 +32,7 @@ const Index: React.FC = () => {
       {!selectedLanguage ? (
         <div className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden">
           {/* Header con solo scritta Welcome Book */}
-          <div className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 py-4 px-4 mb-8 text-center shadow-lg relative overflow-hidden">
+          <div className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 py-4 px-4 mb-4 text-center shadow-lg relative overflow-hidden">
             <div className="relative z-10 flex items-center justify-center">
               <h1 className="text-white font-bold text-xl md:text-2xl tracking-wide">Welcome Book</h1>
             </div>
@@ -42,8 +42,8 @@ const Index: React.FC = () => {
           <div className="absolute top-10 left-10 w-40 h-40 rounded-full bg-teal-100 opacity-50 blur-xl"></div>
           <div className="absolute bottom-10 right-10 w-40 h-40 rounded-full bg-emerald-100 opacity-50 blur-xl"></div>
           
-          <Card className="max-w-md w-full bg-white/90 backdrop-blur-sm shadow-xl border-0 rounded-2xl overflow-hidden">
-            <CardContent className="p-6">
+          <Card className="max-w-md w-full flex-1 bg-white/90 backdrop-blur-sm shadow-xl border-0 rounded-2xl overflow-hidden mb-4">
+            <CardContent className="p-6 h-full flex flex-col">
               <LanguageSelector onSelectLanguage={handleLanguageSelect} />
             </CardContent>
           </Card>
