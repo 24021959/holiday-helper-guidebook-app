@@ -44,7 +44,7 @@ const App = () => {
             {/* Routes for each icon */}
             <Route path="/welcome" element={<Welcome />} />
             <Route path="/storia" element={<Storia />} />
-            <Route path="/camere" element={<PlaceholderPage title="Camere" />} />
+            <Route path="/servizi-hotel" element={<PlaceholderPage title="Servizi hotel" />} />
             <Route path="/colazione" element={<PlaceholderPage title="Colazione" />} />
             <Route path="/ristorante" element={<PlaceholderPage title="Ristorante" />} />
             <Route path="/checkin" element={<PlaceholderPage title="Check-in" />} />
