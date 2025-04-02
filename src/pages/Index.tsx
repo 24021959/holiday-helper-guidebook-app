@@ -58,6 +58,11 @@ const Index: React.FC = () => {
             <h1 className="text-white font-bold text-2xl md:text-3xl tracking-wider">WELCOME BOOK</h1>
           </div>
           
+          {/* Testo che invita a usare il menu */}
+          <div className="w-full bg-white py-2 text-center border-b border-gray-100 shadow-sm">
+            <p className="text-gray-600 font-medium text-sm md:text-base italic">Seleziona un'icona dal menu per esplorare i contenuti</p>
+          </div>
+          
           {/* Contenitore principale con le icone che prende tutto lo spazio disponibile */}
           <div className="flex-1 flex flex-col overflow-hidden">
             <IconNav />
