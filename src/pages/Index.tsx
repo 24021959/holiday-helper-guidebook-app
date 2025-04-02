@@ -28,10 +28,13 @@ const Index: React.FC = () => {
           
           <Card className="max-w-md w-full bg-white/90 backdrop-blur-sm shadow-xl border-0 rounded-2xl overflow-hidden">
             <CardContent className="p-6">
-              <h2 className="text-2xl font-bold text-center mb-8 text-gray-800 flex items-center justify-center">
-                <span className="mr-2">🌍</span> 
-                Seleziona la tua lingua / Select your language / Choisissez votre langue / Seleccione su idioma / Wählen Sie Ihre Sprache
-              </h2>
+              <div className="flex justify-center mb-8">
+                <img 
+                  src="/lovable-uploads/f001bbd0-3515-4169-944c-9a037d5ddae8.png" 
+                  alt="EVA AI Technologies Logo" 
+                  className="w-64 h-auto"
+                />
+              </div>
               <LanguageSelector onSelectLanguage={handleLanguageSelect} />
             </CardContent>
           </Card>
