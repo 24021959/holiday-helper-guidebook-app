@@ -13,19 +13,27 @@ const Index: React.FC = () => {
     // In futuro, qui possiamo aggiungere la logica per cambiare la lingua dell'applicazione
   };
 
+  // Component for footer with logo
+  const Footer = () => (
+    <div className="w-full bg-white py-4 border-t border-gray-200 mt-auto">
+      <div className="flex justify-center items-center">
+        <img 
+          src="/lovable-uploads/f001bbd0-3515-4169-944c-9a037d5ddae8.png" 
+          alt="EVA AI Technologies Logo" 
+          className="h-10 md:h-12" 
+        />
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-gray-100">
       {/* Conditional rendering based on language selection */}
       {!selectedLanguage ? (
         <div className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-          {/* Header con logo più piccolo e scritta Welcome Book */}
+          {/* Header con solo scritta Welcome Book */}
           <div className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 py-4 px-4 mb-8 text-center shadow-lg relative overflow-hidden">
-            <div className="relative z-10 flex items-center justify-center gap-3">
-              <img 
-                src="/lovable-uploads/f001bbd0-3515-4169-944c-9a037d5ddae8.png" 
-                alt="EVA AI Technologies Logo" 
-                className="h-6 md:h-8" 
-              />
+            <div className="relative z-10 flex items-center justify-center">
               <h1 className="text-white font-bold text-xl md:text-2xl tracking-wide">Welcome Book</h1>
             </div>
           </div>
@@ -36,27 +44,18 @@ const Index: React.FC = () => {
           
           <Card className="max-w-md w-full bg-white/90 backdrop-blur-sm shadow-xl border-0 rounded-2xl overflow-hidden">
             <CardContent className="p-6">
-              <div className="flex justify-center mb-8">
-                <img 
-                  src="/lovable-uploads/f001bbd0-3515-4169-944c-9a037d5ddae8.png" 
-                  alt="EVA AI Technologies Logo" 
-                  className="w-64 h-auto"
-                />
-              </div>
               <LanguageSelector onSelectLanguage={handleLanguageSelect} />
             </CardContent>
           </Card>
+          
+          {/* Footer con logo */}
+          <Footer />
         </div>
       ) : (
         <div className="flex-1 flex flex-col">
           {/* Logo and Welcome Book text at the top */}
           <div className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 py-4 px-4 text-center shadow-lg relative overflow-hidden">
-            <div className="relative z-10 flex items-center justify-center gap-3">
-              <img 
-                src="/lovable-uploads/f001bbd0-3515-4169-944c-9a037d5ddae8.png" 
-                alt="EVA AI Technologies Logo" 
-                className="h-6 md:h-8" 
-              />
+            <div className="relative z-10 flex items-center justify-center">
               <h1 className="text-white font-bold text-xl md:text-2xl tracking-wide">Welcome Book</h1>
             </div>
           </div>
@@ -86,6 +85,9 @@ const Index: React.FC = () => {
               </CardContent>
             </Card>
           </div>
+          
+          {/* Footer con logo */}
+          <Footer />
         </div>
       )}
     </div>
