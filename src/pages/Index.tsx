@@ -18,6 +18,18 @@ const Index: React.FC = () => {
       {/* Conditional rendering based on language selection */}
       {!selectedLanguage ? (
         <div className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+          {/* Header con logo più piccolo e scritta Welcome Book */}
+          <div className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 py-4 px-4 mb-8 text-center shadow-lg relative overflow-hidden">
+            <div className="relative z-10 flex items-center justify-center gap-3">
+              <img 
+                src="/lovable-uploads/f001bbd0-3515-4169-944c-9a037d5ddae8.png" 
+                alt="EVA AI Technologies Logo" 
+                className="h-6 md:h-8" 
+              />
+              <h1 className="text-white font-bold text-xl md:text-2xl tracking-wide">Welcome Book</h1>
+            </div>
+          </div>
+          
           {/* Elementi decorativi di sfondo */}
           <div className="absolute top-10 left-10 w-40 h-40 rounded-full bg-teal-100 opacity-50 blur-xl"></div>
           <div className="absolute bottom-10 right-10 w-40 h-40 rounded-full bg-emerald-100 opacity-50 blur-xl"></div>
@@ -43,7 +55,7 @@ const Index: React.FC = () => {
               <img 
                 src="/lovable-uploads/f001bbd0-3515-4169-944c-9a037d5ddae8.png" 
                 alt="EVA AI Technologies Logo" 
-                className="h-8 md:h-10" 
+                className="h-6 md:h-8" 
               />
               <h1 className="text-white font-bold text-xl md:text-2xl tracking-wide">Welcome Book</h1>
             </div>
