@@ -43,12 +43,12 @@ const icons: NavIcon[] = [
 
 const IconNav = () => {
   return (
-    <div className="w-full h-full bg-white p-2">
-      <div className="grid grid-cols-3 gap-2 w-full h-full">
+    <div className="w-full h-full flex flex-col">
+      <div className="grid grid-cols-3 gap-4 w-full h-full p-4">
         {icons.map((item, index) => (
           <div 
             key={index} 
-            className="flex flex-col items-center justify-center p-2 cursor-pointer hover:bg-gray-50 rounded-xl transition-all duration-300 transform hover:scale-105"
+            className="flex flex-col items-center justify-center aspect-square cursor-pointer hover:bg-gray-50 rounded-xl transition-all duration-300 transform hover:scale-105"
           >
             <div className="bg-white rounded-full mb-1 p-3 shadow-md flex items-center justify-center">
               {item.icon}

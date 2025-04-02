@@ -15,12 +15,12 @@ const Index: React.FC = () => {
 
   // Component for footer with logo
   const Footer = () => (
-    <div className="w-full bg-white py-4 border-t border-gray-200 mt-auto">
+    <div className="w-full bg-white py-3 border-t border-gray-200">
       <div className="flex justify-center items-center">
         <img 
           src="/lovable-uploads/f001bbd0-3515-4169-944c-9a037d5ddae8.png" 
           alt="EVA AI Technologies Logo" 
-          className="h-10 md:h-12" 
+          className="h-8 md:h-10" 
         />
       </div>
     </div>
@@ -52,18 +52,15 @@ const Index: React.FC = () => {
           <Footer />
         </div>
       ) : (
-        <div className="flex-1 flex flex-col h-screen">
+        <div className="flex flex-col h-screen">
           {/* Grande header con "Welcome Book" */}
-          <div className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 py-6 text-center shadow-md">
+          <div className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 py-4 text-center shadow-md">
             <h1 className="text-white font-bold text-2xl md:text-3xl tracking-wider">WELCOME BOOK</h1>
           </div>
           
-          {/* Contenitore principale che occupa tutto lo spazio disponibile */}
-          <div className="flex-1 overflow-hidden flex flex-col">
-            {/* Grid con le icone che prende tutto lo spazio disponibile */}
-            <div className="flex-1 overflow-y-auto">
-              <IconNav />
-            </div>
+          {/* Contenitore principale con le icone che prende tutto lo spazio disponibile */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <IconNav />
           </div>
           
           {/* Footer con logo */}
