@@ -11,7 +11,11 @@ import {
   Book,
   Wifi, 
   Bus, 
-  ShoppingCart
+  ShoppingCart,
+  User,
+  Calendar,
+  Settings,
+  Image
 } from "lucide-react";
 
 interface NavIcon {
@@ -20,30 +24,36 @@ interface NavIcon {
 }
 
 const icons: NavIcon[] = [
-  { icon: <Home className="w-8 h-8" />, label: "Benvenuto" },
-  { icon: <Coffee className="w-8 h-8" />, label: "Check-in" },
-  { icon: <MapPin className="w-8 h-8" />, label: "Posizione" },
-  { icon: <Wifi className="w-8 h-8" />, label: "Wifi" },
-  { icon: <Bus className="w-8 h-8" />, label: "Trasporti" },
-  { icon: <Info className="w-8 h-8" />, label: "Info" },
-  { icon: <Utensils className="w-8 h-8" />, label: "Attività" },
-  { icon: <Book className="w-8 h-8" />, label: "Equipaggiamenti" },
-  { icon: <ShoppingCart className="w-8 h-8" />, label: "Shopping" }
+  { icon: <Home className="w-6 h-6" />, label: "Benvenuto" },
+  { icon: <Coffee className="w-6 h-6" />, label: "Check-in" },
+  { icon: <MapPin className="w-6 h-6" />, label: "Posizione" },
+  { icon: <Wifi className="w-6 h-6" />, label: "Wifi" },
+  { icon: <Bus className="w-6 h-6" />, label: "Trasporti" },
+  { icon: <Info className="w-6 h-6" />, label: "Info" },
+  { icon: <Utensils className="w-6 h-6" />, label: "Attività" },
+  { icon: <Book className="w-6 h-6" />, label: "Equipaggiamenti" },
+  { icon: <ShoppingCart className="w-6 h-6" />, label: "Shopping" },
+  { icon: <Phone className="w-6 h-6" />, label: "Contatti" },
+  { icon: <MessageSquare className="w-6 h-6" />, label: "Messaggi" },
+  { icon: <User className="w-6 h-6" />, label: "Profilo" },
+  { icon: <Calendar className="w-6 h-6" />, label: "Eventi" },
+  { icon: <Settings className="w-6 h-6" />, label: "Impostazioni" },
+  { icon: <Image className="w-6 h-6" />, label: "Galleria" }
 ];
 
 const IconNav = () => {
   return (
-    <div className="w-full bg-white p-4">
-      <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
+    <div className="w-full bg-white p-2">
+      <div className="grid grid-cols-3 gap-2 w-full">
         {icons.map((item, index) => (
           <div 
             key={index} 
-            className="flex flex-col items-center justify-center p-4 cursor-pointer hover:bg-gray-50 rounded-xl transition-all duration-300 transform hover:scale-105"
+            className="flex flex-col items-center justify-center p-2 cursor-pointer hover:bg-gray-50 rounded-xl transition-all duration-300 transform hover:scale-105"
           >
-            <div className="bg-white rounded-full mb-2 p-4 shadow-lg flex items-center justify-center">
+            <div className="bg-white rounded-full mb-1 p-3 shadow-md flex items-center justify-center">
               {item.icon}
             </div>
-            <span className="text-xs font-medium text-gray-700 mt-2 text-center">{item.label}</span>
+            <span className="text-xs font-medium text-gray-700 text-center">{item.label}</span>
           </div>
         ))}
       </div>
