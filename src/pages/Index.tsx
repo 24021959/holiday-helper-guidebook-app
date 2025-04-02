@@ -1,22 +1,10 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import IconNav from "@/components/IconNav";
 import { Card, CardContent } from "@/components/ui/card";
 
 const Index: React.FC = () => {
-  // Check if a language has been selected before
-  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(() => {
-    return localStorage.getItem("selectedLanguage");
-  });
-
-  const handleLanguageSelect = (langCode: string) => {
-    console.log(`Lingua selezionata: ${langCode}`);
-    setSelectedLanguage(langCode);
-    // Store the language selection in localStorage
-    localStorage.setItem("selectedLanguage", langCode);
-  };
-
   // Component for footer with logo
   const Footer = () => (
     <div className="w-full bg-gradient-to-r from-teal-50 to-emerald-50 py-3 border-t border-gray-200">
@@ -32,50 +20,32 @@ const Index: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-gray-100">
-      {/* Conditional rendering based on language selection */}
-      {!selectedLanguage ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-          {/* Header con solo scritta Welcome Book */}
-          <div className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 py-4 px-4 mb-4 text-center shadow-lg relative overflow-hidden">
-            <div className="relative z-10 flex items-center justify-center">
-              <h1 className="text-white font-bold text-xl md:text-2xl tracking-wide">Welcome Book</h1>
-            </div>
+      <div className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        {/* Header con solo scritta Welcome Book */}
+        <div className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 py-4 px-4 mb-4 text-center shadow-lg relative overflow-hidden">
+          <div className="relative z-10 flex items-center justify-center">
+            <h1 className="text-white font-bold text-xl md:text-2xl tracking-wide">Welcome Book</h1>
           </div>
-          
-          {/* Elementi decorativi di sfondo */}
-          <div className="absolute top-10 left-10 w-40 h-40 rounded-full bg-teal-100 opacity-50 blur-xl"></div>
-          <div className="absolute bottom-10 right-10 w-40 h-40 rounded-full bg-emerald-100 opacity-50 blur-xl"></div>
-          
-          <Card className="max-w-md w-full flex-1 bg-white/90 backdrop-blur-sm shadow-xl border-0 rounded-2xl overflow-hidden mb-4">
-            <CardContent className="p-6 h-full flex flex-col">
-              <LanguageSelector onSelectLanguage={handleLanguageSelect} />
-            </CardContent>
-          </Card>
-          
-          {/* Footer con logo */}
-          <Footer />
         </div>
-      ) : (
-        <div className="flex flex-col h-screen">
-          {/* Grande header con "Welcome Book" */}
-          <div className="w-full bg-gradient-to-r from-teal-500 to-emerald-600 py-5 text-center shadow-md">
-            <h1 className="text-white font-bold text-2xl md:text-3xl tracking-wider">WELCOME BOOK</h1>
-          </div>
-          
-          {/* Testo che invita a usare il menu */}
-          <div className="w-full bg-gradient-to-r from-teal-50 to-emerald-50 py-3 text-center border-b border-gray-100 shadow-sm">
-            <p className="text-emerald-700 font-medium text-sm md:text-base italic">Seleziona un'icona dal menu per esplorare i contenuti</p>
-          </div>
-          
-          {/* Contenitore principale con le icone che prende tutto lo spazio disponibile */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <IconNav />
-          </div>
-          
-          {/* Footer con logo */}
-          <Footer />
-        </div>
-      )}
+        
+        {/* Elementi decorativi di sfondo */}
+        <div className="absolute top-10 left-10 w-40 h-40 rounded-full bg-teal-100 opacity-50 blur-xl"></div>
+        <div className="absolute bottom-10 right-10 w-40 h-40 rounded-full bg-emerald-100 opacity-50 blur-xl"></div>
+        
+        <Card className="max-w-md w-full flex-1 bg-white/90 backdrop-blur-sm shadow-xl border-0 rounded-2xl overflow-hidden mb-4">
+          <CardContent className="p-6 h-full flex flex-col">
+            <LanguageSelector onSelectLanguage={(langCode) => {
+              // Store the language selection in localStorage
+              localStorage.setItem("selectedLanguage", langCode);
+              // Redirect to menu page
+              window.location.href = "/menu";
+            }} />
+          </CardContent>
+        </Card>
+        
+        {/* Footer con logo */}
+        <Footer />
+      </div>
     </div>
   );
 };
