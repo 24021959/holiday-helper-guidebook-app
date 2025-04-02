@@ -45,7 +45,7 @@ const App = () => {
             <Route path="/welcome" element={<Welcome />} />
             <Route path="/storia" element={<Storia />} />
             <Route path="/servizi-hotel" element={<PlaceholderPage title="Servizi hotel" />} />
-            <Route path="/colazione" element={<PlaceholderPage title="Colazione" />} />
+            <Route path="/servizi-esterni" element={<PlaceholderPage title="Servizi esterni" />} />
             <Route path="/ristorante" element={<PlaceholderPage title="Ristorante" />} />
             <Route path="/checkin" element={<PlaceholderPage title="Check-in" />} />
             <Route path="/location" element={<PlaceholderPage title="Posizione" />} />

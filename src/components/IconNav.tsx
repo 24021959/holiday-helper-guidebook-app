@@ -34,7 +34,7 @@ const icons: NavIcon[] = [
   { icon: <Home className="w-12 h-12" strokeWidth={1.5} />, label: "Benvenuto", bgColor: "bg-blue-200", path: "/welcome" },
   { icon: <Book className="w-12 h-12" strokeWidth={1.5} />, label: "Storia", bgColor: "bg-teal-200", path: "/storia" },
   { icon: <Hotel className="w-12 h-12" strokeWidth={1.5} />, label: "Servizi hotel", bgColor: "bg-amber-200", path: "/servizi-hotel" },
-  { icon: <CoffeeIcon className="w-12 h-12" strokeWidth={1.5} />, label: "Colazione", bgColor: "bg-green-200", path: "/colazione" },
+  { icon: <CoffeeIcon className="w-12 h-12" strokeWidth={1.5} />, label: "Servizi esterni", bgColor: "bg-green-200", path: "/servizi-esterni" },
   { icon: <Utensils className="w-12 h-12" strokeWidth={1.5} />, label: "Ristorante", bgColor: "bg-purple-200", path: "/ristorante" },
   { icon: <Key className="w-12 h-12" strokeWidth={1.5} />, label: "Check-in", bgColor: "bg-orange-200", path: "/checkin" },
   { icon: <MapPin className="w-12 h-12" strokeWidth={1.5} />, label: "Posizione", bgColor: "bg-pink-200", path: "/location" },
