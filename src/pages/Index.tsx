@@ -8,7 +8,7 @@ const Index: React.FC = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
 
   const handleLanguageSelect = (langCode: string) => {
-    console.log(`Selected language: ${langCode}`);
+    console.log(`Lingua selezionata: ${langCode}`);
     setSelectedLanguage(langCode);
     // In futuro, qui possiamo aggiungere la logica per cambiare la lingua dell'applicazione
   };

@@ -10,12 +10,12 @@ interface NavIcon {
 const icons: NavIcon[] = [
   { icon: <Home className="w-6 h-6" />, label: "Home" },
   { icon: <Info className="w-6 h-6" />, label: "Info" },
-  { icon: <MapPin className="w-6 h-6" />, label: "Location" },
-  { icon: <Coffee className="w-6 h-6" />, label: "Services" },
-  { icon: <Utensils className="w-6 h-6" />, label: "Food" },
-  { icon: <Book className="w-6 h-6" />, label: "Activities" },
-  { icon: <Phone className="w-6 h-6" />, label: "Contact" },
-  { icon: <MessageSquare className="w-6 h-6" />, label: "Support" },
+  { icon: <MapPin className="w-6 h-6" />, label: "Posizione" },
+  { icon: <Coffee className="w-6 h-6" />, label: "Servizi" },
+  { icon: <Utensils className="w-6 h-6" />, label: "Ristoranti" },
+  { icon: <Book className="w-6 h-6" />, label: "Attività" },
+  { icon: <Phone className="w-6 h-6" />, label: "Contatti" },
+  { icon: <MessageSquare className="w-6 h-6" />, label: "Assistenza" },
 ];
 
 const IconNav = () => {
