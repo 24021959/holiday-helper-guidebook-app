@@ -52,14 +52,14 @@ const Index: React.FC = () => {
           <Footer />
         </div>
       ) : (
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col h-screen">
           {/* Grande header con "Welcome Book" */}
           <div className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 py-6 text-center shadow-md">
             <h1 className="text-white font-bold text-2xl md:text-3xl tracking-wider">WELCOME BOOK</h1>
           </div>
           
           {/* Contenitore principale che occupa tutto lo spazio disponibile */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 overflow-hidden flex flex-col">
             {/* Grid con le icone che prende tutto lo spazio disponibile */}
             <div className="flex-1 overflow-y-auto">
               <IconNav />

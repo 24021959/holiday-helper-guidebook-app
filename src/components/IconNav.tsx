@@ -43,8 +43,8 @@ const icons: NavIcon[] = [
 
 const IconNav = () => {
   return (
-    <div className="w-full bg-white p-2">
-      <div className="grid grid-cols-3 gap-2 w-full">
+    <div className="w-full h-full bg-white p-2">
+      <div className="grid grid-cols-3 gap-2 w-full h-full">
         {icons.map((item, index) => (
           <div 
             key={index} 
