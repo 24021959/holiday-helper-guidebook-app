@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Menu from "./pages/Menu";
 import NotFound from "./pages/NotFound";
 import BackToMenu from "./components/BackToMenu";
+import Welcome from "./pages/Welcome";
 
 // Create placeholder pages for each menu item
 const PlaceholderPage = ({ title }: { title: string }) => {
@@ -40,7 +41,7 @@ const App = () => {
             <Route path="/menu" element={hasSelectedLanguage ? <Menu /> : <Navigate to="/" />} />
             
             {/* Routes for each icon */}
-            <Route path="/welcome" element={<PlaceholderPage title="Benvenuto" />} />
+            <Route path="/welcome" element={<Welcome />} />
             <Route path="/checkin" element={<PlaceholderPage title="Check-in" />} />
             <Route path="/location" element={<PlaceholderPage title="Posizione" />} />
             <Route path="/wifi" element={<PlaceholderPage title="Wifi" />} />

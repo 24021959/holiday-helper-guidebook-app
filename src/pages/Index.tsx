@@ -21,10 +21,10 @@ const Index: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-gray-100">
       <div className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-        {/* Header con solo scritta Welcome Book */}
+        {/* Header con solo scritta Locanda dell'Angelo */}
         <div className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 py-4 px-4 mb-4 text-center shadow-lg relative overflow-hidden">
           <div className="relative z-10 flex items-center justify-center">
-            <h1 className="text-white font-bold text-xl md:text-2xl tracking-wide">Welcome Book</h1>
+            <h1 className="text-white font-bold text-xl md:text-2xl tracking-wide">Locanda dell'Angelo</h1>
           </div>
         </div>
         

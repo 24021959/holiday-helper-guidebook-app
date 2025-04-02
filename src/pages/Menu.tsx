@@ -18,9 +18,9 @@ const Menu: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen">
-      {/* Grande header con "Welcome Book" */}
+      {/* Grande header con "Locanda dell'Angelo" */}
       <div className="w-full bg-gradient-to-r from-teal-500 to-emerald-600 py-5 text-center shadow-md">
-        <h1 className="text-white font-bold text-2xl md:text-3xl tracking-wider">WELCOME BOOK</h1>
+        <h1 className="text-white font-bold text-2xl md:text-3xl tracking-wider">LOCANDA DELL'ANGELO</h1>
       </div>
       
       {/* Testo che invita a usare il menu */}
