@@ -22,13 +22,9 @@ const Header: React.FC<HeaderProps> = ({ backgroundImage }) => {
         <div className="absolute top-1/2 left-1/4 w-12 h-12 rounded-full bg-white"></div>
       </div>
       
-      {/* Logo principale */}
+      {/* Welcome text */}
       <div className="relative z-10 flex justify-center">
-        <img 
-          src="/lovable-uploads/f001bbd0-3515-4169-944c-9a037d5ddae8.png" 
-          alt="EVA AI Technologies Logo" 
-          className="h-16 md:h-20"
-        />
+        <h1 className="text-4xl md:text-5xl font-bold text-white">Welcome</h1>
       </div>
     </div>
   );
