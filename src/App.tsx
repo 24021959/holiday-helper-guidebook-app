@@ -9,6 +9,7 @@ import Menu from "./pages/Menu";
 import NotFound from "./pages/NotFound";
 import BackToMenu from "./components/BackToMenu";
 import Welcome from "./pages/Welcome";
+import Storia from "./pages/Storia";
 
 // Create placeholder pages for each menu item
 const PlaceholderPage = ({ title }: { title: string }) => {
@@ -46,7 +47,7 @@ const App = () => {
             <Route path="/location" element={<PlaceholderPage title="Posizione" />} />
             <Route path="/wifi" element={<PlaceholderPage title="Wifi" />} />
             <Route path="/transport" element={<PlaceholderPage title="Trasporti" />} />
-            <Route path="/info" element={<PlaceholderPage title="Info" />} />
+            <Route path="/storia" element={<Storia />} />
             <Route path="/activities" element={<PlaceholderPage title="Attività" />} />
             <Route path="/equipment" element={<PlaceholderPage title="Equipaggiamenti" />} />
             <Route path="/shopping" element={<PlaceholderPage title="Shopping" />} />
