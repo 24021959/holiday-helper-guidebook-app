@@ -20,12 +20,17 @@ const icons: NavIcon[] = [
 
 const IconNav = () => {
   return (
-    <div className="w-full overflow-x-auto">
-      <div className="flex justify-center items-center space-x-4 py-4 px-2 min-w-max">
+    <div className="w-full overflow-x-auto bg-white shadow-md">
+      <div className="flex justify-center items-center space-x-1 py-4 px-2 min-w-max">
         {icons.map((item, index) => (
-          <div key={index} className="flex flex-col items-center p-2 cursor-pointer hover:bg-gray-100 rounded-lg">
-            {item.icon}
-            <span className="text-xs mt-1">{item.label}</span>
+          <div 
+            key={index} 
+            className="flex flex-col items-center p-3 cursor-pointer hover:bg-emerald-50 rounded-xl transition-all duration-300 transform hover:scale-105"
+          >
+            <div className="bg-gradient-to-br from-teal-100 to-emerald-200 p-3 rounded-full mb-2 text-emerald-700 shadow-sm">
+              {item.icon}
+            </div>
+            <span className="text-xs font-medium text-gray-700 mt-1">{item.label}</span>
           </div>
         ))}
       </div>

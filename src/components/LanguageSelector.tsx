@@ -33,21 +33,26 @@ export const LanguageSelector = ({ onSelectLanguage }: LanguageSelectorProps) =>
   };
 
   return (
-    <div className="w-full max-w-md mx-auto mt-12">
+    <div className="w-full max-w-md mx-auto">
       {languages.map((language) => (
         <div 
           key={language.code}
-          className="mb-4 transform transition-all duration-300 hover:scale-105"
+          className="mb-4 transform transition-all duration-300 hover:scale-102"
         >
           <Button
             variant="outline"
-            className="w-full flex items-center justify-between py-6 px-6 bg-white bg-opacity-90 border-2 hover:bg-opacity-100"
+            className="w-full flex items-center justify-between py-6 px-6 bg-white hover:bg-emerald-50 border-2 border-gray-100 hover:border-emerald-200 rounded-xl shadow-sm hover:shadow-md transition-all"
             onClick={() => handleSelectLanguage(language.code)}
           >
-            <div className="text-xl font-medium text-left">
+            <div className="text-xl font-medium text-left text-gray-700">
               {language.name}
             </div>
-            <span className="text-3xl">{language.flag}</span>
+            <div className="flex items-center">
+              <span className="text-3xl mr-2">{language.flag}</span>
+              <span className="text-emerald-500 opacity-0 group-hover:opacity-100">
+                →
+              </span>
+            </div>
           </Button>
         </div>
       ))}
