@@ -1,6 +1,5 @@
 
 import React, { useState } from "react";
-import Header from "@/components/Header";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import IconNav from "@/components/IconNav";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,9 +15,6 @@ const Index: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-gray-100">
-      {/* Header */}
-      <Header />
-      
       {/* Conditional rendering based on language selection */}
       {!selectedLanguage ? (
         <div className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden">
@@ -41,6 +37,17 @@ const Index: React.FC = () => {
         </div>
       ) : (
         <div className="flex-1 flex flex-col">
+          {/* Logo at the top */}
+          <div className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 py-4 px-4 text-center shadow-lg relative overflow-hidden">
+            <div className="relative z-10 flex justify-center">
+              <img 
+                src="/lovable-uploads/f001bbd0-3515-4169-944c-9a037d5ddae8.png" 
+                alt="EVA AI Technologies Logo" 
+                className="h-12 md:h-16"
+              />
+            </div>
+          </div>
+          
           {/* Icon Navigation */}
           <IconNav />
           
