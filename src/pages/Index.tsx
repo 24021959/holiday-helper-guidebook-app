@@ -1,16 +1,20 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import IconNav from "@/components/IconNav";
 import { Card, CardContent } from "@/components/ui/card";
 
 const Index: React.FC = () => {
-  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
+  // Check if a language has been selected before
+  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(() => {
+    return localStorage.getItem("selectedLanguage");
+  });
 
   const handleLanguageSelect = (langCode: string) => {
     console.log(`Lingua selezionata: ${langCode}`);
     setSelectedLanguage(langCode);
-    // In futuro, qui possiamo aggiungere la logica per cambiare la lingua dell'applicazione
+    // Store the language selection in localStorage
+    localStorage.setItem("selectedLanguage", langCode);
   };
 
   // Component for footer with logo
