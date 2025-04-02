@@ -1,6 +1,7 @@
 
 import React from "react";
 import IconNav from "@/components/IconNav";
+import Header from "@/components/Header";
 
 const Menu: React.FC = () => {
   // Component for footer with logo
@@ -18,7 +19,7 @@ const Menu: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen">
-      {/* Grande header con "Locanda dell'Angelo" */}
+      {/* Header con nome della locanda */}
       <div className="w-full bg-gradient-to-r from-teal-500 to-emerald-600 py-5 text-center shadow-md">
         <h1 className="text-white font-bold text-2xl md:text-3xl tracking-wider">LOCANDA DELL'ANGELO</h1>
       </div>

@@ -43,20 +43,20 @@ const App = () => {
             
             {/* Routes for each icon */}
             <Route path="/welcome" element={<Welcome />} />
+            <Route path="/storia" element={<Storia />} />
+            <Route path="/camere" element={<PlaceholderPage title="Camere" />} />
+            <Route path="/colazione" element={<PlaceholderPage title="Colazione" />} />
+            <Route path="/ristorante" element={<PlaceholderPage title="Ristorante" />} />
             <Route path="/checkin" element={<PlaceholderPage title="Check-in" />} />
             <Route path="/location" element={<PlaceholderPage title="Posizione" />} />
             <Route path="/wifi" element={<PlaceholderPage title="Wifi" />} />
-            <Route path="/transport" element={<PlaceholderPage title="Trasporti" />} />
-            <Route path="/storia" element={<Storia />} />
             <Route path="/activities" element={<PlaceholderPage title="Attività" />} />
-            <Route path="/equipment" element={<PlaceholderPage title="Equipaggiamenti" />} />
+            <Route path="/transport" element={<PlaceholderPage title="Trasporti" />} />
             <Route path="/shopping" element={<PlaceholderPage title="Shopping" />} />
             <Route path="/contacts" element={<PlaceholderPage title="Contatti" />} />
-            <Route path="/messages" element={<PlaceholderPage title="Messaggi" />} />
-            <Route path="/profile" element={<PlaceholderPage title="Profilo" />} />
             <Route path="/events" element={<PlaceholderPage title="Eventi" />} />
-            <Route path="/settings" element={<PlaceholderPage title="Impostazioni" />} />
             <Route path="/gallery" element={<PlaceholderPage title="Galleria" />} />
+            <Route path="/info" element={<PlaceholderPage title="Info" />} />
             
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
