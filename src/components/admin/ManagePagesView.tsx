@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -113,7 +113,7 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
                       Sottopagina di: {page.parentPath}
                     </p>
                   )}
-                  {page.listItems && (
+                  {page.listItems && page.listItems.length > 0 && (
                     <p className="text-xs text-emerald-600 mt-1">
                       {page.listItems.length} {
                         page.listType === "restaurants" ? "ristoranti" :
