@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { MessageCircle } from "lucide-react";
-import { toast } from "@/components/ui/toast";
+import { toast } from "@/hooks/use-toast";
 
 const ChatbotBubble: React.FC = () => {
   const [isLoaded, setIsLoaded] = useState(false);
