@@ -88,6 +88,10 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
       case 'Home': return <Home className="w-6 h-6" />;
       case 'Bike': return <Bike className="w-6 h-6" />;
       case 'Users': return <Users className="w-6 h-6" />;
+      case 'Building': return <Building className="w-6 h-6" />;
+      case 'Globe': return <Globe className="w-6 h-6" />;
+      case 'Music': return <Music className="w-6 h-6" />;
+      case 'Camera': return <Camera className="w-6 h-6" />;
       default: return <FileText className="w-6 h-6" />;
     }
   };

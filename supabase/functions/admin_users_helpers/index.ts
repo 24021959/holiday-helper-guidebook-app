@@ -51,7 +51,8 @@ serve(async (req) => {
           password_hash, 
           role,
           is_active: true
-        });
+        })
+        .select();
 
       if (error) {
         return new Response(JSON.stringify({ error: error.message }), {
@@ -60,7 +61,7 @@ serve(async (req) => {
         });
       }
 
-      return new Response(JSON.stringify({ success: true }), {
+      return new Response(JSON.stringify({ success: true, data }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -72,7 +73,8 @@ serve(async (req) => {
       const { data, error } = await supabase
         .from('admin_users')
         .update({ is_active })
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
       if (error) {
         return new Response(JSON.stringify({ error: error.message }), {
@@ -81,7 +83,7 @@ serve(async (req) => {
         });
       }
 
-      return new Response(JSON.stringify({ success: true }), {
+      return new Response(JSON.stringify({ success: true, data }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -93,7 +95,8 @@ serve(async (req) => {
       const { data, error } = await supabase
         .from('admin_users')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
       if (error) {
         return new Response(JSON.stringify({ error: error.message }), {
@@ -102,18 +105,18 @@ serve(async (req) => {
         });
       }
 
-      return new Response(JSON.stringify({ success: true }), {
+      return new Response(JSON.stringify({ success: true, data }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     
-    return new Response(JSON.stringify({ error: "Unknown action" }), {
+    return new Response(JSON.stringify({ error: "Azione non riconosciuta" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 400,
     });
     
   } catch (error) {
-    console.error("Error processing request:", error);
+    console.error("Errore nell'elaborazione della richiesta:", error);
     
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

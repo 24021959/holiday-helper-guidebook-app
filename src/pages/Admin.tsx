@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagementView } from "@/components/admin/UserManagementView";
@@ -51,7 +50,6 @@ const Admin: React.FC = () => {
   const keywordToIconMap = useKeywordToIconMap();
   const navigate = useNavigate();
   
-  // Fetch pages data
   useEffect(() => {
     const fetchPages = async () => {
       try {
@@ -71,7 +69,7 @@ const Admin: React.FC = () => {
             isSubmenu: page.is_submenu,
             parentPath: page.parent_path,
             icon: page.icon,
-            listItems: Array.isArray(page.list_items) ? page.list_items : null,
+            listItems: page.list_items ? page.list_items as any[] : [],
             listType: page.list_type
           }));
           
@@ -89,11 +87,9 @@ const Admin: React.FC = () => {
     }
   }, [isAuthenticated]);
   
-  // Check if user is authenticated
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // For this demo, we'll use localStorage to check if admin is logged in
         const adminToken = localStorage.getItem("admin_token");
         
         if (!adminToken) {
@@ -101,7 +97,6 @@ const Admin: React.FC = () => {
           return;
         }
         
-        // Simple validation, could be enhanced with supabase auth
         setIsAuthenticated(true);
         setIsLoading(false);
       } catch (error) {
@@ -113,14 +108,12 @@ const Admin: React.FC = () => {
     checkAuth();
   }, [navigate]);
   
-  // Handler for page creation
   const handlePageCreated = (newPages: PageData[]) => {
     setPages(newPages);
     setParentPages(newPages.filter(page => !page.isSubmenu));
     toast.success("Pagina creata con successo");
   };
   
-  // Handler for page update
   const handlePagesUpdate = (updatedPages: PageData[]) => {
     setPages(updatedPages);
     setParentPages(updatedPages.filter(page => !page.isSubmenu));
