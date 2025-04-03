@@ -83,8 +83,8 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
             label: item.label,
             bgColor: item.bg_color,
             path: item.path,
-            isSubmenu: item.is_submenu,
-            parentPath: item.parent_path
+            isSubmenu: item.is_submenu || false,
+            parentPath: item.parent_path || null
           }));
           setMenuItems(items);
         }
