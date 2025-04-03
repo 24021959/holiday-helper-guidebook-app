@@ -9,6 +9,13 @@ import BackToMenu from "@/components/BackToMenu";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, User, Settings } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const Login: React.FC = () => {
   // User login state
@@ -20,6 +27,9 @@ const Login: React.FC = () => {
   const [adminEmail, setAdminEmail] = useState<string>("");
   const [adminPassword, setAdminPassword] = useState<string>("");
   const [isAdminLoading, setIsAdminLoading] = useState<boolean>(false);
+  
+  // Help dialog state
+  const [helpOpen, setHelpOpen] = useState<boolean>(false);
   
   const navigate = useNavigate();
 
@@ -101,6 +111,10 @@ const Login: React.FC = () => {
     } finally {
       setIsAdminLoading(false);
     }
+  };
+  
+  const openHelpDialog = () => {
+    setHelpOpen(true);
   };
 
   return (
@@ -207,7 +221,36 @@ const Login: React.FC = () => {
             </form>
           </TabsContent>
         </Tabs>
+        
+        <div className="text-center mt-6">
+          <Button variant="link" onClick={openHelpDialog} className="text-emerald-700">
+            Hai problemi di accesso?
+          </Button>
+        </div>
       </div>
+      
+      <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Aiuto con l'accesso</DialogTitle>
+            <DialogDescription>
+              <p className="mb-4">Per accedere in modalità demo:</p>
+              <div className="space-y-2">
+                <div className="bg-gray-50 p-3 rounded-md">
+                  <p className="font-semibold">Accesso Utente:</p>
+                  <p>Username: <code className="bg-gray-200 px-1 rounded">user</code></p>
+                  <p>Password: <code className="bg-gray-200 px-1 rounded">password</code></p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-md">
+                  <p className="font-semibold">Accesso Amministratore:</p>
+                  <p>Username: <code className="bg-gray-200 px-1 rounded">admin</code></p>
+                  <p>Password: <code className="bg-gray-200 px-1 rounded">password</code></p>
+                </div>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
