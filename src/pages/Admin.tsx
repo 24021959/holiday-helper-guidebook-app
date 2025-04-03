@@ -82,7 +82,7 @@ const Admin: React.FC = () => {
             imageUrl: page.image_url,
             icon: page.icon,
             listType: page.list_type as "locations" | "activities" | "restaurants" | undefined,
-            listItems: page.list_items as LocationItem[] | undefined,
+            listItems: Array.isArray(page.list_items) ? page.list_items as LocationItem[] : undefined,
             isSubmenu: page.is_submenu || false,
             parentPath: page.parent_path || undefined
           }));
