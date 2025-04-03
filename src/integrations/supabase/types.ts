@@ -37,8 +37,10 @@ export type Database = {
           icon: string | null
           id: string
           image_url: string | null
+          is_submenu: boolean | null
           list_items: Json | null
           list_type: string | null
+          parent_path: string | null
           path: string
           title: string
           updated_at: string | null
@@ -49,8 +51,10 @@ export type Database = {
           icon?: string | null
           id?: string
           image_url?: string | null
+          is_submenu?: boolean | null
           list_items?: Json | null
           list_type?: string | null
+          parent_path?: string | null
           path: string
           title: string
           updated_at?: string | null
@@ -61,8 +65,10 @@ export type Database = {
           icon?: string | null
           id?: string
           image_url?: string | null
+          is_submenu?: boolean | null
           list_items?: Json | null
           list_type?: string | null
+          parent_path?: string | null
           path?: string
           title?: string
           updated_at?: string | null
@@ -99,7 +105,9 @@ export type Database = {
           created_at: string | null
           icon: string
           id: string
+          is_submenu: boolean | null
           label: string
+          parent_path: string | null
           path: string
           updated_at: string | null
         }
@@ -108,7 +116,9 @@ export type Database = {
           created_at?: string | null
           icon: string
           id?: string
+          is_submenu?: boolean | null
           label: string
+          parent_path?: string | null
           path: string
           updated_at?: string | null
         }
@@ -117,7 +127,9 @@ export type Database = {
           created_at?: string | null
           icon?: string
           id?: string
+          is_submenu?: boolean | null
           label?: string
+          parent_path?: string | null
           path?: string
           updated_at?: string | null
         }

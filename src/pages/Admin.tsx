@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -37,6 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Header from "@/components/Header";
+import { supabase } from "@/lib/supabase";
 
 interface LocationItem {
   name: string;
@@ -54,6 +54,8 @@ interface PageData {
   icon?: string;
   listType?: "locations" | "activities" | "restaurants";
   listItems?: LocationItem[];
+  isSubmenu: boolean;
+  parentPath?: string;
   headerColor?: string;
   logoUrl?: string;
 }
@@ -153,7 +155,9 @@ const Admin: React.FC = () => {
     content: "",
     path: "",
     imageUrl: "",
-    icon: "FileText"
+    icon: "FileText",
+    isSubmenu: false,
+    parentPath: ""
   });
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [chatbotCode, setChatbotCode] = useState<string>("");
@@ -169,6 +173,9 @@ const Admin: React.FC = () => {
   const [uploadedLogo, setUploadedLogo] = useState<string | null>(null);
   const [headerColor, setHeaderColor] = useState<string>("bg-gradient-to-r from-teal-500 to-emerald-600");
   const [selectedColor, setSelectedColor] = useState<string>("bg-blue-200");
+  const [isSubmenu, setIsSubmenu] = useState<boolean>(false);
+  const [parentPages, setParentPages] = useState<PageData[]>([]);
+  const [selectedParent, setSelectedParent] = useState<string>("");
 
   const navigate = useNavigate();
 
@@ -230,22 +237,91 @@ const Admin: React.FC = () => {
       navigate("/login");
     }
     
-    const savedPages = localStorage.getItem("customPages");
-    if (savedPages) {
-      setPages(JSON.parse(savedPages));
-    }
+    const fetchAllData = async () => {
+      try {
+        const { data: pagesData, error: pagesError } = await supabase
+          .from('custom_pages')
+          .select('*');
+        
+        if (pagesError) throw pagesError;
+        
+        if (pagesData) {
+          const formattedPages = pagesData.map(page => ({
+            id: page.id,
+            title: page.title,
+            content: page.content,
+            path: page.path,
+            imageUrl: page.image_url,
+            icon: page.icon,
+            listType: page.list_type as "locations" | "activities" | "restaurants" | undefined,
+            listItems: page.list_items as LocationItem[] | undefined,
+            isSubmenu: page.is_submenu,
+            parentPath: page.parent_path
+          }));
+          setPages(formattedPages);
+          
+          const potentialParents = formattedPages.filter(page => !page.isSubmenu);
+          setParentPages(potentialParents);
+        }
+        
+        const { data: headerData, error: headerError } = await supabase
+          .from('header_settings')
+          .select('*')
+          .limit(1)
+          .single();
+        
+        if (headerError) {
+          if (headerError.code !== 'PGRST116') {
+            throw headerError;
+          }
+        }
+        
+        if (headerData) {
+          if (headerData.logo_url) setUploadedLogo(headerData.logo_url);
+          if (headerData.header_color) setHeaderColor(headerData.header_color);
+        }
+        
+        const { data: chatbotData, error: chatbotError } = await supabase
+          .from('chatbot_settings')
+          .select('*')
+          .limit(1)
+          .single();
+        
+        if (chatbotError) {
+          if (chatbotError.code !== 'PGRST116') {
+            throw chatbotError;
+          }
+        }
+        
+        if (chatbotData && chatbotData.code) {
+          setChatbotCode(chatbotData.code);
+        }
+      } catch (error) {
+        console.error("Errore nel caricamento dei dati:", error);
+        toast.error("Errore nel recupero dei dati da Supabase");
+        
+        const savedPages = localStorage.getItem("customPages");
+        if (savedPages) {
+          setPages(JSON.parse(savedPages));
+          const potentialParents = JSON.parse(savedPages).filter((page: PageData) => !page.isSubmenu);
+          setParentPages(potentialParents);
+        }
+        
+        const savedHeaderSettings = localStorage.getItem("headerSettings");
+        if (savedHeaderSettings) {
+          const settings = JSON.parse(savedHeaderSettings);
+          if (settings.logoUrl) setUploadedLogo(settings.logoUrl);
+          if (settings.headerColor) setHeaderColor(settings.headerColor);
+        }
+        
+        const savedChatbotCode = localStorage.getItem("chatbotCode");
+        if (savedChatbotCode) {
+          setChatbotCode(savedChatbotCode);
+        }
+      }
+    };
     
-    const savedChatbotCode = localStorage.getItem("chatbotCode");
-    if (savedChatbotCode) {
-      setChatbotCode(savedChatbotCode);
-    }
-    
-    const savedHeaderSettings = localStorage.getItem("headerSettings");
-    if (savedHeaderSettings) {
-      const settings = JSON.parse(savedHeaderSettings);
-      if (settings.logoUrl) setUploadedLogo(settings.logoUrl);
-      if (settings.headerColor) setHeaderColor(settings.headerColor);
-    }
+    fetchAllData();
   }, [navigate]);
 
   const generateSlugFromTitle = (title: string): string => {
@@ -325,91 +401,431 @@ const Admin: React.FC = () => {
     toast.info("Elemento rimosso");
   };
 
-  const handleSavePage = () => {
+  const renderCreatePageForm = () => {
+    return (
+      <div className="grid gap-4">
+        <div>
+          <Label htmlFor="title">Titolo Pagina</Label>
+          <Input 
+            id="title" 
+            value={newPage.title} 
+            onChange={handleTitleChange}
+            placeholder="Titolo della pagina"
+            className="mb-1"
+          />
+          {newPage.path && (
+            <p className="text-xs text-gray-500">
+              URL generato: /{newPage.path}
+            </p>
+          )}
+        </div>
+
+        <div className="flex items-center mb-2">
+          <input 
+            type="checkbox" 
+            id="isSubmenu"
+            checked={isSubmenu}
+            onChange={(e) => setIsSubmenu(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-emerald-600 mr-2"
+          />
+          <Label htmlFor="isSubmenu" className="cursor-pointer">Questa è una sottopagina</Label>
+        </div>
+        
+        {isSubmenu && (
+          <div className="mb-4">
+            <Label htmlFor="parentPage">Seleziona la pagina principale</Label>
+            <Select 
+              value={selectedParent} 
+              onValueChange={setSelectedParent}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Seleziona una pagina principale" />
+              </SelectTrigger>
+              <SelectContent>
+                {parentPages.map(page => (
+                  <SelectItem key={page.id} value={page.path}>
+                    {page.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {parentPages.length === 0 && (
+              <p className="text-xs text-amber-600 mt-1">
+                Non ci sono pagine principali disponibili. Crea prima una pagina principale.
+              </p>
+            )}
+          </div>
+        )}
+        
+        <div>
+          <Label htmlFor="icon">Icona per il Menu</Label>
+          <div className="flex items-center gap-3 mb-2 p-2 bg-gray-50 rounded-md">
+            <div className={`${selectedColor} p-2 rounded-md inline-flex items-center justify-center`}>
+              {renderIconPreview(newPage.icon || "FileText")}
+            </div>
+            <div>
+              <p className="font-medium">{newPage.title || "Titolo pagina"}</p>
+              <p className="text-xs text-gray-500">Icona selezionata automaticamente in base al titolo</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-3 md:grid-cols-5 gap-2 mt-2">
+            {availableIcons.map((icon) => (
+              <div 
+                key={icon.name} 
+                className={`flex flex-col items-center p-2 rounded-md cursor-pointer ${newPage.icon === icon.name ? 'bg-emerald-100 border border-emerald-300' : 'hover:bg-gray-100'}`}
+                onClick={() => setNewPage({...newPage, icon: icon.name})}
+              >
+                {renderIconPreview(icon.name)}
+                <span className="text-xs mt-1">{icon.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        <div>
+          <Label htmlFor="color">Colore di Sfondo</Label>
+          <div className="grid grid-cols-4 md:grid-cols-8 gap-2 mt-2">
+            {availableColors.map((colorOption) => (
+              <div 
+                key={colorOption.color} 
+                className={`h-8 rounded-md cursor-pointer ${colorOption.color} ${selectedColor === colorOption.color ? 'ring-2 ring-emerald-500' : ''}`}
+                onClick={() => setSelectedColor(colorOption.color)}
+                title={colorOption.label}
+              />
+            ))}
+          </div>
+        </div>
+        
+        <div>
+          <Label className="block mb-2">Immagine (JPG, PNG)</Label>
+          <ImageUploader onImageUpload={handleImageUpload} />
+          
+          {uploadedImage && (
+            <div className="mt-2 relative">
+              <img 
+                src={uploadedImage} 
+                alt="Anteprima" 
+                className="w-full max-h-48 object-contain border rounded-md" 
+              />
+              <Button
+                variant="destructive"
+                size="sm"
+                className="absolute top-2 right-2"
+                onClick={() => setUploadedImage(null)}
+              >
+                Rimuovi
+              </Button>
+            </div>
+          )}
+        </div>
+        
+        <div>
+          <Label htmlFor="content">Contenuto Pagina</Label>
+          <Textarea 
+            id="content"
+            className="min-h-[200px]"
+            value={newPage.content} 
+            onChange={(e) => setNewPage({...newPage, content: e.target.value})}
+            placeholder="Inserisci il contenuto della pagina qui..."
+          />
+        </div>
+        
+        <div className="border-t pt-4 mt-4">
+          <div className="flex items-center justify-between mb-4">
+            <Label htmlFor="isList" className="flex items-center gap-2">
+              <input 
+                type="checkbox" 
+                id="isList"
+                checked={isList}
+                onChange={(e) => setIsList(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-emerald-600"
+              />
+              <span>Include elenco di {listType}</span>
+            </Label>
+            
+            {isList && (
+              <Select 
+                value={listType} 
+                onValueChange={(value: "locations" | "activities" | "restaurants") => setListType(value)}
+              >
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Tipo di lista" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="locations">Luoghi</SelectItem>
+                  <SelectItem value="restaurants">Ristoranti</SelectItem>
+                  <SelectItem value="activities">Attività</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          
+          {isList && (
+            <div className="space-y-4 mt-4 border rounded-md p-4 bg-gray-50">
+              <h3 className="text-md font-medium text-emerald-700">
+                {listType === "restaurants" ? "Aggiungi Ristoranti" : 
+                listType === "activities" ? "Aggiungi Attività" : 
+                "Aggiungi Luoghi"}
+              </h3>
+              
+              <div className="grid gap-2">
+                <div>
+                  <Label htmlFor="itemName">Nome</Label>
+                  <Input 
+                    id="itemName" 
+                    value={currentItem.name} 
+                    onChange={(e) => setCurrentItem({...currentItem, name: e.target.value})}
+                    placeholder={`Nome ${listType === "restaurants" ? "ristorante" : 
+                      listType === "activities" ? "attività" : "luogo"}`}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="itemDescription">Descrizione</Label>
+                  <Input 
+                    id="itemDescription" 
+                    value={currentItem.description || ""} 
+                    onChange={(e) => setCurrentItem({...currentItem, description: e.target.value})}
+                    placeholder="Breve descrizione"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div>
+                    <Label htmlFor="itemPhone">Telefono</Label>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-gray-500" />
+                      <Input 
+                        id="itemPhone" 
+                        value={currentItem.phoneNumber || ""} 
+                        onChange={(e) => setCurrentItem({...currentItem, phoneNumber: e.target.value})}
+                        placeholder="+39 123 456 7890"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="itemMaps">Google Maps</Label>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-gray-500" />
+                      <Input 
+                        id="itemMaps" 
+                        value={currentItem.mapsUrl || ""} 
+                        onChange={(e) => setCurrentItem({...currentItem, mapsUrl: e.target.value})}
+                        placeholder="https://maps.google.com/?q=..."
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <Button 
+                  onClick={handleAddItem} 
+                  className="w-full mt-2"
+                  variant="secondary"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Aggiungi a lista
+                </Button>
+              </div>
+              
+              {listItems.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium mb-2">Elementi nella lista ({listItems.length})</h4>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nome</TableHead>
+                        <TableHead className="hidden md:table-cell">Descrizione</TableHead>
+                        <TableHead>Contatti</TableHead>
+                        <TableHead className="w-20">Azioni</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {listItems.map((item, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">{item.name}</TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            {item.description ? (
+                              item.description.length > 50 ? 
+                                `${item.description.substring(0, 50)}...` : 
+                                item.description
+                            ) : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              {item.phoneNumber && <Phone className="h-4 w-4 text-gray-500" />}
+                              {item.mapsUrl && <MapPin className="h-4 w-4 text-gray-500" />}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => handleRemoveItem(index)}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        
+        <Button 
+          onClick={handleSavePage}
+          disabled={isSubmenu && !selectedParent}
+        >
+          Salva Pagina
+        </Button>
+      </div>
+    );
+  };
+
+  const handleSavePage = async () => {
     if (!newPage.title || !newPage.content) {
       toast.error("Titolo e contenuto sono obbligatori");
       return;
     }
 
-    const pageId = `page_${Date.now()}`;
-    
-    const pageToSave: PageData = { 
-      ...newPage, 
-      id: pageId,
-      imageUrl: uploadedImage || newPage.imageUrl,
-      path: newPage.path || generateSlugFromTitle(newPage.title)
-    };
-    
-    if (isList && listItems.length > 0) {
-      pageToSave.listType = listType;
-      pageToSave.listItems = [...listItems];
-    }
-    
-    const updatedPages = [...pages, pageToSave];
-    setPages(updatedPages);
-    localStorage.setItem("customPages", JSON.stringify(updatedPages));
-    
-    addIconToMenu(pageToSave);
-    
-    toast.success("Pagina creata con successo!");
-    
-    setNewPage({
-      title: "",
-      content: "",
-      path: "",
-      imageUrl: "",
-      icon: "FileText"
-    });
-    setUploadedImage(null);
-    setIsList(false);
-    setListItems([]);
-    setListType("locations");
-  };
-
-  const addIconToMenu = (page: PageData) => {
-    const currentIconsJson = localStorage.getItem("menuIcons");
-    const currentIcons: MenuIcon[] = currentIconsJson ? JSON.parse(currentIconsJson) : [];
-    
-    const newIcon: MenuIcon = {
-      icon: page.icon || "FileText",
-      label: page.title,
-      bgColor: selectedColor,
-      path: `/${page.path}`
-    };
-    
-    const updatedIcons = [...currentIcons, newIcon];
-    
-    localStorage.setItem("menuIcons", JSON.stringify(updatedIcons));
-    
-    toast.success("Icona aggiunta al menu");
-  };
-
-  const handleDeletePage = (id: string) => {
-    const pageToDelete = pages.find(page => page.id === id);
-    
-    const updatedPages = pages.filter(page => page.id !== id);
-    setPages(updatedPages);
-    localStorage.setItem("customPages", JSON.stringify(updatedPages));
-    
-    if (pageToDelete) {
-      removeIconFromMenu(pageToDelete.path);
-    }
-    
-    toast.info("Pagina eliminata");
-  };
-
-  const removeIconFromMenu = (pagePath: string) => {
-    const currentIconsJson = localStorage.getItem("menuIcons");
-    if (currentIconsJson) {
-      const currentIcons: MenuIcon[] = JSON.parse(currentIconsJson);
-      const updatedIcons = currentIcons.filter(icon => icon.path !== `/${pagePath}`);
-      localStorage.setItem("menuIcons", JSON.stringify(updatedIcons));
+    try {
+      const pageToSave = { 
+        title: newPage.title,
+        content: newPage.content,
+        path: newPage.path || generateSlugFromTitle(newPage.title),
+        image_url: uploadedImage || newPage.imageUrl,
+        icon: newPage.icon || "FileText",
+        is_submenu: isSubmenu,
+        parent_path: isSubmenu ? selectedParent : null
+      };
+      
+      if (isList && listItems.length > 0) {
+        pageToSave.list_type = listType;
+        pageToSave.list_items = listItems;
+      }
+      
+      const { data: savedPage, error } = await supabase
+        .from('custom_pages')
+        .insert(pageToSave)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      await addIconToMenu(savedPage);
+      
+      toast.success("Pagina creata con successo!");
+      
+      setNewPage({
+        title: "",
+        content: "",
+        path: "",
+        imageUrl: "",
+        icon: "FileText"
+      });
+      setUploadedImage(null);
+      setIsList(false);
+      setListItems([]);
+      setListType("locations");
+      setIsSubmenu(false);
+      setSelectedParent("");
+      
+      const { data: updatedPages, error: pagesError } = await supabase
+        .from('custom_pages')
+        .select('*');
+      
+      if (!pagesError && updatedPages) {
+        const formattedPages = updatedPages.map(page => ({
+          id: page.id,
+          title: page.title,
+          content: page.content,
+          path: page.path,
+          imageUrl: page.image_url,
+          icon: page.icon,
+          listType: page.list_type as "locations" | "activities" | "restaurants" | undefined,
+          listItems: page.list_items as LocationItem[] | undefined,
+          isSubmenu: page.is_submenu,
+          parentPath: page.parent_path
+        }));
+        setPages(formattedPages);
+        
+        const potentialParents = formattedPages.filter(page => !page.isSubmenu);
+        setParentPages(potentialParents);
+      }
+    } catch (error) {
+      console.error("Errore nel salvare la pagina:", error);
+      toast.error("Errore nel salvare la pagina");
     }
   };
 
-  const handleSaveChatbotCode = () => {
-    localStorage.setItem("chatbotCode", chatbotCode);
-    toast.success("Codice chatbot salvato con successo!");
+  const addIconToMenu = async (page: any) => {
+    try {
+      const iconData = {
+        icon: page.icon || "FileText",
+        label: page.title,
+        bg_color: selectedColor,
+        path: page.path,
+        is_submenu: page.is_submenu,
+        parent_path: page.parent_path
+      };
+      
+      const { error } = await supabase
+        .from('menu_icons')
+        .insert(iconData);
+      
+      if (error) throw error;
+      
+      toast.success("Icona aggiunta al menu");
+    } catch (error) {
+      console.error("Errore nell'aggiungere l'icona al menu:", error);
+      toast.error("Errore nell'aggiungere l'icona al menu");
+    }
+  };
+
+  const handleDeletePage = async (id: string) => {
+    try {
+      const pageToDelete = pages.find(page => page.id === id);
+      if (!pageToDelete) return;
+      
+      const { error: pageError } = await supabase
+        .from('custom_pages')
+        .delete()
+        .eq('id', id);
+      
+      if (pageError) throw pageError;
+      
+      const { error: iconError } = await supabase
+        .from('menu_icons')
+        .delete()
+        .eq('path', pageToDelete.path);
+      
+      if (iconError) throw iconError;
+      
+      if (!pageToDelete.isSubmenu) {
+        const subPages = pages.filter(page => page.parentPath === pageToDelete.path);
+        
+        for (const subPage of subPages) {
+          await supabase.from('custom_pages').delete().eq('id', subPage.id);
+          await supabase.from('menu_icons').delete().eq('path', subPage.path);
+        }
+      }
+      
+      setPages(pages.filter(page => page.id !== id));
+      
+      toast.info("Pagina eliminata");
+      
+      if (!pageToDelete.isSubmenu) {
+        setParentPages(parentPages.filter(page => page.id !== id));
+      }
+    } catch (error) {
+      console.error("Errore nell'eliminare la pagina:", error);
+      toast.error("Errore nell'eliminare la pagina");
+    }
   };
 
   const handlePreviewPage = (path: string) => {
@@ -463,6 +879,55 @@ const Admin: React.FC = () => {
     toast.success("Colore dell'header aggiornato");
   };
 
+  const renderManagePagesList = () => {
+    return (
+      <>
+        <h2 className="text-xl font-medium text-emerald-600 mb-4">Gestisci Pagine</h2>
+        
+        {pages.length === 0 ? (
+          <p className="text-gray-500">Nessuna pagina creata finora</p>
+        ) : (
+          <div className="space-y-4">
+            {pages.map((page) => (
+              <div key={page.id} className="border rounded-lg p-4 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className={`${selectedColor} p-2 rounded-md`}>
+                    {renderIconPreview(page.icon || "FileText")}
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-lg">{page.title}</h3>
+                    <p className="text-gray-500 text-sm">/{page.path}</p>
+                    {page.isSubmenu && (
+                      <p className="text-xs text-teal-600 mt-1">
+                        Sottopagina di: {page.parentPath}
+                      </p>
+                    )}
+                    {page.listItems && (
+                      <p className="text-xs text-emerald-600 mt-1">
+                        {page.listItems.length} {
+                          page.listType === "restaurants" ? "ristoranti" :
+                          page.listType === "activities" ? "attività" : "luoghi"
+                        }
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => handlePreviewPage(page.path)}>
+                    Anteprima
+                  </Button>
+                  <Button size="sm" variant="destructive" onClick={() => handleDeletePage(page.id)}>
+                    Elimina
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </>
+    );
+  };
+
   if (!isAuthenticated) {
     return null;
   }
@@ -486,286 +951,11 @@ const Admin: React.FC = () => {
           
           <TabsContent value="create" className="space-y-4">
             <h2 className="text-xl font-medium text-emerald-600 mb-4">Crea Nuova Pagina</h2>
-            
-            <div className="grid gap-4">
-              <div>
-                <Label htmlFor="title">Titolo Pagina</Label>
-                <Input 
-                  id="title" 
-                  value={newPage.title} 
-                  onChange={handleTitleChange}
-                  placeholder="Titolo della pagina"
-                  className="mb-1"
-                />
-                {newPage.path && (
-                  <p className="text-xs text-gray-500">
-                    URL generato: /{newPage.path}
-                  </p>
-                )}
-              </div>
-              
-              <div>
-                <Label htmlFor="icon">Icona per il Menu</Label>
-                <div className="flex items-center gap-3 mb-2 p-2 bg-gray-50 rounded-md">
-                  <div className={`${selectedColor} p-2 rounded-md inline-flex items-center justify-center`}>
-                    {renderIconPreview(newPage.icon || "FileText")}
-                  </div>
-                  <div>
-                    <p className="font-medium">{newPage.title || "Titolo pagina"}</p>
-                    <p className="text-xs text-gray-500">Icona selezionata automaticamente in base al titolo</p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-3 md:grid-cols-5 gap-2 mt-2">
-                  {availableIcons.map((icon) => (
-                    <div 
-                      key={icon.name} 
-                      className={`flex flex-col items-center p-2 rounded-md cursor-pointer ${newPage.icon === icon.name ? 'bg-emerald-100 border border-emerald-300' : 'hover:bg-gray-100'}`}
-                      onClick={() => setNewPage({...newPage, icon: icon.name})}
-                    >
-                      {renderIconPreview(icon.name)}
-                      <span className="text-xs mt-1">{icon.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="color">Colore di Sfondo</Label>
-                <div className="grid grid-cols-4 md:grid-cols-8 gap-2 mt-2">
-                  {availableColors.map((colorOption) => (
-                    <div 
-                      key={colorOption.color} 
-                      className={`h-8 rounded-md cursor-pointer ${colorOption.color} ${selectedColor === colorOption.color ? 'ring-2 ring-emerald-500' : ''}`}
-                      onClick={() => setSelectedColor(colorOption.color)}
-                      title={colorOption.label}
-                    />
-                  ))}
-                </div>
-              </div>
-              
-              <div>
-                <Label className="block mb-2">Immagine (JPG, PNG)</Label>
-                <ImageUploader onImageUpload={handleImageUpload} />
-                
-                {uploadedImage && (
-                  <div className="mt-2 relative">
-                    <img 
-                      src={uploadedImage} 
-                      alt="Anteprima" 
-                      className="w-full max-h-48 object-contain border rounded-md" 
-                    />
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-2 right-2"
-                      onClick={() => setUploadedImage(null)}
-                    >
-                      Rimuovi
-                    </Button>
-                  </div>
-                )}
-              </div>
-              
-              <div>
-                <Label htmlFor="content">Contenuto Pagina</Label>
-                <Textarea 
-                  id="content"
-                  className="min-h-[200px]"
-                  value={newPage.content} 
-                  onChange={(e) => setNewPage({...newPage, content: e.target.value})}
-                  placeholder="Inserisci il contenuto della pagina qui..."
-                />
-              </div>
-              
-              <div className="border-t pt-4 mt-4">
-                <div className="flex items-center justify-between mb-4">
-                  <Label htmlFor="isList" className="flex items-center gap-2">
-                    <input 
-                      type="checkbox" 
-                      id="isList"
-                      checked={isList}
-                      onChange={(e) => setIsList(e.target.checked)}
-                      className="h-4 w-4 rounded border-gray-300 text-emerald-600"
-                    />
-                    <span>Include elenco di {listType}</span>
-                  </Label>
-                  
-                  {isList && (
-                    <Select 
-                      value={listType} 
-                      onValueChange={(value: "locations" | "activities" | "restaurants") => setListType(value)}
-                    >
-                      <SelectTrigger className="w-48">
-                        <SelectValue placeholder="Tipo di lista" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="locations">Luoghi</SelectItem>
-                        <SelectItem value="restaurants">Ristoranti</SelectItem>
-                        <SelectItem value="activities">Attività</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-                
-                {isList && (
-                  <div className="space-y-4 mt-4 border rounded-md p-4 bg-gray-50">
-                    <h3 className="text-md font-medium text-emerald-700">
-                      {listType === "restaurants" ? "Aggiungi Ristoranti" : 
-                      listType === "activities" ? "Aggiungi Attività" : 
-                      "Aggiungi Luoghi"}
-                    </h3>
-                    
-                    <div className="grid gap-2">
-                      <div>
-                        <Label htmlFor="itemName">Nome</Label>
-                        <Input 
-                          id="itemName" 
-                          value={currentItem.name} 
-                          onChange={(e) => setCurrentItem({...currentItem, name: e.target.value})}
-                          placeholder={`Nome ${listType === "restaurants" ? "ristorante" : 
-                            listType === "activities" ? "attività" : "luogo"}`}
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="itemDescription">Descrizione</Label>
-                        <Input 
-                          id="itemDescription" 
-                          value={currentItem.description || ""} 
-                          onChange={(e) => setCurrentItem({...currentItem, description: e.target.value})}
-                          placeholder="Breve descrizione"
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <div>
-                          <Label htmlFor="itemPhone">Telefono</Label>
-                          <div className="flex items-center gap-2">
-                            <Phone className="h-4 w-4 text-gray-500" />
-                            <Input 
-                              id="itemPhone" 
-                              value={currentItem.phoneNumber || ""} 
-                              onChange={(e) => setCurrentItem({...currentItem, phoneNumber: e.target.value})}
-                              placeholder="+39 123 456 7890"
-                            />
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="itemMaps">Google Maps</Label>
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-gray-500" />
-                            <Input 
-                              id="itemMaps" 
-                              value={currentItem.mapsUrl || ""} 
-                              onChange={(e) => setCurrentItem({...currentItem, mapsUrl: e.target.value})}
-                              placeholder="https://maps.google.com/?q=..."
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <Button 
-                        onClick={handleAddItem} 
-                        className="w-full mt-2"
-                        variant="secondary"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Aggiungi a lista
-                      </Button>
-                    </div>
-                    
-                    {listItems.length > 0 && (
-                      <div className="mt-4">
-                        <h4 className="text-sm font-medium mb-2">Elementi nella lista ({listItems.length})</h4>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Nome</TableHead>
-                              <TableHead className="hidden md:table-cell">Descrizione</TableHead>
-                              <TableHead>Contatti</TableHead>
-                              <TableHead className="w-20">Azioni</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {listItems.map((item, index) => (
-                              <TableRow key={index}>
-                                <TableCell className="font-medium">{item.name}</TableCell>
-                                <TableCell className="hidden md:table-cell">
-                                  {item.description ? (
-                                    item.description.length > 50 ? 
-                                      `${item.description.substring(0, 50)}...` : 
-                                      item.description
-                                  ) : '-'}
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex gap-2">
-                                    {item.phoneNumber && <Phone className="h-4 w-4 text-gray-500" />}
-                                    {item.mapsUrl && <MapPin className="h-4 w-4 text-gray-500" />}
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon"
-                                    onClick={() => handleRemoveItem(index)}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              
-              <Button onClick={handleSavePage}>Salva Pagina</Button>
-            </div>
+            {renderCreatePageForm()}
           </TabsContent>
           
           <TabsContent value="manage">
-            <h2 className="text-xl font-medium text-emerald-600 mb-4">Gestisci Pagine</h2>
-            
-            {pages.length === 0 ? (
-              <p className="text-gray-500">Nessuna pagina creata finora</p>
-            ) : (
-              <div className="space-y-4">
-                {pages.map((page) => (
-                  <div key={page.id} className="border rounded-lg p-4 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <div className={`${selectedColor} p-2 rounded-md`}>
-                        {renderIconPreview(page.icon || "FileText")}
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-lg">{page.title}</h3>
-                        <p className="text-gray-500 text-sm">/{page.path}</p>
-                        {page.listItems && (
-                          <p className="text-xs text-emerald-600 mt-1">
-                            {page.listItems.length} {
-                              page.listType === "restaurants" ? "ristoranti" :
-                              page.listType === "activities" ? "attività" : "luoghi"
-                            }
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => handlePreviewPage(page.path)}>
-                        Anteprima
-                      </Button>
-                      <Button size="sm" variant="destructive" onClick={() => handleDeletePage(page.id)}>
-                        Elimina
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            {renderManagePagesList()}
           </TabsContent>
           
           <TabsContent value="header">
