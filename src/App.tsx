@@ -6,18 +6,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import Index from "./pages/Index";
-import Menu from "./pages/Menu";
-import NotFound from "./pages/NotFound";
-import BackToMenu from "./components/BackToMenu";
-import Welcome from "./pages/Welcome";
-import Storia from "./pages/Storia";
-import Admin from "./pages/Admin";
-import Login from "./pages/Login";
-import PreviewPage from "./pages/PreviewPage";
-import ChatbotBubble from "./components/ChatbotBubble";
-import Header from "./components/Header";
-import SubMenu from "./pages/SubMenu";
 
 interface CustomPage {
   id: string;
@@ -293,8 +281,23 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/menu" element={hasSelectedLanguage ? <Menu /> : <Navigate to="/" />} />
+            <Route path="/" element={<Navigate to="/login" />} />
+            <Route path="/login" element={<Login />} />
+            
+            <Route 
+              path="/menu" 
+              element={
+                localStorage.getItem("isAuthenticated") === "true" ? 
+                <Menu /> : <Navigate to="/login" />
+              } 
+            />
+            <Route 
+              path="/admin" 
+              element={
+                localStorage.getItem("isAuthenticated") === "true" ? 
+                <Admin /> : <Navigate to="/login" />
+              } 
+            />
             
             <Route path="/welcome" element={<Welcome />} />
             <Route path="/storia" element={<Storia />} />
@@ -321,15 +324,6 @@ const App = () => {
                 element={<DynamicPage pageData={page} />} 
               />
             ))}
-            
-            <Route path="/login" element={<Login />} />
-            <Route 
-              path="/admin" 
-              element={
-                localStorage.getItem("isAuthenticated") === "true" ? 
-                <Admin /> : <Navigate to="/login" />
-              } 
-            />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

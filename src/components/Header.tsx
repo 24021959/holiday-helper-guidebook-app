@@ -1,19 +1,16 @@
 
 import React from "react";
-import AdminButton from "./AdminButton";
 
 interface HeaderProps {
   backgroundImage?: string;
   backgroundColor?: string;
   logoUrl?: string;
-  showAdminButton?: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
   backgroundImage, 
   backgroundColor = "bg-gradient-to-r from-teal-500 to-emerald-600",
-  logoUrl,
-  showAdminButton = true 
+  logoUrl
 }) => {
   // Determina se usare testo bianco o scuro in base al colore di sfondo
   const isLightBackground = 
@@ -31,13 +28,6 @@ const Header: React.FC<HeaderProps> = ({
           : {}
       }
     >
-      {/* Admin button in the top right corner */}
-      {showAdminButton && (
-        <div className="absolute top-3 right-4 z-20">
-          <AdminButton />
-        </div>
-      )}
-      
       {/* Elementi decorativi (solo per header colorati, non per sfondo bianco) */}
       {backgroundColor !== "bg-white" && (
         <div className="absolute top-0 left-0 w-full h-full opacity-20">
