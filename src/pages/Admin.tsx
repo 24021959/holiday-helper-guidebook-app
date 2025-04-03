@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -12,8 +11,8 @@ import {
   MapPin, Book, Coffee, Utensils, Phone, 
   Wifi, Bus, ShoppingCart, Calendar, 
   Hotel, Bike, Map, Info, FileText, 
-  Museum, Building, Landmark, Tree, Beach, 
-  Mountains, Users, Music, Camera, Globe,
+  Landmark, Building, Trees, Mountain, 
+  Users, Music, Camera, Globe,
   Newspaper, PawPrint, Heart, Bookmark, ShoppingBag
 } from "lucide-react";
 import BackToMenu from "@/components/BackToMenu";
@@ -37,7 +36,6 @@ interface MenuIcon {
   path: string;
 }
 
-// Mappa delle parole chiave per associare automaticamente le icone
 const keywordToIconMap: Record<string, string> = {
   "ristorante": "Utensils",
   "ristoro": "Utensils",
@@ -49,8 +47,8 @@ const keywordToIconMap: Record<string, string> = {
   "caffè": "Coffee",
   "bar": "Coffee",
   "bevande": "Coffee",
-  "museo": "Museum",
-  "mostra": "Museum",
+  "museo": "Landmark",
+  "mostra": "Landmark",
   "esposizione": "Landmark",
   "galleria": "Image",
   "immagini": "Image",
@@ -66,10 +64,10 @@ const keywordToIconMap: Record<string, string> = {
   "treno": "Bus",
   "navetta": "Bus",
   "viaggio": "Globe",
-  "escursione": "Mountains",
-  "montagna": "Mountains",
-  "mare": "Beach",
-  "spiaggia": "Beach",
+  "escursione": "Mountain",
+  "montagna": "Mountain",
+  "mare": "Map",
+  "spiaggia": "Map",
   "shopping": "ShoppingBag",
   "acquisti": "ShoppingCart",
   "negozi": "ShoppingBag",
@@ -103,9 +101,9 @@ const keywordToIconMap: Record<string, string> = {
   "connessione": "Wifi",
   "animali": "PawPrint",
   "pet": "PawPrint",
-  "natura": "Tree",
-  "parco": "Tree",
-  "giardino": "Tree",
+  "natura": "Trees",
+  "parco": "Trees",
+  "giardino": "Trees",
   "persone": "Users",
   "ospiti": "Users",
   "clienti": "Users",
@@ -140,7 +138,6 @@ const Admin: React.FC = () => {
     }
   });
 
-  // Opzioni di icone disponibili
   const availableIcons = [
     { name: "FileText", label: "Documento" },
     { name: "Image", label: "Immagine" },
@@ -148,7 +145,7 @@ const Admin: React.FC = () => {
     { name: "Info", label: "Informazione" },
     { name: "Map", label: "Mappa" },
     { name: "Utensils", label: "Ristorante" },
-    { name: "Museum", label: "Museo" },
+    { name: "Landmark", label: "Museo" },
     { name: "Hotel", label: "Hotel" },
     { name: "Wifi", label: "Wifi" },
     { name: "Bus", label: "Trasporto" },
@@ -161,7 +158,6 @@ const Admin: React.FC = () => {
     { name: "Bike", label: "Attività" }
   ];
 
-  // Colori di sfondo disponibili per le icone
   const availableColors = [
     { color: "bg-blue-200", label: "Blu" },
     { color: "bg-green-200", label: "Verde" },
@@ -175,35 +171,30 @@ const Admin: React.FC = () => {
   
   const [selectedColor, setSelectedColor] = useState("bg-blue-200");
 
-  // Controlla se l'utente è già autenticato
   useEffect(() => {
     const authStatus = localStorage.getItem("isAuthenticated");
     if (authStatus === "true") {
       setIsAuthenticated(true);
     } else {
-      // Reindirizza alla pagina di login se non autenticato
       navigate("/login");
     }
     
-    // Carica le pagine dal localStorage
     const savedPages = localStorage.getItem("customPages");
     if (savedPages) {
       setPages(JSON.parse(savedPages));
     }
     
-    // Carica il codice chatbot dal localStorage
     const savedChatbotCode = localStorage.getItem("chatbotCode");
     if (savedChatbotCode) {
       setChatbotCode(savedChatbotCode);
     }
   }, [navigate]);
 
-  // Funzione per generare automaticamente l'URL della pagina dal titolo
   const generateSlugFromTitle = (title: string): string => {
     return title
       .toLowerCase()
-      .replace(/[^\w\s]/gi, '') // Rimuove caratteri speciali
-      .replace(/\s+/g, '-') // Sostituisce spazi con trattini
+      .replace(/[^\w\s]/gi, '')
+      .replace(/\s+/g, '-')
       .replace(/[àáâäãåą]/g, 'a')
       .replace(/[èéêëęė]/g, 'e')
       .replace(/[ìíîïį]/g, 'i')
@@ -214,22 +205,18 @@ const Admin: React.FC = () => {
       .replace(/[ß]/g, 'ss');
   };
 
-  // Funzione per determinare automaticamente l'icona più adatta in base al titolo
   const determineIconFromTitle = (title: string): string => {
     const lowercaseTitle = title.toLowerCase();
     
-    // Cerca corrispondenze dirette nelle parole chiave
     for (const [keyword, icon] of Object.entries(keywordToIconMap)) {
       if (lowercaseTitle.includes(keyword.toLowerCase())) {
         return icon;
       }
     }
     
-    // Se non trova corrispondenze, usa un'icona predefinita
     return "FileText";
   };
 
-  // Gestione logout
   const handleLogout = () => {
     setIsAuthenticated(false);
     localStorage.removeItem("isAuthenticated");
@@ -237,14 +224,12 @@ const Admin: React.FC = () => {
     navigate("/login");
   };
 
-  // Gestione caricamento immagine
   const handleImageUpload = (imageDataUrl: string) => {
     setUploadedImage(imageDataUrl);
     setNewPage({...newPage, imageUrl: imageDataUrl});
     toast.success("Immagine caricata con successo");
   };
 
-  // Gestione cambio titolo con aggiornamento automatico del path e dell'icona
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const title = e.target.value;
     const path = generateSlugFromTitle(title);
@@ -258,17 +243,14 @@ const Admin: React.FC = () => {
     });
   };
 
-  // Salva una nuova pagina e aggiunge l'icona al menu
   const handleSavePage = () => {
     if (!newPage.title || !newPage.content) {
       toast.error("Titolo e contenuto sono obbligatori");
       return;
     }
 
-    // Genera un ID univoco per la pagina
     const pageId = `page_${Date.now()}`;
     
-    // Salva la nuova pagina
     const pageToSave: PageData = { 
       ...newPage, 
       id: pageId,
@@ -280,12 +262,10 @@ const Admin: React.FC = () => {
     setPages(updatedPages);
     localStorage.setItem("customPages", JSON.stringify(updatedPages));
     
-    // Aggiungi l'icona al menu
     addIconToMenu(pageToSave);
     
     toast.success("Pagina creata con successo!");
     
-    // Reset form
     setNewPage({
       title: "",
       content: "",
@@ -296,40 +276,31 @@ const Admin: React.FC = () => {
     setUploadedImage(null);
   };
 
-  // Aggiunge l'icona al menu
   const addIconToMenu = (page: PageData) => {
-    // Recupera l'array di icone attuale dal localStorage
     const currentIconsJson = localStorage.getItem("menuIcons");
     const currentIcons: MenuIcon[] = currentIconsJson ? JSON.parse(currentIconsJson) : [];
     
-    // Crea la nuova icona
     const newIcon: MenuIcon = {
-      icon: page.icon || "FileText", // Usa l'icona selezionata o default
+      icon: page.icon || "FileText",
       label: page.title,
       bgColor: selectedColor,
       path: `/${page.path}`
     };
     
-    // Aggiungi la nuova icona all'array
     const updatedIcons = [...currentIcons, newIcon];
     
-    // Salva l'array aggiornato
     localStorage.setItem("menuIcons", JSON.stringify(updatedIcons));
     
     toast.success("Icona aggiunta al menu");
   };
 
-  // Eliminare una pagina
   const handleDeletePage = (id: string) => {
-    // Trova la pagina per rimuoverla anche dal menu
     const pageToDelete = pages.find(page => page.id === id);
     
-    // Rimuovi la pagina dall'array
     const updatedPages = pages.filter(page => page.id !== id);
     setPages(updatedPages);
     localStorage.setItem("customPages", JSON.stringify(updatedPages));
     
-    // Rimuovi anche l'icona dal menu se la pagina esiste
     if (pageToDelete) {
       removeIconFromMenu(pageToDelete.path);
     }
@@ -337,31 +308,24 @@ const Admin: React.FC = () => {
     toast.info("Pagina eliminata");
   };
 
-  // Rimuove l'icona dal menu
   const removeIconFromMenu = (pagePath: string) => {
-    // Recupera l'array di icone attuale dal localStorage
     const currentIconsJson = localStorage.getItem("menuIcons");
     if (currentIconsJson) {
       const currentIcons: MenuIcon[] = JSON.parse(currentIconsJson);
-      // Rimuovi l'icona con il path corrispondente
       const updatedIcons = currentIcons.filter(icon => icon.path !== `/${pagePath}`);
-      // Salva l'array aggiornato
       localStorage.setItem("menuIcons", JSON.stringify(updatedIcons));
     }
   };
 
-  // Salva il codice del chatbot
   const handleSaveChatbotCode = () => {
     localStorage.setItem("chatbotCode", chatbotCode);
     toast.success("Codice chatbot salvato con successo!");
   };
 
-  // Visualizza la pagina in anteprima
   const handlePreviewPage = (path: string) => {
     navigate(`/preview/${path}`);
   };
 
-  // Helper per mostrare l'icona corrispondente
   const renderIconPreview = (iconName: string) => {
     switch (iconName) {
       case 'FileText': return <FileText className="w-6 h-6" />;
@@ -370,7 +334,7 @@ const Admin: React.FC = () => {
       case 'Info': return <Info className="w-6 h-6" />;
       case 'Map': return <Map className="w-6 h-6" />;
       case 'Utensils': return <Utensils className="w-6 h-6" />;
-      case 'Museum': return <Museum className="w-6 h-6" />;
+      case 'Landmark': return <Landmark className="w-6 h-6" />;
       case 'Hotel': return <Hotel className="w-6 h-6" />;
       case 'Wifi': return <Wifi className="w-6 h-6" />;
       case 'Bus': return <Bus className="w-6 h-6" />;
@@ -385,7 +349,6 @@ const Admin: React.FC = () => {
     }
   };
 
-  // Se c'è un problema di autenticazione, non mostriamo nulla durante il reindirizzamento
   if (!isAuthenticated) {
     return null;
   }

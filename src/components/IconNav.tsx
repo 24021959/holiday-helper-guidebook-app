@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { 
@@ -21,12 +20,10 @@ import {
   Map,
   Info,
   FileText,
-  Museum,
-  Building,
   Landmark,
-  Tree,
-  Beach,
-  Mountains,
+  Building,
+  Trees,
+  Mountain,
   Users,
   Music,
   Camera,
@@ -64,12 +61,10 @@ const getIconComponent = (iconName: string) => {
     case 'Info': return <Info className="w-12 h-12" strokeWidth={1.5} />;
     case 'Image': return <Image className="w-12 h-12" strokeWidth={1.5} />;
     case 'FileText': return <FileText className="w-12 h-12" strokeWidth={1.5} />;
-    case 'Museum': return <Museum className="w-12 h-12" strokeWidth={1.5} />;
-    case 'Building': return <Building className="w-12 h-12" strokeWidth={1.5} />;
     case 'Landmark': return <Landmark className="w-12 h-12" strokeWidth={1.5} />;
-    case 'Tree': return <Tree className="w-12 h-12" strokeWidth={1.5} />;
-    case 'Beach': return <Beach className="w-12 h-12" strokeWidth={1.5} />;
-    case 'Mountains': return <Mountains className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Building': return <Building className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Trees': return <Trees className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Mountain': return <Mountain className="w-12 h-12" strokeWidth={1.5} />;
     case 'Users': return <Users className="w-12 h-12" strokeWidth={1.5} />;
     case 'Music': return <Music className="w-12 h-12" strokeWidth={1.5} />;
     case 'Camera': return <Camera className="w-12 h-12" strokeWidth={1.5} />;
