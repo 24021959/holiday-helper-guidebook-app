@@ -6,6 +6,15 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import BackToMenu from "@/components/BackToMenu";
+import Login from "@/pages/Login";
+import Menu from "@/pages/Menu";
+import Admin from "@/pages/Admin";
+import Welcome from "@/pages/Welcome";
+import Storia from "@/pages/Storia";
+import SubMenu from "@/pages/SubMenu";
+import NotFound from "@/pages/NotFound";
+import ChatbotBubble from "@/components/ChatbotBubble";
 
 interface CustomPage {
   id: string;
