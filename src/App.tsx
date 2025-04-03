@@ -10,6 +10,8 @@ import NotFound from "./pages/NotFound";
 import BackToMenu from "./components/BackToMenu";
 import Welcome from "./pages/Welcome";
 import Storia from "./pages/Storia";
+import Admin from "./pages/Admin";
+import PreviewPage from "./pages/PreviewPage";
 
 // Create placeholder pages for each menu item
 const PlaceholderPage = ({ title }: { title: string }) => {
@@ -57,6 +59,10 @@ const App = () => {
             <Route path="/events" element={<PlaceholderPage title="Eventi" />} />
             <Route path="/gallery" element={<PlaceholderPage title="Galleria" />} />
             <Route path="/info" element={<PlaceholderPage title="Info" />} />
+            
+            {/* Admin routes */}
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/preview/:pageSlug" element={<PreviewPage />} />
             
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />

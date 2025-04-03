@@ -1,7 +1,7 @@
 
 import React from "react";
 import IconNav from "@/components/IconNav";
-import Header from "@/components/Header";
+import AdminButton from "@/components/AdminButton";
 
 const Menu: React.FC = () => {
   // Component for footer with logo
@@ -31,6 +31,9 @@ const Menu: React.FC = () => {
       
       {/* Footer con logo */}
       <Footer />
+      
+      {/* Admin Button */}
+      <AdminButton />
     </div>
   );
 };
