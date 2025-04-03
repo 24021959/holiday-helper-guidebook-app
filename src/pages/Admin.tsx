@@ -27,6 +27,8 @@ interface PageData {
   path: string;
   imageUrl?: string;
   icon?: string;
+  mapsUrl?: string;
+  phoneNumber?: string;
 }
 
 interface MenuIcon {
@@ -124,7 +126,9 @@ const Admin: React.FC = () => {
     content: "",
     path: "",
     imageUrl: "",
-    icon: "FileText"
+    icon: "FileText",
+    mapsUrl: "",
+    phoneNumber: ""
   });
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [chatbotCode, setChatbotCode] = useState<string>("");
@@ -271,7 +275,9 @@ const Admin: React.FC = () => {
       content: "",
       path: "",
       imageUrl: "",
-      icon: "FileText"
+      icon: "FileText",
+      mapsUrl: "",
+      phoneNumber: ""
     });
     setUploadedImage(null);
   };
@@ -461,6 +467,40 @@ const Admin: React.FC = () => {
                   onChange={(e) => setNewPage({...newPage, content: e.target.value})}
                   placeholder="Inserisci il contenuto della pagina qui..."
                 />
+              </div>
+              
+              <div>
+                <Label htmlFor="mapsUrl">Link a Google Maps</Label>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-gray-500" />
+                  <Input 
+                    id="mapsUrl" 
+                    value={newPage.mapsUrl || ""} 
+                    onChange={(e) => setNewPage({...newPage, mapsUrl: e.target.value})}
+                    placeholder="https://maps.google.com/?q=..."
+                    className="flex-1"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Inserisci il link a Google Maps per indicare la posizione
+                </p>
+              </div>
+              
+              <div>
+                <Label htmlFor="phoneNumber">Numero di Telefono</Label>
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-gray-500" />
+                  <Input 
+                    id="phoneNumber" 
+                    value={newPage.phoneNumber || ""} 
+                    onChange={(e) => setNewPage({...newPage, phoneNumber: e.target.value})}
+                    placeholder="+39 123 456 7890"
+                    className="flex-1"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Inserisci il numero di telefono completo di prefisso internazionale (es. +39)
+                </p>
               </div>
               
               <Button onClick={handleSavePage}>Salva Pagina</Button>

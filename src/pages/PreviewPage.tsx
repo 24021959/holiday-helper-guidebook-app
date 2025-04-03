@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import BackToMenu from "@/components/BackToMenu";
+import { MapPin, Phone } from "lucide-react";
 
 interface PageData {
   id: string;
@@ -9,6 +10,8 @@ interface PageData {
   content: string;
   path: string;
   imageUrl?: string;
+  mapsUrl?: string;
+  phoneNumber?: string;
 }
 
 const PreviewPage: React.FC = () => {
@@ -82,6 +85,41 @@ const PreviewPage: React.FC = () => {
             <p key={index} className="mb-4">{paragraph}</p>
           ))}
         </div>
+
+        {/* Contact and location information */}
+        {(page.mapsUrl || page.phoneNumber) && (
+          <div className="mt-8 pt-4 border-t border-gray-200">
+            <h2 className="text-lg font-medium text-emerald-700 mb-4">Informazioni di contatto</h2>
+            
+            <div className="space-y-3">
+              {page.phoneNumber && (
+                <div className="flex items-center gap-2">
+                  <Phone className="h-5 w-5 text-emerald-600" />
+                  <a 
+                    href={`tel:${page.phoneNumber.replace(/\s/g, '')}`} 
+                    className="text-emerald-600 hover:underline"
+                  >
+                    {page.phoneNumber}
+                  </a>
+                </div>
+              )}
+              
+              {page.mapsUrl && (
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-emerald-600" />
+                  <a 
+                    href={page.mapsUrl}
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-emerald-600 hover:underline"
+                  >
+                    Visualizza su Google Maps
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
