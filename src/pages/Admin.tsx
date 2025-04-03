@@ -13,12 +13,35 @@ import {
   Hotel, Bike, Map, Info, FileText, 
   Landmark, Building, Trees, Mountain, 
   Users, Music, Camera, Globe,
-  Newspaper, PawPrint, Heart, Bookmark, ShoppingBag
+  Newspaper, PawPrint, Heart, Bookmark, ShoppingBag,
+  Plus, Trash2, ExternalLink
 } from "lucide-react";
 import BackToMenu from "@/components/BackToMenu";
 import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import ImageUploader from "@/components/ImageUploader";
+import { 
+  Table, 
+  TableHeader, 
+  TableRow, 
+  TableHead, 
+  TableBody, 
+  TableCell 
+} from "@/components/ui/table";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+interface LocationItem {
+  name: string;
+  description?: string;
+  phoneNumber?: string;
+  mapsUrl?: string;
+}
 
 interface PageData {
   id: string;
@@ -29,6 +52,8 @@ interface PageData {
   icon?: string;
   mapsUrl?: string;
   phoneNumber?: string;
+  listType?: "locations" | "activities" | "restaurants";
+  listItems?: LocationItem[];
 }
 
 interface MenuIcon {
@@ -132,6 +157,16 @@ const Admin: React.FC = () => {
   });
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [chatbotCode, setChatbotCode] = useState<string>("");
+  const [isList, setIsList] = useState<boolean>(false);
+  const [listType, setListType] = useState<"locations" | "activities" | "restaurants">("locations");
+  const [listItems, setListItems] = useState<LocationItem[]>([]);
+  const [currentItem, setCurrentItem] = useState<LocationItem>({
+    name: "",
+    description: "",
+    phoneNumber: "",
+    mapsUrl: ""
+  });
+  
   const navigate = useNavigate();
 
   const form = useForm({
@@ -247,6 +282,30 @@ const Admin: React.FC = () => {
     });
   };
 
+  const handleAddItem = () => {
+    if (!currentItem.name) {
+      toast.error("Il nome è obbligatorio");
+      return;
+    }
+    
+    setListItems([...listItems, { ...currentItem }]);
+    setCurrentItem({
+      name: "",
+      description: "",
+      phoneNumber: "",
+      mapsUrl: ""
+    });
+    
+    toast.success("Elemento aggiunto alla lista");
+  };
+  
+  const handleRemoveItem = (index: number) => {
+    const updatedItems = [...listItems];
+    updatedItems.splice(index, 1);
+    setListItems(updatedItems);
+    toast.info("Elemento rimosso");
+  };
+
   const handleSavePage = () => {
     if (!newPage.title || !newPage.content) {
       toast.error("Titolo e contenuto sono obbligatori");
@@ -261,6 +320,11 @@ const Admin: React.FC = () => {
       imageUrl: uploadedImage || newPage.imageUrl,
       path: newPage.path || generateSlugFromTitle(newPage.title)
     };
+    
+    if (isList && listItems.length > 0) {
+      pageToSave.listType = listType;
+      pageToSave.listItems = [...listItems];
+    }
     
     const updatedPages = [...pages, pageToSave];
     setPages(updatedPages);
@@ -280,6 +344,9 @@ const Admin: React.FC = () => {
       phoneNumber: ""
     });
     setUploadedImage(null);
+    setIsList(false);
+    setListItems([]);
+    setListType("locations");
   };
 
   const addIconToMenu = (page: PageData) => {
@@ -503,6 +570,152 @@ const Admin: React.FC = () => {
                 </p>
               </div>
               
+              <div className="border-t pt-4 mt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <Label htmlFor="isList" className="flex items-center gap-2">
+                    <input 
+                      type="checkbox" 
+                      id="isList"
+                      checked={isList}
+                      onChange={(e) => setIsList(e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300 text-emerald-600"
+                    />
+                    <span>Include elenco di {listType}</span>
+                  </Label>
+                  
+                  {isList && (
+                    <Select 
+                      value={listType} 
+                      onValueChange={(value: "locations" | "activities" | "restaurants") => setListType(value)}
+                    >
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Tipo di lista" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="locations">Luoghi</SelectItem>
+                        <SelectItem value="restaurants">Ristoranti</SelectItem>
+                        <SelectItem value="activities">Attività</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+                
+                {isList && (
+                  <div className="space-y-4 mt-4 border rounded-md p-4 bg-gray-50">
+                    <h3 className="text-md font-medium text-emerald-700">
+                      {listType === "restaurants" ? "Aggiungi Ristoranti" : 
+                      listType === "activities" ? "Aggiungi Attività" : 
+                      "Aggiungi Luoghi"}
+                    </h3>
+                    
+                    <div className="grid gap-2">
+                      <div>
+                        <Label htmlFor="itemName">Nome</Label>
+                        <Input 
+                          id="itemName" 
+                          value={currentItem.name} 
+                          onChange={(e) => setCurrentItem({...currentItem, name: e.target.value})}
+                          placeholder={`Nome ${listType === "restaurants" ? "ristorante" : 
+                            listType === "activities" ? "attività" : "luogo"}`}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="itemDescription">Descrizione</Label>
+                        <Input 
+                          id="itemDescription" 
+                          value={currentItem.description || ""} 
+                          onChange={(e) => setCurrentItem({...currentItem, description: e.target.value})}
+                          placeholder="Breve descrizione"
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <div>
+                          <Label htmlFor="itemPhone">Telefono</Label>
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-gray-500" />
+                            <Input 
+                              id="itemPhone" 
+                              value={currentItem.phoneNumber || ""} 
+                              onChange={(e) => setCurrentItem({...currentItem, phoneNumber: e.target.value})}
+                              placeholder="+39 123 456 7890"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="itemMaps">Google Maps</Label>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-gray-500" />
+                            <Input 
+                              id="itemMaps" 
+                              value={currentItem.mapsUrl || ""} 
+                              onChange={(e) => setCurrentItem({...currentItem, mapsUrl: e.target.value})}
+                              placeholder="https://maps.google.com/?q=..."
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <Button 
+                        onClick={handleAddItem} 
+                        className="w-full mt-2"
+                        variant="secondary"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Aggiungi a lista
+                      </Button>
+                    </div>
+                    
+                    {listItems.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="text-sm font-medium mb-2">Elementi nella lista ({listItems.length})</h4>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Nome</TableHead>
+                              <TableHead className="hidden md:table-cell">Descrizione</TableHead>
+                              <TableHead>Contatti</TableHead>
+                              <TableHead className="w-20">Azioni</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {listItems.map((item, index) => (
+                              <TableRow key={index}>
+                                <TableCell className="font-medium">{item.name}</TableCell>
+                                <TableCell className="hidden md:table-cell">
+                                  {item.description ? (
+                                    item.description.length > 50 ? 
+                                      `${item.description.substring(0, 50)}...` : 
+                                      item.description
+                                  ) : '-'}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex gap-2">
+                                    {item.phoneNumber && <Phone className="h-4 w-4 text-gray-500" />}
+                                    {item.mapsUrl && <MapPin className="h-4 w-4 text-gray-500" />}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    onClick={() => handleRemoveItem(index)}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              
               <Button onClick={handleSavePage}>Salva Pagina</Button>
             </div>
           </TabsContent>
@@ -523,6 +736,14 @@ const Admin: React.FC = () => {
                       <div>
                         <h3 className="font-medium text-lg">{page.title}</h3>
                         <p className="text-gray-500 text-sm">/{page.path}</p>
+                        {page.listItems && (
+                          <p className="text-xs text-emerald-600 mt-1">
+                            {page.listItems.length} {
+                              page.listType === "restaurants" ? "ristoranti" :
+                              page.listType === "activities" ? "attività" : "luoghi"
+                            }
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-2">

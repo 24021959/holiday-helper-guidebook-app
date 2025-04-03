@@ -2,7 +2,15 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import BackToMenu from "@/components/BackToMenu";
-import { MapPin, Phone } from "lucide-react";
+import { MapPin, Phone, ExternalLink } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+interface LocationItem {
+  name: string;
+  description?: string;
+  phoneNumber?: string;
+  mapsUrl?: string;
+}
 
 interface PageData {
   id: string;
@@ -12,6 +20,8 @@ interface PageData {
   imageUrl?: string;
   mapsUrl?: string;
   phoneNumber?: string;
+  listType?: "locations" | "activities" | "restaurants";
+  listItems?: LocationItem[];
 }
 
 const PreviewPage: React.FC = () => {
@@ -60,6 +70,66 @@ const PreviewPage: React.FC = () => {
     );
   }
 
+  // Renderizza la lista di elementi se presente
+  const renderListItems = () => {
+    if (!page.listItems || page.listItems.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="mt-8">
+        <h2 className="text-xl font-medium text-emerald-700 mb-4">
+          {page.listType === "restaurants" ? "Ristoranti" : 
+           page.listType === "activities" ? "Attività" : "Luoghi"}
+        </h2>
+        
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[250px]">Nome</TableHead>
+                <TableHead>Descrizione</TableHead>
+                <TableHead className="text-right">Contatti</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {page.listItems.map((item, index) => (
+                <TableRow key={index}>
+                  <TableCell className="font-medium">{item.name}</TableCell>
+                  <TableCell>{item.description}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-3">
+                      {item.phoneNumber && (
+                        <a 
+                          href={`tel:${item.phoneNumber.replace(/\s/g, '')}`}
+                          className="text-emerald-600 hover:text-emerald-800 flex items-center gap-1"
+                          title="Chiama"
+                        >
+                          <Phone className="h-4 w-4" />
+                        </a>
+                      )}
+                      {item.mapsUrl && (
+                        <a 
+                          href={item.mapsUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-emerald-600 hover:text-emerald-800 flex items-center gap-1"
+                          title="Vedi su Google Maps"
+                        >
+                          <MapPin className="h-4 w-4" />
+                        </a>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 p-6 pt-20">
       <BackToMenu />
@@ -85,6 +155,9 @@ const PreviewPage: React.FC = () => {
             <p key={index} className="mb-4">{paragraph}</p>
           ))}
         </div>
+
+        {/* Render list items if available */}
+        {renderListItems()}
 
         {/* Contact and location information */}
         {(page.mapsUrl || page.phoneNumber) && (
