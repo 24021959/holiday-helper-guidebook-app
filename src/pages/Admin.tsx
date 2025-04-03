@@ -225,7 +225,10 @@ const Admin: React.FC = () => {
               <ChatbotSettingsView 
                 chatbotCode={chatbotCode}
                 setChatbotCode={setChatbotCode}
-                onSave={() => toast.success("Impostazioni chatbot salvate")}
+                onSave={() => {
+                  toast.success("Impostazioni chatbot salvate");
+                  return Promise.resolve();
+                }}
               />
             </TabsContent>
             

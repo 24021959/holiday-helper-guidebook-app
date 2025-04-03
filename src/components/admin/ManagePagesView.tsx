@@ -87,6 +87,7 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
       case 'Coffee': return <Coffee className="w-6 h-6" />;
       case 'Home': return <Home className="w-6 h-6" />;
       case 'Bike': return <Bike className="w-6 h-6" />;
+      case 'Users': return <Users className="w-6 h-6" />;
       default: return <FileText className="w-6 h-6" />;
     }
   };
