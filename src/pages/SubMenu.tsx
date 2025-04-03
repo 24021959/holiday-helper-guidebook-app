@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import IconNav from "@/components/IconNav";
 import Header from "@/components/Header";
@@ -128,7 +127,6 @@ const SubMenu: React.FC = () => {
       <Header 
         logoUrl={headerSettings.logoUrl || undefined}
         backgroundColor={headerSettings.headerColor}
-        showAdminButton={true}
       />
       
       {/* Titolo del sottomenu */}

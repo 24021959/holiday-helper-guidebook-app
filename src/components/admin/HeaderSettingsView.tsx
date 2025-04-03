@@ -1,4 +1,3 @@
-
 import React from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -34,7 +33,6 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
     setUploadedLogo(imageDataUrl);
     
     try {
-      // Check if header settings exist
       const { data: existingData, error: fetchError } = await supabase
         .from('header_settings')
         .select('*')
@@ -44,13 +42,11 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
       
       let saveOperation;
       if (existingData && existingData.length > 0) {
-        // Update existing record
         saveOperation = supabase
           .from('header_settings')
           .update({ logo_url: imageDataUrl })
           .eq('id', existingData[0].id);
       } else {
-        // Insert new record
         saveOperation = supabase
           .from('header_settings')
           .insert({ logo_url: imageDataUrl, header_color: headerColor });
@@ -59,7 +55,6 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
       const { error: saveError } = await saveOperation;
       if (saveError) throw saveError;
       
-      // Update localStorage for fallback
       const headerSettings = {
         logoUrl: imageDataUrl,
         headerColor: headerColor
@@ -77,7 +72,6 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
     setHeaderColor(color);
     
     try {
-      // Check if header settings exist
       const { data: existingData, error: fetchError } = await supabase
         .from('header_settings')
         .select('*')
@@ -87,13 +81,11 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
       
       let saveOperation;
       if (existingData && existingData.length > 0) {
-        // Update existing record
         saveOperation = supabase
           .from('header_settings')
           .update({ header_color: color })
           .eq('id', existingData[0].id);
       } else {
-        // Insert new record
         saveOperation = supabase
           .from('header_settings')
           .insert({ logo_url: uploadedLogo, header_color: color });
@@ -102,7 +94,6 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
       const { error: saveError } = await saveOperation;
       if (saveError) throw saveError;
       
-      // Update localStorage for fallback
       const headerSettings = {
         logoUrl: uploadedLogo,
         headerColor: color
@@ -209,7 +200,6 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
             <Header 
               backgroundColor={headerColor} 
               logoUrl={uploadedLogo || undefined}
-              showAdminButton={false} 
             />
           </div>
         </div>
