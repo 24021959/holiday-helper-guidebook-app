@@ -42,7 +42,7 @@ const Login: React.FC = () => {
         localStorage.setItem("admin_user", JSON.stringify(data.user));
         toast.success("Login amministratore effettuato con successo!");
         
-        // Redirect to menu page (inverted logic as requested)
+        // Admin user goes to menu (as requested by the client)
         navigate("/menu");
         return;
       } else if (data && data.error) {
@@ -62,19 +62,19 @@ const Login: React.FC = () => {
   };
 
   const checkDemoCredentials = () => {
-    if (email === "admin" && password === "password") {
-      // Changed redirection: admin credentials go to menu page
+    if (email === "user" && password === "password") {
+      // Changed routing: "user" credentials now redirect to admin panel
+      localStorage.setItem("isAuthenticated", "true");
+      localStorage.setItem("userType", "regular");
+      toast.success("Login utente effettuato con successo (modalità demo)!");
+      navigate("/admin");
+    } else if (email === "admin" && password === "password") {
+      // Changed routing: "admin" credentials now redirect to menu
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("userType", "admin");
       localStorage.setItem("admin_token", "demo_token");
       toast.success("Login admin effettuato con successo (modalità demo)!");
       navigate("/menu");
-    } else if (email === "user" && password === "password") {
-      // Changed redirection: user credentials go to admin page
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("userType", "regular");
-      toast.success("Login utente effettuato con successo (modalità demo)!");
-      navigate("/admin");
     } else {
       toast.error("Credenziali non valide");
     }
@@ -84,7 +84,7 @@ const Login: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 p-6 pt-20">
       <BackToMenu />
       <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-2xl font-bold text-emerald-700 mb-6 text-center">Accedi</h1>
+        <h1 className="text-2xl font-bold text-emerald-700 mb-6 text-center">Accesso</h1>
         
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
@@ -123,8 +123,8 @@ const Login: React.FC = () => {
           </Button>
           
           <div className="text-xs text-gray-500 text-center mt-4">
-            <p className="mb-1">Per demo utente: username "user" e password "password"</p>
-            <p>Per demo admin: username "admin" e password "password"</p>
+            <p className="mb-1">Per demo utente (accesso a pannello admin): username "user" e password "password"</p>
+            <p>Per demo admin (accesso a menu): username "admin" e password "password"</p>
           </div>
         </form>
       </div>
