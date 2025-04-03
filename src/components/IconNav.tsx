@@ -20,7 +20,21 @@ import {
   Bike,
   Map,
   Info,
-  FileText
+  FileText,
+  Museum,
+  Building,
+  Landmark,
+  Tree,
+  Beach,
+  Mountains,
+  Users,
+  Music,
+  Camera,
+  Globe,
+  Newspaper,
+  PawPrint,
+  Heart,
+  ShoppingBag
 } from "lucide-react";
 
 interface NavIcon {
@@ -42,6 +56,7 @@ const getIconComponent = (iconName: string) => {
     case 'Wifi': return <Wifi className="w-12 h-12" strokeWidth={1.5} />;
     case 'Bus': return <Bus className="w-12 h-12" strokeWidth={1.5} />;
     case 'ShoppingCart': return <ShoppingCart className="w-12 h-12" strokeWidth={1.5} />;
+    case 'ShoppingBag': return <ShoppingBag className="w-12 h-12" strokeWidth={1.5} />;
     case 'Calendar': return <Calendar className="w-12 h-12" strokeWidth={1.5} />;
     case 'Hotel': return <Hotel className="w-12 h-12" strokeWidth={1.5} />;
     case 'Bike': return <Bike className="w-12 h-12" strokeWidth={1.5} />;
@@ -49,6 +64,19 @@ const getIconComponent = (iconName: string) => {
     case 'Info': return <Info className="w-12 h-12" strokeWidth={1.5} />;
     case 'Image': return <Image className="w-12 h-12" strokeWidth={1.5} />;
     case 'FileText': return <FileText className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Museum': return <Museum className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Building': return <Building className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Landmark': return <Landmark className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Tree': return <Tree className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Beach': return <Beach className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Mountains': return <Mountains className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Users': return <Users className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Music': return <Music className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Camera': return <Camera className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Globe': return <Globe className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Newspaper': return <Newspaper className="w-12 h-12" strokeWidth={1.5} />;
+    case 'PawPrint': return <PawPrint className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Heart': return <Heart className="w-12 h-12" strokeWidth={1.5} />;
     default: return <FileText className="w-12 h-12" strokeWidth={1.5} />;
   }
 };
@@ -65,7 +93,7 @@ const defaultIcons: NavIcon[] = [
   { icon: 'Wifi', label: "Wifi", bgColor: "bg-indigo-200", path: "/wifi" },
   { icon: 'Bike', label: "Attività", bgColor: "bg-red-200", path: "/activities" },
   { icon: 'Bus', label: "Trasporti", bgColor: "bg-emerald-200", path: "/transport" },
-  { icon: 'ShoppingCart', label: "Shopping", bgColor: "bg-sky-200", path: "/shopping" },
+  { icon: 'ShoppingBag', label: "Shopping", bgColor: "bg-sky-200", path: "/shopping" },
   { icon: 'Phone', label: "Contatti", bgColor: "bg-yellow-200", path: "/contacts" },
   { icon: 'Calendar', label: "Eventi", bgColor: "bg-lime-200", path: "/events" },
   { icon: 'Image', label: "Galleria", bgColor: "bg-fuchsia-200", path: "/gallery" },

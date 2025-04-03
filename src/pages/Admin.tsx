@@ -7,7 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Image, FileImage, MessageCircle } from "lucide-react";
+import { 
+  Image, FileImage, MessageCircle, Home, 
+  MapPin, Book, Coffee, Utensils, Phone, 
+  Wifi, Bus, ShoppingCart, Calendar, 
+  Hotel, Bike, Map, Info, FileText, 
+  Museum, Building, Landmark, Tree, Beach, 
+  Mountains, Users, Music, Camera, Globe,
+  Newspaper, PawPrint, Heart, Bookmark, ShoppingBag
+} from "lucide-react";
 import BackToMenu from "@/components/BackToMenu";
 import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
@@ -29,6 +37,87 @@ interface MenuIcon {
   path: string;
 }
 
+// Mappa delle parole chiave per associare automaticamente le icone
+const keywordToIconMap: Record<string, string> = {
+  "ristorante": "Utensils",
+  "ristoro": "Utensils",
+  "cucina": "Utensils",
+  "cibo": "Utensils",
+  "cena": "Utensils",
+  "pranzo": "Utensils",
+  "colazione": "Coffee",
+  "caffè": "Coffee",
+  "bar": "Coffee",
+  "bevande": "Coffee",
+  "museo": "Museum",
+  "mostra": "Museum",
+  "esposizione": "Landmark",
+  "galleria": "Image",
+  "immagini": "Image",
+  "foto": "Camera",
+  "hotel": "Hotel",
+  "alloggio": "Hotel",
+  "camera": "Hotel",
+  "dormire": "Hotel",
+  "albergo": "Hotel",
+  "soggiorno": "Hotel",
+  "trasporto": "Bus",
+  "bus": "Bus",
+  "treno": "Bus",
+  "navetta": "Bus",
+  "viaggio": "Globe",
+  "escursione": "Mountains",
+  "montagna": "Mountains",
+  "mare": "Beach",
+  "spiaggia": "Beach",
+  "shopping": "ShoppingBag",
+  "acquisti": "ShoppingCart",
+  "negozi": "ShoppingBag",
+  "eventi": "Calendar",
+  "evento": "Calendar",
+  "programma": "Calendar",
+  "news": "Newspaper",
+  "notizie": "Newspaper",
+  "informazioni": "Info",
+  "info": "Info",
+  "contatti": "Phone",
+  "contatto": "Phone",
+  "telefono": "Phone",
+  "email": "MessageCircle",
+  "messaggio": "MessageCircle",
+  "chat": "MessageCircle",
+  "posizione": "MapPin",
+  "mappa": "Map",
+  "indirizzo": "MapPin",
+  "dove": "MapPin",
+  "come arrivare": "MapPin",
+  "attività": "Bike",
+  "sport": "Bike",
+  "intrattenimento": "Music",
+  "musica": "Music",
+  "storia": "Book",
+  "cultura": "Book",
+  "tradizione": "Book",
+  "wifi": "Wifi",
+  "internet": "Wifi",
+  "connessione": "Wifi",
+  "animali": "PawPrint",
+  "pet": "PawPrint",
+  "natura": "Tree",
+  "parco": "Tree",
+  "giardino": "Tree",
+  "persone": "Users",
+  "ospiti": "Users",
+  "clienti": "Users",
+  "staff": "Users",
+  "benessere": "Heart",
+  "spa": "Heart",
+  "relax": "Heart",
+  "welcome": "Home",
+  "benvenuto": "Home",
+  "accoglienza": "Home"
+};
+
 const Admin: React.FC = () => {
   const [pages, setPages] = useState<PageData[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -46,7 +135,6 @@ const Admin: React.FC = () => {
   const form = useForm({
     defaultValues: {
       title: "",
-      path: "",
       content: "",
       icon: "FileText",
     }
@@ -58,7 +146,19 @@ const Admin: React.FC = () => {
     { name: "Image", label: "Immagine" },
     { name: "MessageCircle", label: "Chat" },
     { name: "Info", label: "Informazione" },
-    { name: "Map", label: "Mappa" }
+    { name: "Map", label: "Mappa" },
+    { name: "Utensils", label: "Ristorante" },
+    { name: "Museum", label: "Museo" },
+    { name: "Hotel", label: "Hotel" },
+    { name: "Wifi", label: "Wifi" },
+    { name: "Bus", label: "Trasporto" },
+    { name: "ShoppingBag", label: "Shopping" },
+    { name: "Calendar", label: "Eventi" },
+    { name: "Phone", label: "Contatti" },
+    { name: "Book", label: "Storia/Cultura" },
+    { name: "Coffee", label: "Bar/Caffè" },
+    { name: "Home", label: "Benvenuto" },
+    { name: "Bike", label: "Attività" }
   ];
 
   // Colori di sfondo disponibili per le icone
@@ -98,6 +198,37 @@ const Admin: React.FC = () => {
     }
   }, [navigate]);
 
+  // Funzione per generare automaticamente l'URL della pagina dal titolo
+  const generateSlugFromTitle = (title: string): string => {
+    return title
+      .toLowerCase()
+      .replace(/[^\w\s]/gi, '') // Rimuove caratteri speciali
+      .replace(/\s+/g, '-') // Sostituisce spazi con trattini
+      .replace(/[àáâäãåą]/g, 'a')
+      .replace(/[èéêëęė]/g, 'e')
+      .replace(/[ìíîïį]/g, 'i')
+      .replace(/[òóôöõ]/g, 'o')
+      .replace(/[ùúûü]/g, 'u')
+      .replace(/[ç]/g, 'c')
+      .replace(/[ñń]/g, 'n')
+      .replace(/[ß]/g, 'ss');
+  };
+
+  // Funzione per determinare automaticamente l'icona più adatta in base al titolo
+  const determineIconFromTitle = (title: string): string => {
+    const lowercaseTitle = title.toLowerCase();
+    
+    // Cerca corrispondenze dirette nelle parole chiave
+    for (const [keyword, icon] of Object.entries(keywordToIconMap)) {
+      if (lowercaseTitle.includes(keyword.toLowerCase())) {
+        return icon;
+      }
+    }
+    
+    // Se non trova corrispondenze, usa un'icona predefinita
+    return "FileText";
+  };
+
   // Gestione logout
   const handleLogout = () => {
     setIsAuthenticated(false);
@@ -113,10 +244,24 @@ const Admin: React.FC = () => {
     toast.success("Immagine caricata con successo");
   };
 
+  // Gestione cambio titolo con aggiornamento automatico del path e dell'icona
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const title = e.target.value;
+    const path = generateSlugFromTitle(title);
+    const icon = determineIconFromTitle(title);
+    
+    setNewPage({
+      ...newPage, 
+      title, 
+      path,
+      icon
+    });
+  };
+
   // Salva una nuova pagina e aggiunge l'icona al menu
   const handleSavePage = () => {
-    if (!newPage.title || !newPage.path || !newPage.content) {
-      toast.error("Titolo, URL e contenuto sono obbligatori");
+    if (!newPage.title || !newPage.content) {
+      toast.error("Titolo e contenuto sono obbligatori");
       return;
     }
 
@@ -127,7 +272,8 @@ const Admin: React.FC = () => {
     const pageToSave: PageData = { 
       ...newPage, 
       id: pageId,
-      imageUrl: uploadedImage || newPage.imageUrl
+      imageUrl: uploadedImage || newPage.imageUrl,
+      path: newPage.path || generateSlugFromTitle(newPage.title)
     };
     
     const updatedPages = [...pages, pageToSave];
@@ -215,6 +361,30 @@ const Admin: React.FC = () => {
     navigate(`/preview/${path}`);
   };
 
+  // Helper per mostrare l'icona corrispondente
+  const renderIconPreview = (iconName: string) => {
+    switch (iconName) {
+      case 'FileText': return <FileText className="w-6 h-6" />;
+      case 'Image': return <Image className="w-6 h-6" />;
+      case 'MessageCircle': return <MessageCircle className="w-6 h-6" />;
+      case 'Info': return <Info className="w-6 h-6" />;
+      case 'Map': return <Map className="w-6 h-6" />;
+      case 'Utensils': return <Utensils className="w-6 h-6" />;
+      case 'Museum': return <Museum className="w-6 h-6" />;
+      case 'Hotel': return <Hotel className="w-6 h-6" />;
+      case 'Wifi': return <Wifi className="w-6 h-6" />;
+      case 'Bus': return <Bus className="w-6 h-6" />;
+      case 'ShoppingBag': return <ShoppingBag className="w-6 h-6" />;
+      case 'Calendar': return <Calendar className="w-6 h-6" />;
+      case 'Phone': return <Phone className="w-6 h-6" />;
+      case 'Book': return <Book className="w-6 h-6" />;
+      case 'Coffee': return <Coffee className="w-6 h-6" />;
+      case 'Home': return <Home className="w-6 h-6" />;
+      case 'Bike': return <Bike className="w-6 h-6" />;
+      default: return <FileText className="w-6 h-6" />;
+    }
+  };
+
   // Se c'è un problema di autenticazione, non mostriamo nulla durante il reindirizzamento
   if (!isAuthenticated) {
     return null;
@@ -240,29 +410,34 @@ const Admin: React.FC = () => {
             <h2 className="text-xl font-medium text-emerald-600 mb-4">Crea Nuova Pagina</h2>
             
             <div className="grid gap-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="title">Titolo Pagina</Label>
-                  <Input 
-                    id="title" 
-                    value={newPage.title} 
-                    onChange={(e) => setNewPage({...newPage, title: e.target.value})}
-                    placeholder="Titolo della pagina"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="path">URL Pagina (senza /)</Label>
-                  <Input 
-                    id="path" 
-                    value={newPage.path} 
-                    onChange={(e) => setNewPage({...newPage, path: e.target.value})}
-                    placeholder="nome-pagina"
-                  />
-                </div>
+              <div>
+                <Label htmlFor="title">Titolo Pagina</Label>
+                <Input 
+                  id="title" 
+                  value={newPage.title} 
+                  onChange={handleTitleChange}
+                  placeholder="Titolo della pagina"
+                  className="mb-1"
+                />
+                {newPage.path && (
+                  <p className="text-xs text-gray-500">
+                    URL generato: /{newPage.path}
+                  </p>
+                )}
               </div>
               
               <div>
                 <Label htmlFor="icon">Icona per il Menu</Label>
+                <div className="flex items-center gap-3 mb-2 p-2 bg-gray-50 rounded-md">
+                  <div className={`${selectedColor} p-2 rounded-md inline-flex items-center justify-center`}>
+                    {renderIconPreview(newPage.icon || "FileText")}
+                  </div>
+                  <div>
+                    <p className="font-medium">{newPage.title || "Titolo pagina"}</p>
+                    <p className="text-xs text-gray-500">Icona selezionata automaticamente in base al titolo</p>
+                  </div>
+                </div>
+                
                 <div className="grid grid-cols-3 md:grid-cols-5 gap-2 mt-2">
                   {availableIcons.map((icon) => (
                     <div 
@@ -270,9 +445,7 @@ const Admin: React.FC = () => {
                       className={`flex flex-col items-center p-2 rounded-md cursor-pointer ${newPage.icon === icon.name ? 'bg-emerald-100 border border-emerald-300' : 'hover:bg-gray-100'}`}
                       onClick={() => setNewPage({...newPage, icon: icon.name})}
                     >
-                      {icon.name === "FileText" && <FileImage className="w-6 h-6" />}
-                      {icon.name === "Image" && <Image className="w-6 h-6" />}
-                      {icon.name === "MessageCircle" && <MessageCircle className="w-6 h-6" />}
+                      {renderIconPreview(icon.name)}
                       <span className="text-xs mt-1">{icon.label}</span>
                     </div>
                   ))}
@@ -342,9 +515,7 @@ const Admin: React.FC = () => {
                   <div key={page.id} className="border rounded-lg p-4 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                       <div className={`${selectedColor} p-2 rounded-md`}>
-                        {page.icon === "FileText" && <FileImage className="w-5 h-5" />}
-                        {page.icon === "Image" && <Image className="w-5 h-5" />}
-                        {page.icon === "MessageCircle" && <MessageCircle className="w-5 h-5" />}
+                        {renderIconPreview(page.icon || "FileText")}
                       </div>
                       <div>
                         <h3 className="font-medium text-lg">{page.title}</h3>
