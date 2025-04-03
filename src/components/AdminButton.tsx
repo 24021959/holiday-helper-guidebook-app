@@ -23,10 +23,11 @@ const AdminButton: React.FC = () => {
   const handleClick = () => {
     if (isAuthenticated) {
       if (isAdmin) {
-        navigate("/admin");
-      } else {
-        // Redirect regular user to their menu
+        // Admin user goes to the menu (inverted logic)
         navigate("/menu");
+      } else {
+        // Regular user goes to admin panel (inverted logic)
+        navigate("/admin");
       }
     } else {
       navigate("/login");
@@ -37,10 +38,10 @@ const AdminButton: React.FC = () => {
     <button
       onClick={handleClick}
       className="text-gray-600 hover:text-emerald-600 transition-colors"
-      aria-label={isAdmin ? "Admin Panel" : "Profilo Utente"}
-      title={isAuthenticated ? (isAdmin ? "Pannello amministrazione" : "Profilo utente") : "Accedi"}
+      aria-label={isAdmin ? "Menu" : "Pannello amministrazione"}
+      title={isAuthenticated ? (isAdmin ? "Menu" : "Pannello amministrazione") : "Accedi"}
     >
-      {isAdmin ? <Settings size={20} /> : <User size={20} />}
+      {isAdmin ? <User size={20} /> : <Settings size={20} />}
     </button>
   );
 };

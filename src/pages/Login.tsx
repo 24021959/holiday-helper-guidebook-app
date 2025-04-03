@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -40,7 +41,9 @@ const Login: React.FC = () => {
         localStorage.setItem("admin_token", data.token);
         localStorage.setItem("admin_user", JSON.stringify(data.user));
         toast.success("Login amministratore effettuato con successo!");
-        navigate("/admin");
+        
+        // Redirect to menu page (inverted logic as requested)
+        navigate("/menu");
         return;
       } else if (data && data.error) {
         // Specific error from the function
@@ -60,16 +63,18 @@ const Login: React.FC = () => {
 
   const checkDemoCredentials = () => {
     if (email === "admin" && password === "password") {
+      // Changed redirection: admin credentials go to menu page
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("userType", "admin");
       localStorage.setItem("admin_token", "demo_token");
       toast.success("Login admin effettuato con successo (modalità demo)!");
-      navigate("/admin");
+      navigate("/menu");
     } else if (email === "user" && password === "password") {
+      // Changed redirection: user credentials go to admin page
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("userType", "regular");
       toast.success("Login utente effettuato con successo (modalità demo)!");
-      navigate("/menu");
+      navigate("/admin");
     } else {
       toast.error("Credenziali non valide");
     }
