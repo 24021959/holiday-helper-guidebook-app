@@ -13,6 +13,7 @@ import Storia from "./pages/Storia";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
 import PreviewPage from "./pages/PreviewPage";
+import ChatbotBubble from "./components/ChatbotBubble";
 
 // Create placeholder pages for each menu item
 const PlaceholderPage = ({ title }: { title: string }) => {
@@ -69,6 +70,7 @@ const App = () => {
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <ChatbotBubble />
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

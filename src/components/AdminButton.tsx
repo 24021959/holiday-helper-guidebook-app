@@ -25,11 +25,11 @@ const AdminButton: React.FC = () => {
   return (
     <button
       onClick={handleClick}
-      className="fixed bottom-5 right-5 bg-emerald-600 text-white p-3 rounded-full shadow-lg hover:bg-emerald-700 transition-colors"
+      className="text-gray-600 hover:text-emerald-600 transition-colors"
       aria-label="Admin Panel"
       title={isAuthenticated ? "Pannello amministrazione" : "Accedi"}
     >
-      <Settings size={24} />
+      <Settings size={20} />
     </button>
   );
 };

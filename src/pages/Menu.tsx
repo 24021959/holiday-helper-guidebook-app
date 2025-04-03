@@ -19,9 +19,12 @@ const Menu: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen">
-      {/* Header con nome della locanda */}
-      <div className="w-full bg-gradient-to-r from-teal-500 to-emerald-600 py-5 text-center shadow-md">
+      {/* Header con nome della locanda e icona admin */}
+      <div className="w-full bg-gradient-to-r from-teal-500 to-emerald-600 py-5 text-center shadow-md relative">
         <h1 className="text-white font-bold text-2xl md:text-3xl tracking-wider">LOCANDA DELL'ANGELO</h1>
+        <div className="absolute top-1/2 right-4 -translate-y-1/2">
+          <AdminButton />
+        </div>
       </div>
       
       {/* Contenitore principale con le icone che prende tutto lo spazio disponibile */}
@@ -31,9 +34,6 @@ const Menu: React.FC = () => {
       
       {/* Footer con logo */}
       <Footer />
-      
-      {/* Admin Button */}
-      <AdminButton />
     </div>
   );
 };

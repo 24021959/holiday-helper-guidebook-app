@@ -18,14 +18,6 @@ const PreviewPage: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Carica il chatbot
-    const script = document.createElement("script");
-    script.defer = true;
-    script.id = "chatbot-script";
-    script.src = "https://cdn.aichatbotjs.com/chatbot.js";
-    script.setAttribute("data-chatbot-id", "bot-ufqmgj3gyj");
-    document.body.appendChild(script);
-
     // Trova la pagina dal localStorage
     const savedPages = localStorage.getItem("customPages");
     if (savedPages) {
@@ -37,14 +29,6 @@ const PreviewPage: React.FC = () => {
     }
     
     setLoading(false);
-    
-    // Cleanup
-    return () => {
-      const chatbotScript = document.getElementById("chatbot-script");
-      if (chatbotScript) {
-        chatbotScript.remove();
-      }
-    };
   }, [pageSlug]);
 
   if (loading) {
@@ -98,9 +82,6 @@ const PreviewPage: React.FC = () => {
             <p key={index} className="mb-4">{paragraph}</p>
           ))}
         </div>
-        
-        {/* Area per il chatbot */}
-        <div id="chatbot-container" className="mt-8"></div>
       </div>
     </div>
   );

@@ -1,11 +1,13 @@
 
 import React from "react";
+import AdminButton from "./AdminButton";
 
 interface HeaderProps {
   backgroundImage?: string;
+  showAdminButton?: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ backgroundImage }) => {
+const Header: React.FC<HeaderProps> = ({ backgroundImage, showAdminButton = true }) => {
   return (
     <div
       className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 py-12 px-4 text-center shadow-lg relative overflow-hidden"
@@ -15,6 +17,13 @@ const Header: React.FC<HeaderProps> = ({ backgroundImage }) => {
           : {}
       }
     >
+      {/* Admin button in the top right corner */}
+      {showAdminButton && (
+        <div className="absolute top-3 right-4 z-20">
+          <AdminButton />
+        </div>
+      )}
+      
       {/* Elementi decorativi */}
       <div className="absolute top-0 left-0 w-full h-full opacity-20">
         <div className="absolute top-6 left-6 w-16 h-16 rounded-full bg-white"></div>
