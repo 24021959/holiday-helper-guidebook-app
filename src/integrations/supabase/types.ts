@@ -9,7 +9,120 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      chatbot_settings: {
+        Row: {
+          code: string | null
+          created_at: string | null
+          id: number
+          updated_at: string | null
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string | null
+          id?: number
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string | null
+          created_at?: string | null
+          id?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      custom_pages: {
+        Row: {
+          content: string
+          created_at: string | null
+          icon: string | null
+          id: string
+          image_url: string | null
+          list_items: Json | null
+          list_type: string | null
+          path: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          icon?: string | null
+          id?: string
+          image_url?: string | null
+          list_items?: Json | null
+          list_type?: string | null
+          path: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          icon?: string | null
+          id?: string
+          image_url?: string | null
+          list_items?: Json | null
+          list_type?: string | null
+          path?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      header_settings: {
+        Row: {
+          created_at: string | null
+          header_color: string | null
+          id: number
+          logo_url: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          header_color?: string | null
+          id?: number
+          logo_url?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          header_color?: string | null
+          id?: number
+          logo_url?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      menu_icons: {
+        Row: {
+          bg_color: string
+          created_at: string | null
+          icon: string
+          id: string
+          label: string
+          path: string
+          updated_at: string | null
+        }
+        Insert: {
+          bg_color: string
+          created_at?: string | null
+          icon: string
+          id?: string
+          label: string
+          path: string
+          updated_at?: string | null
+        }
+        Update: {
+          bg_color?: string
+          created_at?: string | null
+          icon?: string
+          id?: string
+          label?: string
+          path?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

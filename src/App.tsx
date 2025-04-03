@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
 import Menu from "./pages/Menu";
 import NotFound from "./pages/NotFound";
@@ -16,6 +18,7 @@ import Login from "./pages/Login";
 import PreviewPage from "./pages/PreviewPage";
 import ChatbotBubble from "./components/ChatbotBubble";
 import Header from "./components/Header";
+import SubMenu from "./pages/SubMenu";
 
 interface CustomPage {
   id: string;
@@ -23,6 +26,8 @@ interface CustomPage {
   content: string;
   path: string;
   imageUrl?: string;
+  isSubmenu?: boolean;
+  parentPath?: string | null;
 }
 
 interface HeaderSettings {
@@ -33,13 +38,52 @@ interface HeaderSettings {
 // Create placeholder pages for each menu item
 const PlaceholderPage = ({ title }: { title: string }) => {
   const [headerSettings, setHeaderSettings] = useState<HeaderSettings>({});
+  const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    const savedHeaderSettings = localStorage.getItem("headerSettings");
-    if (savedHeaderSettings) {
-      setHeaderSettings(JSON.parse(savedHeaderSettings));
-    }
+    const fetchHeaderSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('header_settings')
+          .select('*')
+          .limit(1)
+          .single();
+          
+        if (error) throw error;
+        
+        if (data) {
+          setHeaderSettings({
+            logoUrl: data.logo_url,
+            headerColor: data.header_color,
+          });
+        }
+      } catch (error) {
+        console.error("Errore nel caricamento delle impostazioni header:", error);
+        
+        // Fallback al localStorage se Supabase fallisce
+        const savedHeaderSettings = localStorage.getItem("headerSettings");
+        if (savedHeaderSettings) {
+          try {
+            setHeaderSettings(JSON.parse(savedHeaderSettings));
+          } catch (err) {
+            console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
+          }
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchHeaderSettings();
   }, []);
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100">
+        <Loader2 className="h-10 w-10 text-emerald-600 animate-spin" />
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 p-6 pt-20">
@@ -57,13 +101,70 @@ const PlaceholderPage = ({ title }: { title: string }) => {
 // Componente per pagine dinamiche
 const DynamicPage = ({ pageData }: { pageData: CustomPage }) => {
   const [headerSettings, setHeaderSettings] = useState<HeaderSettings>({});
+  const [loading, setLoading] = useState(true);
+  const [hasSubmenuPages, setHasSubmenuPages] = useState(false);
   
+  // Controlla se questa pagina ha sottopagine
   useEffect(() => {
-    const savedHeaderSettings = localStorage.getItem("headerSettings");
-    if (savedHeaderSettings) {
-      setHeaderSettings(JSON.parse(savedHeaderSettings));
-    }
-  }, []);
+    const checkForSubmenuPages = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('menu_icons')
+          .select('id')
+          .eq('parent_path', pageData.path)
+          .limit(1);
+          
+        if (error) throw error;
+        
+        setHasSubmenuPages(data && data.length > 0);
+      } catch (error) {
+        console.error("Errore nel controllo delle sottopagine:", error);
+      }
+    };
+    
+    const fetchHeaderSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('header_settings')
+          .select('*')
+          .limit(1)
+          .single();
+          
+        if (error) throw error;
+        
+        if (data) {
+          setHeaderSettings({
+            logoUrl: data.logo_url,
+            headerColor: data.header_color,
+          });
+        }
+      } catch (error) {
+        console.error("Errore nel caricamento delle impostazioni header:", error);
+        
+        // Fallback al localStorage se Supabase fallisce
+        const savedHeaderSettings = localStorage.getItem("headerSettings");
+        if (savedHeaderSettings) {
+          try {
+            setHeaderSettings(JSON.parse(savedHeaderSettings));
+          } catch (err) {
+            console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
+          }
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    Promise.all([checkForSubmenuPages(), fetchHeaderSettings()]);
+  }, [pageData.path]);
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100">
+        <Loader2 className="h-10 w-10 text-emerald-600 animate-spin" />
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 p-6 pt-20">
@@ -90,6 +191,19 @@ const DynamicPage = ({ pageData }: { pageData: CustomPage }) => {
             <p key={index} className="mb-4">{paragraph}</p>
           ))}
         </div>
+        
+        {hasSubmenuPages && (
+          <div className="mt-6 pt-4 border-t border-gray-200">
+            <div className="flex justify-center">
+              <a 
+                href={`/submenu/${pageData.path.replace('/', '')}`} 
+                className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg shadow-md hover:from-emerald-600 hover:to-teal-700 transition-colors"
+              >
+                Esplora {pageData.title}
+              </a>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -100,28 +214,87 @@ const queryClient = new QueryClient();
 const App = () => {
   const [customPages, setCustomPages] = useState<CustomPage[]>([]);
   const [headerSettings, setHeaderSettings] = useState<HeaderSettings>({});
+  const [loading, setLoading] = useState(true);
   const hasSelectedLanguage = localStorage.getItem("selectedLanguage") !== null;
   
-  // Carica le pagine personalizzate e le impostazioni dell'header dal localStorage
+  // Carica le pagine personalizzate e le impostazioni dell'header da Supabase
   useEffect(() => {
-    const savedPages = localStorage.getItem("customPages");
-    if (savedPages) {
+    const fetchData = async () => {
       try {
-        setCustomPages(JSON.parse(savedPages));
+        // 1. Fetch pagine personalizzate
+        const { data: pagesData, error: pagesError } = await supabase
+          .from('custom_pages')
+          .select('*');
+        
+        if (pagesError) throw pagesError;
+        
+        if (pagesData) {
+          const formattedPages: CustomPage[] = pagesData.map(page => ({
+            id: page.id,
+            title: page.title,
+            content: page.content,
+            path: page.path,
+            imageUrl: page.image_url,
+            isSubmenu: page.is_submenu,
+            parentPath: page.parent_path
+          }));
+          setCustomPages(formattedPages);
+        }
+        
+        // 2. Fetch impostazioni dell'header
+        const { data: headerData, error: headerError } = await supabase
+          .from('header_settings')
+          .select('*')
+          .limit(1)
+          .single();
+          
+        if (headerError) throw headerError;
+        
+        if (headerData) {
+          setHeaderSettings({
+            logoUrl: headerData.logo_url,
+            headerColor: headerData.header_color,
+          });
+        }
       } catch (error) {
-        console.error("Errore nel caricamento delle pagine personalizzate:", error);
+        console.error("Errore nel caricamento dei dati:", error);
+        
+        // Fallback al localStorage se Supabase fallisce
+        const savedPages = localStorage.getItem("customPages");
+        if (savedPages) {
+          try {
+            setCustomPages(JSON.parse(savedPages));
+          } catch (err) {
+            console.error("Errore nel parsing delle pagine dal localStorage:", err);
+          }
+        }
+        
+        const savedHeaderSettings = localStorage.getItem("headerSettings");
+        if (savedHeaderSettings) {
+          try {
+            setHeaderSettings(JSON.parse(savedHeaderSettings));
+          } catch (err) {
+            console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
+          }
+        }
+      } finally {
+        setLoading(false);
       }
-    }
+    };
     
-    const savedHeaderSettings = localStorage.getItem("headerSettings");
-    if (savedHeaderSettings) {
-      try {
-        setHeaderSettings(JSON.parse(savedHeaderSettings));
-      } catch (error) {
-        console.error("Errore nel caricamento delle impostazioni header:", error);
-      }
-    }
+    fetchData();
   }, []);
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 text-emerald-600 animate-spin mx-auto" />
+          <p className="mt-4 text-emerald-700">Caricamento applicazione...</p>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <QueryClientProvider client={queryClient}>
@@ -150,11 +323,14 @@ const App = () => {
             <Route path="/gallery" element={<PlaceholderPage title="Galleria" />} />
             <Route path="/info" element={<PlaceholderPage title="Info" />} />
             
+            {/* Rotta per sottomenu */}
+            <Route path="/submenu/:parentPath" element={<SubMenu />} />
+            
             {/* Rotte dinamiche per le pagine personalizzate */}
             {customPages.map((page) => (
               <Route 
                 key={page.id} 
-                path={`/${page.path}`} 
+                path={page.path} 
                 element={<DynamicPage pageData={page} />} 
               />
             ))}
