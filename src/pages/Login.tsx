@@ -7,49 +7,74 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import BackToMenu from "@/components/BackToMenu";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, User, Settings } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  // User login state
+  const [userUsername, setUserUsername] = useState<string>("");
+  const [userPassword, setUserPassword] = useState<string>("");
+  const [isUserLoading, setIsUserLoading] = useState<boolean>(false);
+  
+  // Admin login state
+  const [adminEmail, setAdminEmail] = useState<string>("");
+  const [adminPassword, setAdminPassword] = useState<string>("");
+  const [isAdminLoading, setIsAdminLoading] = useState<boolean>(false);
+  
   const navigate = useNavigate();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleUserLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsUserLoading(true);
     
     try {
-      console.log("Tentativo di login con:", email, password); // Log per debugging
+      console.log("Tentativo di login utente con:", userUsername, userPassword);
       
-      // Controllo credenziali demo in modo semplice e diretto
-      if (email.toLowerCase() === "user" && password === "password") {
+      // User demo login is simplified - only username "user" and password "password"
+      if (userUsername.toLowerCase() === "user" && userPassword === "password") {
         console.log("Credenziali utente demo valide!");
         localStorage.setItem("isAuthenticated", "true");
         localStorage.setItem("userType", "regular");
-        toast.success("Login utente effettuato con successo (modalità demo)!");
+        toast.success("Login utente effettuato con successo!");
         navigate("/admin");
-        return; // Importante: interrompiamo l'esecuzione qui
-      } 
+      } else {
+        console.log("Credenziali utente demo non valide");
+        toast.error("Credenziali utente non valide");
+      }
+    } catch (error) {
+      console.error("Errore durante il login utente:", error);
+      toast.error("Errore durante il login. Riprova più tardi.");
+    } finally {
+      setIsUserLoading(false);
+    }
+  };
+
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsAdminLoading(true);
+    
+    try {
+      console.log("Tentativo di login admin con:", adminEmail, adminPassword);
       
-      if (email.toLowerCase() === "admin" && password === "password") {
+      // Admin demo credentials check
+      if (adminEmail.toLowerCase() === "admin" && adminPassword === "password") {
         console.log("Credenziali admin demo valide!");
         localStorage.setItem("isAuthenticated", "true");
         localStorage.setItem("userType", "admin");
         localStorage.setItem("admin_token", "demo_token");
-        toast.success("Login admin effettuato con successo (modalità demo)!");
+        toast.success("Login admin effettuato con successo!");
         navigate("/menu");
-        return; // Importante: interrompiamo l'esecuzione qui
+        return;
       }
       
-      console.log("Credenziali demo non valide, provo con Supabase");
+      console.log("Credenziali admin demo non valide, provo con Supabase");
       
-      // Se non sono credenziali demo, proviamo con Supabase Admin Users
+      // Try Supabase admin users helper
       const { data, error } = await supabase.functions.invoke("admin_users_helpers", {
         body: { 
           action: "login_user", 
-          email, 
-          password 
+          email: adminEmail, 
+          password: adminPassword 
         }
       });
       
@@ -67,16 +92,14 @@ const Login: React.FC = () => {
         toast.success("Login amministratore effettuato con successo!");
         
         navigate("/menu");
-        return;
       } else {
-        // Messaggio di errore specifico per credenziali non valide
-        toast.error("Credenziali non valide");
+        toast.error("Credenziali admin non valide");
       }
     } catch (error) {
-      console.error("Errore durante il login:", error);
+      console.error("Errore durante il login admin:", error);
       toast.error("Errore durante il login. Riprova più tardi.");
     } finally {
-      setIsLoading(false);
+      setIsAdminLoading(false);
     }
   };
 
@@ -86,47 +109,104 @@ const Login: React.FC = () => {
       <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8">
         <h1 className="text-2xl font-bold text-emerald-700 mb-6 text-center">Accesso</h1>
         
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <Label htmlFor="email">Email / Username</Label>
-            <Input 
-              id="email" 
-              type="text" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Inserisci email o username"
-              className="mt-1"
-              disabled={isLoading}
-            />
-          </div>
-          <div>
-            <Label htmlFor="password">Password</Label>
-            <Input 
-              id="password" 
-              type="password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Inserisci password"
-              className="mt-1"
-              disabled={isLoading}
-            />
-          </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Accesso in corso...
-              </>
-            ) : (
-              "Accedi"
-            )}
-          </Button>
+        <Tabs defaultValue="user" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="user" className="flex items-center justify-center gap-2">
+              <User size={16} />
+              <span>Utente</span>
+            </TabsTrigger>
+            <TabsTrigger value="admin" className="flex items-center justify-center gap-2">
+              <Settings size={16} />
+              <span>Amministratore</span>
+            </TabsTrigger>
+          </TabsList>
           
-          <div className="text-xs text-gray-500 text-center mt-4">
-            <p className="mb-1">Per demo utente (accesso a pannello admin): username "user" e password "password"</p>
-            <p>Per demo admin (accesso a menu): username "admin" e password "password"</p>
-          </div>
-        </form>
+          <TabsContent value="user">
+            <form onSubmit={handleUserLogin} className="space-y-4">
+              <div>
+                <Label htmlFor="username">Username</Label>
+                <Input 
+                  id="username" 
+                  type="text" 
+                  value={userUsername} 
+                  onChange={(e) => setUserUsername(e.target.value)}
+                  placeholder="Inserisci username"
+                  className="mt-1"
+                  disabled={isUserLoading}
+                />
+              </div>
+              <div>
+                <Label htmlFor="userPassword">Password</Label>
+                <Input 
+                  id="userPassword" 
+                  type="password" 
+                  value={userPassword} 
+                  onChange={(e) => setUserPassword(e.target.value)}
+                  placeholder="Inserisci password"
+                  className="mt-1"
+                  disabled={isUserLoading}
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={isUserLoading}>
+                {isUserLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Accesso in corso...
+                  </>
+                ) : (
+                  "Accedi come Utente"
+                )}
+              </Button>
+              
+              <div className="text-xs text-gray-500 text-center mt-4">
+                <p>Per demo utente: username "user" e password "password"</p>
+              </div>
+            </form>
+          </TabsContent>
+          
+          <TabsContent value="admin">
+            <form onSubmit={handleAdminLogin} className="space-y-4">
+              <div>
+                <Label htmlFor="adminEmail">Email / Username</Label>
+                <Input 
+                  id="adminEmail" 
+                  type="text" 
+                  value={adminEmail} 
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  placeholder="Inserisci email o username"
+                  className="mt-1"
+                  disabled={isAdminLoading}
+                />
+              </div>
+              <div>
+                <Label htmlFor="adminPassword">Password</Label>
+                <Input 
+                  id="adminPassword" 
+                  type="password" 
+                  value={adminPassword} 
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="Inserisci password"
+                  className="mt-1"
+                  disabled={isAdminLoading}
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={isAdminLoading}>
+                {isAdminLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Accesso in corso...
+                  </>
+                ) : (
+                  "Accedi come Admin"
+                )}
+              </Button>
+              
+              <div className="text-xs text-gray-500 text-center mt-4">
+                <p>Per demo admin: username "admin" e password "password"</p>
+              </div>
+            </form>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
