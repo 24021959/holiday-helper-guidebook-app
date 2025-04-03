@@ -1,22 +1,31 @@
 
 import React, { useEffect, useState } from "react";
-import { Settings } from "lucide-react";
+import { Settings, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const AdminButton: React.FC = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   
   useEffect(() => {
     const authStatus = localStorage.getItem("isAuthenticated");
+    const userType = localStorage.getItem("userType");
+    
     if (authStatus === "true") {
       setIsAuthenticated(true);
+      setIsAdmin(userType === "admin" || localStorage.getItem("admin_token") !== null);
     }
   }, []);
   
   const handleClick = () => {
     if (isAuthenticated) {
-      navigate("/admin");
+      if (isAdmin) {
+        navigate("/admin");
+      } else {
+        // Redirect utente normale ai propri dati o al menu
+        navigate("/menu");
+      }
     } else {
       navigate("/login");
     }
@@ -26,10 +35,10 @@ const AdminButton: React.FC = () => {
     <button
       onClick={handleClick}
       className="text-gray-600 hover:text-emerald-600 transition-colors"
-      aria-label="Admin Panel"
-      title={isAuthenticated ? "Pannello amministrazione" : "Accedi"}
+      aria-label={isAdmin ? "Admin Panel" : "Profilo Utente"}
+      title={isAuthenticated ? (isAdmin ? "Pannello amministrazione" : "Profilo utente") : "Accedi"}
     >
-      <Settings size={20} />
+      {isAdmin ? <Settings size={20} /> : <User size={20} />}
     </button>
   );
 };

@@ -6,46 +6,87 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import BackToMenu from "@/components/BackToMenu";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
 const Login: React.FC = () => {
-  const [username, setUsername] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulazione di autenticazione
-    setTimeout(() => {
-      // Demo credentials
-      if (username === "admin" && password === "password") {
-        localStorage.setItem("isAuthenticated", "true");
-        toast.success("Login effettuato con successo!");
+    try {
+      // Prima prova ad autenticare con Supabase Admin Users
+      const { data, error } = await supabase.functions.invoke("admin_users_helpers", {
+        body: { 
+          action: "login_user", 
+          email, 
+          password 
+        }
+      });
+      
+      if (error) throw error;
+      
+      if (data && data.success) {
+        // Utente amministratore autenticato
+        localStorage.setItem("admin_token", data.token);
+        localStorage.setItem("admin_user", JSON.stringify(data.user));
+        toast.success("Login amministratore effettuato con successo!");
         navigate("/admin");
+      } else if (data && data.error) {
+        toast.error(data.error);
+      } else {
+        // Se non è un utente admin, prova con le credenziali demo per utente normale
+        if (email === "user" && password === "password") {
+          localStorage.setItem("isAuthenticated", "true");
+          localStorage.setItem("userType", "regular");
+          toast.success("Login utente effettuato con successo!");
+          navigate("/menu");
+        } else {
+          toast.error("Credenziali non valide");
+        }
+      }
+    } catch (error) {
+      console.error("Errore durante il login:", error);
+      // Demo credentials fallback
+      if (email === "admin" && password === "password") {
+        localStorage.setItem("isAuthenticated", "true");
+        localStorage.setItem("admin_token", "demo_token");
+        localStorage.setItem("userType", "admin");
+        toast.success("Login admin effettuato con successo (modalità demo)!");
+        navigate("/admin");
+      } else if (email === "user" && password === "password") {
+        localStorage.setItem("isAuthenticated", "true");
+        localStorage.setItem("userType", "regular");
+        toast.success("Login utente effettuato con successo (modalità demo)!");
+        navigate("/menu");
       } else {
         toast.error("Credenziali non valide");
       }
+    } finally {
       setIsLoading(false);
-    }, 800);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 p-6 pt-20">
       <BackToMenu />
       <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-2xl font-bold text-emerald-700 mb-6 text-center">Accesso Amministrazione</h1>
+        <h1 className="text-2xl font-bold text-emerald-700 mb-6 text-center">Accedi</h1>
         
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="email">Email / Username</Label>
             <Input 
-              id="username" 
+              id="email" 
               type="text" 
-              value={username} 
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="admin"
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Inserisci email o username"
               className="mt-1"
               disabled={isLoading}
             />
@@ -57,17 +98,25 @@ const Login: React.FC = () => {
               type="password" 
               value={password} 
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="password"
+              placeholder="Inserisci password"
               className="mt-1"
               disabled={isLoading}
             />
           </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Accesso in corso..." : "Accedi"}
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Accesso in corso...
+              </>
+            ) : (
+              "Accedi"
+            )}
           </Button>
           
           <div className="text-xs text-gray-500 text-center mt-4">
-            Per demo usa: username "admin" e password "password"
+            <p className="mb-1">Per demo utente: username "user" e password "password"</p>
+            <p>Per demo admin: username "admin" e password "password"</p>
           </div>
         </form>
       </div>
