@@ -20,7 +20,25 @@ const Login: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // First try to authenticate with Supabase Admin Users
+      // Check demo credentials first for quick login in development
+      if (email === "user" && password === "password") {
+        localStorage.setItem("isAuthenticated", "true");
+        localStorage.setItem("userType", "regular");
+        toast.success("Login utente effettuato con successo (modalità demo)!");
+        navigate("/admin");
+        setIsLoading(false);
+        return;
+      } else if (email === "admin" && password === "password") {
+        localStorage.setItem("isAuthenticated", "true");
+        localStorage.setItem("userType", "admin");
+        localStorage.setItem("admin_token", "demo_token");
+        toast.success("Login admin effettuato con successo (modalità demo)!");
+        navigate("/menu");
+        setIsLoading(false);
+        return;
+      }
+      
+      // If not demo credentials, try to authenticate with Supabase Admin Users
       const { data, error } = await supabase.functions.invoke("admin_users_helpers", {
         body: { 
           action: "login_user", 
@@ -48,35 +66,15 @@ const Login: React.FC = () => {
       } else if (data && data.error) {
         // Specific error from the function
         toast.error(data.error);
+      } else {
+        // No valid authentication method worked
+        toast.error("Credenziali non valide");
       }
-      
-      // If not an admin user or if there was an error, try with demo credentials
-      checkDemoCredentials();
     } catch (error) {
       console.error("Errore durante il login:", error);
-      // Demo credentials fallback
-      checkDemoCredentials();
+      toast.error("Errore durante il login. Riprova più tardi.");
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const checkDemoCredentials = () => {
-    if (email === "user" && password === "password") {
-      // Changed routing: "user" credentials now redirect to admin panel
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("userType", "regular");
-      toast.success("Login utente effettuato con successo (modalità demo)!");
-      navigate("/admin");
-    } else if (email === "admin" && password === "password") {
-      // Changed routing: "admin" credentials now redirect to menu
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("userType", "admin");
-      localStorage.setItem("admin_token", "demo_token");
-      toast.success("Login admin effettuato con successo (modalità demo)!");
-      navigate("/menu");
-    } else {
-      toast.error("Credenziali non valide");
     }
   };
 
