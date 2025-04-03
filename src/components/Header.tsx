@@ -1,55 +1,53 @@
 
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 interface HeaderProps {
-  backgroundImage?: string;
-  backgroundColor?: string;
   logoUrl?: string;
+  backgroundColor?: string;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
-  backgroundImage, 
-  backgroundColor = "bg-gradient-to-r from-teal-500 to-emerald-600",
-  logoUrl
+  logoUrl, 
+  backgroundColor = "#10b981" 
 }) => {
-  // Determina se usare testo bianco o scuro in base al colore di sfondo
-  const isLightBackground = 
-    backgroundColor === "bg-white" || 
-    backgroundColor === "bg-gradient-to-r from-amber-400 to-yellow-500";
+  const navigate = useNavigate();
   
-  const textColorClass = isLightBackground ? "text-gray-800" : "text-white";
+  const handleLogoClick = () => {
+    navigate("/menu");
+  };
+  
+  const headerStyle = {
+    backgroundColor: backgroundColor || "#10b981"
+  };
 
   return (
-    <div
-      className={`w-full ${!backgroundImage ? backgroundColor : ''} py-5 px-4 text-center shadow-lg relative overflow-hidden`}
-      style={
-        backgroundImage
-          ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: "cover", backgroundPosition: "center" }
-          : {}
-      }
+    <header 
+      className="fixed top-0 left-0 w-full z-10 shadow-md py-2 px-4 flex items-center justify-between"
+      style={headerStyle}
     >
-      {/* Elementi decorativi (solo per header colorati, non per sfondo bianco) */}
-      {backgroundColor !== "bg-white" && (
-        <div className="absolute top-0 left-0 w-full h-full opacity-20">
-          <div className="absolute top-6 left-6 w-16 h-16 rounded-full bg-white"></div>
-          <div className="absolute bottom-8 right-8 w-24 h-24 rounded-full bg-white"></div>
-          <div className="absolute top-1/2 left-1/4 w-12 h-12 rounded-full bg-white"></div>
-        </div>
-      )}
-      
-      {/* Welcome text or logo */}
-      <div className="relative z-10 flex flex-col items-center justify-center">
+      <div className="flex items-center">
         {logoUrl ? (
           <img 
             src={logoUrl} 
             alt="Logo" 
-            className="h-16 md:h-20 object-contain"
+            className="h-10 cursor-pointer"
+            onClick={handleLogoClick}
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = "https://via.placeholder.com/150x50?text=Logo";
+            }}
           />
         ) : (
-          <h1 className={`text-2xl md:text-3xl font-bold ${textColorClass}`}>LOCANDA DELL'ANGELO</h1>
+          <div 
+            className="text-white font-semibold text-lg cursor-pointer"
+            onClick={handleLogoClick}
+          >
+            Hotel App
+          </div>
         )}
       </div>
-    </div>
+    </header>
   );
 };
 
