@@ -1,25 +1,63 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const ChatbotBubble: React.FC = () => {
+  const [chatbotCode, setChatbotCode] = useState<string | null>(null);
+
   useEffect(() => {
-    // Verifica se il tag script è già stato aggiunto
-    if (!document.getElementById("chatbot-script")) {
-      // Aggiungi lo script del chatbot nel tag HEAD
-      const script = document.createElement("script");
-      script.id = "chatbot-script";
-      script.defer = true;
-      script.src = "https://cdn.aichatbotjs.com/chatbot.js";
-      script.setAttribute("data-chatbot-id", "bot-ufqmgj3gyj");
-      script.setAttribute("data-element", "chatbot-container");
-      script.setAttribute("data-position", "right");
+    // Recupera il codice del chatbot dal localStorage
+    const savedChatbotCode = localStorage.getItem("chatbotCode");
+    setChatbotCode(savedChatbotCode);
+    
+    // Se esiste un codice chatbot configurato, lo utilizziamo
+    if (savedChatbotCode) {
+      // Estrai l'URL dello script dal codice
+      const srcMatch = savedChatbotCode.match(/src=['"](.*?)['"]/);
+      const dataIdMatch = savedChatbotCode.match(/data-chatbot-id=['"](.*?)['"]/);
       
-      // Inserisci lo script nell'head anziché nel body
-      document.head.appendChild(script);
-      
-      console.log("Script del chatbot aggiunto nell'head del documento");
+      if (srcMatch && srcMatch[1]) {
+        const scriptSrc = srcMatch[1];
+        let chatbotId = "";
+        
+        if (dataIdMatch && dataIdMatch[1]) {
+          chatbotId = dataIdMatch[1];
+        }
+        
+        // Verifica se il tag script è già stato aggiunto
+        if (!document.getElementById("chatbot-script")) {
+          // Aggiungi lo script del chatbot nel tag HEAD
+          const script = document.createElement("script");
+          script.id = "chatbot-script";
+          script.defer = true;
+          script.src = scriptSrc;
+          
+          if (chatbotId) {
+            script.setAttribute("data-chatbot-id", chatbotId);
+          }
+          script.setAttribute("data-element", "chatbot-container");
+          script.setAttribute("data-position", "right");
+          
+          // Inserisci lo script nell'head
+          document.head.appendChild(script);
+          console.log("Script del chatbot aggiunto nell'head del documento");
+        }
+      }
+    } else {
+      // Se non c'è un codice configurato, utilizziamo quello predefinito
+      if (!document.getElementById("chatbot-script")) {
+        const script = document.createElement("script");
+        script.id = "chatbot-script";
+        script.defer = true;
+        script.src = "https://cdn.aichatbotjs.com/chatbot.js";
+        script.setAttribute("data-chatbot-id", "bot-ufqmgj3gyj");
+        script.setAttribute("data-element", "chatbot-container");
+        script.setAttribute("data-position", "right");
+        
+        document.head.appendChild(script);
+        console.log("Script del chatbot predefinito aggiunto nell'head");
+      }
     }
     
     // Aggiungi un container per il chatbot se non esiste
@@ -74,14 +112,39 @@ const ChatbotBubble: React.FC = () => {
         existingScript.remove();
       }
       
-      const script = document.createElement("script");
-      script.id = "chatbot-script";
-      script.defer = true;
-      script.src = "https://cdn.aichatbotjs.com/chatbot.js";
-      script.setAttribute("data-chatbot-id", "bot-ufqmgj3gyj");
-      script.setAttribute("data-element", "chatbot-container");
-      script.setAttribute("data-position", "right");
-      document.head.appendChild(script);
+      // Recupera il codice più recente
+      const latestChatbotCode = localStorage.getItem("chatbotCode");
+      if (latestChatbotCode) {
+        // Estrai l'URL dello script dal codice
+        const srcMatch = latestChatbotCode.match(/src=['"](.*?)['"]/);
+        const dataIdMatch = latestChatbotCode.match(/data-chatbot-id=['"](.*?)['"]/);
+        
+        if (srcMatch && srcMatch[1]) {
+          const scriptSrc = srcMatch[1];
+          const script = document.createElement("script");
+          script.id = "chatbot-script";
+          script.defer = true;
+          script.src = scriptSrc;
+          
+          if (dataIdMatch && dataIdMatch[1]) {
+            script.setAttribute("data-chatbot-id", dataIdMatch[1]);
+          }
+          
+          script.setAttribute("data-element", "chatbot-container");
+          script.setAttribute("data-position", "right");
+          document.head.appendChild(script);
+        }
+      } else {
+        // Utilizza configurazione predefinita
+        const script = document.createElement("script");
+        script.id = "chatbot-script";
+        script.defer = true;
+        script.src = "https://cdn.aichatbotjs.com/chatbot.js";
+        script.setAttribute("data-chatbot-id", "bot-ufqmgj3gyj");
+        script.setAttribute("data-element", "chatbot-container");
+        script.setAttribute("data-position", "right");
+        document.head.appendChild(script);
+      }
       
       // Mostra messaggio all'utente
       toast({

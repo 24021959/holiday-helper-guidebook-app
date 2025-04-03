@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import Index from "./pages/Index";
 import Menu from "./pages/Menu";
 import NotFound from "./pages/NotFound";
@@ -14,6 +15,14 @@ import Admin from "./pages/Admin";
 import Login from "./pages/Login";
 import PreviewPage from "./pages/PreviewPage";
 import ChatbotBubble from "./components/ChatbotBubble";
+
+interface CustomPage {
+  id: string;
+  title: string;
+  content: string;
+  path: string;
+  imageUrl?: string;
+}
 
 // Create placeholder pages for each menu item
 const PlaceholderPage = ({ title }: { title: string }) => {
@@ -30,10 +39,55 @@ const PlaceholderPage = ({ title }: { title: string }) => {
   );
 };
 
+// Componente per pagine dinamiche
+const DynamicPage = ({ pageData }: { pageData: CustomPage }) => {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 p-6 pt-20">
+      <BackToMenu />
+      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8">
+        <h1 className="text-2xl font-bold text-emerald-700 mb-4">{pageData.title}</h1>
+        
+        {pageData.imageUrl && (
+          <div className="mb-6">
+            <img 
+              src={pageData.imageUrl} 
+              alt={pageData.title} 
+              className="w-full h-auto rounded-lg object-cover max-h-80"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = "https://via.placeholder.com/800x400?text=Immagine+non+disponibile";
+              }}
+            />
+          </div>
+        )}
+        
+        <div className="text-gray-600 prose">
+          {pageData.content.split('\n').map((paragraph, index) => (
+            <p key={index} className="mb-4">{paragraph}</p>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const queryClient = new QueryClient();
 
 const App = () => {
+  const [customPages, setCustomPages] = useState<CustomPage[]>([]);
   const hasSelectedLanguage = localStorage.getItem("selectedLanguage") !== null;
+  
+  // Carica le pagine personalizzate dal localStorage
+  useEffect(() => {
+    const savedPages = localStorage.getItem("customPages");
+    if (savedPages) {
+      try {
+        setCustomPages(JSON.parse(savedPages));
+      } catch (error) {
+        console.error("Errore nel caricamento delle pagine personalizzate:", error);
+      }
+    }
+  }, []);
   
   return (
     <QueryClientProvider client={queryClient}>
@@ -61,6 +115,15 @@ const App = () => {
             <Route path="/events" element={<PlaceholderPage title="Eventi" />} />
             <Route path="/gallery" element={<PlaceholderPage title="Galleria" />} />
             <Route path="/info" element={<PlaceholderPage title="Info" />} />
+            
+            {/* Rotte dinamiche per le pagine personalizzate */}
+            {customPages.map((page) => (
+              <Route 
+                key={page.id} 
+                path={`/${page.path}`} 
+                element={<DynamicPage pageData={page} />} 
+              />
+            ))}
             
             {/* Admin routes */}
             <Route path="/login" element={<Login />} />

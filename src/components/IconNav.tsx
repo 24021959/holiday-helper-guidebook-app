@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { 
   Home, 
@@ -8,7 +8,7 @@ import {
   Coffee, 
   Utensils, 
   Phone, 
-  MessageSquare, 
+  MessageCircle, 
   User,
   Wifi, 
   Bus, 
@@ -18,37 +18,95 @@ import {
   Image,
   Hotel,
   Bike,
-  Coffee as CoffeeIcon,
   Map,
-  Info
+  Info,
+  FileText
 } from "lucide-react";
 
 interface NavIcon {
-  icon: React.ReactNode;
+  icon: string;
   label: string;
   bgColor: string;
   path: string;
 }
 
-const icons: NavIcon[] = [
-  { icon: <Home className="w-12 h-12" strokeWidth={1.5} />, label: "Benvenuto", bgColor: "bg-blue-200", path: "/welcome" },
-  { icon: <Book className="w-12 h-12" strokeWidth={1.5} />, label: "Storia", bgColor: "bg-teal-200", path: "/storia" },
-  { icon: <Hotel className="w-12 h-12" strokeWidth={1.5} />, label: "Servizi hotel", bgColor: "bg-amber-200", path: "/servizi-hotel" },
-  { icon: <CoffeeIcon className="w-12 h-12" strokeWidth={1.5} />, label: "Servizi esterni", bgColor: "bg-green-200", path: "/servizi-esterni" },
-  { icon: <Utensils className="w-12 h-12" strokeWidth={1.5} />, label: "Ristorante", bgColor: "bg-purple-200", path: "/ristorante" },
-  { icon: <Map className="w-12 h-12" strokeWidth={1.5} />, label: "Scopri il territorio", bgColor: "bg-orange-200", path: "/scopri-territorio" },
-  { icon: <MapPin className="w-12 h-12" strokeWidth={1.5} />, label: "Posizione", bgColor: "bg-pink-200", path: "/location" },
-  { icon: <Wifi className="w-12 h-12" strokeWidth={1.5} />, label: "Wifi", bgColor: "bg-indigo-200", path: "/wifi" },
-  { icon: <Bike className="w-12 h-12" strokeWidth={1.5} />, label: "Attività", bgColor: "bg-red-200", path: "/activities" },
-  { icon: <Bus className="w-12 h-12" strokeWidth={1.5} />, label: "Trasporti", bgColor: "bg-emerald-200", path: "/transport" },
-  { icon: <ShoppingCart className="w-12 h-12" strokeWidth={1.5} />, label: "Shopping", bgColor: "bg-sky-200", path: "/shopping" },
-  { icon: <Phone className="w-12 h-12" strokeWidth={1.5} />, label: "Contatti", bgColor: "bg-yellow-200", path: "/contacts" },
-  { icon: <Calendar className="w-12 h-12" strokeWidth={1.5} />, label: "Eventi", bgColor: "bg-lime-200", path: "/events" },
-  { icon: <Image className="w-12 h-12" strokeWidth={1.5} />, label: "Galleria", bgColor: "bg-fuchsia-200", path: "/gallery" },
-  { icon: <Info className="w-12 h-12" strokeWidth={1.5} />, label: "Info", bgColor: "bg-cyan-200", path: "/info" }
+const getIconComponent = (iconName: string) => {
+  switch (iconName) {
+    case 'Home': return <Home className="w-12 h-12" strokeWidth={1.5} />;
+    case 'MapPin': return <MapPin className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Book': return <Book className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Coffee': return <Coffee className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Utensils': return <Utensils className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Phone': return <Phone className="w-12 h-12" strokeWidth={1.5} />;
+    case 'MessageCircle': return <MessageCircle className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Wifi': return <Wifi className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Bus': return <Bus className="w-12 h-12" strokeWidth={1.5} />;
+    case 'ShoppingCart': return <ShoppingCart className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Calendar': return <Calendar className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Hotel': return <Hotel className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Bike': return <Bike className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Map': return <Map className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Info': return <Info className="w-12 h-12" strokeWidth={1.5} />;
+    case 'Image': return <Image className="w-12 h-12" strokeWidth={1.5} />;
+    case 'FileText': return <FileText className="w-12 h-12" strokeWidth={1.5} />;
+    default: return <FileText className="w-12 h-12" strokeWidth={1.5} />;
+  }
+};
+
+// Icone predefinite del menu
+const defaultIcons: NavIcon[] = [
+  { icon: 'Home', label: "Benvenuto", bgColor: "bg-blue-200", path: "/welcome" },
+  { icon: 'Book', label: "Storia", bgColor: "bg-teal-200", path: "/storia" },
+  { icon: 'Hotel', label: "Servizi hotel", bgColor: "bg-amber-200", path: "/servizi-hotel" },
+  { icon: 'Coffee', label: "Servizi esterni", bgColor: "bg-green-200", path: "/servizi-esterni" },
+  { icon: 'Utensils', label: "Ristorante", bgColor: "bg-purple-200", path: "/ristorante" },
+  { icon: 'Map', label: "Scopri il territorio", bgColor: "bg-orange-200", path: "/scopri-territorio" },
+  { icon: 'MapPin', label: "Posizione", bgColor: "bg-pink-200", path: "/location" },
+  { icon: 'Wifi', label: "Wifi", bgColor: "bg-indigo-200", path: "/wifi" },
+  { icon: 'Bike', label: "Attività", bgColor: "bg-red-200", path: "/activities" },
+  { icon: 'Bus', label: "Trasporti", bgColor: "bg-emerald-200", path: "/transport" },
+  { icon: 'ShoppingCart', label: "Shopping", bgColor: "bg-sky-200", path: "/shopping" },
+  { icon: 'Phone', label: "Contatti", bgColor: "bg-yellow-200", path: "/contacts" },
+  { icon: 'Calendar', label: "Eventi", bgColor: "bg-lime-200", path: "/events" },
+  { icon: 'Image', label: "Galleria", bgColor: "bg-fuchsia-200", path: "/gallery" },
+  { icon: 'Info', label: "Info", bgColor: "bg-cyan-200", path: "/info" }
 ];
 
 const IconNav = () => {
+  const [icons, setIcons] = useState<NavIcon[]>(defaultIcons);
+  
+  // Carica le icone personalizzate dal localStorage
+  useEffect(() => {
+    const savedIcons = localStorage.getItem("menuIcons");
+    if (savedIcons) {
+      try {
+        const customIcons: NavIcon[] = JSON.parse(savedIcons);
+        // Unisce le icone predefinite con quelle personalizzate
+        // Le icone personalizzate con percorsi uguali sostituiranno quelle predefinite
+        const mergedIcons = [...defaultIcons];
+        
+        customIcons.forEach(customIcon => {
+          // Verifica se esiste già un'icona con lo stesso path
+          const existingIndex = mergedIcons.findIndex(
+            icon => icon.path === customIcon.path
+          );
+          
+          if (existingIndex >= 0) {
+            // Sostituisci l'icona esistente
+            mergedIcons[existingIndex] = customIcon;
+          } else {
+            // Aggiungi la nuova icona
+            mergedIcons.push(customIcon);
+          }
+        });
+        
+        setIcons(mergedIcons);
+      } catch (error) {
+        console.error("Errore nel caricamento delle icone personalizzate:", error);
+      }
+    }
+  }, []);
+
   return (
     <div className="w-full h-full flex flex-col bg-gradient-to-br from-teal-50 to-emerald-100">
       <div className="grid grid-cols-3 gap-4 w-full h-full p-4">
@@ -59,7 +117,7 @@ const IconNav = () => {
             className={`flex flex-col items-center justify-center aspect-square cursor-pointer ${item.bgColor} rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-md border border-white/80 shadow-sm`}
           >
             <div className="bg-white rounded-full mb-2 p-4 shadow-md flex items-center justify-center">
-              {item.icon}
+              {getIconComponent(item.icon)}
             </div>
             <span className="text-sm font-medium text-gray-700 text-center">{item.label}</span>
           </Link>
