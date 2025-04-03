@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -152,9 +153,7 @@ const Admin: React.FC = () => {
     content: "",
     path: "",
     imageUrl: "",
-    icon: "FileText",
-    mapsUrl: "",
-    phoneNumber: ""
+    icon: "FileText"
   });
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [chatbotCode, setChatbotCode] = useState<string>("");
@@ -169,6 +168,7 @@ const Admin: React.FC = () => {
   });
   const [uploadedLogo, setUploadedLogo] = useState<string | null>(null);
   const [headerColor, setHeaderColor] = useState<string>("bg-gradient-to-r from-teal-500 to-emerald-600");
+  const [selectedColor, setSelectedColor] = useState<string>("bg-blue-200");
 
   const navigate = useNavigate();
 
@@ -358,9 +358,7 @@ const Admin: React.FC = () => {
       content: "",
       path: "",
       imageUrl: "",
-      icon: "FileText",
-      mapsUrl: "",
-      phoneNumber: ""
+      icon: "FileText"
     });
     setUploadedImage(null);
     setIsList(false);
