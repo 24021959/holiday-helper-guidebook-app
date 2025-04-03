@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,8 +8,7 @@ import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BackToMenu from "@/components/BackToMenu";
 
-// Ensure Login is properly imported
-import Login from "./pages/Login";
+import Home from "./pages/Home";
 import Menu from "@/pages/Menu";
 import Admin from "@/pages/Admin";
 import Welcome from "@/pages/Welcome";
@@ -18,6 +16,7 @@ import Storia from "@/pages/Storia";
 import SubMenu from "@/pages/SubMenu";
 import NotFound from "@/pages/NotFound";
 import ChatbotBubble from "@/components/ChatbotBubble";
+import Login from "./pages/Login";
 
 interface CustomPage {
   id: string;
@@ -293,21 +292,21 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Navigate to="/login" />} />
+            <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             
             <Route 
               path="/menu" 
               element={
                 localStorage.getItem("isAuthenticated") === "true" ? 
-                <Menu /> : <Navigate to="/login" />
+                <Menu /> : <Navigate to="/" />
               } 
             />
             <Route 
               path="/admin" 
               element={
                 localStorage.getItem("isAuthenticated") === "true" ? 
-                <Admin /> : <Navigate to="/login" />
+                <Admin /> : <Navigate to="/" />
               } 
             />
             
