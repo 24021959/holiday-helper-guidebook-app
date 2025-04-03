@@ -58,31 +58,16 @@ export const UserManagementView: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setIsLoading(true);
-      // Using a direct SQL query via RPC since we don't have TypeScript types for admin_users yet
-      const { data: adminUsers, error } = await supabase
-        .rpc('get_admin_users')
-        .select('*');
+      
+      // Call our edge function instead of direct Supabase query
+      const { data, error } = await supabase.functions.invoke("admin_users_helpers", {
+        body: { action: "get_users" }
+      });
 
-      if (error) {
-        // Fallback to direct table query if RPC doesn't exist
-        const { data: tableData, error: tableError } = await supabase
-          .from('admin_users')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (tableError) throw tableError;
-        
-        if (tableData) {
-          setUsers(tableData.map(user => ({
-            id: user.id,
-            email: user.email,
-            isActive: user.is_active,
-            role: user.role,
-            createdAt: new Date(user.created_at).toLocaleDateString()
-          })));
-        }
-      } else if (adminUsers) {
-        setUsers(adminUsers.map(user => ({
+      if (error) throw error;
+      
+      if (data && data.data) {
+        setUsers(data.data.map((user: any) => ({
           id: user.id,
           email: user.email,
           isActive: user.is_active,
@@ -105,24 +90,17 @@ export const UserManagementView: React.FC = () => {
     }
 
     try {
-      // Direct SQL insert using RPC for type safety
-      const { error } = await supabase.rpc('create_admin_user', {
-        p_email: email,
-        p_password: password,
-        p_role: role
+      // Call our edge function to create user
+      const { error } = await supabase.functions.invoke("admin_users_helpers", {
+        body: { 
+          action: "create_user",
+          email,
+          password_hash: password, 
+          role
+        }
       });
 
-      if (error) {
-        // Fallback to direct insert if RPC doesn't exist
-        const { error: insertError } = await supabase.from('admin_users').insert({
-          email: email,
-          password_hash: password,
-          role: role,
-          is_active: true
-        });
-        
-        if (insertError) throw insertError;
-      }
+      if (error) throw error;
       
       toast.success("Utente creato con successo");
       setEmail("");
@@ -138,20 +116,16 @@ export const UserManagementView: React.FC = () => {
 
   const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase.rpc('update_admin_user_status', {
-        p_user_id: userId,
-        p_is_active: !currentStatus
+      // Call our edge function to toggle user status
+      const { error } = await supabase.functions.invoke("admin_users_helpers", {
+        body: { 
+          action: "toggle_status",
+          id: userId,
+          is_active: !currentStatus
+        }
       });
 
-      if (error) {
-        // Fallback to direct update if RPC doesn't exist
-        const { error: updateError } = await supabase
-          .from('admin_users')
-          .update({ is_active: !currentStatus })
-          .eq('id', userId);
-          
-        if (updateError) throw updateError;
-      }
+      if (error) throw error;
       
       setUsers(users.map(user => 
         user.id === userId ? { ...user, isActive: !currentStatus } : user
@@ -168,19 +142,15 @@ export const UserManagementView: React.FC = () => {
     if (!userToDelete) return;
     
     try {
-      const { error } = await supabase.rpc('delete_admin_user', {
-        p_user_id: userToDelete
+      // Call our edge function to delete user
+      const { error } = await supabase.functions.invoke("admin_users_helpers", {
+        body: { 
+          action: "delete_user",
+          id: userToDelete
+        }
       });
 
-      if (error) {
-        // Fallback to direct delete if RPC doesn't exist
-        const { error: deleteError } = await supabase
-          .from('admin_users')
-          .delete()
-          .eq('id', userToDelete);
-          
-        if (deleteError) throw deleteError;
-      }
+      if (error) throw error;
       
       setUsers(users.filter(user => user.id !== userToDelete));
       toast.success("Utente eliminato con successo");
