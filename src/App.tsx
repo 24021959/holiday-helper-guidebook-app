@@ -337,7 +337,14 @@ const App = () => {
             
             {/* Admin routes */}
             <Route path="/login" element={<Login />} />
-            <Route path="/admin" element={<Admin />} />
+            <Route 
+              path="/admin" 
+              element={
+                localStorage.getItem("isAuthenticated") === "true" && 
+                (localStorage.getItem("userType") === "admin" || localStorage.getItem("admin_token")) ? 
+                <Admin /> : <Navigate to="/login" />
+              } 
+            />
             <Route path="/preview/:pageSlug" element={<PreviewPage />} />
             
             {/* Catch-all route */}

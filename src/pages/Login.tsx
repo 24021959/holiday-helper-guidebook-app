@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -42,16 +41,14 @@ const Login: React.FC = () => {
         localStorage.setItem("admin_user", JSON.stringify(data.user));
         toast.success("Login amministratore effettuato con successo!");
         navigate("/admin");
+        return;
       } else if (data && data.error) {
         // Specific error from the function
         toast.error(data.error);
-        
-        // Try demo credentials
-        checkDemoCredentials();
-      } else {
-        // If not an admin user, try with demo credentials for regular user
-        checkDemoCredentials();
       }
+      
+      // If not an admin user or if there was an error, try with demo credentials
+      checkDemoCredentials();
     } catch (error) {
       console.error("Errore durante il login:", error);
       // Demo credentials fallback

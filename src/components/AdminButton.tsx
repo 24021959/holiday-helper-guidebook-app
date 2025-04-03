@@ -25,7 +25,7 @@ const AdminButton: React.FC = () => {
       if (isAdmin) {
         navigate("/admin");
       } else {
-        // Redirect regular user to their data or menu
+        // Redirect regular user to their menu
         navigate("/menu");
       }
     } else {
