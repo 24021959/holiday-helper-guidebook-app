@@ -20,21 +20,29 @@ const Login: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Verifica prima le credenziali demo semplici
+      console.log("Tentativo di login con:", email, password); // Log per debugging
+      
+      // Controllo credenziali demo in modo semplice e diretto
       if (email.toLowerCase() === "user" && password === "password") {
+        console.log("Credenziali utente demo valide!");
         localStorage.setItem("isAuthenticated", "true");
         localStorage.setItem("userType", "regular");
         toast.success("Login utente effettuato con successo (modalità demo)!");
         navigate("/admin");
-        return;
-      } else if (email.toLowerCase() === "admin" && password === "password") {
+        return; // Importante: interrompiamo l'esecuzione qui
+      } 
+      
+      if (email.toLowerCase() === "admin" && password === "password") {
+        console.log("Credenziali admin demo valide!");
         localStorage.setItem("isAuthenticated", "true");
         localStorage.setItem("userType", "admin");
         localStorage.setItem("admin_token", "demo_token");
         toast.success("Login admin effettuato con successo (modalità demo)!");
         navigate("/menu");
-        return;
+        return; // Importante: interrompiamo l'esecuzione qui
       }
+      
+      console.log("Credenziali demo non valide, provo con Supabase");
       
       // Se non sono credenziali demo, proviamo con Supabase Admin Users
       const { data, error } = await supabase.functions.invoke("admin_users_helpers", {
@@ -58,14 +66,10 @@ const Login: React.FC = () => {
         localStorage.setItem("admin_user", JSON.stringify(data.user));
         toast.success("Login amministratore effettuato con successo!");
         
-        // Admin user goes to menu (as requested by the client)
         navigate("/menu");
         return;
-      } else if (data && data.error) {
-        // Specific error from the function
-        toast.error(data.error);
       } else {
-        // No valid authentication method worked
+        // Messaggio di errore specifico per credenziali non valide
         toast.error("Credenziali non valide");
       }
     } catch (error) {
