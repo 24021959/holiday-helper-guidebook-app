@@ -3,50 +3,19 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  Image, FileImage, MessageCircle, Home, 
-  MapPin, Book, Coffee, Utensils, Phone, 
-  Wifi, Bus, ShoppingCart, Calendar, 
-  Hotel, Bike, Map, Info, FileText, 
-  Landmark, Building, Trees, Mountain, 
-  Users, Music, Camera, Globe,
-  Newspaper, PawPrint, Heart, Bookmark, ShoppingBag,
-  Plus, Trash2, ExternalLink
-} from "lucide-react";
 import BackToMenu from "@/components/BackToMenu";
-import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import ImageUploader from "@/components/ImageUploader";
-import { 
-  Table, 
-  TableHeader, 
-  TableRow, 
-  TableHead, 
-  TableBody, 
-  TableCell 
-} from "@/components/ui/table";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import Header from "@/components/Header";
-import { supabase } from "@/integrations/supabase/client"; // Fixed import path
+import { supabase } from "@/integrations/supabase/client";
 
 // Import the refactored components
 import { CreatePageForm } from "@/components/admin/CreatePageForm";
 import { ManagePagesView } from "@/components/admin/ManagePagesView";
 import { HeaderSettingsView } from "@/components/admin/HeaderSettingsView";
 import { ChatbotSettingsView } from "@/components/admin/ChatbotSettingsView";
+import { UserManagementView } from "@/components/admin/UserManagementView";
 import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";
 
-interface LocationItem {
+export interface LocationItem {
   name: string;
   description?: string;
   phoneNumber?: string;
@@ -68,6 +37,14 @@ export interface PageData {
   logoUrl?: string;
 }
 
+export interface UserData {
+  id: string;
+  email: string;
+  isActive: boolean;
+  role: string;
+  createdAt: string;
+}
+
 const Admin: React.FC = () => {
   const [pages, setPages] = useState<PageData[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -75,6 +52,7 @@ const Admin: React.FC = () => {
   const [headerColor, setHeaderColor] = useState<string>("bg-gradient-to-r from-teal-500 to-emerald-600");
   const [chatbotCode, setChatbotCode] = useState<string>("");
   const [parentPages, setParentPages] = useState<PageData[]>([]);
+  const [currentTab, setCurrentTab] = useState<string>("create");
   
   const navigate = useNavigate();
   const keywordToIconMap = useKeywordToIconMap();
@@ -235,12 +213,13 @@ const Admin: React.FC = () => {
           <Button variant="outline" onClick={handleLogout}>Logout</Button>
         </div>
 
-        <Tabs defaultValue="create">
+        <Tabs defaultValue="create" value={currentTab} onValueChange={setCurrentTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="create">Crea Pagina</TabsTrigger>
             <TabsTrigger value="manage">Gestisci Pagine</TabsTrigger>
             <TabsTrigger value="header">Personalizza Header</TabsTrigger>
             <TabsTrigger value="chatbot">Chatbot</TabsTrigger>
+            <TabsTrigger value="users">Gestione Utenti</TabsTrigger>
           </TabsList>
           
           <TabsContent value="create" className="space-y-4">
@@ -271,6 +250,10 @@ const Admin: React.FC = () => {
               setChatbotCode={setChatbotCode}
               onSave={handleSaveChatbotCode}
             />
+          </TabsContent>
+          
+          <TabsContent value="users">
+            <UserManagementView />
           </TabsContent>
         </Tabs>
       </div>
