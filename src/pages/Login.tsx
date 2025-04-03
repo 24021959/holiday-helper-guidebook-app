@@ -20,7 +20,7 @@ const Login: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Prima prova ad autenticare con Supabase Admin Users
+      // First try to authenticate with Supabase Admin Users
       const { data, error } = await supabase.functions.invoke("admin_users_helpers", {
         body: { 
           action: "login_user", 
@@ -29,46 +29,52 @@ const Login: React.FC = () => {
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error calling admin_users_helpers:", error);
+        throw error;
+      }
       
       if (data && data.success) {
-        // Utente amministratore autenticato
+        // Admin user authenticated
+        localStorage.setItem("isAuthenticated", "true");
+        localStorage.setItem("userType", "admin");
         localStorage.setItem("admin_token", data.token);
         localStorage.setItem("admin_user", JSON.stringify(data.user));
         toast.success("Login amministratore effettuato con successo!");
         navigate("/admin");
       } else if (data && data.error) {
+        // Specific error from the function
         toast.error(data.error);
+        
+        // Try demo credentials
+        checkDemoCredentials();
       } else {
-        // Se non è un utente admin, prova con le credenziali demo per utente normale
-        if (email === "user" && password === "password") {
-          localStorage.setItem("isAuthenticated", "true");
-          localStorage.setItem("userType", "regular");
-          toast.success("Login utente effettuato con successo!");
-          navigate("/menu");
-        } else {
-          toast.error("Credenziali non valide");
-        }
+        // If not an admin user, try with demo credentials for regular user
+        checkDemoCredentials();
       }
     } catch (error) {
       console.error("Errore durante il login:", error);
       // Demo credentials fallback
-      if (email === "admin" && password === "password") {
-        localStorage.setItem("isAuthenticated", "true");
-        localStorage.setItem("admin_token", "demo_token");
-        localStorage.setItem("userType", "admin");
-        toast.success("Login admin effettuato con successo (modalità demo)!");
-        navigate("/admin");
-      } else if (email === "user" && password === "password") {
-        localStorage.setItem("isAuthenticated", "true");
-        localStorage.setItem("userType", "regular");
-        toast.success("Login utente effettuato con successo (modalità demo)!");
-        navigate("/menu");
-      } else {
-        toast.error("Credenziali non valide");
-      }
+      checkDemoCredentials();
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const checkDemoCredentials = () => {
+    if (email === "admin" && password === "password") {
+      localStorage.setItem("isAuthenticated", "true");
+      localStorage.setItem("userType", "admin");
+      localStorage.setItem("admin_token", "demo_token");
+      toast.success("Login admin effettuato con successo (modalità demo)!");
+      navigate("/admin");
+    } else if (email === "user" && password === "password") {
+      localStorage.setItem("isAuthenticated", "true");
+      localStorage.setItem("userType", "regular");
+      toast.success("Login utente effettuato con successo (modalità demo)!");
+      navigate("/menu");
+    } else {
+      toast.error("Credenziali non valide");
     }
   };
 

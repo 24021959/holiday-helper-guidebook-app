@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagementView } from "@/components/admin/UserManagementView";
@@ -42,6 +43,7 @@ export interface LocationItem {
 const Admin: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [pages, setPages] = useState<PageData[]>([]);
   const [parentPages, setParentPages] = useState<PageData[]>([]);
   const [uploadedLogo, setUploadedLogo] = useState<string | null>(null);
@@ -91,9 +93,13 @@ const Admin: React.FC = () => {
     const checkAuth = async () => {
       try {
         const adminToken = localStorage.getItem("admin_token");
+        const userType = localStorage.getItem("userType");
         
-        if (!adminToken) {
-          navigate("/login");
+        if (!adminToken && userType !== "admin") {
+          setAuthError("Accesso negato. Devi essere un amministratore per visualizzare questa pagina.");
+          setTimeout(() => {
+            navigate("/login");
+          }, 2000);
           return;
         }
         
@@ -101,7 +107,10 @@ const Admin: React.FC = () => {
         setIsLoading(false);
       } catch (error) {
         console.error("Auth check failed:", error);
-        navigate("/login");
+        setAuthError("Errore durante la verifica dell'autenticazione.");
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
       }
     };
     
@@ -122,6 +131,8 @@ const Admin: React.FC = () => {
   const handleLogout = () => {
     localStorage.removeItem("admin_token");
     localStorage.removeItem("admin_user");
+    localStorage.removeItem("isAuthenticated");
+    localStorage.removeItem("userType");
     toast.success("Logout eseguito con successo");
     navigate("/login");
   };
@@ -130,6 +141,23 @@ const Admin: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+      </div>
+    );
+  }
+  
+  if (authError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <strong className="font-bold">Errore! </strong>
+          <span className="block sm:inline">{authError}</span>
+        </div>
+        <button 
+          onClick={() => navigate("/login")} 
+          className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors"
+        >
+          Torna al login
+        </button>
       </div>
     );
   }

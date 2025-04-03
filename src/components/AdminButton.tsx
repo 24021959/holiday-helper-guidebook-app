@@ -9,12 +9,14 @@ const AdminButton: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   
   useEffect(() => {
+    // Check authentication status from localStorage
     const authStatus = localStorage.getItem("isAuthenticated");
     const userType = localStorage.getItem("userType");
+    const adminToken = localStorage.getItem("admin_token");
     
     if (authStatus === "true") {
       setIsAuthenticated(true);
-      setIsAdmin(userType === "admin" || localStorage.getItem("admin_token") !== null);
+      setIsAdmin(userType === "admin" || adminToken !== null);
     }
   }, []);
   
@@ -23,7 +25,7 @@ const AdminButton: React.FC = () => {
       if (isAdmin) {
         navigate("/admin");
       } else {
-        // Redirect utente normale ai propri dati o al menu
+        // Redirect regular user to their data or menu
         navigate("/menu");
       }
     } else {
