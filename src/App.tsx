@@ -16,7 +16,6 @@ import Storia from "@/pages/Storia";
 import SubMenu from "@/pages/SubMenu";
 import NotFound from "@/pages/NotFound";
 import ChatbotBubble from "@/components/ChatbotBubble";
-import Login from "./pages/Login";
 
 interface CustomPage {
   id: string;
@@ -293,7 +292,6 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
             
             <Route 
               path="/menu" 

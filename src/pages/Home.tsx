@@ -1,15 +1,44 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useState } from "react";
 import { Loader2, User, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+
+const Header = () => {
+  return (
+    <header className="bg-emerald-700 shadow-md py-4 px-6 text-white">
+      <div className="container mx-auto flex justify-center items-center">
+        <h1 className="text-2xl md:text-3xl font-bold">Locanda dell'Angelo</h1>
+      </div>
+    </header>
+  );
+};
+
+const Footer = () => {
+  return (
+    <footer className="bg-emerald-800 text-white py-6 px-4">
+      <div className="container mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-center">
+          <div className="mb-4 md:mb-0">
+            <p className="font-medium">Locanda dell'Angelo</p>
+            <p className="text-sm opacity-80">Via Roma 123, 12345 Città, Italia</p>
+          </div>
+          <div className="text-center md:text-right">
+            <p className="text-sm opacity-80">
+              © {new Date().getFullYear()} Locanda dell'Angelo - Tutti i diritti riservati
+            </p>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+};
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -70,11 +99,13 @@ const Home: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 flex flex-col">
-      <div className="flex-1 flex items-center justify-center p-6">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-teal-50 to-emerald-100">
+      <Header />
+      
+      <main className="flex-1 flex items-center justify-center p-6">
         <Card className="w-full max-w-md shadow-xl">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-emerald-700">LOCANDA DELL'ANGELO</CardTitle>
+            <CardTitle className="text-2xl font-bold text-emerald-700">BENVENUTO</CardTitle>
             <CardDescription>Accedi all'applicazione</CardDescription>
           </CardHeader>
           
@@ -193,13 +224,9 @@ const Home: React.FC = () => {
             </div>
           </CardFooter>
         </Card>
-      </div>
+      </main>
       
-      <footer className="bg-white p-4 shadow-inner">
-        <div className="max-w-7xl mx-auto text-center text-gray-500 text-sm">
-          © {new Date().getFullYear()} Locanda dell'Angelo - Tutti i diritti riservati
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
