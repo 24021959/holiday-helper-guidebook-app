@@ -11,6 +11,7 @@ import BackToMenu from "./components/BackToMenu";
 import Welcome from "./pages/Welcome";
 import Storia from "./pages/Storia";
 import Admin from "./pages/Admin";
+import Login from "./pages/Login";
 import PreviewPage from "./pages/PreviewPage";
 
 // Create placeholder pages for each menu item
@@ -61,6 +62,7 @@ const App = () => {
             <Route path="/info" element={<PlaceholderPage title="Info" />} />
             
             {/* Admin routes */}
+            <Route path="/login" element={<Login />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/preview/:pageSlug" element={<PreviewPage />} />
             

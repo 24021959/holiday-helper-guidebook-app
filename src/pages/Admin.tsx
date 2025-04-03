@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -25,28 +24,16 @@ const Admin: React.FC = () => {
     path: "",
     imageUrl: ""
   });
-  const [username, setUsername] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
   const navigate = useNavigate();
-
-  // Simulazione autenticazione (da sostituire con un vero sistema di autenticazione)
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Demo credentials
-    if (username === "admin" && password === "password") {
-      setIsAuthenticated(true);
-      localStorage.setItem("isAuthenticated", "true");
-      toast.success("Login effettuato con successo!");
-    } else {
-      toast.error("Credenziali non valide");
-    }
-  };
 
   // Controlla se l'utente è già autenticato
   useEffect(() => {
     const authStatus = localStorage.getItem("isAuthenticated");
     if (authStatus === "true") {
       setIsAuthenticated(true);
+    } else {
+      // Reindirizza alla pagina di login se non autenticato
+      navigate("/login");
     }
     
     // Carica le pagine dal localStorage
@@ -54,13 +41,14 @@ const Admin: React.FC = () => {
     if (savedPages) {
       setPages(JSON.parse(savedPages));
     }
-  }, []);
+  }, [navigate]);
 
   // Gestione logout
   const handleLogout = () => {
     setIsAuthenticated(false);
     localStorage.removeItem("isAuthenticated");
     toast.info("Logout effettuato");
+    navigate("/login");
   };
 
   // Salva una nuova pagina
@@ -100,38 +88,9 @@ const Admin: React.FC = () => {
     navigate(`/preview/${path}`);
   };
 
-  // Se l'utente non è autenticato, mostra il form di login
+  // Se c'è un problema di autenticazione, non mostriamo nulla durante il reindirizzamento
   if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 p-6 pt-20">
-        <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8">
-          <h1 className="text-2xl font-bold text-emerald-700 mb-6">Accesso Amministrazione</h1>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <Label htmlFor="username">Username</Label>
-              <Input 
-                id="username" 
-                type="text" 
-                value={username} 
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="admin"
-              />
-            </div>
-            <div>
-              <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password" 
-                type="password" 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="password"
-              />
-            </div>
-            <Button type="submit" className="w-full">Accedi</Button>
-          </form>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
