@@ -20,15 +20,16 @@ const Login: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Check demo credentials first for quick login in development
-      if (email === "user" && password === "password") {
+      // Controlliamo prima le credenziali demo
+      // Fix: Assicuriamoci che le credenziali demo vengano verificate con precisione
+      if (email.toLowerCase() === "user" && password === "password") {
         localStorage.setItem("isAuthenticated", "true");
         localStorage.setItem("userType", "regular");
         toast.success("Login utente effettuato con successo (modalità demo)!");
         navigate("/admin");
         setIsLoading(false);
         return;
-      } else if (email === "admin" && password === "password") {
+      } else if (email.toLowerCase() === "admin" && password === "password") {
         localStorage.setItem("isAuthenticated", "true");
         localStorage.setItem("userType", "admin");
         localStorage.setItem("admin_token", "demo_token");
@@ -38,7 +39,7 @@ const Login: React.FC = () => {
         return;
       }
       
-      // If not demo credentials, try to authenticate with Supabase Admin Users
+      // Se non sono credenziali demo, proviamo con Supabase Admin Users
       const { data, error } = await supabase.functions.invoke("admin_users_helpers", {
         body: { 
           action: "login_user", 
