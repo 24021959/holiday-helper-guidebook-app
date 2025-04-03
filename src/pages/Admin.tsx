@@ -11,6 +11,7 @@ import { Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";
+import { Json } from "@/integrations/supabase/types";
 
 export interface PageData {
   id: string;
@@ -21,7 +22,7 @@ export interface PageData {
   isSubmenu?: boolean;
   parentPath?: string | null;
   icon?: string;
-  listItems?: any[];
+  listItems?: any[] | null;
   listType?: string;
 }
 
@@ -70,7 +71,7 @@ const Admin: React.FC = () => {
             isSubmenu: page.is_submenu,
             parentPath: page.parent_path,
             icon: page.icon,
-            listItems: page.list_items,
+            listItems: Array.isArray(page.list_items) ? page.list_items : null,
             listType: page.list_type
           }));
           
@@ -113,11 +114,9 @@ const Admin: React.FC = () => {
   }, [navigate]);
   
   // Handler for page creation
-  const handlePageCreated = (newPage: PageData) => {
-    setPages([...pages, newPage]);
-    if (!newPage.isSubmenu) {
-      setParentPages([...parentPages, newPage]);
-    }
+  const handlePageCreated = (newPages: PageData[]) => {
+    setPages(newPages);
+    setParentPages(newPages.filter(page => !page.isSubmenu));
     toast.success("Pagina creata con successo");
   };
   
