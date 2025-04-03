@@ -35,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import Header from "@/components/Header";
 
 interface LocationItem {
   name: string;
@@ -50,10 +51,10 @@ interface PageData {
   path: string;
   imageUrl?: string;
   icon?: string;
-  mapsUrl?: string;
-  phoneNumber?: string;
   listType?: "locations" | "activities" | "restaurants";
   listItems?: LocationItem[];
+  headerColor?: string;
+  logoUrl?: string;
 }
 
 interface MenuIcon {
@@ -166,7 +167,9 @@ const Admin: React.FC = () => {
     phoneNumber: "",
     mapsUrl: ""
   });
-  
+  const [uploadedLogo, setUploadedLogo] = useState<string | null>(null);
+  const [headerColor, setHeaderColor] = useState<string>("bg-gradient-to-r from-teal-500 to-emerald-600");
+
   const navigate = useNavigate();
 
   const form = useForm({
@@ -207,8 +210,17 @@ const Admin: React.FC = () => {
     { color: "bg-teal-200", label: "Teal" },
     { color: "bg-red-200", label: "Rosso" }
   ];
-  
-  const [selectedColor, setSelectedColor] = useState("bg-blue-200");
+
+  const headerColorOptions = [
+    { value: "bg-gradient-to-r from-teal-500 to-emerald-600", label: "Teal/Emerald (Default)" },
+    { value: "bg-gradient-to-r from-blue-500 to-indigo-600", label: "Blue/Indigo" },
+    { value: "bg-gradient-to-r from-purple-500 to-pink-500", label: "Purple/Pink" },
+    { value: "bg-gradient-to-r from-red-500 to-orange-500", label: "Red/Orange" },
+    { value: "bg-gradient-to-r from-amber-400 to-yellow-500", label: "Amber/Yellow" },
+    { value: "bg-white", label: "White" },
+    { value: "bg-gray-800", label: "Dark Gray" },
+    { value: "bg-black", label: "Black" }
+  ];
 
   useEffect(() => {
     const authStatus = localStorage.getItem("isAuthenticated");
@@ -226,6 +238,13 @@ const Admin: React.FC = () => {
     const savedChatbotCode = localStorage.getItem("chatbotCode");
     if (savedChatbotCode) {
       setChatbotCode(savedChatbotCode);
+    }
+    
+    const savedHeaderSettings = localStorage.getItem("headerSettings");
+    if (savedHeaderSettings) {
+      const settings = JSON.parse(savedHeaderSettings);
+      if (settings.logoUrl) setUploadedLogo(settings.logoUrl);
+      if (settings.headerColor) setHeaderColor(settings.headerColor);
     }
   }, [navigate]);
 
@@ -422,6 +441,30 @@ const Admin: React.FC = () => {
     }
   };
 
+  const handleLogoUpload = (imageDataUrl: string) => {
+    setUploadedLogo(imageDataUrl);
+    
+    const headerSettings = {
+      logoUrl: imageDataUrl,
+      headerColor: headerColor
+    };
+    localStorage.setItem("headerSettings", JSON.stringify(headerSettings));
+    
+    toast.success("Logo caricato con successo");
+  };
+
+  const handleHeaderColorChange = (color: string) => {
+    setHeaderColor(color);
+    
+    const headerSettings = {
+      logoUrl: uploadedLogo,
+      headerColor: color
+    };
+    localStorage.setItem("headerSettings", JSON.stringify(headerSettings));
+    
+    toast.success("Colore dell'header aggiornato");
+  };
+
   if (!isAuthenticated) {
     return null;
   }
@@ -439,6 +482,7 @@ const Admin: React.FC = () => {
           <TabsList className="mb-4">
             <TabsTrigger value="create">Crea Pagina</TabsTrigger>
             <TabsTrigger value="manage">Gestisci Pagine</TabsTrigger>
+            <TabsTrigger value="header">Personalizza Header</TabsTrigger>
             <TabsTrigger value="chatbot">Chatbot</TabsTrigger>
           </TabsList>
           
@@ -534,40 +578,6 @@ const Admin: React.FC = () => {
                   onChange={(e) => setNewPage({...newPage, content: e.target.value})}
                   placeholder="Inserisci il contenuto della pagina qui..."
                 />
-              </div>
-              
-              <div>
-                <Label htmlFor="mapsUrl">Link a Google Maps</Label>
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-gray-500" />
-                  <Input 
-                    id="mapsUrl" 
-                    value={newPage.mapsUrl || ""} 
-                    onChange={(e) => setNewPage({...newPage, mapsUrl: e.target.value})}
-                    placeholder="https://maps.google.com/?q=..."
-                    className="flex-1"
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Inserisci il link a Google Maps per indicare la posizione
-                </p>
-              </div>
-              
-              <div>
-                <Label htmlFor="phoneNumber">Numero di Telefono</Label>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-gray-500" />
-                  <Input 
-                    id="phoneNumber" 
-                    value={newPage.phoneNumber || ""} 
-                    onChange={(e) => setNewPage({...newPage, phoneNumber: e.target.value})}
-                    placeholder="+39 123 456 7890"
-                    className="flex-1"
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Inserisci il numero di telefono completo di prefisso internazionale (es. +39)
-                </p>
               </div>
               
               <div className="border-t pt-4 mt-4">
@@ -758,6 +768,86 @@ const Admin: React.FC = () => {
                 ))}
               </div>
             )}
+          </TabsContent>
+          
+          <TabsContent value="header">
+            <h2 className="text-xl font-medium text-emerald-600 mb-4">Personalizza Header</h2>
+            
+            <div className="space-y-6">
+              <div className="p-4 border rounded-lg bg-gray-50">
+                <h3 className="text-md font-medium text-emerald-700 mb-4">Logo della struttura</h3>
+                <ImageUploader onImageUpload={handleLogoUpload} />
+                
+                {uploadedLogo && (
+                  <div className="mt-4 relative">
+                    <div className="p-4 bg-gray-100 rounded-md inline-block">
+                      <img 
+                        src={uploadedLogo} 
+                        alt="Logo Anteprima" 
+                        className="h-16 object-contain" 
+                      />
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={() => {
+                        setUploadedLogo(null);
+                        const headerSettings = {
+                          logoUrl: null,
+                          headerColor: headerColor
+                        };
+                        localStorage.setItem("headerSettings", JSON.stringify(headerSettings));
+                        toast.info("Logo rimosso");
+                      }}
+                    >
+                      Rimuovi Logo
+                    </Button>
+                  </div>
+                )}
+              </div>
+              
+              <div className="p-4 border rounded-lg bg-gray-50">
+                <h3 className="text-md font-medium text-emerald-700 mb-4">Colore dell'header</h3>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {headerColorOptions.map((option) => (
+                    <div 
+                      key={option.value}
+                      className={`cursor-pointer rounded-lg transition-all ${
+                        headerColor === option.value ? 'ring-2 ring-emerald-500' : ''
+                      }`}
+                      onClick={() => handleHeaderColorChange(option.value)}
+                    >
+                      <div 
+                        className={`${option.value} h-16 rounded-lg flex items-center justify-center ${
+                          option.value === "bg-white" ? "border" : ""
+                        }`}
+                      >
+                        <span className={`text-sm font-medium ${
+                          option.value === "bg-white" || option.value === "bg-gradient-to-r from-amber-400 to-yellow-500" 
+                            ? "text-gray-800" 
+                            : "text-white"
+                        }`}>
+                          {option.label}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="p-4 border rounded-lg">
+                <h3 className="text-md font-medium text-emerald-700 mb-4">Anteprima Header</h3>
+                <div className="border rounded-lg overflow-hidden">
+                  <Header 
+                    backgroundColor={headerColor} 
+                    logoUrl={uploadedLogo || undefined}
+                    showAdminButton={false} 
+                  />
+                </div>
+              </div>
+            </div>
           </TabsContent>
           
           <TabsContent value="chatbot">

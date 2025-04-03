@@ -15,6 +15,7 @@ import Admin from "./pages/Admin";
 import Login from "./pages/Login";
 import PreviewPage from "./pages/PreviewPage";
 import ChatbotBubble from "./components/ChatbotBubble";
+import Header from "./components/Header";
 
 interface CustomPage {
   id: string;
@@ -24,8 +25,22 @@ interface CustomPage {
   imageUrl?: string;
 }
 
+interface HeaderSettings {
+  logoUrl?: string | null;
+  headerColor?: string;
+}
+
 // Create placeholder pages for each menu item
 const PlaceholderPage = ({ title }: { title: string }) => {
+  const [headerSettings, setHeaderSettings] = useState<HeaderSettings>({});
+  
+  useEffect(() => {
+    const savedHeaderSettings = localStorage.getItem("headerSettings");
+    if (savedHeaderSettings) {
+      setHeaderSettings(JSON.parse(savedHeaderSettings));
+    }
+  }, []);
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 p-6 pt-20">
       <BackToMenu />
@@ -41,6 +56,15 @@ const PlaceholderPage = ({ title }: { title: string }) => {
 
 // Componente per pagine dinamiche
 const DynamicPage = ({ pageData }: { pageData: CustomPage }) => {
+  const [headerSettings, setHeaderSettings] = useState<HeaderSettings>({});
+  
+  useEffect(() => {
+    const savedHeaderSettings = localStorage.getItem("headerSettings");
+    if (savedHeaderSettings) {
+      setHeaderSettings(JSON.parse(savedHeaderSettings));
+    }
+  }, []);
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 p-6 pt-20">
       <BackToMenu />
@@ -75,9 +99,10 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const [customPages, setCustomPages] = useState<CustomPage[]>([]);
+  const [headerSettings, setHeaderSettings] = useState<HeaderSettings>({});
   const hasSelectedLanguage = localStorage.getItem("selectedLanguage") !== null;
   
-  // Carica le pagine personalizzate dal localStorage
+  // Carica le pagine personalizzate e le impostazioni dell'header dal localStorage
   useEffect(() => {
     const savedPages = localStorage.getItem("customPages");
     if (savedPages) {
@@ -85,6 +110,15 @@ const App = () => {
         setCustomPages(JSON.parse(savedPages));
       } catch (error) {
         console.error("Errore nel caricamento delle pagine personalizzate:", error);
+      }
+    }
+    
+    const savedHeaderSettings = localStorage.getItem("headerSettings");
+    if (savedHeaderSettings) {
+      try {
+        setHeaderSettings(JSON.parse(savedHeaderSettings));
+      } catch (error) {
+        console.error("Errore nel caricamento delle impostazioni header:", error);
       }
     }
   }, []);

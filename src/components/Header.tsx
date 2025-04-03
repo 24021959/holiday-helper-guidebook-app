@@ -4,13 +4,20 @@ import AdminButton from "./AdminButton";
 
 interface HeaderProps {
   backgroundImage?: string;
+  backgroundColor?: string;
+  logoUrl?: string;
   showAdminButton?: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ backgroundImage, showAdminButton = true }) => {
+const Header: React.FC<HeaderProps> = ({ 
+  backgroundImage, 
+  backgroundColor = "bg-gradient-to-r from-teal-500 to-emerald-600",
+  logoUrl,
+  showAdminButton = true 
+}) => {
   return (
     <div
-      className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 py-12 px-4 text-center shadow-lg relative overflow-hidden"
+      className={`w-full ${!backgroundImage ? backgroundColor : ''} py-12 px-4 text-center shadow-lg relative overflow-hidden`}
       style={
         backgroundImage
           ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: "cover", backgroundPosition: "center" }
@@ -31,9 +38,17 @@ const Header: React.FC<HeaderProps> = ({ backgroundImage, showAdminButton = true
         <div className="absolute top-1/2 left-1/4 w-12 h-12 rounded-full bg-white"></div>
       </div>
       
-      {/* Welcome text */}
-      <div className="relative z-10 flex justify-center">
-        <h1 className="text-4xl md:text-5xl font-bold text-white">Welcome</h1>
+      {/* Welcome text or logo */}
+      <div className="relative z-10 flex flex-col items-center justify-center">
+        {logoUrl ? (
+          <img 
+            src={logoUrl} 
+            alt="Logo" 
+            className="h-16 md:h-20 mb-4 object-contain"
+          />
+        ) : (
+          <h1 className="text-4xl md:text-5xl font-bold text-white">Welcome</h1>
+        )}
       </div>
     </div>
   );
