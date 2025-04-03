@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import IconNav from "@/components/IconNav";
 import Header from "@/components/Header";
@@ -22,7 +23,7 @@ const Menu: React.FC = () => {
     // Check authentication first
     const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
     if (!isAuthenticated) {
-      navigate("/login");
+      navigate("/");
       return;
     }
     
@@ -68,7 +69,7 @@ const Menu: React.FC = () => {
     localStorage.removeItem("userType");
     localStorage.removeItem("admin_token");
     localStorage.removeItem("admin_user");
-    navigate("/login");
+    navigate("/");
   };
   
   // Component for footer with logo
