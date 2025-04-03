@@ -23,10 +23,10 @@ const AdminButton: React.FC = () => {
   const handleClick = () => {
     if (isAuthenticated) {
       if (isAdmin) {
-        // Changed routing: Admin user goes to menu page
+        // Admin user goes to menu page
         navigate("/menu");
       } else {
-        // Changed routing: Regular user goes to admin panel
+        // Regular user goes to admin panel
         navigate("/admin");
       }
     } else {

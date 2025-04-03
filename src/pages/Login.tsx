@@ -20,14 +20,12 @@ const Login: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Controlliamo prima le credenziali demo
-      // Fix: Assicuriamoci che le credenziali demo vengano verificate con precisione
+      // Verifica prima le credenziali demo semplici
       if (email.toLowerCase() === "user" && password === "password") {
         localStorage.setItem("isAuthenticated", "true");
         localStorage.setItem("userType", "regular");
         toast.success("Login utente effettuato con successo (modalità demo)!");
         navigate("/admin");
-        setIsLoading(false);
         return;
       } else if (email.toLowerCase() === "admin" && password === "password") {
         localStorage.setItem("isAuthenticated", "true");
@@ -35,7 +33,6 @@ const Login: React.FC = () => {
         localStorage.setItem("admin_token", "demo_token");
         toast.success("Login admin effettuato con successo (modalità demo)!");
         navigate("/menu");
-        setIsLoading(false);
         return;
       }
       
