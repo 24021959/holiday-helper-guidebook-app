@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +7,7 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BackToMenu from "@/components/BackToMenu";
+import ChatbotBubble from "@/components/ChatbotBubble";
 
 import Home from "./pages/Home";
 import Menu from "@/pages/Menu";
@@ -16,7 +16,7 @@ import Welcome from "@/pages/Welcome";
 import Storia from "@/pages/Storia";
 import SubMenu from "@/pages/SubMenu";
 import NotFound from "@/pages/NotFound";
-import ChatbotBubble from "@/components/ChatbotBubble";
+import Index from "@/pages/Index";
 
 interface CustomPage {
   id: string;
@@ -312,19 +312,7 @@ const App = () => {
             
             <Route path="/welcome" element={<Welcome />} />
             <Route path="/storia" element={<Storia />} />
-            <Route path="/servizi-hotel" element={<PlaceholderPage title="Servizi hotel" />} />
-            <Route path="/servizi-esterni" element={<PlaceholderPage title="Servizi esterni" />} />
-            <Route path="/ristorante" element={<PlaceholderPage title="Ristorante" />} />
-            <Route path="/scopri-territorio" element={<PlaceholderPage title="Scopri il territorio" />} />
-            <Route path="/location" element={<PlaceholderPage title="Posizione" />} />
-            <Route path="/wifi" element={<PlaceholderPage title="Wifi" />} />
-            <Route path="/activities" element={<PlaceholderPage title="Attività" />} />
-            <Route path="/transport" element={<PlaceholderPage title="Trasporti" />} />
-            <Route path="/shopping" element={<PlaceholderPage title="Shopping" />} />
-            <Route path="/contacts" element={<PlaceholderPage title="Contatti" />} />
-            <Route path="/events" element={<PlaceholderPage title="Eventi" />} />
-            <Route path="/gallery" element={<PlaceholderPage title="Galleria" />} />
-            <Route path="/info" element={<PlaceholderPage title="Info" />} />
+            <Route path="/index" element={<Index />} />
             
             <Route path="/submenu/:parentPath" element={<SubMenu />} />
             

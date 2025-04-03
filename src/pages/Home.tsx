@@ -8,37 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, User, Shield } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-
-const Header = () => {
-  return (
-    <header className="bg-emerald-700 shadow-md py-4 px-6 text-white">
-      <div className="container mx-auto flex justify-center items-center">
-        <h1 className="text-2xl md:text-3xl font-bold">Locanda dell'Angelo</h1>
-      </div>
-    </header>
-  );
-};
-
-const Footer = () => {
-  return (
-    <footer className="bg-emerald-800 text-white py-6 px-4">
-      <div className="container mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-center">
-          <div className="mb-4 md:mb-0">
-            <p className="font-medium">Locanda dell'Angelo</p>
-            <p className="text-sm opacity-80">Via Roma 123, 12345 Città, Italia</p>
-          </div>
-          <div className="text-center md:text-right">
-            <p className="text-sm opacity-80">
-              © {new Date().getFullYear()} Locanda dell'Angelo - Tutti i diritti riservati
-            </p>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-};
+import AppHeader from "@/components/AppHeader";
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -100,7 +70,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-teal-50 to-emerald-100">
-      <Header />
+      <AppHeader />
       
       <main className="flex-1 flex items-center justify-center p-6">
         <Card className="w-full max-w-md shadow-xl">
@@ -226,7 +196,23 @@ const Home: React.FC = () => {
         </Card>
       </main>
       
-      <Footer />
+      <footer className="bg-emerald-800 text-white py-4 px-4">
+        <div className="container mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="mb-4 md:mb-0">
+              <p className="font-medium">Locanda dell'Angelo</p>
+              <p className="text-sm opacity-80">© {new Date().getFullYear()} - Tutti i diritti riservati</p>
+            </div>
+            <div className="flex items-center justify-center">
+              <img 
+                src="/lovable-uploads/f001bbd0-3515-4169-944c-9a037d5ddae8.png" 
+                alt="EVA AI Technologies Logo" 
+                className="h-8 md:h-10" 
+              />
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
