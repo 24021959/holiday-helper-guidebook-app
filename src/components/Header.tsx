@@ -1,53 +1,65 @@
 
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import AdminButton from "./AdminButton";
 
 interface HeaderProps {
-  logoUrl?: string;
+  backgroundImage?: string;
   backgroundColor?: string;
+  logoUrl?: string;
+  showAdminButton?: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
-  logoUrl, 
-  backgroundColor = "#10b981" 
+  backgroundImage, 
+  backgroundColor = "bg-gradient-to-r from-teal-500 to-emerald-600",
+  logoUrl,
+  showAdminButton = true 
 }) => {
-  const navigate = useNavigate();
+  // Determina se usare testo bianco o scuro in base al colore di sfondo
+  const isLightBackground = 
+    backgroundColor === "bg-white" || 
+    backgroundColor === "bg-gradient-to-r from-amber-400 to-yellow-500";
   
-  const handleLogoClick = () => {
-    navigate("/menu");
-  };
-  
-  const headerStyle = {
-    backgroundColor: backgroundColor || "#10b981"
-  };
+  const textColorClass = isLightBackground ? "text-gray-800" : "text-white";
 
   return (
-    <header 
-      className="fixed top-0 left-0 w-full z-10 shadow-md py-2 px-4 flex items-center justify-between"
-      style={headerStyle}
+    <div
+      className={`w-full ${!backgroundImage ? backgroundColor : ''} py-5 px-4 text-center shadow-lg relative overflow-hidden`}
+      style={
+        backgroundImage
+          ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: "cover", backgroundPosition: "center" }
+          : {}
+      }
     >
-      <div className="flex items-center">
+      {/* Admin button in the top right corner */}
+      {showAdminButton && (
+        <div className="absolute top-3 right-4 z-20">
+          <AdminButton />
+        </div>
+      )}
+      
+      {/* Elementi decorativi (solo per header colorati, non per sfondo bianco) */}
+      {backgroundColor !== "bg-white" && (
+        <div className="absolute top-0 left-0 w-full h-full opacity-20">
+          <div className="absolute top-6 left-6 w-16 h-16 rounded-full bg-white"></div>
+          <div className="absolute bottom-8 right-8 w-24 h-24 rounded-full bg-white"></div>
+          <div className="absolute top-1/2 left-1/4 w-12 h-12 rounded-full bg-white"></div>
+        </div>
+      )}
+      
+      {/* Welcome text or logo */}
+      <div className="relative z-10 flex flex-col items-center justify-center">
         {logoUrl ? (
           <img 
             src={logoUrl} 
             alt="Logo" 
-            className="h-10 cursor-pointer"
-            onClick={handleLogoClick}
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = "https://via.placeholder.com/150x50?text=Logo";
-            }}
+            className="h-16 md:h-20 object-contain"
           />
         ) : (
-          <div 
-            className="text-white font-semibold text-lg cursor-pointer"
-            onClick={handleLogoClick}
-          >
-            Hotel App
-          </div>
+          <h1 className={`text-2xl md:text-3xl font-bold ${textColorClass}`}>LOCANDA DELL'ANGELO</h1>
         )}
       </div>
-    </header>
+    </div>
   );
 };
 

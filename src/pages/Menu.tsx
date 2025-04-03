@@ -1,12 +1,11 @@
 
 import React, { useEffect, useState } from "react";
 import IconNav from "@/components/IconNav";
+import AdminButton from "@/components/AdminButton";
 import Header from "@/components/Header";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
 
 interface HeaderSettings {
   logoUrl?: string | null;
@@ -20,13 +19,6 @@ const Menu: React.FC = () => {
   const navigate = useNavigate();
   
   useEffect(() => {
-    // Check authentication first
-    const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
-    if (!isAuthenticated) {
-      navigate("/");
-      return;
-    }
-    
     const fetchHeaderSettings = async () => {
       try {
         const { data, error } = await supabase
@@ -62,15 +54,7 @@ const Menu: React.FC = () => {
     };
     
     fetchHeaderSettings();
-  }, [navigate]);
-  
-  const handleLogout = () => {
-    localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem("userType");
-    localStorage.removeItem("admin_token");
-    localStorage.removeItem("admin_user");
-    navigate("/");
-  };
+  }, []);
   
   // Component for footer with logo
   const Footer = () => (
@@ -112,26 +96,19 @@ const Menu: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen">
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <h1 className="text-xl font-semibold text-gray-900">Menu</h1>
-            <Button 
-              variant="outline"
-              onClick={handleLogout}
-              className="flex items-center gap-2"
-            >
-              <LogOut size={16} />
-              Logout
-            </Button>
-          </div>
-        </div>
-      </div>
+      {/* Header con le impostazioni personalizzate */}
+      <Header 
+        logoUrl={headerSettings.logoUrl || undefined}
+        backgroundColor={headerSettings.headerColor}
+        showAdminButton={true}
+      />
       
+      {/* Contenitore principale con le icone che prende tutto lo spazio disponibile */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <IconNav parentPath={null} />
       </div>
       
+      {/* Footer con logo */}
       <Footer />
     </div>
   );

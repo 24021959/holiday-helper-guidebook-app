@@ -1,11 +1,37 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { Settings } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-// This component is no longer used for login access
-// It's kept as a placeholder in case we need it for other functionality later
 const AdminButton: React.FC = () => {
-  // Return null since we don't want this button displayed anymore
-  return null;
+  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
+  useEffect(() => {
+    const authStatus = localStorage.getItem("isAuthenticated");
+    if (authStatus === "true") {
+      setIsAuthenticated(true);
+    }
+  }, []);
+  
+  const handleClick = () => {
+    if (isAuthenticated) {
+      navigate("/admin");
+    } else {
+      navigate("/login");
+    }
+  };
+  
+  return (
+    <button
+      onClick={handleClick}
+      className="text-gray-600 hover:text-emerald-600 transition-colors"
+      aria-label="Admin Panel"
+      title={isAuthenticated ? "Pannello amministrazione" : "Accedi"}
+    >
+      <Settings size={20} />
+    </button>
+  );
 };
 
 export default AdminButton;

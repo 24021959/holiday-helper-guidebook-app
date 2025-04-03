@@ -10,8 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";
-import { Json } from "@/integrations/supabase/types";
 
 export interface PageData {
   id: string;
@@ -21,9 +19,6 @@ export interface PageData {
   imageUrl?: string;
   isSubmenu?: boolean;
   parentPath?: string | null;
-  icon?: string;
-  listItems?: any[] | null;
-  listType?: string;
 }
 
 export interface UserData {
@@ -43,96 +38,35 @@ export interface LocationItem {
 const Admin: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [pages, setPages] = useState<PageData[]>([]);
-  const [parentPages, setParentPages] = useState<PageData[]>([]);
-  const [uploadedLogo, setUploadedLogo] = useState<string | null>(null);
-  const [headerColor, setHeaderColor] = useState<string>("bg-gradient-to-r from-teal-500 to-emerald-600");
-  const [chatbotCode, setChatbotCode] = useState<string>("");
-  const keywordToIconMap = useKeywordToIconMap();
   const navigate = useNavigate();
   
-  useEffect(() => {
-    const fetchPages = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('custom_pages')
-          .select('*');
-        
-        if (error) throw error;
-        
-        if (data) {
-          const formattedPages: PageData[] = data.map(page => ({
-            id: page.id,
-            title: page.title,
-            content: page.content,
-            path: page.path,
-            imageUrl: page.image_url,
-            isSubmenu: page.is_submenu,
-            parentPath: page.parent_path,
-            icon: page.icon,
-            listItems: page.list_items ? page.list_items as any[] : [],
-            listType: page.list_type
-          }));
-          
-          setPages(formattedPages);
-          setParentPages(formattedPages.filter(page => !page.isSubmenu));
-        }
-      } catch (error) {
-        console.error("Errore nel caricamento delle pagine:", error);
-        toast.error("Impossibile caricare le pagine");
-      }
-    };
-
-    if (isAuthenticated) {
-      fetchPages();
-    }
-  }, [isAuthenticated]);
-  
+  // Check if user is authenticated
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // For this demo, we'll use localStorage to check if admin is logged in
         const adminToken = localStorage.getItem("admin_token");
-        const userType = localStorage.getItem("userType");
         
-        if (!adminToken && userType !== "admin") {
-          setAuthError("Accesso negato. Devi essere un amministratore per visualizzare questa pagina.");
-          setTimeout(() => {
-            navigate("/login");
-          }, 2000);
+        if (!adminToken) {
+          navigate("/login");
           return;
         }
         
+        // Simple validation, could be enhanced with supabase auth
         setIsAuthenticated(true);
         setIsLoading(false);
       } catch (error) {
         console.error("Auth check failed:", error);
-        setAuthError("Errore durante la verifica dell'autenticazione.");
-        setTimeout(() => {
-          navigate("/login");
-        }, 2000);
+        navigate("/login");
       }
     };
     
     checkAuth();
   }, [navigate]);
   
-  const handlePageCreated = (newPages: PageData[]) => {
-    setPages(newPages);
-    setParentPages(newPages.filter(page => !page.isSubmenu));
-    toast.success("Pagina creata con successo");
-  };
-  
-  const handlePagesUpdate = (updatedPages: PageData[]) => {
-    setPages(updatedPages);
-    setParentPages(updatedPages.filter(page => !page.isSubmenu));
-  };
-  
   const handleLogout = () => {
     localStorage.removeItem("admin_token");
     localStorage.removeItem("admin_user");
-    localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem("userType");
     toast.success("Logout eseguito con successo");
     navigate("/login");
   };
@@ -141,23 +75,6 @@ const Admin: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
-      </div>
-    );
-  }
-  
-  if (authError) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-          <strong className="font-bold">Errore! </strong>
-          <span className="block sm:inline">{authError}</span>
-        </div>
-        <button 
-          onClick={() => navigate("/login")} 
-          className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors"
-        >
-          Torna al login
-        </button>
       </div>
     );
   }
@@ -219,38 +136,19 @@ const Admin: React.FC = () => {
           
           <div className="bg-white shadow-md rounded-md p-6 border">
             <TabsContent value="create-page">
-              <CreatePageForm 
-                parentPages={parentPages} 
-                onPageCreated={handlePageCreated}
-                keywordToIconMap={keywordToIconMap}
-              />
+              <CreatePageForm />
             </TabsContent>
             
             <TabsContent value="manage-pages">
-              <ManagePagesView 
-                pages={pages} 
-                onPagesUpdate={handlePagesUpdate} 
-              />
+              <ManagePagesView />
             </TabsContent>
             
             <TabsContent value="header-settings">
-              <HeaderSettingsView 
-                uploadedLogo={uploadedLogo}
-                setUploadedLogo={setUploadedLogo}
-                headerColor={headerColor}
-                setHeaderColor={setHeaderColor}
-              />
+              <HeaderSettingsView />
             </TabsContent>
             
             <TabsContent value="chatbot-settings">
-              <ChatbotSettingsView 
-                chatbotCode={chatbotCode}
-                setChatbotCode={setChatbotCode}
-                onSave={() => {
-                  toast.success("Impostazioni chatbot salvate");
-                  return Promise.resolve();
-                }}
-              />
+              <ChatbotSettingsView />
             </TabsContent>
             
             <TabsContent value="user-management">

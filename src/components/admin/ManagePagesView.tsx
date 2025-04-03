@@ -87,11 +87,6 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
       case 'Coffee': return <Coffee className="w-6 h-6" />;
       case 'Home': return <Home className="w-6 h-6" />;
       case 'Bike': return <Bike className="w-6 h-6" />;
-      case 'Users': return <Users className="w-6 h-6" />;
-      case 'Building': return <Building className="w-6 h-6" />;
-      case 'Globe': return <Globe className="w-6 h-6" />;
-      case 'Music': return <Music className="w-6 h-6" />;
-      case 'Camera': return <Camera className="w-6 h-6" />;
       default: return <FileText className="w-6 h-6" />;
     }
   };
@@ -118,7 +113,7 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
                       Sottopagina di: {page.parentPath}
                     </p>
                   )}
-                  {page.listItems && page.listItems.length > 0 && (
+                  {page.listItems && (
                     <p className="text-xs text-emerald-600 mt-1">
                       {page.listItems.length} {
                         page.listType === "restaurants" ? "ristoranti" :
