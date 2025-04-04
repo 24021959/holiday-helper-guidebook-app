@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -88,7 +87,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
     }
   }, [isSubmenu, parentPath, form]);
 
-  // Update path based on title
+  // Automatically update path based on title
   useEffect(() => {
     const title = form.watch("title");
     if (title) {
@@ -279,9 +278,9 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
             name="path"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Percorso URL</FormLabel>
+                <FormLabel>Percorso URL (generato automaticamente)</FormLabel>
                 <FormControl>
-                  <Input placeholder="percorso-url" {...field} />
+                  <Input placeholder="percorso-url" readOnly className="bg-gray-100" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
