@@ -6,14 +6,18 @@ interface HeaderProps {
   backgroundImage?: string;
   backgroundColor?: string;
   logoUrl?: string;
+  logoPosition?: "center" | "left";
   showAdminButton?: boolean;
+  appTitle?: string;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
   backgroundImage, 
   backgroundColor = "bg-gradient-to-r from-teal-500 to-emerald-600",
   logoUrl,
-  showAdminButton = true 
+  logoPosition = "center",
+  showAdminButton = true,
+  appTitle = "LOCANDA DELL'ANGELO"
 }) => {
   // Determina se usare testo bianco o scuro in base al colore di sfondo
   const isLightBackground = 
@@ -24,7 +28,7 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <div
-      className={`w-full ${!backgroundImage ? backgroundColor : ''} py-5 px-4 text-center shadow-lg relative overflow-hidden`}
+      className={`w-full ${!backgroundImage ? backgroundColor : ''} py-5 px-4 shadow-lg relative overflow-hidden`}
       style={
         backgroundImage
           ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: "cover", backgroundPosition: "center" }
@@ -48,15 +52,20 @@ const Header: React.FC<HeaderProps> = ({
       )}
       
       {/* Welcome text or logo */}
-      <div className="relative z-10 flex flex-col items-center justify-center">
+      <div className={`relative z-10 flex ${logoPosition === "left" ? "justify-start" : "justify-center"} items-center`}>
         {logoUrl ? (
-          <img 
-            src={logoUrl} 
-            alt="Logo" 
-            className="h-16 md:h-20 object-contain"
-          />
+          <div className="flex items-center">
+            <img 
+              src={logoUrl} 
+              alt="Logo" 
+              className="h-10 md:h-12 object-contain"
+            />
+            {appTitle && logoPosition === "left" && (
+              <h1 className={`ml-3 text-xl md:text-2xl font-bold ${textColorClass}`}>{appTitle}</h1>
+            )}
+          </div>
         ) : (
-          <h1 className={`text-2xl md:text-3xl font-bold ${textColorClass}`}>LOCANDA DELL'ANGELO</h1>
+          <h1 className={`text-2xl md:text-3xl font-bold ${textColorClass}`}>{appTitle}</h1>
         )}
       </div>
     </div>
