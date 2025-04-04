@@ -23,9 +23,10 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
     try {
       setIsSaving(true);
       
-      // Validate the chatbot code
-      if (chatbotCode && !chatbotCode.includes('script')) {
+      // Validate the chatbot code - ensure it contains a script tag
+      if (!chatbotCode.includes('<script')) {
         toast.error("Il codice inserito non sembra essere un tag script valido");
+        setIsSaving(false);
         return;
       }
       
@@ -69,6 +70,13 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
             
             document.head.appendChild(script);
             console.log("Chatbot reinizializzato dopo il salvataggio");
+            
+            // Create container if it doesn't exist
+            if (!document.getElementById("chatbot-container")) {
+              const chatbotContainer = document.createElement("div");
+              chatbotContainer.id = "chatbot-container";
+              document.body.appendChild(chatbotContainer);
+            }
           }
         }, 500);
       }

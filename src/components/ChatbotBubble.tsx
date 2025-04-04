@@ -17,60 +17,84 @@ const ChatbotBubble: React.FC = () => {
     setIsVisible(!isAdminPage);
     
     // Only load and initialize the chatbot if we're not on an admin page
-    if (!isAdminPage && !chatbotInitialized.current) {
+    if (!isAdminPage) {
       loadChatbotSettings();
+    } else if (chatbotInitialized.current) {
+      // If we're navigating to an admin page and the chatbot was previously initialized
+      // Remove the script and container
+      cleanupChatbot();
+      chatbotInitialized.current = false;
     }
   }, [location.pathname]);
   
+  const cleanupChatbot = () => {
+    // Remove any existing chatbot script
+    const existingScript = document.getElementById("chatbot-script");
+    if (existingScript) {
+      existingScript.remove();
+    }
+    
+    // Clean up any existing container
+    const existingContainer = document.getElementById("chatbot-container");
+    if (existingContainer) {
+      existingContainer.innerHTML = '';
+    }
+  };
+  
   const loadChatbotSettings = async () => {
     try {
-      // First try to get from Supabase (most up-to-date)
-      const { data, error } = await supabase
-        .from('chatbot_settings')
-        .select('code')
-        .limit(1)
-        .single();
-        
-      if (error && error.code !== 'PGRST116') {
-        console.warn("Errore nel caricamento delle impostazioni chatbot:", error);
+      if (chatbotInitialized.current) {
+        return; // Avoid re-initializing if already done
       }
       
-      let code = data?.code;
+      // First try to get from localStorage (faster)
+      let code = localStorage.getItem("chatbotCode");
       
-      // Fallback to localStorage if Supabase fails
+      // If not in localStorage, try Supabase
       if (!code) {
-        code = localStorage.getItem("chatbotCode");
+        const { data, error } = await supabase
+          .from('chatbot_settings')
+          .select('code')
+          .eq('id', 1)
+          .maybeSingle();
+          
+        if (error && error.code !== 'PGRST116') {
+          console.warn("Errore nel caricamento delle impostazioni chatbot:", error);
+        }
+        
+        code = data?.code || null;
+        
+        // Save to localStorage for future use
+        if (code) {
+          localStorage.setItem("chatbotCode", code);
+        }
       }
       
       setChatbotCode(code);
       
-      if (code) {
-        initializeChatbot(code);
+      if (code && code.includes('<script')) {
+        cleanupChatbot(); // Clean up any existing chatbot before initializing
+        setTimeout(() => initializeChatbot(code), 100);
       } else {
-        // If no code is configured, load the default chatbot
-        initializeDefaultChatbot();
+        // If no valid code is configured, load the default chatbot
+        cleanupChatbot();
+        setTimeout(() => initializeDefaultChatbot(), 100);
       }
     } catch (error) {
       console.error("Errore nel caricamento delle impostazioni chatbot:", error);
       // Fallback to default chatbot
-      initializeDefaultChatbot();
+      cleanupChatbot();
+      setTimeout(() => initializeDefaultChatbot(), 100);
     }
   };
   
   const initializeChatbot = (code: string) => {
     try {
-      // Remove any existing chatbot script
-      const existingScript = document.getElementById("chatbot-script");
-      if (existingScript) {
-        existingScript.remove();
-      }
+      // Clean up first
+      cleanupChatbot();
       
-      // Clean up any existing container
-      const existingContainer = document.getElementById("chatbot-container");
-      if (existingContainer) {
-        existingContainer.innerHTML = '';
-      } else {
-        // Create container if it doesn't exist
+      // Create container if it doesn't exist
+      if (!document.getElementById("chatbot-container")) {
         const chatbotContainer = document.createElement("div");
         chatbotContainer.id = "chatbot-container";
         document.body.appendChild(chatbotContainer);
@@ -103,15 +127,21 @@ const ChatbotBubble: React.FC = () => {
     } catch (error) {
       console.error("Errore nell'inizializzazione del chatbot:", error);
       toast.error("Errore nell'inizializzazione del chatbot");
+      // Fallback to default
+      initializeDefaultChatbot();
     }
   };
   
   const initializeDefaultChatbot = () => {
     try {
-      // Remove any existing script
-      const existingScript = document.getElementById("chatbot-script");
-      if (existingScript) {
-        existingScript.remove();
+      // Clean up first
+      cleanupChatbot();
+      
+      // Create container if it doesn't exist
+      if (!document.getElementById("chatbot-container")) {
+        const chatbotContainer = document.createElement("div");
+        chatbotContainer.id = "chatbot-container";
+        document.body.appendChild(chatbotContainer);
       }
       
       // Set up default script
@@ -126,13 +156,6 @@ const ChatbotBubble: React.FC = () => {
       document.head.appendChild(script);
       chatbotInitialized.current = true;
       console.log("Script del chatbot predefinito aggiunto");
-      
-      // Ensure container exists
-      if (!document.getElementById("chatbot-container")) {
-        const chatbotContainer = document.createElement("div");
-        chatbotContainer.id = "chatbot-container";
-        document.body.appendChild(chatbotContainer);
-      }
     } catch (error) {
       console.error("Errore nell'inizializzazione del chatbot predefinito:", error);
     }
@@ -144,7 +167,17 @@ const ChatbotBubble: React.FC = () => {
     try {
       // Try multiple approaches to open the chatbot
       
-      // 1. Try calling global methods if they exist
+      // 1. Click on any chatbot UI elements that might be present
+      const buttons = document.querySelectorAll('button[aria-label*="chat"], div[class*="chat-button"], div[class*="chatbot"]');
+      for (const button of Array.from(buttons)) {
+        if (button instanceof HTMLElement) {
+          console.log("Elemento chatbot trovato, tentativo di apertura:", button);
+          button.click();
+          return;
+        }
+      }
+      
+      // 2. Try calling global methods if they exist
       if (window.ChatbotComponent?.open) {
         window.ChatbotComponent.open();
         return;
@@ -160,43 +193,31 @@ const ChatbotBubble: React.FC = () => {
         return;
       }
       
-      // 2. Emit global event
+      // 3. Emit global event
       const openEvent = new CustomEvent("open-chatbot");
       window.dispatchEvent(openEvent);
       
-      // 3. Try to find and click chatbot elements
-      const chatbotElements = [
-        document.querySelector(".chatbot-widget"),
-        document.querySelector(".chatbot-launcher"),
-        document.querySelector("iframe[id*='chatbot']"),
-        document.querySelector("[data-botid]"),
-        document.querySelector("[id*='chatbot']"),
-        document.querySelector("[class*='chatbot']"),
-        document.querySelector(".bot-button"),
-        document.querySelector(".bot-icon"),
-        document.querySelector(".chatbot-button"),
-        document.querySelector(".chat-button")
-      ];
-      
-      for (const element of chatbotElements) {
-        if (element) {
-          console.log("Elemento chatbot trovato, tentativo di apertura:", element);
-          if (element instanceof HTMLElement) {
-            element.click();
-            element.style.display = "block";
-            element.style.visibility = "visible";
-            element.style.opacity = "1";
-            return;
-          }
+      // 4. Check if reinitializing helps
+      if (!chatbotInitialized.current || !document.getElementById("chatbot-script")) {
+        console.log("Chatbot non inizializzato, reinizializzazione in corso...");
+        if (chatbotCode) {
+          initializeChatbot(chatbotCode);
+        } else {
+          initializeDefaultChatbot();
         }
-      }
-      
-      // 4. If all else fails, reinitialize the chatbot
-      console.log("Nessun elemento chatbot trovato, reinizializzazione in corso...");
-      if (chatbotCode) {
-        initializeChatbot(chatbotCode);
-      } else {
-        initializeDefaultChatbot();
+        
+        // Delay to give the script time to load
+        setTimeout(() => {
+          // Try one more time to find and click any chat elements
+          const chatElements = document.querySelectorAll('[class*="chat"], [id*="chat"], [aria-label*="chat"]');
+          for (const element of Array.from(chatElements)) {
+            if (element instanceof HTMLElement && element.offsetParent !== null) {
+              console.log("Elemento chatbot trovato dopo reinizializzazione:", element);
+              element.click();
+              return;
+            }
+          }
+        }, 1000);
       }
       
       // 5. Notify user
