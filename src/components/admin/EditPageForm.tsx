@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -8,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageData } from "@/pages/Admin";
-import { ImageUploader } from "../ImageUploader";
+import ImageUploader from "../ImageUploader";
 
 interface EditPageFormProps {
   page: PageData;
@@ -32,7 +31,6 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
   const [icon, setIcon] = useState(page.icon || "FileText");
   const [isLoading, setIsLoading] = useState(false);
 
-  // If it's a list page, handle the list items
   const [listItems, setListItems] = useState(page.listItems || []);
   const [listType, setListType] = useState(page.listType || "");
 
@@ -42,7 +40,6 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
     try {
       setIsLoading(true);
       
-      // Validate form
       if (!title.trim()) {
         toast.error("Il titolo è obbligatorio");
         return;
@@ -58,13 +55,11 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         return;
       }
       
-      // If it's a submenu, validate parent path
       if (isSubmenu && !parentPath) {
         toast.error("Seleziona una pagina genitore");
         return;
       }
       
-      // Update page in Supabase
       const { data, error } = await supabase
         .from('custom_pages')
         .update({
@@ -84,7 +79,6 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
       
       if (error) throw error;
       
-      // Update menu icon
       await supabase
         .from('menu_icons')
         .update({
@@ -96,7 +90,6 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         })
         .eq('path', page.path);
       
-      // Format the updated page
       const updatedPage: PageData = {
         id: data.id,
         title: data.title,
@@ -110,7 +103,6 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         listType: data.list_type as 'restaurants' | 'activities' | 'locations' | undefined
       };
       
-      // Call callback function
       onPageUpdated(updatedPage);
       
       toast.success("Pagina aggiornata con successo");
