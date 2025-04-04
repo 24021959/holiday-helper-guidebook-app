@@ -53,12 +53,19 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
         }
         
         if (pageData) {
+          // Ensure listItems is always an array
+          const listItemsArray = pageData.list_items 
+            ? Array.isArray(pageData.list_items) 
+                ? pageData.list_items 
+                : []
+            : [];
+            
           setPageData({
             id: pageData.id,
             title: pageData.title,
             content: pageData.content,
             imageUrl: pageData.image_url,
-            listItems: pageData.list_items || [],
+            listItems: listItemsArray,
             listType: pageData.list_type as 'restaurants' | 'activities' | 'locations' | undefined
           });
         } else {

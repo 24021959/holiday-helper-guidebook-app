@@ -29,6 +29,17 @@ const DynamicPage = () => {
   return <PreviewPage pageRoute={actualPath} />;
 };
 
+// Componente Protected per verificare l'autenticazione
+const Protected = ({ children }: { children: React.ReactNode }) => {
+  const isAuth = localStorage.getItem("isAuthenticated") === "true";
+  
+  if (!isAuth) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
 function App() {
   useEffect(() => {
     // Aggiungi lo script del chatbot all'head se presente nelle impostazioni
@@ -60,15 +71,25 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Index />} />
+        {/* Public routes */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/admin" element={<Admin />} />
         <Route path="/welcome" element={<Welcome />} />
-        <Route path="/home" element={<Home />} />
         <Route path="/menu" element={<Menu />} />
         <Route path="/storia" element={<Storia />} />
         <Route path="/submenu/:parentPath" element={<SubMenu />} />
         <Route path="/preview/*" element={<PreviewPage />} />
+        
+        {/* Protected routes */}
+        <Route 
+          path="/admin" 
+          element={
+            <Protected>
+              <Admin />
+            </Protected>
+          } 
+        />
+        <Route path="/home" element={<Home />} />
         
         {/* Rotta speciale per tutte le altre pagine - cattura le pagine dinamiche */}
         <Route path="/:pageRoute/*" element={<DynamicPage />} />
