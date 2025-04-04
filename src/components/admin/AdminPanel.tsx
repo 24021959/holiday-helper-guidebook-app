@@ -82,6 +82,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           <ManagePagesView 
             pages={pages} 
             onPagesUpdate={handlePagesUpdate}
+            parentPages={parentPages}
+            keywordToIconMap={keywordToIconMap}
           />
         </TabsContent>
         

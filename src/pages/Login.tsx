@@ -1,12 +1,13 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { md5 } from "js-md5";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
 const Login: React.FC = () => {
@@ -69,7 +70,7 @@ const Login: React.FC = () => {
         body: { 
           action: "check_login",
           email,
-          password_hash: password
+          password_hash: md5(password)
         }
       });
 

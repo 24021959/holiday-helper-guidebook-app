@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { PageData } from "@/pages/Admin";
 import { useNavigate } from "react-router-dom";
@@ -12,20 +13,28 @@ import {
   Hotel, Bike, Map, Info, Image,
   Landmark, Building, Trees, Mountain, 
   Users, Music, Camera, Globe,
-  Newspaper, PawPrint, Heart, Bookmark, ShoppingBag
+  Newspaper, PawPrint, Heart, Bookmark, ShoppingBag,
+  Edit, Trash, Eye
 } from "lucide-react";
+import { EditPageForm } from "./EditPageForm";
 
 interface ManagePagesViewProps {
   pages: PageData[];
   onPagesUpdate: (pages: PageData[]) => void;
+  parentPages: PageData[];
+  keywordToIconMap: Record<string, string>;
 }
 
 export const ManagePagesView: React.FC<ManagePagesViewProps> = ({ 
   pages, 
-  onPagesUpdate 
+  onPagesUpdate,
+  parentPages,
+  keywordToIconMap
 }) => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedPage, setSelectedPage] = useState<PageData | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     // Ensure pages are loaded
@@ -70,6 +79,19 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
       console.error("Errore nell'eliminare la pagina:", error);
       toast.error("Errore nell'eliminare la pagina");
     }
+  };
+
+  const handleEditPage = (page: PageData) => {
+    setSelectedPage(page);
+    setIsEditDialogOpen(true);
+  };
+
+  const handlePageUpdated = (updatedPage: PageData) => {
+    const updatedPages = pages.map(p => 
+      p.id === updatedPage.id ? updatedPage : p
+    );
+    onPagesUpdate(updatedPages);
+    setIsEditDialogOpen(false);
   };
 
   const handlePreviewPage = (path: string) => {
@@ -137,17 +159,56 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => handlePreviewPage(page.path)}>
-                  Anteprima
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => handlePreviewPage(page.path)}
+                  className="flex items-center gap-1"
+                >
+                  <Eye className="w-4 h-4" />
+                  <span className="hidden sm:inline">Anteprima</span>
                 </Button>
-                <Button size="sm" variant="destructive" onClick={() => handleDeletePage(page.id)}>
-                  Elimina
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => handleEditPage(page)}
+                  className="flex items-center gap-1 bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
+                >
+                  <Edit className="w-4 h-4" />
+                  <span className="hidden sm:inline">Modifica</span>
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="destructive" 
+                  onClick={() => handleDeletePage(page.id)}
+                  className="flex items-center gap-1"
+                >
+                  <Trash className="w-4 h-4" />
+                  <span className="hidden sm:inline">Elimina</span>
                 </Button>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* Edit Page Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Modifica Pagina: {selectedPage?.title}</DialogTitle>
+          </DialogHeader>
+          
+          {selectedPage && (
+            <EditPageForm 
+              page={selectedPage}
+              parentPages={parentPages}
+              onPageUpdated={handlePageUpdated}
+              keywordToIconMap={keywordToIconMap}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
