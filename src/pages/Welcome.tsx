@@ -13,7 +13,7 @@ const Welcome: React.FC = () => {
         showAdminButton={false}
       />
       
-      <div className="pt-16">
+      <div className="pt-4">
         <BackToMenu />
         <div className="max-w-4xl mx-auto">
           {/* Immagine dell'hotel */}
