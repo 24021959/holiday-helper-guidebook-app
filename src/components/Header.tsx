@@ -24,7 +24,6 @@ const Header: React.FC<HeaderProps> = ({
   
   const textColorClass = isLightBackground ? "text-gray-800" : "text-white";
 
-  // Default logo URL is no longer needed as we'll only show logo if provided
   return (
     <div
       className={`w-full ${!backgroundImage ? backgroundColor : ''} py-5 px-4 shadow-md relative overflow-hidden rounded-xl`}
@@ -52,13 +51,13 @@ const Header: React.FC<HeaderProps> = ({
       
       {/* Logo and Title - responsive layout */}
       <div className="relative z-10 flex flex-col sm:flex-row items-center sm:justify-between">
-        {/* Logo - only show if provided */}
+        {/* Logo - only show if provided, with increased size */}
         {logoUrl && (
           <div className="flex-shrink-0 mb-2 sm:mb-0">
             <img 
               src={logoUrl} 
               alt="Logo" 
-              className="h-8 md:h-10 object-contain"
+              className="h-12 md:h-14 object-contain" 
             />
           </div>
         )}

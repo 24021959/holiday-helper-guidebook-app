@@ -11,6 +11,7 @@ import { Loader2 } from "lucide-react";
 interface HeaderSettings {
   logoUrl?: string | null;
   headerColor?: string;
+  establishmentName?: string | null;
 }
 
 const Menu: React.FC = () => {
@@ -34,6 +35,7 @@ const Menu: React.FC = () => {
           setHeaderSettings({
             logoUrl: data.logo_url,
             headerColor: data.header_color,
+            establishmentName: data.establishment_name
           });
         }
       } catch (error) {
@@ -88,6 +90,7 @@ const Menu: React.FC = () => {
       <Header 
         logoUrl={headerSettings.logoUrl || undefined}
         backgroundColor={headerSettings.headerColor}
+        establishmentName={headerSettings.establishmentName || undefined}
         showAdminButton={false}
       />
       

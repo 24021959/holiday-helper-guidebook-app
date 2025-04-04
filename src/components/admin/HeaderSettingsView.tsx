@@ -92,26 +92,27 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
       
       if (fetchError) throw fetchError;
       
+      // Create the data object for the update or insert operation
+      const headerData = { 
+        logo_url: localLogo, 
+        header_color: localColor,
+        establishment_name: establishmentName || null
+      };
+      
+      console.log("Saving header settings:", headerData);
+      
       let saveOperation;
       if (existingData && existingData.length > 0) {
         // Update existing record
         saveOperation = supabase
           .from('header_settings')
-          .update({ 
-            logo_url: localLogo, 
-            header_color: localColor,
-            establishment_name: establishmentName || null
-          })
+          .update(headerData)
           .eq('id', existingData[0].id);
       } else {
         // Insert new record
         saveOperation = supabase
           .from('header_settings')
-          .insert({ 
-            logo_url: localLogo, 
-            header_color: localColor,
-            establishment_name: establishmentName || null
-          });
+          .insert(headerData);
       }
       
       const { error: saveError } = await saveOperation;

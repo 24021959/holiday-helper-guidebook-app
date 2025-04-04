@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 interface HeaderSettings {
   logoUrl?: string | null;
   headerColor?: string;
+  establishmentName?: string | null;
 }
 
 interface PageDetails {
@@ -43,6 +44,7 @@ const SubMenu: React.FC = () => {
           setHeaderSettings({
             logoUrl: headerData.logo_url,
             headerColor: headerData.header_color,
+            establishmentName: headerData.establishment_name
           });
         }
         
@@ -84,15 +86,6 @@ const SubMenu: React.FC = () => {
     
     fetchData();
   }, [parentPath]);
-  
-  // Component for footer with credentials
-  const Footer = () => (
-    <div className="w-full bg-gradient-to-r from-teal-50 to-emerald-50 py-3 border-t border-gray-200">
-      <div className="text-center text-gray-500 text-xs">
-        © 2025 Powered by EV-AI Technologies
-      </div>
-    </div>
-  );
 
   if (loading) {
     return (
@@ -125,6 +118,7 @@ const SubMenu: React.FC = () => {
       <Header 
         logoUrl={headerSettings.logoUrl || undefined}
         backgroundColor={headerSettings.headerColor}
+        establishmentName={headerSettings.establishmentName || undefined}
         showAdminButton={false}
       />
       
