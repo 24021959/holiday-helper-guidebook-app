@@ -1,13 +1,12 @@
-
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster as Sonner } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import Index from "./pages/Index";
+import Home from "./pages/Home";
 import Menu from "./pages/Menu";
 import NotFound from "./pages/NotFound";
 import BackToMenu from "./components/BackToMenu";
@@ -17,7 +16,6 @@ import Admin from "./pages/Admin";
 import Login from "./pages/Login";
 import PreviewPage from "./pages/PreviewPage";
 import ChatbotBubble from "./components/ChatbotBubble";
-import Header from "./components/Header";
 import SubMenu from "./pages/SubMenu";
 
 interface CustomPage {
@@ -104,7 +102,6 @@ const DynamicPage = ({ pageData }: { pageData: CustomPage }) => {
   const [loading, setLoading] = useState(true);
   const [hasSubmenuPages, setHasSubmenuPages] = useState(false);
   
-  // Controlla se questa pagina ha sottopagine
   useEffect(() => {
     const checkForSubmenuPages = async () => {
       try {
@@ -217,11 +214,9 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const hasSelectedLanguage = localStorage.getItem("selectedLanguage") !== null;
   
-  // Carica le pagine personalizzate e le impostazioni dell'header da Supabase
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 1. Fetch pagine personalizzate
         const { data: pagesData, error: pagesError } = await supabase
           .from('custom_pages')
           .select('*');
@@ -241,14 +236,13 @@ const App = () => {
           setCustomPages(formattedPages);
         }
         
-        // 2. Fetch impostazioni dell'header
         const { data: headerData, error: headerError } = await supabase
           .from('header_settings')
           .select('*')
           .limit(1)
           .single();
           
-        if (headerError) throw headerError;
+        if (headerError && headerError.code !== 'PGRST116') throw headerError;
         
         if (headerData) {
           setHeaderSettings({
@@ -259,7 +253,6 @@ const App = () => {
       } catch (error) {
         console.error("Errore nel caricamento dei dati:", error);
         
-        // Fallback al localStorage se Supabase fallisce
         const savedPages = localStorage.getItem("customPages");
         if (savedPages) {
           try {
@@ -299,14 +292,12 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/menu" element={hasSelectedLanguage ? <Menu /> : <Navigate to="/" />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/menu" element={<Menu />} />
             
-            {/* Routes for each icon */}
             <Route path="/welcome" element={<Welcome />} />
             <Route path="/storia" element={<Storia />} />
             <Route path="/servizi-hotel" element={<PlaceholderPage title="Servizi hotel" />} />
@@ -323,10 +314,8 @@ const App = () => {
             <Route path="/gallery" element={<PlaceholderPage title="Galleria" />} />
             <Route path="/info" element={<PlaceholderPage title="Info" />} />
             
-            {/* Rotta per sottomenu */}
             <Route path="/submenu/:parentPath" element={<SubMenu />} />
             
-            {/* Rotte dinamiche per le pagine personalizzate */}
             {customPages.map((page) => (
               <Route 
                 key={page.id} 
@@ -335,12 +324,10 @@ const App = () => {
               />
             ))}
             
-            {/* Admin routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/preview/:pageSlug" element={<PreviewPage />} />
             
-            {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
           <ChatbotBubble />
