@@ -1,14 +1,75 @@
-import React from "react";
+
+import React, { useEffect, useState } from "react";
 import BackToMenu from "@/components/BackToMenu";
 import { Card } from "@/components/ui/card";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
+
+interface HeaderSettings {
+  logoUrl?: string | null;
+  headerColor?: string;
+  establishmentName?: string | null;
+}
 
 const Storia: React.FC = () => {
+  const [headerSettings, setHeaderSettings] = useState<HeaderSettings>({});
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchHeaderSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('header_settings')
+          .select('*')
+          .limit(1)
+          .single();
+          
+        if (error) throw error;
+        
+        if (data) {
+          setHeaderSettings({
+            logoUrl: data.logo_url,
+            headerColor: data.header_color,
+            establishmentName: data.establishment_name
+          });
+        }
+      } catch (error) {
+        console.error("Errore nel caricamento delle impostazioni header:", error);
+        
+        // Fallback al localStorage se Supabase fallisce
+        const savedHeaderSettings = localStorage.getItem("headerSettings");
+        if (savedHeaderSettings) {
+          try {
+            setHeaderSettings(JSON.parse(savedHeaderSettings));
+          } catch (err) {
+            console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
+          }
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchHeaderSettings();
+  }, []);
+  
+  if (loading) {
+    return (
+      <div className="flex flex-col h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100">
+        <Loader2 className="h-12 w-12 text-emerald-600 animate-spin" />
+        <p className="mt-4 text-emerald-700">Caricamento...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 p-4 md:p-6">
       <Header 
-        backgroundColor="bg-white"
+        backgroundColor={headerSettings.headerColor}
+        logoUrl={headerSettings.logoUrl || undefined}
+        establishmentName={headerSettings.establishmentName || undefined}
         showAdminButton={false}
       />
       
