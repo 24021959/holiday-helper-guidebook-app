@@ -1,8 +1,8 @@
-
 import React, { useEffect, useState } from "react";
 import IconNav from "@/components/IconNav";
 import AdminButton from "@/components/AdminButton";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
@@ -56,15 +56,6 @@ const Menu: React.FC = () => {
     fetchHeaderSettings();
   }, []);
   
-  // Component for footer with credentials
-  const Footer = () => (
-    <div className="w-full bg-gradient-to-r from-teal-50 to-emerald-50 py-3 border-t border-gray-200">
-      <div className="text-center text-gray-500 text-xs">
-        © 2025 Powered by EV-AI Technologies
-      </div>
-    </div>
-  );
-
   if (loading) {
     return (
       <div className="flex flex-col h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100">

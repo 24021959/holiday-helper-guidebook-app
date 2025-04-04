@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BackToMenu from "@/components/BackToMenu";
@@ -29,7 +29,6 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
   const [error, setError] = useState<string | null>(null);
   const [headerSettings, setHeaderSettings] = useState<{ logoUrl?: string; headerColor?: string }>({});
 
-  // Determina il percorso della pagina da caricare
   const path = pageRoute || location.pathname;
   const effectivePath = path.startsWith('/preview/') ? path.substring(9) : path;
 
@@ -40,7 +39,6 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
       try {
         setLoading(true);
         
-        // 1. Fetch della pagina
         const { data: pageData, error: pageError } = await supabase
           .from('custom_pages')
           .select('*')
@@ -53,7 +51,6 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
         }
         
         if (pageData) {
-          // Ensure listItems is always an array
           const listItemsArray = pageData.list_items 
             ? Array.isArray(pageData.list_items) 
                 ? pageData.list_items 
@@ -72,7 +69,6 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
           throw new Error(`Pagina non trovata: ${effectivePath}`);
         }
         
-        // 2. Fetch delle impostazioni dell'header
         const { data: headerData, error: headerError } = await supabase
           .from('header_settings')
           .select('*')
@@ -95,19 +91,6 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
     
     fetchData();
   }, [effectivePath]);
-
-  // Component for footer with logo
-  const Footer = () => (
-    <div className="w-full bg-gradient-to-r from-teal-50 to-emerald-50 py-3 border-t border-gray-200">
-      <div className="flex justify-center items-center">
-        <img 
-          src="/lovable-uploads/f001bbd0-3515-4169-944c-9a037d5ddae8.png" 
-          alt="EVA AI Technologies Logo" 
-          className="h-8 md:h-10" 
-        />
-      </div>
-    </div>
-  );
 
   if (loading) {
     return (
@@ -165,7 +148,6 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
     );
   }
 
-  // Rendering della pagina
   return (
     <div className="flex flex-col min-h-screen">
       <Header 
@@ -176,15 +158,12 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
       
       <div className="flex-1 p-4 md:p-6 lg:p-8 bg-gray-50">
         <div className="container mx-auto">
-          {/* Pulsante Torna al Menu */}
           <BackToMenu />
           
-          {/* Titolo della pagina */}
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mt-4 mb-6">
             {pageData.title}
           </h1>
           
-          {/* Immagine (se presente) */}
           {pageData.imageUrl && (
             <div className="mb-6">
               <img 
@@ -195,7 +174,6 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
             </div>
           )}
           
-          {/* Contenuto della pagina */}
           <div className="bg-white p-5 rounded-lg shadow-md mb-6">
             <div className="prose max-w-none">
               {pageData.content.split('\n').map((paragraph, index) => (
@@ -204,7 +182,6 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
             </div>
           </div>
           
-          {/* Lista di luoghi, attività o ristoranti (se presente) */}
           {pageData.listItems && pageData.listItems.length > 0 && (
             <div className="mt-8">
               <h2 className="text-xl font-semibold text-emerald-700 mb-4">
@@ -223,7 +200,6 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
                       <h3 className="font-bold text-lg mb-2">{item.name}</h3>
                       {item.description && <p className="text-gray-600 mb-3">{item.description}</p>}
                       
-                      {/* Informazioni di contatto */}
                       <div className="space-y-2">
                         {item.phoneNumber && (
                           <div className="flex items-center text-sm">

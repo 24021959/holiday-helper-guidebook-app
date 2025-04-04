@@ -2,10 +2,17 @@
 import React from "react";
 import BackToMenu from "@/components/BackToMenu";
 import { Card } from "@/components/ui/card";
+import Footer from "@/components/Footer";
+import Header from "@/components/Header";
 
 const Storia: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 p-4 md:p-6 pt-20">
+      <Header 
+        backgroundColor="bg-white"
+        showAdminButton={false}
+      />
+      
       <BackToMenu />
       <div className="max-w-4xl mx-auto">
         <Card className="bg-white/95 backdrop-blur-sm shadow-lg border-0 rounded-xl overflow-hidden mb-8">
@@ -78,6 +85,9 @@ const Storia: React.FC = () => {
           </div>
         </Card>
       </div>
+      
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };

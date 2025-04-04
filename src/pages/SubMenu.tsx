@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import IconNav from "@/components/IconNav";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
@@ -141,7 +142,7 @@ const SubMenu: React.FC = () => {
         <IconNav parentPath={`/${parentPath}`} />
       </div>
       
-      {/* Footer con logo */}
+      {/* Footer con credenziali */}
       <Footer />
     </div>
   );

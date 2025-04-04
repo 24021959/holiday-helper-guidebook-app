@@ -4,17 +4,9 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import IconNav from "@/components/IconNav";
 import { Card, CardContent } from "@/components/ui/card";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 const Index: React.FC = () => {
-  // Component for footer with credentials
-  const Footer = () => (
-    <div className="w-full bg-gradient-to-r from-teal-50 to-emerald-50 py-3 border-t border-gray-200">
-      <div className="text-center text-gray-500 text-xs">
-        © 2025 Powered by EV-AI Technologies
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-gray-100">
       <div className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden">
@@ -40,7 +32,7 @@ const Index: React.FC = () => {
           </CardContent>
         </Card>
         
-        {/* Footer con logo */}
+        {/* Footer con credenziali */}
         <Footer />
       </div>
     </div>
