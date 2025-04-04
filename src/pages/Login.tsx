@@ -31,7 +31,12 @@ const Login: React.FC = () => {
         toast.success("Login effettuato con successo");
         navigate("/admin");
       } else {
-        toast.error("Credenziali non valide");
+        // Try to authenticate with Supabase data
+        checkDbLogin(adminUsername, adminPassword, "user").then(success => {
+          if (!success) {
+            toast.error("Credenziali non valide");
+          }
+        });
       }
       setIsLoading(false);
     }, 500);
@@ -55,6 +60,40 @@ const Login: React.FC = () => {
       }
       setIsLoading(false);
     }, 500);
+  };
+
+  const checkDbLogin = async (email: string, password: string, role: string): Promise<boolean> => {
+    try {
+      // Call the admin_users_helpers function to check login
+      const { data, error } = await supabase.functions.invoke("admin_users_helpers", {
+        body: { 
+          action: "check_login",
+          email,
+          password_hash: password
+        }
+      });
+
+      if (error) {
+        console.error("Error checking login:", error);
+        return false;
+      }
+      
+      if (data && data.success) {
+        // Save user data in localStorage
+        localStorage.setItem("admin_token", "user_token");
+        localStorage.setItem("admin_user", email);
+        localStorage.setItem("user_role", role);
+        localStorage.setItem("isAuthenticated", "true");
+        toast.success("Login effettuato con successo");
+        navigate("/admin");
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error("Login check error:", error);
+      return false;
+    }
   };
 
   return (

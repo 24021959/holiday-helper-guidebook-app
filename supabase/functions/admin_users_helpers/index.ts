@@ -40,6 +40,30 @@ serve(async (req) => {
       });
     }
     
+    // Handle check login
+    if (body.action === "check_login") {
+      const { email, password_hash } = body;
+      
+      const { data, error } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('email', email)
+        .eq('password_hash', password_hash)
+        .eq('is_active', true)
+        .single();
+
+      if (error) {
+        return new Response(JSON.stringify({ success: false, error: error.message }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200, // We still return 200 to handle the error on client side
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true, user: data }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
     // Handle create user
     if (body.action === "create_user") {
       const { email, password_hash, role } = body;

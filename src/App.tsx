@@ -114,12 +114,12 @@ function App() {
       <Routes>
         {/* Public routes */}
         <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/login" element={<Login headerSettings={headerSettings} />} />
-        <Route path="/welcome" element={<Welcome headerSettings={headerSettings} />} />
-        <Route path="/menu" element={<Menu headerSettings={headerSettings} />} />
-        <Route path="/storia" element={<Storia headerSettings={headerSettings} />} />
-        <Route path="/submenu/:parentPath" element={<SubMenu headerSettings={headerSettings} />} />
-        <Route path="/preview/*" element={<PreviewPage headerSettings={headerSettings} />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/welcome" element={<Welcome />} />
+        <Route path="/menu" element={<Menu />} />
+        <Route path="/storia" element={<Storia />} />
+        <Route path="/submenu/:parentPath" element={<SubMenu />} />
+        <Route path="/preview/*" element={<PreviewPage />} />
         
         {/* Protected routes */}
         <Route 
@@ -130,13 +130,13 @@ function App() {
             </Protected>
           } 
         />
-        <Route path="/home" element={<Home headerSettings={headerSettings} />} />
+        <Route path="/home" element={<Home />} />
         
         {/* Rotta speciale per tutte le altre pagine - cattura le pagine dinamiche */}
         <Route path="/:pageRoute/*" element={<DynamicPage />} />
         
         {/* Rotta per 404 Not Found - deve essere l'ultima */}
-        <Route path="*" element={<NotFound headerSettings={headerSettings} />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   )
