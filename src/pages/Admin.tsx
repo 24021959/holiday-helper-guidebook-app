@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagementView } from "@/components/admin/UserManagementView";
@@ -7,7 +8,7 @@ import { ChatbotSettingsView } from "@/components/admin/ChatbotSettingsView";
 import { CreatePageForm } from "@/components/admin/CreatePageForm";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";
 
@@ -45,8 +46,23 @@ const Admin: React.FC = () => {
   const [uploadedLogo, setUploadedLogo] = useState<string | null>(null);
   const [headerColor, setHeaderColor] = useState<string>("bg-gradient-to-r from-teal-500 to-emerald-600");
   const [chatbotCode, setChatbotCode] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<string>("create-page");
   const navigate = useNavigate();
+  const location = useLocation();
   const keywordToIconMap = useKeywordToIconMap();
+  const isMaster = localStorage.getItem("user_role") === "master";
+  
+  // Imposta la scheda attiva in base ai parametri URL o al ruolo dell'utente
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get('tab');
+    
+    if (tabParam) {
+      setActiveTab(tabParam);
+    } else if (isMaster) {
+      setActiveTab("user-management");
+    }
+  }, [location.search, isMaster]);
   
   // Fetch all pages 
   useEffect(() => {
@@ -79,10 +95,10 @@ const Admin: React.FC = () => {
       }
     };
     
-    if (isAuthenticated) {
+    if (isAuthenticated && !isMaster) {
       fetchPages();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isMaster]);
   
   // Check if user is authenticated
   useEffect(() => {
@@ -125,6 +141,7 @@ const Admin: React.FC = () => {
   const handleLogout = () => {
     localStorage.removeItem("admin_token");
     localStorage.removeItem("admin_user");
+    localStorage.removeItem("user_role");
     toast.success("Logout eseguito con successo");
     navigate("/login");
   };
@@ -143,16 +160,19 @@ const Admin: React.FC = () => {
 
   // Get only parent pages (non-submenu pages)
   const parentPages = pages.filter(page => !page.isSubmenu);
+  
+  // Determina il testo del titolo in base al ruolo dell'utente
+  const panelTitle = isMaster ? "Pannello Master" : "Pannello Amministratore";
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm border-b">
+      <div className={`bg-white shadow-sm border-b ${isMaster ? "bg-gradient-to-r from-purple-500 to-indigo-600" : ""}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <h1 className="text-xl font-semibold text-gray-900">Pannello Amministratore</h1>
+            <h1 className={`text-xl font-semibold ${isMaster ? "text-white" : "text-gray-900"}`}>{panelTitle}</h1>
             <button 
               onClick={handleLogout}
-              className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm"
+              className={`px-3 py-1 ${isMaster ? "bg-white text-purple-700" : "bg-gray-200 hover:bg-gray-300 text-gray-800"} rounded text-sm`}
             >
               Logout
             </button>
@@ -161,78 +181,87 @@ const Admin: React.FC = () => {
       </div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs defaultValue="create-page">
-          <TabsList className="mb-8 w-full justify-start border-b rounded-none bg-transparent h-auto pb-0">
-            <TabsTrigger 
-              value="create-page"
-              className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
-            >
-              Crea Pagina
-            </TabsTrigger>
-            <TabsTrigger 
-              value="manage-pages"
-              className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
-            >
-              Gestisci Pagine
-            </TabsTrigger>
-            <TabsTrigger 
-              value="header-settings"
-              className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
-            >
-              Impostazioni Header
-            </TabsTrigger>
-            <TabsTrigger 
-              value="chatbot-settings"
-              className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
-            >
-              Impostazioni Chatbot
-            </TabsTrigger>
-            <TabsTrigger 
-              value="user-management"
-              className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
-            >
-              Gestione Utenti
-            </TabsTrigger>
-          </TabsList>
-          
+        {isMaster ? (
+          // Se è un utente Master, mostra solo la gestione utenti
           <div className="bg-white shadow-md rounded-md p-6 border">
-            <TabsContent value="create-page">
-              <CreatePageForm 
-                parentPages={parentPages} 
-                onPageCreated={handlePageCreated}
-                keywordToIconMap={keywordToIconMap}
-              />
-            </TabsContent>
-            
-            <TabsContent value="manage-pages">
-              <ManagePagesView 
-                pages={pages} 
-                onPagesUpdate={handlePagesUpdate}
-              />
-            </TabsContent>
-            
-            <TabsContent value="header-settings">
-              <HeaderSettingsView 
-                uploadedLogo={uploadedLogo}
-                setUploadedLogo={setUploadedLogo}
-                headerColor={headerColor}
-                setHeaderColor={setHeaderColor}
-              />
-            </TabsContent>
-            
-            <TabsContent value="chatbot-settings">
-              <ChatbotSettingsView 
-                chatbotCode={chatbotCode}
-                setChatbotCode={setChatbotCode}
-                onSave={handleSaveChatbotSettings}
-              />
-            </TabsContent>
-            
-            <TabsContent value="user-management">
-              <UserManagementView />
-            </TabsContent>
+            <h2 className="text-xl font-medium text-purple-600 mb-6">Gestione Utenti (Pannello Master)</h2>
+            <UserManagementView />
           </div>
-        </Tabs>
+        ) : (
+          // Se è un utente normale Admin, mostra tutti i tab
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-8 w-full justify-start border-b rounded-none bg-transparent h-auto pb-0">
+              <TabsTrigger 
+                value="create-page"
+                className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
+              >
+                Crea Pagina
+              </TabsTrigger>
+              <TabsTrigger 
+                value="manage-pages"
+                className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
+              >
+                Gestisci Pagine
+              </TabsTrigger>
+              <TabsTrigger 
+                value="header-settings"
+                className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
+              >
+                Impostazioni Header
+              </TabsTrigger>
+              <TabsTrigger 
+                value="chatbot-settings"
+                className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
+              >
+                Impostazioni Chatbot
+              </TabsTrigger>
+              <TabsTrigger 
+                value="user-management"
+                className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
+              >
+                Gestione Utenti
+              </TabsTrigger>
+            </TabsList>
+            
+            <div className="bg-white shadow-md rounded-md p-6 border">
+              <TabsContent value="create-page">
+                <CreatePageForm 
+                  parentPages={parentPages} 
+                  onPageCreated={handlePageCreated}
+                  keywordToIconMap={keywordToIconMap}
+                />
+              </TabsContent>
+              
+              <TabsContent value="manage-pages">
+                <ManagePagesView 
+                  pages={pages} 
+                  onPagesUpdate={handlePagesUpdate}
+                />
+              </TabsContent>
+              
+              <TabsContent value="header-settings">
+                <HeaderSettingsView 
+                  uploadedLogo={uploadedLogo}
+                  setUploadedLogo={setUploadedLogo}
+                  headerColor={headerColor}
+                  setHeaderColor={setHeaderColor}
+                />
+              </TabsContent>
+              
+              <TabsContent value="chatbot-settings">
+                <ChatbotSettingsView 
+                  chatbotCode={chatbotCode}
+                  setChatbotCode={setChatbotCode}
+                  onSave={handleSaveChatbotSettings}
+                />
+              </TabsContent>
+              
+              <TabsContent value="user-management">
+                <UserManagementView />
+              </TabsContent>
+            </div>
+          </Tabs>
+        )}
       </div>
     </div>
   );

@@ -13,12 +13,10 @@ const Home: React.FC = () => {
   const navigate = useNavigate();
   const [adminUsername, setAdminUsername] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
+  const [masterUsername, setMasterUsername] = useState("");
+  const [masterPassword, setMasterPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
-  const handleUserEntry = () => {
-    localStorage.setItem("selectedLanguage", "it");
-    navigate("/menu");
-  };
+  const [activeTab, setActiveTab] = useState("admin");
   
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,10 +26,30 @@ const Home: React.FC = () => {
     setTimeout(() => {
       if (adminUsername === "admin" && adminPassword === "password") {
         localStorage.setItem("admin_token", "demo_token");
+        localStorage.setItem("admin_user", "admin");
         toast.success("Login effettuato con successo");
         navigate("/admin");
       } else {
         toast.error("Credenziali non valide");
+      }
+      setIsLoading(false);
+    }, 500);
+  };
+  
+  const handleMasterLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    // Master authentication
+    setTimeout(() => {
+      if (masterUsername === "master" && masterPassword === "master123") {
+        localStorage.setItem("admin_token", "master_token");
+        localStorage.setItem("admin_user", "master");
+        localStorage.setItem("user_role", "master");
+        toast.success("Login come Master effettuato con successo");
+        navigate("/admin?tab=user-management");
+      } else {
+        toast.error("Credenziali Master non valide");
       }
       setIsLoading(false);
     }, 500);
@@ -47,38 +65,11 @@ const Home: React.FC = () => {
       
       <div className="container mx-auto px-4 py-10">
         <div className="max-w-3xl mx-auto">
-          <Tabs defaultValue="guest" className="w-full">
+          <Tabs defaultValue="admin" className="w-full" value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2 mb-8">
-              <TabsTrigger value="guest">Ospiti</TabsTrigger>
               <TabsTrigger value="admin">Amministrazione</TabsTrigger>
+              <TabsTrigger value="master">Master</TabsTrigger>
             </TabsList>
-            
-            <TabsContent value="guest">
-              <Card>
-                <CardHeader className="text-center">
-                  <CardTitle className="text-2xl text-emerald-700">Benvenuti</CardTitle>
-                  <CardDescription>
-                    Accedi come ospite per esplorare le informazioni della struttura
-                  </CardDescription>
-                </CardHeader>
-                
-                <CardContent className="text-center">
-                  <div className="w-full max-w-sm mx-auto">
-                    <Button 
-                      className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white"
-                      onClick={handleUserEntry}
-                      size="lg"
-                    >
-                      Entra come Ospite
-                    </Button>
-                  </div>
-                </CardContent>
-                
-                <CardFooter className="text-center justify-center text-sm text-gray-500">
-                  Nessuna registrazione necessaria per gli ospiti
-                </CardFooter>
-              </Card>
-            </TabsContent>
             
             <TabsContent value="admin">
               <Card>
@@ -132,6 +123,62 @@ const Home: React.FC = () => {
                 
                 <CardFooter className="text-center justify-center text-xs text-gray-500">
                   Demo: usa username "admin" e password "password"
+                </CardFooter>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="master">
+              <Card>
+                <CardHeader className="text-center">
+                  <CardTitle className="text-2xl text-emerald-700">Master</CardTitle>
+                  <CardDescription>
+                    Accedi come Master per gestire gli utenti del sistema
+                  </CardDescription>
+                </CardHeader>
+                
+                <CardContent>
+                  <form onSubmit={handleMasterLogin} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="master-username">Username Master</Label>
+                      <Input 
+                        id="master-username"
+                        type="text"
+                        placeholder="master"
+                        value={masterUsername}
+                        onChange={(e) => setMasterUsername(e.target.value)}
+                        disabled={isLoading}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="master-password">Password Master</Label>
+                      <Input 
+                        id="master-password"
+                        type="password"
+                        placeholder="********"
+                        value={masterPassword}
+                        onChange={(e) => setMasterPassword(e.target.value)}
+                        disabled={isLoading}
+                      />
+                    </div>
+                    
+                    <Button 
+                      type="submit"
+                      className="w-full bg-gradient-to-r from-purple-500 to-indigo-600"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Accesso in corso...
+                        </>
+                      ) : "Accedi come Master"}
+                    </Button>
+                  </form>
+                </CardContent>
+                
+                <CardFooter className="text-center justify-center text-xs text-gray-500">
+                  Demo: usa username "master" e password "master123"
                 </CardFooter>
               </Card>
             </TabsContent>
