@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import TranslatedText from "@/components/TranslatedText";
 
 interface HeaderSettings {
   logoUrl?: string | null;
@@ -91,7 +92,9 @@ const SubMenu: React.FC = () => {
     return (
       <div className="flex flex-col h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100">
         <Loader2 className="h-12 w-12 text-emerald-600 animate-spin" />
-        <p className="mt-4 text-emerald-700">Caricamento sottomenu...</p>
+        <p className="mt-4 text-emerald-700">
+          <TranslatedText text="Caricamento sottomenu..." />
+        </p>
       </div>
     );
   }
@@ -100,12 +103,14 @@ const SubMenu: React.FC = () => {
     return (
       <div className="flex flex-col h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100">
         <div className="bg-white p-6 rounded-lg shadow-md text-center max-w-md">
-          <p className="text-red-500 mb-4">{error}</p>
+          <p className="text-red-500 mb-4">
+            <TranslatedText text={error} />
+          </p>
           <button 
             onClick={() => navigate('/menu')}
             className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
           >
-            Torna al menu
+            <TranslatedText text="Torna al menu" />
           </button>
         </div>
       </div>
@@ -126,7 +131,7 @@ const SubMenu: React.FC = () => {
       {pageDetails && (
         <div className="bg-gradient-to-r from-emerald-100 to-teal-100 py-3 px-4 shadow-sm">
           <h1 className="text-xl font-medium text-emerald-800 text-center">
-            {pageDetails.title}
+            <TranslatedText text={pageDetails.title} />
           </h1>
         </div>
       )}

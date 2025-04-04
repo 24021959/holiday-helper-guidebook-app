@@ -7,6 +7,8 @@ import Footer from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import TranslatedText from "@/components/TranslatedText";
+import { useTranslation } from "@/context/TranslationContext";
 
 interface HeaderSettings {
   logoUrl?: string | null;
@@ -19,6 +21,7 @@ const Menu: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { language } = useTranslation();
   
   useEffect(() => {
     const fetchHeaderSettings = async () => {
@@ -63,7 +66,9 @@ const Menu: React.FC = () => {
     return (
       <div className="flex flex-col h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100">
         <Loader2 className="h-12 w-12 text-emerald-600 animate-spin" />
-        <p className="mt-4 text-emerald-700">Caricamento menu...</p>
+        <p className="mt-4 text-emerald-700">
+          <TranslatedText text="Caricamento menu..." />
+        </p>
       </div>
     );
   }
@@ -72,12 +77,14 @@ const Menu: React.FC = () => {
     return (
       <div className="flex flex-col h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100">
         <div className="bg-white p-6 rounded-lg shadow-md text-center max-w-md">
-          <p className="text-red-500 mb-4">{error}</p>
+          <p className="text-red-500 mb-4">
+            <TranslatedText text={error} />
+          </p>
           <button 
             onClick={() => window.location.reload()}
             className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
           >
-            Riprova
+            <TranslatedText text="Riprova" />
           </button>
         </div>
       </div>

@@ -34,6 +34,9 @@ const TranslatedText: React.FC<TranslatedTextProps> = ({
         }
       } catch (error) {
         console.error("Translation error:", error);
+        if (isMounted) {
+          setTranslatedText(text); // Fallback to original text on error
+        }
       } finally {
         if (isMounted) {
           setIsLoading(false);

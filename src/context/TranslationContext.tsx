@@ -21,6 +21,11 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
     }
   }, []);
 
+  // Save language to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('selectedLanguage', language);
+  }, [language]);
+
   const translate = async (text: string): Promise<string> => {
     // If the language is Italian (default), return the original text
     if (language === 'it') return text;
