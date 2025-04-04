@@ -1,199 +1,251 @@
 
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import Header from "@/components/Header";
+import { Loader2, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import BackToMenu from "@/components/BackToMenu";
-import { MapPin, Phone, ExternalLink } from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
-interface LocationItem {
-  name: string;
-  description?: string;
-  phoneNumber?: string;
-  mapsUrl?: string;
-}
 
 interface PageData {
   id: string;
   title: string;
   content: string;
-  path: string;
   imageUrl?: string;
-  mapsUrl?: string;
-  phoneNumber?: string;
-  listType?: "locations" | "activities" | "restaurants";
-  listItems?: LocationItem[];
+  listItems?: any[];
+  listType?: 'restaurants' | 'activities' | 'locations';
 }
 
-const PreviewPage: React.FC = () => {
-  const { pageSlug } = useParams<{pageSlug: string}>();
-  const [page, setPage] = useState<PageData | null>(null);
-  const [loading, setLoading] = useState(true);
+interface PreviewPageProps {
+  pageRoute?: string;
+}
+
+const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
+  const params = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
+  const [pageData, setPageData] = useState<PageData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [headerSettings, setHeaderSettings] = useState<{ logoUrl?: string; headerColor?: string }>({});
+
+  // Determina il percorso della pagina da caricare
+  const path = pageRoute || location.pathname;
+  const effectivePath = path.startsWith('/preview/') ? path.substring(9) : path;
 
   useEffect(() => {
-    // Trova la pagina dal localStorage
-    const savedPages = localStorage.getItem("customPages");
-    if (savedPages) {
-      const parsedPages: PageData[] = JSON.parse(savedPages);
-      const foundPage = parsedPages.find(p => p.path === pageSlug);
-      if (foundPage) {
-        setPage(foundPage);
-      }
-    }
+    console.log("Caricamento pagina con percorso:", effectivePath);
     
-    setLoading(false);
-  }, [pageSlug]);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // 1. Fetch della pagina
+        const { data: pageData, error: pageError } = await supabase
+          .from('custom_pages')
+          .select('*')
+          .eq('path', effectivePath)
+          .single();
+        
+        if (pageError) {
+          console.error("Errore nel caricamento della pagina:", pageError);
+          throw new Error(`Pagina non trovata: ${effectivePath}`);
+        }
+        
+        if (pageData) {
+          setPageData({
+            id: pageData.id,
+            title: pageData.title,
+            content: pageData.content,
+            imageUrl: pageData.image_url,
+            listItems: pageData.list_items || [],
+            listType: pageData.list_type as 'restaurants' | 'activities' | 'locations' | undefined
+          });
+        } else {
+          throw new Error(`Pagina non trovata: ${effectivePath}`);
+        }
+        
+        // 2. Fetch delle impostazioni dell'header
+        const { data: headerData, error: headerError } = await supabase
+          .from('header_settings')
+          .select('*')
+          .limit(1)
+          .single();
+          
+        if (!headerError && headerData) {
+          setHeaderSettings({
+            logoUrl: headerData.logo_url,
+            headerColor: headerData.header_color,
+          });
+        }
+      } catch (error) {
+        console.error("Errore:", error);
+        setError(error instanceof Error ? error.message : "Errore sconosciuto");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [effectivePath]);
+
+  // Component for footer with logo
+  const Footer = () => (
+    <div className="w-full bg-gradient-to-r from-teal-50 to-emerald-50 py-3 border-t border-gray-200">
+      <div className="flex justify-center items-center">
+        <img 
+          src="/lovable-uploads/f001bbd0-3515-4169-944c-9a037d5ddae8.png" 
+          alt="EVA AI Technologies Logo" 
+          className="h-8 md:h-10" 
+        />
+      </div>
+    </div>
+  );
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 p-6 pt-20 flex justify-center items-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-600"></div>
+      <div className="flex flex-col h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100">
+        <Loader2 className="h-12 w-12 text-emerald-600 animate-spin" />
+        <p className="mt-4 text-emerald-700">Caricamento pagina...</p>
       </div>
     );
   }
 
-  if (!page) {
+  if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 p-6 pt-20">
-        <BackToMenu />
-        <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8 text-center">
-          <h1 className="text-2xl font-bold text-emerald-700 mb-4">Pagina non trovata</h1>
-          <p className="text-gray-600 mb-4">La pagina richiesta non esiste.</p>
-          <button 
-            onClick={() => navigate("/menu")}
-            className="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700"
-          >
-            Torna al Menu
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Renderizza la lista di elementi se presente
-  const renderListItems = () => {
-    if (!page.listItems || page.listItems.length === 0) {
-      return null;
-    }
-
-    return (
-      <div className="mt-8">
-        <h2 className="text-xl font-medium text-emerald-700 mb-4">
-          {page.listType === "restaurants" ? "Ristoranti" : 
-           page.listType === "activities" ? "Attività" : "Luoghi"}
-        </h2>
+      <div className="flex flex-col h-screen">
+        <Header 
+          logoUrl={headerSettings.logoUrl} 
+          backgroundColor={headerSettings.headerColor}
+          showAdminButton={true}
+        />
         
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[250px]">Nome</TableHead>
-                <TableHead>Descrizione</TableHead>
-                <TableHead className="text-right">Contatti</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {page.listItems.map((item, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell>{item.description}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-3">
-                      {item.phoneNumber && (
-                        <a 
-                          href={`tel:${item.phoneNumber.replace(/\s/g, '')}`}
-                          className="text-emerald-600 hover:text-emerald-800 flex items-center gap-1"
-                          title="Chiama"
-                        >
-                          <Phone className="h-4 w-4" />
-                        </a>
-                      )}
-                      {item.mapsUrl && (
-                        <a 
-                          href={item.mapsUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-emerald-600 hover:text-emerald-800 flex items-center gap-1"
-                          title="Vedi su Google Maps"
-                        >
-                          <MapPin className="h-4 w-4" />
-                        </a>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 p-6 pt-20">
-      <BackToMenu />
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-2xl font-bold text-emerald-700 mb-4">{page.title}</h1>
-        
-        {page.imageUrl && (
-          <div className="mb-6">
-            <img 
-              src={page.imageUrl} 
-              alt={page.title} 
-              className="w-full h-auto rounded-lg object-cover max-h-80"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = "https://via.placeholder.com/800x400?text=Immagine+non+disponibile";
-              }}
-            />
+        <div className="flex-1 flex flex-col items-center justify-center p-6">
+          <div className="bg-white p-6 rounded-lg shadow-md text-center max-w-md">
+            <p className="text-red-500 mb-4">{error}</p>
+            <p className="text-gray-600 mb-6">La pagina richiesta non è stata trovata. Controlla l'URL o torna al menu principale.</p>
+            <Button onClick={() => navigate('/menu')} className="bg-emerald-600 hover:bg-emerald-700">
+              Torna al Menu
+            </Button>
           </div>
-        )}
-        
-        <div className="text-gray-600 prose">
-          {page.content.split('\n').map((paragraph, index) => (
-            <p key={index} className="mb-4">{paragraph}</p>
-          ))}
         </div>
+        
+        <Footer />
+      </div>
+    );
+  }
 
-        {/* Render list items if available */}
-        {renderListItems()}
+  if (!pageData) {
+    return (
+      <div className="flex flex-col h-screen">
+        <Header 
+          logoUrl={headerSettings.logoUrl} 
+          backgroundColor={headerSettings.headerColor}
+          showAdminButton={true}
+        />
+        
+        <div className="flex-1 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg shadow-md text-center">
+            <p className="text-gray-600">Nessun contenuto trovato per questa pagina.</p>
+            <Button onClick={() => navigate('/menu')} className="mt-4 bg-emerald-600 hover:bg-emerald-700">
+              Torna al Menu
+            </Button>
+          </div>
+        </div>
+        
+        <Footer />
+      </div>
+    );
+  }
 
-        {/* Contact and location information */}
-        {(page.mapsUrl || page.phoneNumber) && (
-          <div className="mt-8 pt-4 border-t border-gray-200">
-            <h2 className="text-lg font-medium text-emerald-700 mb-4">Informazioni di contatto</h2>
-            
-            <div className="space-y-3">
-              {page.phoneNumber && (
-                <div className="flex items-center gap-2">
-                  <Phone className="h-5 w-5 text-emerald-600" />
-                  <a 
-                    href={`tel:${page.phoneNumber.replace(/\s/g, '')}`} 
-                    className="text-emerald-600 hover:underline"
-                  >
-                    {page.phoneNumber}
-                  </a>
-                </div>
-              )}
-              
-              {page.mapsUrl && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-emerald-600" />
-                  <a 
-                    href={page.mapsUrl}
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="text-emerald-600 hover:underline"
-                  >
-                    Visualizza su Google Maps
-                  </a>
-                </div>
-              )}
+  // Rendering della pagina
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Header 
+        logoUrl={headerSettings.logoUrl} 
+        backgroundColor={headerSettings.headerColor}
+        showAdminButton={true}
+      />
+      
+      <div className="flex-1 p-4 md:p-6 lg:p-8 bg-gray-50">
+        <div className="container mx-auto">
+          {/* Pulsante Torna al Menu */}
+          <BackToMenu />
+          
+          {/* Titolo della pagina */}
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mt-4 mb-6">
+            {pageData.title}
+          </h1>
+          
+          {/* Immagine (se presente) */}
+          {pageData.imageUrl && (
+            <div className="mb-6">
+              <img 
+                src={pageData.imageUrl} 
+                alt={pageData.title} 
+                className="w-full h-auto max-h-96 object-cover rounded-lg shadow-md"
+              />
+            </div>
+          )}
+          
+          {/* Contenuto della pagina */}
+          <div className="bg-white p-5 rounded-lg shadow-md mb-6">
+            <div className="prose max-w-none">
+              {pageData.content.split('\n').map((paragraph, index) => (
+                paragraph ? <p key={index} className="mb-4">{paragraph}</p> : <br key={index} />
+              ))}
             </div>
           </div>
-        )}
+          
+          {/* Lista di luoghi, attività o ristoranti (se presente) */}
+          {pageData.listItems && pageData.listItems.length > 0 && (
+            <div className="mt-8">
+              <h2 className="text-xl font-semibold text-emerald-700 mb-4">
+                {pageData.listType === "restaurants" ? "Ristoranti Consigliati" :
+                 pageData.listType === "activities" ? "Attività Consigliate" :
+                 "Luoghi di Interesse"}
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {pageData.listItems.map((item, index) => (
+                  <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
+                    {item.imageUrl && (
+                      <img src={item.imageUrl} alt={item.name} className="w-full h-48 object-cover" />
+                    )}
+                    <div className="p-4">
+                      <h3 className="font-bold text-lg mb-2">{item.name}</h3>
+                      {item.description && <p className="text-gray-600 mb-3">{item.description}</p>}
+                      
+                      {/* Informazioni di contatto */}
+                      <div className="space-y-2">
+                        {item.phoneNumber && (
+                          <div className="flex items-center text-sm">
+                            <span className="text-emerald-600 mr-2">📞</span>
+                            <a href={`tel:${item.phoneNumber}`} className="text-emerald-600 hover:underline">
+                              {item.phoneNumber}
+                            </a>
+                          </div>
+                        )}
+                        
+                        {item.mapsUrl && (
+                          <div className="flex items-center text-sm">
+                            <span className="text-emerald-600 mr-2">📍</span>
+                            <a href={item.mapsUrl} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">
+                              Visualizza sulla mappa
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
+      
+      <Footer />
     </div>
   );
 };

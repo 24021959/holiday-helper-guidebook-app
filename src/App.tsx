@@ -1,340 +1,83 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import Home from "./pages/Home";
-import Menu from "./pages/Menu";
-import NotFound from "./pages/NotFound";
-import BackToMenu from "./components/BackToMenu";
-import Welcome from "./pages/Welcome";
-import Storia from "./pages/Storia";
-import Admin from "./pages/Admin";
-import Login from "./pages/Login";
-import PreviewPage from "./pages/PreviewPage";
-import ChatbotBubble from "./components/ChatbotBubble";
-import SubMenu from "./pages/SubMenu";
 
-interface CustomPage {
-  id: string;
-  title: string;
-  content: string;
-  path: string;
-  imageUrl?: string;
-  isSubmenu?: boolean;
-  parentPath?: string | null;
+import React, { useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom'
+import Home from '@/pages/Home'
+import Welcome from '@/pages/Welcome'
+import Index from '@/pages/Index'
+import Menu from '@/pages/Menu'
+import SubMenu from '@/pages/SubMenu'
+import Login from '@/pages/Login'
+import Admin from '@/pages/Admin'
+import Storia from '@/pages/Storia'
+import NotFound from '@/pages/NotFound'
+import PreviewPage from '@/pages/PreviewPage'
+import { supabase } from './integrations/supabase/client'
+
+// Componente per gestire le pagine dinamiche create dall'amministratore
+const DynamicPage = () => {
+  const { pageRoute } = useParams<{ pageRoute: string }>();
+  const location = useLocation();
+  
+  // Se non c'è path, tornare alla homepage
+  if (!pageRoute) {
+    return <Navigate to="/menu" replace />;
+  }
+  
+  // Costruisci il path effettivo basato sull'URL corrente
+  const actualPath = location.pathname;
+  
+  return <PreviewPage pageRoute={actualPath} />;
+};
+
+function App() {
+  useEffect(() => {
+    // Aggiungi lo script del chatbot all'head se presente nelle impostazioni
+    const loadChatbotSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('chatbot_settings')
+          .select('code')
+          .limit(1)
+          .single();
+        
+        if (error) throw error;
+        
+        if (data && data.code) {
+          // Crea un nuovo elemento script
+          const script = document.createElement('script');
+          script.innerHTML = data.code;
+          document.head.appendChild(script);
+          console.info("Script del chatbot predefinito aggiunto nell'head");
+        }
+      } catch (error) {
+        console.warn("Errore nel caricamento delle impostazioni del chatbot:", error);
+      }
+    };
+    
+    loadChatbotSettings();
+  }, []);
+
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/welcome" element={<Welcome />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/menu" element={<Menu />} />
+        <Route path="/storia" element={<Storia />} />
+        <Route path="/submenu/:parentPath" element={<SubMenu />} />
+        <Route path="/preview/*" element={<PreviewPage />} />
+        
+        {/* Rotta speciale per tutte le altre pagine - cattura le pagine dinamiche */}
+        <Route path="/:pageRoute/*" element={<DynamicPage />} />
+        
+        {/* Rotta per 404 Not Found - deve essere l'ultima */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Router>
+  )
 }
 
-interface HeaderSettings {
-  logoUrl?: string | null;
-  headerColor?: string;
-}
-
-// Create placeholder pages for each menu item
-const PlaceholderPage = ({ title }: { title: string }) => {
-  const [headerSettings, setHeaderSettings] = useState<HeaderSettings>({});
-  const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    const fetchHeaderSettings = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('header_settings')
-          .select('*')
-          .limit(1)
-          .single();
-          
-        if (error) throw error;
-        
-        if (data) {
-          setHeaderSettings({
-            logoUrl: data.logo_url,
-            headerColor: data.header_color,
-          });
-        }
-      } catch (error) {
-        console.error("Errore nel caricamento delle impostazioni header:", error);
-        
-        // Fallback al localStorage se Supabase fallisce
-        const savedHeaderSettings = localStorage.getItem("headerSettings");
-        if (savedHeaderSettings) {
-          try {
-            setHeaderSettings(JSON.parse(savedHeaderSettings));
-          } catch (err) {
-            console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
-          }
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchHeaderSettings();
-  }, []);
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100">
-        <Loader2 className="h-10 w-10 text-emerald-600 animate-spin" />
-      </div>
-    );
-  }
-  
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 p-6 pt-20">
-      <BackToMenu />
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-2xl font-bold text-emerald-700 mb-4">{title}</h1>
-        <p className="text-gray-600">
-          Contenuto della pagina {title} in arrivo...
-        </p>
-      </div>
-    </div>
-  );
-};
-
-// Componente per pagine dinamiche
-const DynamicPage = ({ pageData }: { pageData: CustomPage }) => {
-  const [headerSettings, setHeaderSettings] = useState<HeaderSettings>({});
-  const [loading, setLoading] = useState(true);
-  const [hasSubmenuPages, setHasSubmenuPages] = useState(false);
-  
-  useEffect(() => {
-    const checkForSubmenuPages = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('menu_icons')
-          .select('id')
-          .eq('parent_path', pageData.path)
-          .limit(1);
-          
-        if (error) throw error;
-        
-        setHasSubmenuPages(data && data.length > 0);
-      } catch (error) {
-        console.error("Errore nel controllo delle sottopagine:", error);
-      }
-    };
-    
-    const fetchHeaderSettings = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('header_settings')
-          .select('*')
-          .limit(1)
-          .single();
-          
-        if (error) throw error;
-        
-        if (data) {
-          setHeaderSettings({
-            logoUrl: data.logo_url,
-            headerColor: data.header_color,
-          });
-        }
-      } catch (error) {
-        console.error("Errore nel caricamento delle impostazioni header:", error);
-        
-        // Fallback al localStorage se Supabase fallisce
-        const savedHeaderSettings = localStorage.getItem("headerSettings");
-        if (savedHeaderSettings) {
-          try {
-            setHeaderSettings(JSON.parse(savedHeaderSettings));
-          } catch (err) {
-            console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
-          }
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    Promise.all([checkForSubmenuPages(), fetchHeaderSettings()]);
-  }, [pageData.path]);
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100">
-        <Loader2 className="h-10 w-10 text-emerald-600 animate-spin" />
-      </div>
-    );
-  }
-  
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 p-6 pt-20">
-      <BackToMenu />
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-2xl font-bold text-emerald-700 mb-4">{pageData.title}</h1>
-        
-        {pageData.imageUrl && (
-          <div className="mb-6">
-            <img 
-              src={pageData.imageUrl} 
-              alt={pageData.title} 
-              className="w-full h-auto rounded-lg object-cover max-h-80"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = "https://via.placeholder.com/800x400?text=Immagine+non+disponibile";
-              }}
-            />
-          </div>
-        )}
-        
-        <div className="text-gray-600 prose">
-          {pageData.content.split('\n').map((paragraph, index) => (
-            <p key={index} className="mb-4">{paragraph}</p>
-          ))}
-        </div>
-        
-        {hasSubmenuPages && (
-          <div className="mt-6 pt-4 border-t border-gray-200">
-            <div className="flex justify-center">
-              <a 
-                href={`/submenu/${pageData.path.replace('/', '')}`} 
-                className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg shadow-md hover:from-emerald-600 hover:to-teal-700 transition-colors"
-              >
-                Esplora {pageData.title}
-              </a>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const queryClient = new QueryClient();
-
-const App = () => {
-  const [customPages, setCustomPages] = useState<CustomPage[]>([]);
-  const [headerSettings, setHeaderSettings] = useState<HeaderSettings>({});
-  const [loading, setLoading] = useState(true);
-  const hasSelectedLanguage = localStorage.getItem("selectedLanguage") !== null;
-  
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const { data: pagesData, error: pagesError } = await supabase
-          .from('custom_pages')
-          .select('*');
-        
-        if (pagesError) throw pagesError;
-        
-        if (pagesData) {
-          const formattedPages: CustomPage[] = pagesData.map(page => ({
-            id: page.id,
-            title: page.title,
-            content: page.content,
-            path: page.path,
-            imageUrl: page.image_url,
-            isSubmenu: page.is_submenu,
-            parentPath: page.parent_path
-          }));
-          setCustomPages(formattedPages);
-        }
-        
-        const { data: headerData, error: headerError } = await supabase
-          .from('header_settings')
-          .select('*')
-          .limit(1)
-          .single();
-          
-        if (headerError && headerError.code !== 'PGRST116') throw headerError;
-        
-        if (headerData) {
-          setHeaderSettings({
-            logoUrl: headerData.logo_url,
-            headerColor: headerData.header_color,
-          });
-        }
-      } catch (error) {
-        console.error("Errore nel caricamento dei dati:", error);
-        
-        const savedPages = localStorage.getItem("customPages");
-        if (savedPages) {
-          try {
-            setCustomPages(JSON.parse(savedPages));
-          } catch (err) {
-            console.error("Errore nel parsing delle pagine dal localStorage:", err);
-          }
-        }
-        
-        const savedHeaderSettings = localStorage.getItem("headerSettings");
-        if (savedHeaderSettings) {
-          try {
-            setHeaderSettings(JSON.parse(savedHeaderSettings));
-          } catch (err) {
-            console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
-          }
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, []);
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 text-emerald-600 animate-spin mx-auto" />
-          <p className="mt-4 text-emerald-700">Caricamento applicazione...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/menu" element={<Menu />} />
-            
-            <Route path="/welcome" element={<Welcome />} />
-            <Route path="/storia" element={<Storia />} />
-            <Route path="/servizi-hotel" element={<PlaceholderPage title="Servizi hotel" />} />
-            <Route path="/servizi-esterni" element={<PlaceholderPage title="Servizi esterni" />} />
-            <Route path="/ristorante" element={<PlaceholderPage title="Ristorante" />} />
-            <Route path="/scopri-territorio" element={<PlaceholderPage title="Scopri il territorio" />} />
-            <Route path="/location" element={<PlaceholderPage title="Posizione" />} />
-            <Route path="/wifi" element={<PlaceholderPage title="Wifi" />} />
-            <Route path="/activities" element={<PlaceholderPage title="Attività" />} />
-            <Route path="/transport" element={<PlaceholderPage title="Trasporti" />} />
-            <Route path="/shopping" element={<PlaceholderPage title="Shopping" />} />
-            <Route path="/contacts" element={<PlaceholderPage title="Contatti" />} />
-            <Route path="/events" element={<PlaceholderPage title="Eventi" />} />
-            <Route path="/gallery" element={<PlaceholderPage title="Galleria" />} />
-            <Route path="/info" element={<PlaceholderPage title="Info" />} />
-            
-            <Route path="/submenu/:parentPath" element={<SubMenu />} />
-            
-            {customPages.map((page) => (
-              <Route 
-                key={page.id} 
-                path={page.path} 
-                element={<DynamicPage pageData={page} />} 
-              />
-            ))}
-            
-            <Route path="/login" element={<Login />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/preview/:pageSlug" element={<PreviewPage />} />
-            
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <ChatbotBubble />
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
-};
-
-export default App;
+export default App

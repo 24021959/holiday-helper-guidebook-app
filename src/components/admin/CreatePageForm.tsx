@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -150,6 +151,9 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         ? `${parentPath}/${values.path}` 
         : `/${values.path}`;
       
+      // Aggiunto console.log per debug
+      console.log("Creating page with path:", finalPath);
+      
       // Prepare data for insertion to custom_pages table
       const pageData = {
         id: pageId,
@@ -164,12 +168,21 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         list_items: listType && locationItems.length > 0 ? locationItems : null
       };
 
+      console.log("Page data for insertion:", pageData);
+
       // 1. Insert into custom_pages table
-      const { error: pagesError } = await supabase
+      const { data: insertedPage, error: pagesError } = await supabase
         .from('custom_pages')
-        .insert(pageData);
+        .insert(pageData)
+        .select('*')
+        .single();
       
-      if (pagesError) throw pagesError;
+      if (pagesError) {
+        console.error("Error inserting page:", pagesError);
+        throw pagesError;
+      }
+      
+      console.log("Page inserted successfully:", insertedPage);
       
       // 2. Insert into menu_icons table
       const iconData = {
@@ -181,18 +194,30 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         parent_path: isSubmenu ? parentPath : null
       };
 
-      const { error: iconError } = await supabase
+      console.log("Icon data for insertion:", iconData);
+
+      const { data: insertedIcon, error: iconError } = await supabase
         .from('menu_icons')
-        .insert(iconData);
+        .insert(iconData)
+        .select('*')
+        .single();
       
-      if (iconError) throw iconError;
+      if (iconError) {
+        console.error("Error inserting icon:", iconError);
+        throw iconError;
+      }
+      
+      console.log("Icon inserted successfully:", insertedIcon);
       
       // Fetch all pages to update the list
       const { data: pagesData, error: fetchError } = await supabase
         .from('custom_pages')
         .select('*');
       
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error("Error fetching pages:", fetchError);
+        throw fetchError;
+      }
       
       if (pagesData) {
         const formattedPages = pagesData.map(page => ({
@@ -210,6 +235,8 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         
         // Update pages list in parent component
         onPageCreated(formattedPages);
+        
+        console.log("Updated pages list:", formattedPages);
       }
       
       // Reset form and state
