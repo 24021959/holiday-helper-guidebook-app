@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -24,7 +25,7 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
 }) => {
   const [title, setTitle] = useState(page.title);
   const [content, setContent] = useState(page.content);
-  const [path, setPath] = useState(page.path);
+  const [path, setPath] = useState(page.path); // Keep state but hide UI element
   const [isSubmenu, setIsSubmenu] = useState(page.isSubmenu || false);
   const [parentPath, setParentPath] = useState(page.parentPath || "");
   const [imageUrl, setImageUrl] = useState(page.imageUrl || "");
@@ -50,6 +51,7 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         return;
       }
       
+      // We still validate the path even though it's hidden
       if (!path.trim()) {
         toast.error("Il percorso è obbligatorio");
         return;
@@ -120,26 +122,14 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="title">Titolo</Label>
-          <Input 
-            id="title" 
-            value={title} 
-            onChange={(e) => setTitle(e.target.value)} 
-            placeholder="Titolo della pagina"
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="path">Percorso URL</Label>
-          <Input 
-            id="path" 
-            value={path} 
-            onChange={(e) => setPath(e.target.value)} 
-            placeholder="percorso-pagina"
-          />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="title">Titolo</Label>
+        <Input 
+          id="title" 
+          value={title} 
+          onChange={(e) => setTitle(e.target.value)} 
+          placeholder="Titolo della pagina"
+        />
       </div>
       
       <div className="space-y-2">
@@ -202,7 +192,7 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
               />
             </div>
           )}
-          <ImageUploader onImageUploaded={handleImageUploaded} />
+          <ImageUploader onImageUpload={handleImageUploaded} />
         </div>
       </div>
       

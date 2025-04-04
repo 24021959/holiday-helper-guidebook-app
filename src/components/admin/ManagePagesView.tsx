@@ -141,7 +141,6 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
                 </div>
                 <div>
                   <h3 className="font-medium text-lg">{page.title}</h3>
-                  <p className="text-gray-500 text-sm">/{page.path}</p>
                   {page.isSubmenu && (
                     <p className="text-xs text-teal-600 mt-1">
                       Sottopagina di: {page.parentPath}
