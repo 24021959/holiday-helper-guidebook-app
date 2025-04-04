@@ -51,31 +51,21 @@ const Header: React.FC<HeaderProps> = ({
         </div>
       )}
       
-      {/* Container for logo and title with flexible layout */}
-      <div className="relative z-10 flex items-center">
-        {/* Logo on the left when logoPosition is left */}
-        {logoUrl && logoPosition === "left" && (
+      {/* Welcome text or logo */}
+      <div className={`relative z-10 flex ${logoPosition === "left" ? "justify-start" : "justify-center"} items-center`}>
+        {logoUrl ? (
           <div className="flex items-center">
             <img 
               src={logoUrl} 
               alt="Logo" 
               className="h-10 md:h-12 object-contain"
             />
+            {appTitle && logoPosition === "left" && (
+              <h1 className={`ml-3 text-xl md:text-2xl font-bold ${textColorClass}`}>{appTitle}</h1>
+            )}
           </div>
-        )}
-        
-        {/* Centered title */}
-        <div className={`flex-1 flex justify-center ${logoPosition === "left" ? "ml-4" : ""}`}>
-          <h1 className={`text-xl md:text-2xl font-bold ${textColorClass}`}>{appTitle}</h1>
-        </div>
-        
-        {/* Logo in center when logoPosition is center */}
-        {logoUrl && logoPosition === "center" && (
-          <img 
-            src={logoUrl} 
-            alt="Logo" 
-            className="h-10 md:h-12 object-contain"
-          />
+        ) : (
+          <h1 className={`text-2xl md:text-3xl font-bold ${textColorClass}`}>{appTitle}</h1>
         )}
       </div>
     </div>
