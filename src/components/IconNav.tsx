@@ -14,7 +14,7 @@ interface IconData {
   icon: string;
   path: string;
   parent_path: string | null;
-  order: number;
+  order?: number; // Make order optional since it doesn't exist in the database
 }
 
 const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
@@ -32,12 +32,20 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
         const { data, error } = await supabase
           .from('menu_icons')
           .select('*')
-          .eq('parent_path', parentPath)
-          .order('order', { ascending: true });
+          .eq('parent_path', parentPath);
         
         if (error) throw error;
         
-        setIcons(data || []);
+        // Transform the data to match the IconData interface
+        const transformedData = data?.map(icon => ({
+          id: icon.id,
+          title: icon.label, // Use label as title
+          icon: icon.icon,
+          path: icon.path,
+          parent_path: icon.parent_path
+        })) || [];
+        
+        setIcons(transformedData);
       } catch (error) {
         console.error("Errore nel caricamento delle icone:", error);
         setError("Impossibile caricare le icone del menu");
@@ -106,19 +114,21 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
     );
   }
 
-  // Add the static links for Welcome and Storia pages
-  const staticIcons = [
+  // Add the static links for Welcome and Storia pages as IconData objects
+  const staticIcons: IconData[] = [
     {
       id: "welcome",
       title: "Benvenuto",
       icon: "Home",
       path: "/welcome",
+      parent_path: null
     },
     {
       id: "storia",
       title: "Storia",
       icon: "Book",
       path: "/storia",
+      parent_path: null
     }
   ];
 
