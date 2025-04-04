@@ -1,22 +1,12 @@
 
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { PageData } from "@/pages/Admin";
 import { useNavigate } from "react-router-dom";
-import {
-  FileText, MessageCircle, Home, 
-  MapPin, Book, Coffee, Utensils, Phone, 
-  Wifi, Bus, ShoppingCart, Calendar, 
-  Hotel, Bike, Map, Info, Image,
-  Landmark, Building, Trees, Mountain, 
-  Users, Music, Camera, Globe,
-  Newspaper, PawPrint, Heart, Bookmark, ShoppingBag,
-  Edit, Trash, Eye
-} from "lucide-react";
 import { EditPageForm } from "./EditPageForm";
+import { PageListItem } from "./PageListItem";
 
 interface ManagePagesViewProps {
   pages: PageData[];
@@ -98,29 +88,6 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     navigate(`/preview/${path}`);
   };
 
-  const renderIconPreview = (iconName: string) => {
-    switch (iconName) {
-      case 'FileText': return <FileText className="w-6 h-6" />;
-      case 'Image': return <Image className="w-6 h-6" />;
-      case 'MessageCircle': return <MessageCircle className="w-6 h-6" />;
-      case 'Info': return <Info className="w-6 h-6" />;
-      case 'Map': return <Map className="w-6 h-6" />;
-      case 'Utensils': return <Utensils className="w-6 h-6" />;
-      case 'Landmark': return <Landmark className="w-6 h-6" />;
-      case 'Hotel': return <Hotel className="w-6 h-6" />;
-      case 'Wifi': return <Wifi className="w-6 h-6" />;
-      case 'Bus': return <Bus className="w-6 h-6" />;
-      case 'ShoppingBag': return <ShoppingBag className="w-6 h-6" />;
-      case 'Calendar': return <Calendar className="w-6 h-6" />;
-      case 'Phone': return <Phone className="w-6 h-6" />;
-      case 'Book': return <Book className="w-6 h-6" />;
-      case 'Coffee': return <Coffee className="w-6 h-6" />;
-      case 'Home': return <Home className="w-6 h-6" />;
-      case 'Bike': return <Bike className="w-6 h-6" />;
-      default: return <FileText className="w-6 h-6" />;
-    }
-  };
-
   if (isLoading) {
     return <p className="text-gray-500">Caricamento pagine...</p>;
   }
@@ -134,59 +101,13 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
       ) : (
         <div className="space-y-4">
           {pages.map((page) => (
-            <div key={page.id} className="border rounded-lg p-4 flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <div className="bg-blue-200 p-2 rounded-md">
-                  {renderIconPreview(page.icon || "FileText")}
-                </div>
-                <div>
-                  <h3 className="font-medium text-lg">{page.title}</h3>
-                  {page.isSubmenu && (
-                    <p className="text-xs text-teal-600 mt-1">
-                      Sottopagina di: {page.parentPath}
-                    </p>
-                  )}
-                  {page.listItems && page.listItems.length > 0 && (
-                    <p className="text-xs text-emerald-600 mt-1">
-                      {page.listItems.length} {
-                        page.listType === "restaurants" ? "ristoranti" :
-                        page.listType === "activities" ? "attività" : 
-                        page.listType === "locations" ? "luoghi" : "luoghi"
-                      }
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => handlePreviewPage(page.path)}
-                  className="flex items-center gap-1"
-                >
-                  <Eye className="w-4 h-4" />
-                  <span className="hidden sm:inline">Anteprima</span>
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => handleEditPage(page)}
-                  className="flex items-center gap-1 bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
-                >
-                  <Edit className="w-4 h-4" />
-                  <span className="hidden sm:inline">Modifica</span>
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="destructive" 
-                  onClick={() => handleDeletePage(page.id)}
-                  className="flex items-center gap-1"
-                >
-                  <Trash className="w-4 h-4" />
-                  <span className="hidden sm:inline">Elimina</span>
-                </Button>
-              </div>
-            </div>
+            <PageListItem
+              key={page.id}
+              page={page}
+              onDelete={handleDeletePage}
+              onEdit={handleEditPage}
+              onPreview={handlePreviewPage}
+            />
           ))}
         </div>
       )}

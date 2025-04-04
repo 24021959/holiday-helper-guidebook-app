@@ -1,14 +1,15 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageData } from "@/pages/Admin";
-import ImageUploader from "../ImageUploader";
+import { PageContentSection } from "./form/PageContentSection";
+import { PageTypeSection } from "./form/PageTypeSection";
+import { PageImageSection } from "./form/PageImageSection";
+import { PageIconSection } from "./form/PageIconSection";
 
 interface EditPageFormProps {
   page: PageData;
@@ -132,100 +133,25 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         />
       </div>
       
-      <div className="space-y-2">
-        <Label htmlFor="content">Contenuto</Label>
-        <Textarea 
-          id="content" 
-          value={content} 
-          onChange={(e) => setContent(e.target.value)} 
-          placeholder="Contenuto della pagina"
-          className="min-h-[200px]"
-        />
-      </div>
+      <PageContentSection content={content} setContent={setContent} />
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Tipo di pagina</Label>
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="isSubmenu"
-              checked={isSubmenu}
-              onChange={(e) => setIsSubmenu(e.target.checked)}
-              className="rounded border-gray-300"
-            />
-            <Label htmlFor="isSubmenu">Sottopagina</Label>
-          </div>
-        </div>
-        
-        {isSubmenu && (
-          <div className="space-y-2">
-            <Label htmlFor="parentPath">Pagina genitore</Label>
-            <Select 
-              value={parentPath} 
-              onValueChange={setParentPath}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleziona pagina genitore" />
-              </SelectTrigger>
-              <SelectContent>
-                {parentPages.map((parent) => (
-                  <SelectItem key={parent.path} value={parent.path}>
-                    {parent.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-      </div>
+      <PageTypeSection 
+        isSubmenu={isSubmenu}
+        setIsSubmenu={setIsSubmenu}
+        parentPath={parentPath}
+        setParentPath={setParentPath}
+        parentPages={parentPages}
+      />
       
-      <div className="space-y-2">
-        <Label>Immagine della pagina</Label>
-        <div className="space-y-2">
-          {imageUrl && (
-            <div className="mb-2">
-              <img 
-                src={imageUrl} 
-                alt="Anteprima" 
-                className="w-full max-h-32 object-cover rounded-md"
-              />
-            </div>
-          )}
-          <ImageUploader onImageUpload={handleImageUploaded} />
-        </div>
-      </div>
+      <PageImageSection 
+        imageUrl={imageUrl}
+        onImageUploaded={handleImageUploaded}
+      />
       
-      <div className="space-y-2">
-        <Label htmlFor="icon">Icona</Label>
-        <Select 
-          value={icon} 
-          onValueChange={setIcon}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Seleziona un'icona" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="FileText">Documento</SelectItem>
-            <SelectItem value="Image">Immagine</SelectItem>
-            <SelectItem value="MessageCircle">Messaggio</SelectItem>
-            <SelectItem value="Info">Informazioni</SelectItem>
-            <SelectItem value="Map">Mappa</SelectItem>
-            <SelectItem value="Utensils">Ristorante</SelectItem>
-            <SelectItem value="Landmark">Luogo</SelectItem>
-            <SelectItem value="Hotel">Hotel</SelectItem>
-            <SelectItem value="Wifi">WiFi</SelectItem>
-            <SelectItem value="Bus">Trasporti</SelectItem>
-            <SelectItem value="ShoppingBag">Shopping</SelectItem>
-            <SelectItem value="Calendar">Eventi</SelectItem>
-            <SelectItem value="Phone">Contatti</SelectItem>
-            <SelectItem value="Book">Guida</SelectItem>
-            <SelectItem value="Coffee">Bar</SelectItem>
-            <SelectItem value="Home">Casa</SelectItem>
-            <SelectItem value="Bike">Attività</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <PageIconSection 
+        icon={icon}
+        setIcon={setIcon}
+      />
       
       <Button type="submit" disabled={isLoading} className="w-full">
         {isLoading ? "Aggiornamento in corso..." : "Aggiorna pagina"}
