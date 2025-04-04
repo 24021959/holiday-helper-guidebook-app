@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import Header from "@/components/Header";
+import { Loader2 } from "lucide-react";
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -16,6 +16,7 @@ const Home: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   const handleUserEntry = () => {
+    localStorage.setItem("selectedLanguage", "it");
     navigate("/menu");
   };
   
@@ -26,7 +27,7 @@ const Home: React.FC = () => {
     // Simple demo authentication
     setTimeout(() => {
       if (adminUsername === "admin" && adminPassword === "password") {
-        localStorage.setItem("isAuthenticated", "true");
+        localStorage.setItem("admin_token", "demo_token");
         toast.success("Login effettuato con successo");
         navigate("/admin");
       } else {
@@ -38,10 +39,11 @@ const Home: React.FC = () => {
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-teal-100">
-      <Header 
-        backgroundColor="bg-gradient-to-r from-teal-500 to-emerald-600"
-        showAdminButton={false}
-      />
+      <div className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 py-4 px-4 text-center shadow-lg relative overflow-hidden">
+        <div className="relative z-10 flex items-center justify-center">
+          <h1 className="text-white font-bold text-xl md:text-2xl tracking-wide">Locanda dell'Angelo</h1>
+        </div>
+      </div>
       
       <div className="container mx-auto px-4 py-10">
         <div className="max-w-3xl mx-auto">
@@ -118,7 +120,12 @@ const Home: React.FC = () => {
                       className="w-full bg-gradient-to-r from-emerald-500 to-teal-600"
                       disabled={isLoading}
                     >
-                      {isLoading ? "Accesso in corso..." : "Accedi"}
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Accesso in corso...
+                        </>
+                      ) : "Accedi"}
                     </Button>
                   </form>
                 </CardContent>
@@ -129,6 +136,16 @@ const Home: React.FC = () => {
               </Card>
             </TabsContent>
           </Tabs>
+        </div>
+        
+        <div className="w-full py-6 mt-10 border-t border-gray-200">
+          <div className="flex justify-center items-center">
+            <img 
+              src="/lovable-uploads/f001bbd0-3515-4169-944c-9a037d5ddae8.png" 
+              alt="EVA AI Technologies Logo" 
+              className="h-8 md:h-10" 
+            />
+          </div>
         </div>
       </div>
     </div>

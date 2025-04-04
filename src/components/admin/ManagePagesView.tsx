@@ -129,7 +129,8 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
                     <p className="text-xs text-emerald-600 mt-1">
                       {page.listItems.length} {
                         page.listType === "restaurants" ? "ristoranti" :
-                        page.listType === "activities" ? "attività" : "luoghi"
+                        page.listType === "activities" ? "attività" : 
+                        page.listType === "locations" ? "luoghi" : "luoghi"
                       }
                     </p>
                   )}

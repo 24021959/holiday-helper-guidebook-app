@@ -22,7 +22,7 @@ export interface PageData {
   isSubmenu?: boolean;
   parentPath?: string | null;
   listItems?: any[];
-  listType?: 'restaurants' | 'activities' | 'places';
+  listType?: 'restaurants' | 'activities' | 'places' | 'locations';
 }
 
 export interface UserData {
@@ -69,7 +69,7 @@ const Admin: React.FC = () => {
             icon: page.icon,
             isSubmenu: page.is_submenu,
             parentPath: page.parent_path,
-            listItems: page.list_items,
+            listItems: Array.isArray(page.list_items) ? page.list_items : [],
             listType: page.list_type
           }));
           setPages(formattedPages);
@@ -117,9 +117,10 @@ const Admin: React.FC = () => {
     setPages(updatedPages);
   };
   
-  const handleSaveChatbotSettings = () => {
+  const handleSaveChatbotSettings = async () => {
     // Implementation for saving chatbot settings
     toast.success("Impostazioni chatbot salvate");
+    return Promise.resolve();
   };
   
   const handleLogout = () => {
