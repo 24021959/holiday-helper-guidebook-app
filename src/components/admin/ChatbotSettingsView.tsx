@@ -23,6 +23,12 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
     try {
       setIsSaving(true);
       
+      // Validate the chatbot code
+      if (chatbotCode && !chatbotCode.includes('script')) {
+        toast.error("Il codice inserito non sembra essere un tag script valido");
+        return;
+      }
+      
       // Save to Supabase
       const { error } = await supabase
         .from('chatbot_settings')
@@ -36,6 +42,36 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
       
       // Call the parent onSave function
       await onSave();
+      
+      // Reinitialize chatbot if exists on page
+      const existingScript = document.getElementById("chatbot-script");
+      if (existingScript) {
+        existingScript.remove();
+        
+        // Add a delay to ensure the old script is fully removed
+        setTimeout(() => {
+          // Extract script details and reinitialize
+          const srcMatch = chatbotCode.match(/src=['"](.*?)['"]/);
+          const dataIdMatch = chatbotCode.match(/data-chatbot-id=['"](.*?)['"]/);
+          
+          if (srcMatch && srcMatch[1]) {
+            const script = document.createElement("script");
+            script.id = "chatbot-script";
+            script.defer = true;
+            script.src = srcMatch[1];
+            
+            if (dataIdMatch && dataIdMatch[1]) {
+              script.setAttribute("data-chatbot-id", dataIdMatch[1]);
+            }
+            
+            script.setAttribute("data-element", "chatbot-container");
+            script.setAttribute("data-position", "right");
+            
+            document.head.appendChild(script);
+            console.log("Chatbot reinizializzato dopo il salvataggio");
+          }
+        }, 500);
+      }
       
       toast.success("Configurazione chatbot salvata con successo");
     } catch (error) {
