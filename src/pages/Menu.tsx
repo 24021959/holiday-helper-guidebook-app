@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import IconNav from "@/components/IconNav";
 import AdminButton from "@/components/AdminButton";
@@ -100,7 +99,7 @@ const Menu: React.FC = () => {
       <Header 
         logoUrl={headerSettings.logoUrl || undefined}
         backgroundColor={headerSettings.headerColor}
-        showAdminButton={true}
+        showAdminButton={false}
       />
       
       {/* Contenitore principale con le icone che prende tutto lo spazio disponibile */}

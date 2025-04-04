@@ -26,7 +26,7 @@ const Index: React.FC = () => {
         <Header 
           backgroundColor="bg-white"
           logoUrl="/lovable-uploads/f001bbd0-3515-4169-944c-9a037d5ddae8.png"
-          showAdminButton={true}
+          showAdminButton={false}
         />
         
         {/* Elementi decorativi di sfondo */}
