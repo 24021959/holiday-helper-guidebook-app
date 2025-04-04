@@ -15,7 +15,7 @@ const Header: React.FC<HeaderProps> = ({
   backgroundColor = "bg-white",
   logoUrl,
   establishmentName = "EV-AI Guest",
-  showAdminButton = false  // Cambiato il default a false
+  showAdminButton = false
 }) => {
   // Determina se usare testo bianco o scuro in base al colore di sfondo
   const isLightBackground = 
@@ -52,10 +52,10 @@ const Header: React.FC<HeaderProps> = ({
         </div>
       )}
       
-      {/* Logo and Title */}
-      <div className="relative z-10 flex items-center justify-between">
-        {/* Logo a sinistra */}
-        <div className="flex-shrink-0">
+      {/* Logo and Title - layout modificato per essere responsive */}
+      <div className="relative z-10 flex flex-col sm:flex-row items-center sm:justify-between">
+        {/* Logo */}
+        <div className="flex-shrink-0 mb-2 sm:mb-0">
           <img 
             src={logoUrl || defaultLogo} 
             alt="EV-AI Logo" 
@@ -63,8 +63,8 @@ const Header: React.FC<HeaderProps> = ({
           />
         </div>
         
-        {/* Titolo al centro */}
-        <div className="absolute left-1/2 transform -translate-x-1/2">
+        {/* Titolo - non più in posizione assoluta */}
+        <div className="mt-2 sm:mt-0">
           <h1 className={`text-xl md:text-2xl font-bold ${textColorClass}`}>{establishmentName}</h1>
         </div>
       </div>
