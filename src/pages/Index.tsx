@@ -18,7 +18,7 @@ const Index: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-gray-100">
       <div className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-        {/* Header with white background, EV-AI logo on the left and "EV-AI Guest" title */}
+        {/* Header with white background, EV-AI logo on the left and "EV-AI Guest" title centered */}
         <Header 
           backgroundColor="bg-white" 
           logoUrl="/lovable-uploads/f001bbd0-3515-4169-944c-9a037d5ddae8.png"
