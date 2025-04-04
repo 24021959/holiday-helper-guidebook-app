@@ -11,7 +11,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ 
   backgroundImage, 
-  backgroundColor = "bg-gradient-to-r from-teal-500 to-emerald-600",
+  backgroundColor = "bg-white",
   logoUrl,
   showAdminButton = true 
 }) => {
@@ -22,9 +22,12 @@ const Header: React.FC<HeaderProps> = ({
   
   const textColorClass = isLightBackground ? "text-gray-800" : "text-white";
 
+  // Default logo URL
+  const defaultLogo = "/lovable-uploads/f001bbd0-3515-4169-944c-9a037d5ddae8.png";
+
   return (
     <div
-      className={`w-full ${!backgroundImage ? backgroundColor : ''} py-5 px-4 text-center shadow-lg relative overflow-hidden`}
+      className={`w-full ${!backgroundImage ? backgroundColor : ''} py-5 px-4 shadow-md relative overflow-hidden`}
       style={
         backgroundImage
           ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: "cover", backgroundPosition: "center" }
@@ -47,17 +50,21 @@ const Header: React.FC<HeaderProps> = ({
         </div>
       )}
       
-      {/* Welcome text or logo */}
-      <div className="relative z-10 flex flex-col items-center justify-center">
-        {logoUrl ? (
+      {/* Logo and Title */}
+      <div className="relative z-10 flex items-center justify-between">
+        {/* Logo a sinistra */}
+        <div className="flex-shrink-0">
           <img 
-            src={logoUrl} 
-            alt="Logo" 
-            className="h-16 md:h-20 object-contain"
+            src={logoUrl || defaultLogo} 
+            alt="EV-AI Logo" 
+            className="h-8 md:h-10 object-contain"
           />
-        ) : (
-          <h1 className={`text-2xl md:text-3xl font-bold ${textColorClass}`}>LOCANDA DELL'ANGELO</h1>
-        )}
+        </div>
+        
+        {/* Titolo al centro */}
+        <div className="absolute left-1/2 transform -translate-x-1/2">
+          <h1 className={`text-xl md:text-2xl font-bold ${textColorClass}`}>EV-AI Guest</h1>
+        </div>
       </div>
     </div>
   );
