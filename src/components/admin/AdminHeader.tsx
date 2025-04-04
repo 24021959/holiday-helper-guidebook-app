@@ -21,7 +21,8 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ isMaster }) => {
   };
   
   const goToPreview = () => {
-    navigate("/");
+    // Modifica: indirizza l'utente verso /welcome o /index anziché alla root
+    navigate("/welcome");
   };
   
   // Determina il testo del titolo in base al ruolo dell'utente
