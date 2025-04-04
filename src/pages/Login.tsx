@@ -71,24 +71,34 @@ const Login: React.FC = () => {
         </div>
 
         <Tabs defaultValue="admin" className="w-full" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 mb-8">
-            <TabsTrigger value="admin">Amministrazione</TabsTrigger>
-            <TabsTrigger value="master">Master</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100 p-1 rounded-lg">
+            <TabsTrigger 
+              value="admin" 
+              className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white transition-all duration-200"
+            >
+              Amministrazione
+            </TabsTrigger>
+            <TabsTrigger 
+              value="master" 
+              className="data-[state=active]:bg-purple-500 data-[state=active]:text-white transition-all duration-200"
+            >
+              Master
+            </TabsTrigger>
           </TabsList>
             
           <TabsContent value="admin">
-            <Card>
-              <CardHeader>
+            <Card className="border-emerald-100 bg-gradient-to-br from-emerald-50 to-white shadow-md">
+              <CardHeader className="border-b border-emerald-100 bg-emerald-50/50">
                 <CardTitle className="text-xl text-emerald-700">Amministrazione</CardTitle>
-                <CardDescription>
+                <CardDescription className="text-emerald-600/80">
                   Accedi per gestire i contenuti del sito
                 </CardDescription>
               </CardHeader>
                 
-              <CardContent>
+              <CardContent className="pt-6">
                 <form onSubmit={handleAdminLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="admin-username">Username</Label>
+                    <Label htmlFor="admin-username" className="text-emerald-700">Username</Label>
                     <Input 
                       id="admin-username"
                       type="text"
@@ -96,11 +106,12 @@ const Login: React.FC = () => {
                       value={adminUsername}
                       onChange={(e) => setAdminUsername(e.target.value)}
                       disabled={isLoading}
+                      className="border-emerald-200 focus-visible:ring-emerald-500"
                     />
                   </div>
                     
                   <div className="space-y-2">
-                    <Label htmlFor="admin-password">Password</Label>
+                    <Label htmlFor="admin-password" className="text-emerald-700">Password</Label>
                     <Input 
                       id="admin-password"
                       type="password"
@@ -108,12 +119,13 @@ const Login: React.FC = () => {
                       value={adminPassword}
                       onChange={(e) => setAdminPassword(e.target.value)}
                       disabled={isLoading}
+                      className="border-emerald-200 focus-visible:ring-emerald-500"
                     />
                   </div>
                     
                   <Button 
                     type="submit"
-                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-600"
+                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 transition-all duration-300"
                     disabled={isLoading}
                   >
                     {isLoading ? (
@@ -126,25 +138,25 @@ const Login: React.FC = () => {
                 </form>
               </CardContent>
                 
-              <CardFooter className="text-center justify-center text-xs text-gray-500">
+              <CardFooter className="text-center justify-center text-xs text-gray-500 border-t border-emerald-100 bg-emerald-50/30">
                 Demo: usa username "admin" e password "password"
               </CardFooter>
             </Card>
           </TabsContent>
             
           <TabsContent value="master">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-xl text-emerald-700">Master</CardTitle>
-                <CardDescription>
+            <Card className="border-purple-100 bg-gradient-to-br from-purple-50 to-white shadow-md">
+              <CardHeader className="border-b border-purple-100 bg-purple-50/50">
+                <CardTitle className="text-xl text-purple-700">Master</CardTitle>
+                <CardDescription className="text-purple-600/80">
                   Accedi come Master per gestire gli utenti del sistema
                 </CardDescription>
               </CardHeader>
                 
-              <CardContent>
+              <CardContent className="pt-6">
                 <form onSubmit={handleMasterLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="master-username">Username Master</Label>
+                    <Label htmlFor="master-username" className="text-purple-700">Username Master</Label>
                     <Input 
                       id="master-username"
                       type="text"
@@ -152,11 +164,12 @@ const Login: React.FC = () => {
                       value={masterUsername}
                       onChange={(e) => setMasterUsername(e.target.value)}
                       disabled={isLoading}
+                      className="border-purple-200 focus-visible:ring-purple-500"
                     />
                   </div>
                     
                   <div className="space-y-2">
-                    <Label htmlFor="master-password">Password Master</Label>
+                    <Label htmlFor="master-password" className="text-purple-700">Password Master</Label>
                     <Input 
                       id="master-password"
                       type="password"
@@ -164,12 +177,13 @@ const Login: React.FC = () => {
                       value={masterPassword}
                       onChange={(e) => setMasterPassword(e.target.value)}
                       disabled={isLoading}
+                      className="border-purple-200 focus-visible:ring-purple-500"
                     />
                   </div>
                     
                   <Button 
                     type="submit"
-                    className="w-full bg-gradient-to-r from-purple-500 to-indigo-600"
+                    className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 transition-all duration-300"
                     disabled={isLoading}
                   >
                     {isLoading ? (
@@ -182,7 +196,7 @@ const Login: React.FC = () => {
                 </form>
               </CardContent>
                 
-              <CardFooter className="text-center justify-center text-xs text-gray-500">
+              <CardFooter className="text-center justify-center text-xs text-gray-500 border-t border-purple-100 bg-purple-50/30">
                 Demo: usa username "master" e password "master123"
               </CardFooter>
             </Card>
