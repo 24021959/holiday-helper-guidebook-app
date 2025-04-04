@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +25,14 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
   onPagesUpdate 
 }) => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Ensure pages are loaded
+    if (pages) {
+      setIsLoading(false);
+    }
+  }, [pages]);
 
   const handleDeletePage = async (id: string) => {
     try {
@@ -91,6 +99,10 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     }
   };
 
+  if (isLoading) {
+    return <p className="text-gray-500">Caricamento pagine...</p>;
+  }
+
   return (
     <>
       <h2 className="text-xl font-medium text-emerald-600 mb-4">Gestisci Pagine</h2>
@@ -113,7 +125,7 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
                       Sottopagina di: {page.parentPath}
                     </p>
                   )}
-                  {page.listItems && (
+                  {page.listItems && page.listItems.length > 0 && (
                     <p className="text-xs text-emerald-600 mt-1">
                       {page.listItems.length} {
                         page.listType === "restaurants" ? "ristoranti" :
