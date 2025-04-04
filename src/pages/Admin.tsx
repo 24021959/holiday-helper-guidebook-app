@@ -62,8 +62,33 @@ const Admin: React.FC = () => {
     }
   }, [location.search, isMaster]);
   
-  // Fetch all pages 
+  // Fetch chatbot settings
   useEffect(() => {
+    const fetchChatbotSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('chatbot_settings')
+          .select('code')
+          .limit(1)
+          .single();
+          
+        if (error && error.code !== 'PGRST116') {
+          // PGRST116 è "did not return a single row"
+          console.warn("Errore nel caricamento delle impostazioni chatbot:", error);
+          return;
+        }
+        
+        if (data) {
+          setChatbotCode(data.code);
+          // Store in localStorage for client-side access
+          localStorage.setItem("chatbotCode", data.code);
+        }
+      } catch (error) {
+        console.error("Error fetching chatbot settings:", error);
+      }
+    };
+    
+    // Fetch all pages 
     const fetchPages = async () => {
       try {
         const { data, error } = await supabase
@@ -93,8 +118,11 @@ const Admin: React.FC = () => {
       }
     };
     
-    if (isAuthenticated && !isMaster) {
-      fetchPages();
+    if (isAuthenticated) {
+      if (!isMaster) {
+        fetchPages();
+      }
+      fetchChatbotSettings();
     }
   }, [isAuthenticated, isMaster]);
   
@@ -131,9 +159,24 @@ const Admin: React.FC = () => {
   };
   
   const handleSaveChatbotSettings = async () => {
-    // Implementation for saving chatbot settings
-    toast.success("Impostazioni chatbot salvate");
-    return Promise.resolve();
+    try {
+      const { error } = await supabase
+        .from('chatbot_settings')
+        .upsert({ id: 1, code: chatbotCode })
+        .select();
+
+      if (error) throw error;
+      
+      // Also save to localStorage for client-side access
+      localStorage.setItem("chatbotCode", chatbotCode);
+      
+      toast.success("Impostazioni chatbot salvate con successo");
+      return Promise.resolve();
+    } catch (error) {
+      console.error("Errore nel salvataggio delle impostazioni chatbot:", error);
+      toast.error("Errore nel salvataggio delle impostazioni chatbot");
+      return Promise.reject(error);
+    }
   };
   
   if (isLoading) {

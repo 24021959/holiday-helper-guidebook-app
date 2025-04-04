@@ -1,9 +1,10 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
 interface ChatbotSettingsViewProps {
   chatbotCode: string;
@@ -16,6 +17,35 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
   setChatbotCode,
   onSave
 }) => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const saveChatbotSettings = async () => {
+    try {
+      setIsSaving(true);
+      
+      // Save to Supabase
+      const { error } = await supabase
+        .from('chatbot_settings')
+        .upsert({ id: 1, code: chatbotCode })
+        .select();
+
+      if (error) throw error;
+      
+      // Also save to localStorage for client-side access
+      localStorage.setItem("chatbotCode", chatbotCode);
+      
+      // Call the parent onSave function
+      await onSave();
+      
+      toast.success("Configurazione chatbot salvata con successo");
+    } catch (error) {
+      console.error("Errore nel salvataggio delle impostazioni chatbot:", error);
+      toast.error("Errore nel salvataggio delle impostazioni chatbot");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <>
       <h2 className="text-xl font-medium text-emerald-600 mb-4">Integrazione Chatbot</h2>
@@ -28,7 +58,19 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
           placeholder="<script defer id='chatbot-script' src='https://...' data-chatbot-id='...'></script>"
         />
         <div className="flex justify-end">
-          <Button onClick={onSave}>Salva Configurazione Chatbot</Button>
+          <Button 
+            onClick={saveChatbotSettings} 
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Salvataggio in corso...
+              </>
+            ) : (
+              "Salva Configurazione Chatbot"
+            )}
+          </Button>
         </div>
         
         <div className="mt-6 p-4 bg-gray-100 rounded-lg">
@@ -37,7 +79,7 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
             <li>Copia il codice di embedding fornito dal tuo provider di chatbot.</li>
             <li>Incolla il codice nel campo di testo sopra.</li>
             <li>Clicca su "Salva Configurazione Chatbot".</li>
-            <li>Il chatbot sarà visibile in tutte le pagine del tuo sito.</li>
+            <li>Il chatbot sarà visibile in tutte le pagine del tuo sito, eccetto il pannello di amministrazione.</li>
           </ol>
         </div>
       </div>

@@ -13,6 +13,7 @@ import NotFound from '@/pages/NotFound'
 import PreviewPage from '@/pages/PreviewPage'
 import { supabase } from './integrations/supabase/client'
 import { TranslationProvider } from './context/TranslationContext'
+import ChatbotBubble from '@/components/ChatbotBubble'
 
 // Componente per gestire le pagine dinamiche create dall'amministratore
 const DynamicPage = () => {
@@ -49,29 +50,6 @@ function App() {
   }>({});
 
   useEffect(() => {
-    // Aggiungi lo script del chatbot all'head se presente nelle impostazioni
-    const loadChatbotSettings = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('chatbot_settings')
-          .select('code')
-          .limit(1)
-          .single();
-        
-        if (error) throw error;
-        
-        if (data && data.code) {
-          // Crea un nuovo elemento script
-          const script = document.createElement('script');
-          script.innerHTML = data.code;
-          document.head.appendChild(script);
-          console.info("Script del chatbot predefinito aggiunto nell'head");
-        }
-      } catch (error) {
-        console.warn("Errore nel caricamento delle impostazioni del chatbot:", error);
-      }
-    };
-    
     // Carica impostazioni dell'header
     const loadHeaderSettings = async () => {
       try {
@@ -106,7 +84,6 @@ function App() {
       }
     };
     
-    loadChatbotSettings();
     loadHeaderSettings();
   }, []);
 
@@ -140,6 +117,9 @@ function App() {
           {/* Rotta per 404 Not Found - deve essere l'ultima */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        
+        {/* ChatbotBubble will be conditionally rendered based on current route */}
+        <ChatbotBubble />
       </Router>
     </TranslationProvider>
   )

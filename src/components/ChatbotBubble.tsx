@@ -2,11 +2,25 @@
 import React, { useEffect, useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useLocation } from "react-router-dom";
 
 const ChatbotBubble: React.FC = () => {
   const [chatbotCode, setChatbotCode] = useState<string | null>(null);
-
+  const [isVisible, setIsVisible] = useState<boolean>(true);
+  const location = useLocation();
+  
   useEffect(() => {
+    // Hide the chatbot on admin pages
+    const isAdminPage = location.pathname.includes('/admin') || location.pathname.includes('/login');
+    setIsVisible(!isAdminPage);
+    
+    // Only load and initialize the chatbot if we're not on an admin page
+    if (!isAdminPage) {
+      loadChatbot();
+    }
+  }, [location.pathname]);
+  
+  const loadChatbot = () => {
     // Recupera il codice del chatbot dal localStorage
     const savedChatbotCode = localStorage.getItem("chatbotCode");
     setChatbotCode(savedChatbotCode);
@@ -66,12 +80,7 @@ const ChatbotBubble: React.FC = () => {
       chatbotContainer.id = "chatbot-container";
       document.body.appendChild(chatbotContainer);
     }
-    
-    // Funzione di pulizia
-    return () => {
-      // Non rimuoviamo lo script perché potrebbe causare problemi durante la navigazione SPA
-    };
-  }, []);
+  };
 
   const handleOpenChat = () => {
     console.log("Tentativo di aprire il chatbot...");
@@ -162,6 +171,11 @@ const ChatbotBubble: React.FC = () => {
       });
     }
   };
+
+  // Non mostrare il bubble se siamo in una pagina admin
+  if (!isVisible) {
+    return null;
+  }
 
   return (
     <>
