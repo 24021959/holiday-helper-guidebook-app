@@ -1,9 +1,20 @@
+
 import React from "react";
 import BackToMenu from "@/components/BackToMenu";
 import { Card } from "@/components/ui/card";
 import Header from "@/components/Header";
 
 const Welcome: React.FC = () => {
+  // Component for footer with credentials
+  const Footer = () => (
+    <div className="w-full bg-gradient-to-r from-teal-50 to-emerald-50 py-3 border-t border-gray-200 mt-8">
+      <div className="text-center text-gray-600 text-sm">
+        <p>Powered by EV-AI Technologies</p>
+        <p className="text-xs mt-1">© {new Date().getFullYear()} EVA AI Technologies - All Rights Reserved</p>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 p-4 md:p-6">
       <Header 
@@ -61,6 +72,9 @@ const Welcome: React.FC = () => {
           </Card>
         </div>
       </div>
+      
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };

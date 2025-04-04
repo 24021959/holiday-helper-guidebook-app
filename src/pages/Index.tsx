@@ -1,4 +1,3 @@
-
 import React from "react";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import IconNav from "@/components/IconNav";
@@ -6,15 +5,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import Header from "@/components/Header";
 
 const Index: React.FC = () => {
-  // Component for footer with logo
+  // Component for footer with credentials
   const Footer = () => (
     <div className="w-full bg-gradient-to-r from-teal-50 to-emerald-50 py-3 border-t border-gray-200">
-      <div className="flex justify-center items-center">
-        <img 
-          src="/lovable-uploads/f001bbd0-3515-4169-944c-9a037d5ddae8.png" 
-          alt="EVA AI Technologies Logo" 
-          className="h-8 md:h-10" 
-        />
+      <div className="text-center text-gray-600 text-sm">
+        <p>Powered by EV-AI Technologies</p>
+        <p className="text-xs mt-1">© {new Date().getFullYear()} EVA AI Technologies - All Rights Reserved</p>
       </div>
     </div>
   );
