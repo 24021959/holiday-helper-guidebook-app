@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagementView } from "@/components/admin/UserManagementView";
@@ -22,7 +21,7 @@ export interface PageData {
   isSubmenu?: boolean;
   parentPath?: string | null;
   listItems?: any[];
-  listType?: 'restaurants' | 'activities' | 'places' | 'locations';
+  listType?: 'restaurants' | 'activities' | 'locations';
 }
 
 export interface UserData {
@@ -70,7 +69,7 @@ const Admin: React.FC = () => {
             isSubmenu: page.is_submenu,
             parentPath: page.parent_path,
             listItems: Array.isArray(page.list_items) ? page.list_items : [],
-            listType: page.list_type
+            listType: page.list_type as 'restaurants' | 'activities' | 'locations'
           }));
           setPages(formattedPages);
         }
@@ -109,8 +108,8 @@ const Admin: React.FC = () => {
     checkAuth();
   }, [navigate]);
   
-  const handlePageCreated = (newPage: PageData) => {
-    setPages([...pages, newPage]);
+  const handlePageCreated = (newPages: PageData[]) => {
+    setPages(newPages);
   };
   
   const handlePagesUpdate = (updatedPages: PageData[]) => {
