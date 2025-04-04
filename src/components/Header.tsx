@@ -14,7 +14,7 @@ const Header: React.FC<HeaderProps> = ({
   backgroundImage, 
   backgroundColor = "bg-white",
   logoUrl,
-  establishmentName = "EV-AI Guest",
+  establishmentName = "Welcome Guest",
   showAdminButton = false
 }) => {
   // Determina se usare testo bianco o scuro in base al colore di sfondo
