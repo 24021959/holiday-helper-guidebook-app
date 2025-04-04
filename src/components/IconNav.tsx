@@ -2,7 +2,12 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Book, Home } from "lucide-react";
+import { 
+  Loader2, Book, Home, FileText, Image, MessageCircle, Info, Map, 
+  Utensils, Landmark, Hotel, Wifi, Bus, ShoppingBag, Calendar, 
+  Phone, Coffee, Bike, Camera, Globe, Mountain, MapPin, Newspaper,
+  Music, Heart, Trees, Users, ShoppingCart
+} from "lucide-react";
 
 interface IconNavProps {
   parentPath: string | null;
@@ -63,11 +68,6 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
 
   // Funzione per convertire il nome dell'icona in componente Lucide
   const renderIcon = (iconName: string) => {
-    const { 
-      FileText, Image, MessageCircle, Info, Map, Utensils, Landmark, 
-      Hotel, Wifi, Bus, ShoppingBag, Calendar, Phone, Coffee, Bike 
-    } = require("lucide-react");
-    
     switch (iconName) {
       case 'FileText': return <FileText className="w-12 h-12" />;
       case 'Image': return <Image className="w-12 h-12" />;
@@ -86,6 +86,16 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
       case 'Book': return <Book className="w-12 h-12" />;
       case 'Home': return <Home className="w-12 h-12" />;
       case 'Bike': return <Bike className="w-12 h-12" />;
+      case 'Camera': return <Camera className="w-12 h-12" />;
+      case 'Globe': return <Globe className="w-12 h-12" />;
+      case 'Mountain': return <Mountain className="w-12 h-12" />;
+      case 'MapPin': return <MapPin className="w-12 h-12" />;
+      case 'Newspaper': return <Newspaper className="w-12 h-12" />;
+      case 'Music': return <Music className="w-12 h-12" />;
+      case 'Heart': return <Heart className="w-12 h-12" />;
+      case 'Trees': return <Trees className="w-12 h-12" />;
+      case 'Users': return <Users className="w-12 h-12" />;
+      case 'ShoppingCart': return <ShoppingCart className="w-12 h-12" />;
       default: return <FileText className="w-12 h-12" />;
     }
   };
