@@ -1,11 +1,13 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BackToMenu from "@/components/BackToMenu";
+import TranslatedText from "@/components/TranslatedText";
 
 interface PageData {
   id: string;
@@ -96,7 +98,9 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
     return (
       <div className="flex flex-col h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100">
         <Loader2 className="h-12 w-12 text-emerald-600 animate-spin" />
-        <p className="mt-4 text-emerald-700">Caricamento pagina...</p>
+        <p className="mt-4 text-emerald-700">
+          <TranslatedText text="Caricamento pagina..." />
+        </p>
       </div>
     );
   }
@@ -113,9 +117,11 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
         <div className="flex-1 flex flex-col items-center justify-center p-6">
           <div className="bg-white p-6 rounded-lg shadow-md text-center max-w-md">
             <p className="text-red-500 mb-4">{error}</p>
-            <p className="text-gray-600 mb-6">La pagina richiesta non è stata trovata. Controlla l'URL o torna al menu principale.</p>
+            <p className="text-gray-600 mb-6">
+              <TranslatedText text="La pagina richiesta non è stata trovata. Controlla l'URL o torna al menu principale." />
+            </p>
             <Button onClick={() => navigate('/menu')} className="bg-emerald-600 hover:bg-emerald-700">
-              Torna al Menu
+              <TranslatedText text="Torna al Menu" />
             </Button>
           </div>
         </div>
@@ -136,9 +142,11 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
         
         <div className="flex-1 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg shadow-md text-center">
-            <p className="text-gray-600">Nessun contenuto trovato per questa pagina.</p>
+            <p className="text-gray-600">
+              <TranslatedText text="Nessun contenuto trovato per questa pagina." />
+            </p>
             <Button onClick={() => navigate('/menu')} className="mt-4 bg-emerald-600 hover:bg-emerald-700">
-              Torna al Menu
+              <TranslatedText text="Torna al Menu" />
             </Button>
           </div>
         </div>
@@ -161,7 +169,7 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
           <BackToMenu />
           
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mt-4 mb-6">
-            {pageData.title}
+            <TranslatedText text={pageData.title} />
           </h1>
           
           {pageData.imageUrl && (
@@ -177,7 +185,11 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
           <div className="bg-white p-5 rounded-lg shadow-md mb-6">
             <div className="prose max-w-none">
               {pageData.content.split('\n').map((paragraph, index) => (
-                paragraph ? <p key={index} className="mb-4">{paragraph}</p> : <br key={index} />
+                paragraph ? 
+                  <p key={index} className="mb-4">
+                    <TranslatedText text={paragraph} />
+                  </p> 
+                  : <br key={index} />
               ))}
             </div>
           </div>
@@ -185,9 +197,13 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
           {pageData.listItems && pageData.listItems.length > 0 && (
             <div className="mt-8">
               <h2 className="text-xl font-semibold text-emerald-700 mb-4">
-                {pageData.listType === "restaurants" ? "Ristoranti Consigliati" :
-                 pageData.listType === "activities" ? "Attività Consigliate" :
-                 "Luoghi di Interesse"}
+                <TranslatedText 
+                  text={
+                    pageData.listType === "restaurants" ? "Ristoranti Consigliati" :
+                    pageData.listType === "activities" ? "Attività Consigliate" :
+                    "Luoghi di Interesse"
+                  } 
+                />
               </h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -197,8 +213,14 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
                       <img src={item.imageUrl} alt={item.name} className="w-full h-48 object-cover" />
                     )}
                     <div className="p-4">
-                      <h3 className="font-bold text-lg mb-2">{item.name}</h3>
-                      {item.description && <p className="text-gray-600 mb-3">{item.description}</p>}
+                      <h3 className="font-bold text-lg mb-2">
+                        <TranslatedText text={item.name} />
+                      </h3>
+                      {item.description && (
+                        <p className="text-gray-600 mb-3">
+                          <TranslatedText text={item.description} />
+                        </p>
+                      )}
                       
                       <div className="space-y-2">
                         {item.phoneNumber && (
@@ -214,7 +236,7 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
                           <div className="flex items-center text-sm">
                             <span className="text-emerald-600 mr-2">📍</span>
                             <a href={item.mapsUrl} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">
-                              Visualizza sulla mappa
+                              <TranslatedText text="Visualizza sulla mappa" />
                             </a>
                           </div>
                         )}

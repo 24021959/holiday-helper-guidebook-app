@@ -1,19 +1,26 @@
 
 import React from "react";
+import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import TranslatedText from "./TranslatedText";
 
-const BackToMenu = () => {
+const BackToMenu: React.FC = () => {
+  const navigate = useNavigate();
+
+  const handleBack = () => {
+    navigate("/menu");
+  };
+
   return (
-    <div className="w-full py-2 px-4">
-      <Link 
-        to="/menu" 
-        className="flex items-center gap-2 text-emerald-700 font-medium"
-      >
-        <ArrowLeft className="h-5 w-5" />
-        <span className="text-sm">Menu</span>
-      </Link>
-    </div>
+    <Button
+      variant="ghost"
+      className="mb-4 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
+      onClick={handleBack}
+    >
+      <ArrowLeft className="mr-2 h-4 w-4" />
+      <TranslatedText text="Torna al Menu" />
+    </Button>
   );
 };
 

@@ -12,6 +12,7 @@ import Storia from '@/pages/Storia'
 import NotFound from '@/pages/NotFound'
 import PreviewPage from '@/pages/PreviewPage'
 import { supabase } from './integrations/supabase/client'
+import { TranslationProvider } from './context/TranslationContext'
 
 // Componente per gestire le pagine dinamiche create dall'amministratore
 const DynamicPage = () => {
@@ -110,35 +111,37 @@ function App() {
   }, []);
 
   return (
-    <Router>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<Index />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/welcome" element={<Welcome />} />
-        <Route path="/menu" element={<Menu />} />
-        <Route path="/storia" element={<Storia />} />
-        <Route path="/submenu/:parentPath" element={<SubMenu />} />
-        <Route path="/preview/*" element={<PreviewPage />} />
-        
-        {/* Protected routes */}
-        <Route 
-          path="/admin" 
-          element={
-            <Protected>
-              <Admin />
-            </Protected>
-          } 
-        />
-        <Route path="/home" element={<Home />} />
-        
-        {/* Rotta speciale per tutte le altre pagine - cattura le pagine dinamiche */}
-        <Route path="/:pageRoute/*" element={<DynamicPage />} />
-        
-        {/* Rotta per 404 Not Found - deve essere l'ultima */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Router>
+    <TranslationProvider>
+      <Router>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/welcome" element={<Welcome />} />
+          <Route path="/menu" element={<Menu />} />
+          <Route path="/storia" element={<Storia />} />
+          <Route path="/submenu/:parentPath" element={<SubMenu />} />
+          <Route path="/preview/*" element={<PreviewPage />} />
+          
+          {/* Protected routes */}
+          <Route 
+            path="/admin" 
+            element={
+              <Protected>
+                <Admin />
+              </Protected>
+            } 
+          />
+          <Route path="/home" element={<Home />} />
+          
+          {/* Rotta speciale per tutte le altre pagine - cattura le pagine dinamiche */}
+          <Route path="/:pageRoute/*" element={<DynamicPage />} />
+          
+          {/* Rotta per 404 Not Found - deve essere l'ultima */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Router>
+    </TranslationProvider>
   )
 }
 

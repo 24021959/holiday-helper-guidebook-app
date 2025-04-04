@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/context/TranslationContext";
 
 type Language = {
   code: string;
@@ -22,12 +23,16 @@ interface LanguageSelectorProps {
 
 export const LanguageSelector = ({ onSelectLanguage }: LanguageSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const { setLanguage } = useTranslation();
 
   const toggleLanguageSelector = () => {
     setIsOpen(!isOpen);
   };
 
   const handleSelectLanguage = (code: string) => {
+    // Update the language in our context
+    setLanguage(code as 'it' | 'en' | 'fr' | 'es' | 'de');
+    // Call the original onSelectLanguage prop
     onSelectLanguage(code);
     setIsOpen(false);
   };
