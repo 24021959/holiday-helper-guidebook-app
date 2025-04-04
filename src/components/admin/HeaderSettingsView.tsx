@@ -28,10 +28,14 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
     { value: "bg-gradient-to-r from-amber-400 to-yellow-500", label: "Amber/Yellow" },
     { value: "bg-white", label: "White" },
     { value: "bg-gray-800", label: "Dark Gray" },
-    { value: "bg-black", label: "Black" }
+    { value: "bg-black", label: "Black" },
+    { value: "bg-gradient-to-r from-purple-400 to-indigo-500", label: "Purple/Indigo" }
   ];
   
   const [establishmentName, setEstablishmentName] = useState<string>("");
+  const [localLogo, setLocalLogo] = useState<string | null>(uploadedLogo);
+  const [localColor, setLocalColor] = useState<string>(headerColor);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   
   // Fetch header settings on component mount
   useEffect(() => {
@@ -44,8 +48,18 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
           
         if (error) throw error;
         
-        if (data && data.length > 0 && data[0].establishment_name) {
-          setEstablishmentName(data[0].establishment_name);
+        if (data && data.length > 0) {
+          if (data[0].establishment_name) {
+            setEstablishmentName(data[0].establishment_name);
+          }
+          if (data[0].logo_url) {
+            setLocalLogo(data[0].logo_url);
+            setUploadedLogo(data[0].logo_url);
+          }
+          if (data[0].header_color) {
+            setLocalColor(data[0].header_color);
+            setHeaderColor(data[0].header_color);
+          }
         }
       } catch (error) {
         console.error("Error fetching header settings:", error);
@@ -53,105 +67,22 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
     };
     
     fetchHeaderSettings();
-  }, []);
+  }, [setUploadedLogo, setHeaderColor]);
 
-  const handleLogoUpload = async (imageDataUrl: string) => {
-    setUploadedLogo(imageDataUrl);
-    
-    try {
-      // Check if header settings exist
-      const { data: existingData, error: fetchError } = await supabase
-        .from('header_settings')
-        .select('*')
-        .limit(1);
-      
-      if (fetchError) throw fetchError;
-      
-      let saveOperation;
-      if (existingData && existingData.length > 0) {
-        // Update existing record
-        saveOperation = supabase
-          .from('header_settings')
-          .update({ logo_url: imageDataUrl })
-          .eq('id', existingData[0].id);
-      } else {
-        // Insert new record
-        saveOperation = supabase
-          .from('header_settings')
-          .insert({ 
-            logo_url: imageDataUrl, 
-            header_color: headerColor,
-            establishment_name: establishmentName
-          });
-      }
-      
-      const { error: saveError } = await saveOperation;
-      if (saveError) throw saveError;
-      
-      // Update localStorage for fallback
-      const headerSettings = {
-        logoUrl: imageDataUrl,
-        headerColor: headerColor,
-        establishmentName: establishmentName
-      };
-      localStorage.setItem("headerSettings", JSON.stringify(headerSettings));
-      
-      toast.success("Logo caricato con successo");
-    } catch (error) {
-      console.error("Errore nel salvare il logo:", error);
-      toast.error("Errore nel salvare il logo");
-    }
+  const handleLogoUpload = (imageDataUrl: string) => {
+    setLocalLogo(imageDataUrl);
   };
 
-  const handleHeaderColorChange = async (color: string) => {
-    setHeaderColor(color);
-    
-    try {
-      // Check if header settings exist
-      const { data: existingData, error: fetchError } = await supabase
-        .from('header_settings')
-        .select('*')
-        .limit(1);
-      
-      if (fetchError) throw fetchError;
-      
-      let saveOperation;
-      if (existingData && existingData.length > 0) {
-        // Update existing record
-        saveOperation = supabase
-          .from('header_settings')
-          .update({ header_color: color })
-          .eq('id', existingData[0].id);
-      } else {
-        // Insert new record
-        saveOperation = supabase
-          .from('header_settings')
-          .insert({ 
-            logo_url: uploadedLogo, 
-            header_color: color,
-            establishment_name: establishmentName
-          });
-      }
-      
-      const { error: saveError } = await saveOperation;
-      if (saveError) throw saveError;
-      
-      // Update localStorage for fallback
-      const headerSettings = {
-        logoUrl: uploadedLogo,
-        headerColor: color,
-        establishmentName: establishmentName
-      };
-      localStorage.setItem("headerSettings", JSON.stringify(headerSettings));
-      
-      toast.success("Colore dell'header aggiornato");
-    } catch (error) {
-      console.error("Errore nel salvare il colore dell'header:", error);
-      toast.error("Errore nel salvare il colore dell'header");
-    }
+  const handleHeaderColorChange = (color: string) => {
+    setLocalColor(color);
   };
 
-  const handleEstablishmentNameChange = async () => {
+  const handleRemoveLogo = () => {
+    setLocalLogo(null);
+  };
+
+  const saveAllSettings = async () => {
+    setIsLoading(true);
     try {
       // Check if header settings exist
       const { data: existingData, error: fetchError } = await supabase
@@ -166,34 +97,44 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
         // Update existing record
         saveOperation = supabase
           .from('header_settings')
-          .update({ establishment_name: establishmentName })
+          .update({ 
+            logo_url: localLogo, 
+            header_color: localColor,
+            establishment_name: establishmentName || null
+          })
           .eq('id', existingData[0].id);
       } else {
         // Insert new record
         saveOperation = supabase
           .from('header_settings')
           .insert({ 
-            logo_url: uploadedLogo, 
-            header_color: headerColor,
-            establishment_name: establishmentName
+            logo_url: localLogo, 
+            header_color: localColor,
+            establishment_name: establishmentName || null
           });
       }
       
       const { error: saveError } = await saveOperation;
       if (saveError) throw saveError;
       
+      // Update parent state to reflect changes
+      setUploadedLogo(localLogo);
+      setHeaderColor(localColor);
+      
       // Update localStorage for fallback
       const headerSettings = {
-        logoUrl: uploadedLogo,
-        headerColor: headerColor,
-        establishmentName: establishmentName
+        logoUrl: localLogo,
+        headerColor: localColor,
+        establishmentName: establishmentName || null
       };
       localStorage.setItem("headerSettings", JSON.stringify(headerSettings));
       
-      toast.success("Nome della struttura aggiornato");
+      toast.success("Impostazioni header salvate con successo");
     } catch (error) {
-      console.error("Errore nel salvare il nome della struttura:", error);
-      toast.error("Errore nel salvare il nome della struttura");
+      console.error("Errore nel salvare le impostazioni dell'header:", error);
+      toast.error("Errore nel salvare le impostazioni dell'header");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -204,33 +145,25 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
       <div className="space-y-6">
         <div className="p-4 border rounded-lg bg-gray-50">
           <h3 className="text-md font-medium text-emerald-700 mb-4">Nome della struttura</h3>
-          <div className="flex gap-2">
-            <Input
-              type="text"
-              placeholder="Inserisci il nome della struttura"
-              value={establishmentName}
-              onChange={(e) => setEstablishmentName(e.target.value)}
-              className="flex-grow"
-            />
-            <Button 
-              variant="outline" 
-              className="bg-white hover:bg-gray-100"
-              onClick={handleEstablishmentNameChange}
-            >
-              Salva
-            </Button>
-          </div>
+          <Input
+            type="text"
+            placeholder="Inserisci il nome della struttura"
+            value={establishmentName}
+            onChange={(e) => setEstablishmentName(e.target.value)}
+            className="flex-grow"
+          />
+          <p className="text-xs text-gray-500 mt-2">Lascia vuoto per non mostrare alcun testo nell'header</p>
         </div>
         
         <div className="p-4 border rounded-lg bg-gray-50">
           <h3 className="text-md font-medium text-emerald-700 mb-4">Logo della struttura</h3>
           <ImageUploader onImageUpload={handleLogoUpload} />
           
-          {uploadedLogo && (
+          {localLogo && (
             <div className="mt-4 relative">
               <div className="p-4 bg-gray-100 rounded-md inline-block">
                 <img 
-                  src={uploadedLogo} 
+                  src={localLogo} 
                   alt="Logo Anteprima" 
                   className="h-16 object-contain" 
                 />
@@ -239,40 +172,13 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
                 variant="destructive"
                 size="sm"
                 className="absolute top-2 right-2"
-                onClick={async () => {
-                  try {
-                    const { data: existingData } = await supabase
-                      .from('header_settings')
-                      .select('*')
-                      .limit(1);
-                    
-                    if (existingData && existingData.length > 0) {
-                      await supabase
-                        .from('header_settings')
-                        .update({ logo_url: null })
-                        .eq('id', existingData[0].id);
-                    }
-                    
-                    setUploadedLogo(null);
-                    
-                    const headerSettings = {
-                      logoUrl: null,
-                      headerColor: headerColor,
-                      establishmentName: establishmentName
-                    };
-                    localStorage.setItem("headerSettings", JSON.stringify(headerSettings));
-                    
-                    toast.info("Logo rimosso");
-                  } catch (error) {
-                    console.error("Errore nella rimozione del logo:", error);
-                    toast.error("Errore nella rimozione del logo");
-                  }
-                }}
+                onClick={handleRemoveLogo}
               >
                 Rimuovi Logo
               </Button>
             </div>
           )}
+          <p className="text-xs text-gray-500 mt-2">Inserisci un logo o rimuovilo per non mostrarlo nell'header</p>
         </div>
         
         <div className="p-4 border rounded-lg bg-gray-50">
@@ -283,7 +189,7 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
               <div 
                 key={option.value}
                 className={`cursor-pointer rounded-lg transition-all ${
-                  headerColor === option.value ? 'ring-2 ring-emerald-500' : ''
+                  localColor === option.value ? 'ring-2 ring-emerald-500' : ''
                 }`}
                 onClick={() => handleHeaderColorChange(option.value)}
               >
@@ -309,12 +215,23 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
           <h3 className="text-md font-medium text-emerald-700 mb-4">Anteprima Header</h3>
           <div className="border rounded-lg overflow-hidden">
             <Header 
-              backgroundColor={headerColor} 
-              logoUrl={uploadedLogo || undefined}
+              backgroundColor={localColor} 
+              logoUrl={localLogo || undefined}
               showAdminButton={false}
-              establishmentName={establishmentName} 
+              establishmentName={establishmentName || undefined}
             />
           </div>
+        </div>
+        
+        {/* Save button for all header settings */}
+        <div className="flex justify-end">
+          <Button 
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6"
+            onClick={saveAllSettings}
+            disabled={isLoading}
+          >
+            {isLoading ? "Salvataggio..." : "Salva impostazioni header"}
+          </Button>
         </div>
       </div>
     </>

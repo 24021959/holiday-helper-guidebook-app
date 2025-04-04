@@ -14,19 +14,17 @@ const Header: React.FC<HeaderProps> = ({
   backgroundImage, 
   backgroundColor = "bg-white",
   logoUrl,
-  establishmentName = "Welcome Guest",
+  establishmentName,
   showAdminButton = false
 }) => {
-  // Determina se usare testo bianco o scuro in base al colore di sfondo
+  // Determine if we should use dark or light text based on background color
   const isLightBackground = 
     backgroundColor === "bg-white" || 
     backgroundColor === "bg-gradient-to-r from-amber-400 to-yellow-500";
   
   const textColorClass = isLightBackground ? "text-gray-800" : "text-white";
 
-  // Default logo URL
-  const defaultLogo = "/lovable-uploads/f001bbd0-3515-4169-944c-9a037d5ddae8.png";
-
+  // Default logo URL is no longer needed as we'll only show logo if provided
   return (
     <div
       className={`w-full ${!backgroundImage ? backgroundColor : ''} py-5 px-4 shadow-md relative overflow-hidden rounded-xl`}
@@ -43,7 +41,7 @@ const Header: React.FC<HeaderProps> = ({
         </div>
       )}
       
-      {/* Elementi decorativi (solo per header colorati, non per sfondo bianco) */}
+      {/* Decorative elements (only for colored headers, not for white background) */}
       {backgroundColor !== "bg-white" && (
         <div className="absolute top-0 left-0 w-full h-full opacity-20">
           <div className="absolute top-6 left-6 w-16 h-16 rounded-full bg-white"></div>
@@ -52,21 +50,25 @@ const Header: React.FC<HeaderProps> = ({
         </div>
       )}
       
-      {/* Logo and Title - layout modificato per essere responsive */}
+      {/* Logo and Title - responsive layout */}
       <div className="relative z-10 flex flex-col sm:flex-row items-center sm:justify-between">
-        {/* Logo */}
-        <div className="flex-shrink-0 mb-2 sm:mb-0">
-          <img 
-            src={logoUrl || defaultLogo} 
-            alt="EV-AI Logo" 
-            className="h-8 md:h-10 object-contain"
-          />
-        </div>
+        {/* Logo - only show if provided */}
+        {logoUrl && (
+          <div className="flex-shrink-0 mb-2 sm:mb-0">
+            <img 
+              src={logoUrl} 
+              alt="Logo" 
+              className="h-8 md:h-10 object-contain"
+            />
+          </div>
+        )}
         
-        {/* Titolo - non più in posizione assoluta */}
-        <div className="mt-2 sm:mt-0">
-          <h1 className={`text-xl md:text-2xl font-bold ${textColorClass}`}>{establishmentName}</h1>
-        </div>
+        {/* Title - only show if provided */}
+        {establishmentName && (
+          <div className="mt-2 sm:mt-0">
+            <h1 className={`text-xl md:text-2xl font-bold ${textColorClass}`}>{establishmentName}</h1>
+          </div>
+        )}
       </div>
     </div>
   );
