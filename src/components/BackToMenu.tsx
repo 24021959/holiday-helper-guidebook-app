@@ -11,7 +11,7 @@ const BackToMenu = () => {
         className="flex items-center gap-2 text-emerald-700 font-medium"
       >
         <ArrowLeft className="h-5 w-5" />
-        <span>Menu</span>
+        <span className="text-sm">Menu</span>
       </Link>
     </div>
   );
