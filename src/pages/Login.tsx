@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
-import BackToMenu from "@/components/BackToMenu";
 
 const Login: React.FC = () => {
   const [adminUsername, setAdminUsername] = useState<string>("");
@@ -59,8 +58,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 p-6 pt-20">
-      <BackToMenu />
+    <div className="min-h-screen bg-white p-6 pt-20">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-8">
           <img 
