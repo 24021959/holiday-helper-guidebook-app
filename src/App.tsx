@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom'
 import Home from '@/pages/Home'
 import Welcome from '@/pages/Welcome'
@@ -41,6 +41,12 @@ const Protected = ({ children }: { children: React.ReactNode }) => {
 };
 
 function App() {
+  const [headerSettings, setHeaderSettings] = useState<{
+    logoUrl?: string;
+    headerColor?: string;
+    establishmentName?: string;
+  }>({});
+
   useEffect(() => {
     // Aggiungi lo script del chatbot all'head se presente nelle impostazioni
     const loadChatbotSettings = async () => {
@@ -65,7 +71,42 @@ function App() {
       }
     };
     
+    // Carica impostazioni dell'header
+    const loadHeaderSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('header_settings')
+          .select('*')
+          .limit(1)
+          .single();
+        
+        if (error && error.code !== 'PGRST116') {
+          // PGRST116 è "did not return a single row" 
+          console.warn("Errore nel caricamento delle impostazioni header:", error);
+          return;
+        }
+        
+        if (data) {
+          setHeaderSettings({
+            logoUrl: data.logo_url,
+            headerColor: data.header_color,
+            establishmentName: data.establishment_name
+          });
+          
+          // Salva anche in localStorage come fallback
+          localStorage.setItem("headerSettings", JSON.stringify({
+            logoUrl: data.logo_url,
+            headerColor: data.header_color,
+            establishmentName: data.establishment_name
+          }));
+        }
+      } catch (error) {
+        console.warn("Errore nel caricamento delle impostazioni header:", error);
+      }
+    };
+    
     loadChatbotSettings();
+    loadHeaderSettings();
   }, []);
 
   return (
@@ -73,12 +114,12 @@ function App() {
       <Routes>
         {/* Public routes */}
         <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/welcome" element={<Welcome />} />
-        <Route path="/menu" element={<Menu />} />
-        <Route path="/storia" element={<Storia />} />
-        <Route path="/submenu/:parentPath" element={<SubMenu />} />
-        <Route path="/preview/*" element={<PreviewPage />} />
+        <Route path="/login" element={<Login headerSettings={headerSettings} />} />
+        <Route path="/welcome" element={<Welcome headerSettings={headerSettings} />} />
+        <Route path="/menu" element={<Menu headerSettings={headerSettings} />} />
+        <Route path="/storia" element={<Storia headerSettings={headerSettings} />} />
+        <Route path="/submenu/:parentPath" element={<SubMenu headerSettings={headerSettings} />} />
+        <Route path="/preview/*" element={<PreviewPage headerSettings={headerSettings} />} />
         
         {/* Protected routes */}
         <Route 
@@ -89,13 +130,13 @@ function App() {
             </Protected>
           } 
         />
-        <Route path="/home" element={<Home />} />
+        <Route path="/home" element={<Home headerSettings={headerSettings} />} />
         
         {/* Rotta speciale per tutte le altre pagine - cattura le pagine dinamiche */}
         <Route path="/:pageRoute/*" element={<DynamicPage />} />
         
         {/* Rotta per 404 Not Found - deve essere l'ultima */}
-        <Route path="*" element={<NotFound />} />
+        <Route path="*" element={<NotFound headerSettings={headerSettings} />} />
       </Routes>
     </Router>
   )

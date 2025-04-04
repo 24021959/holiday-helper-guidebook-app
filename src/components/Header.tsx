@@ -6,6 +6,7 @@ interface HeaderProps {
   backgroundImage?: string;
   backgroundColor?: string;
   logoUrl?: string;
+  establishmentName?: string;
   showAdminButton?: boolean;
 }
 
@@ -13,6 +14,7 @@ const Header: React.FC<HeaderProps> = ({
   backgroundImage, 
   backgroundColor = "bg-white",
   logoUrl,
+  establishmentName = "EV-AI Guest",
   showAdminButton = true 
 }) => {
   // Determina se usare testo bianco o scuro in base al colore di sfondo
@@ -63,7 +65,7 @@ const Header: React.FC<HeaderProps> = ({
         
         {/* Titolo al centro */}
         <div className="absolute left-1/2 transform -translate-x-1/2">
-          <h1 className={`text-xl md:text-2xl font-bold ${textColorClass}`}>EV-AI Guest</h1>
+          <h1 className={`text-xl md:text-2xl font-bold ${textColorClass}`}>{establishmentName}</h1>
         </div>
       </div>
     </div>

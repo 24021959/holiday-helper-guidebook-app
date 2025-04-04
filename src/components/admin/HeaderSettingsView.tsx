@@ -1,7 +1,8 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import ImageUploader from "@/components/ImageUploader";
 import Header from "@/components/Header";
@@ -30,6 +31,30 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
     { value: "bg-black", label: "Black" }
   ];
   
+  const [establishmentName, setEstablishmentName] = useState<string>("");
+  
+  // Fetch header settings on component mount
+  useEffect(() => {
+    const fetchHeaderSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('header_settings')
+          .select('*')
+          .limit(1);
+          
+        if (error) throw error;
+        
+        if (data && data.length > 0 && data[0].establishment_name) {
+          setEstablishmentName(data[0].establishment_name);
+        }
+      } catch (error) {
+        console.error("Error fetching header settings:", error);
+      }
+    };
+    
+    fetchHeaderSettings();
+  }, []);
+
   const handleLogoUpload = async (imageDataUrl: string) => {
     setUploadedLogo(imageDataUrl);
     
@@ -53,7 +78,11 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
         // Insert new record
         saveOperation = supabase
           .from('header_settings')
-          .insert({ logo_url: imageDataUrl, header_color: headerColor });
+          .insert({ 
+            logo_url: imageDataUrl, 
+            header_color: headerColor,
+            establishment_name: establishmentName
+          });
       }
       
       const { error: saveError } = await saveOperation;
@@ -62,7 +91,8 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
       // Update localStorage for fallback
       const headerSettings = {
         logoUrl: imageDataUrl,
-        headerColor: headerColor
+        headerColor: headerColor,
+        establishmentName: establishmentName
       };
       localStorage.setItem("headerSettings", JSON.stringify(headerSettings));
       
@@ -96,7 +126,11 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
         // Insert new record
         saveOperation = supabase
           .from('header_settings')
-          .insert({ logo_url: uploadedLogo, header_color: color });
+          .insert({ 
+            logo_url: uploadedLogo, 
+            header_color: color,
+            establishment_name: establishmentName
+          });
       }
       
       const { error: saveError } = await saveOperation;
@@ -105,7 +139,8 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
       // Update localStorage for fallback
       const headerSettings = {
         logoUrl: uploadedLogo,
-        headerColor: color
+        headerColor: color,
+        establishmentName: establishmentName
       };
       localStorage.setItem("headerSettings", JSON.stringify(headerSettings));
       
@@ -116,11 +151,77 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
     }
   };
 
+  const handleEstablishmentNameChange = async () => {
+    try {
+      // Check if header settings exist
+      const { data: existingData, error: fetchError } = await supabase
+        .from('header_settings')
+        .select('*')
+        .limit(1);
+      
+      if (fetchError) throw fetchError;
+      
+      let saveOperation;
+      if (existingData && existingData.length > 0) {
+        // Update existing record
+        saveOperation = supabase
+          .from('header_settings')
+          .update({ establishment_name: establishmentName })
+          .eq('id', existingData[0].id);
+      } else {
+        // Insert new record
+        saveOperation = supabase
+          .from('header_settings')
+          .insert({ 
+            logo_url: uploadedLogo, 
+            header_color: headerColor,
+            establishment_name: establishmentName
+          });
+      }
+      
+      const { error: saveError } = await saveOperation;
+      if (saveError) throw saveError;
+      
+      // Update localStorage for fallback
+      const headerSettings = {
+        logoUrl: uploadedLogo,
+        headerColor: headerColor,
+        establishmentName: establishmentName
+      };
+      localStorage.setItem("headerSettings", JSON.stringify(headerSettings));
+      
+      toast.success("Nome della struttura aggiornato");
+    } catch (error) {
+      console.error("Errore nel salvare il nome della struttura:", error);
+      toast.error("Errore nel salvare il nome della struttura");
+    }
+  };
+
   return (
     <>
       <h2 className="text-xl font-medium text-emerald-600 mb-4">Personalizza Header</h2>
       
       <div className="space-y-6">
+        <div className="p-4 border rounded-lg bg-gray-50">
+          <h3 className="text-md font-medium text-emerald-700 mb-4">Nome della struttura</h3>
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              placeholder="Inserisci il nome della struttura"
+              value={establishmentName}
+              onChange={(e) => setEstablishmentName(e.target.value)}
+              className="flex-grow"
+            />
+            <Button 
+              variant="outline" 
+              className="bg-white hover:bg-gray-100"
+              onClick={handleEstablishmentNameChange}
+            >
+              Salva
+            </Button>
+          </div>
+        </div>
+        
         <div className="p-4 border rounded-lg bg-gray-50">
           <h3 className="text-md font-medium text-emerald-700 mb-4">Logo della struttura</h3>
           <ImageUploader onImageUpload={handleLogoUpload} />
@@ -156,7 +257,8 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
                     
                     const headerSettings = {
                       logoUrl: null,
-                      headerColor: headerColor
+                      headerColor: headerColor,
+                      establishmentName: establishmentName
                     };
                     localStorage.setItem("headerSettings", JSON.stringify(headerSettings));
                     
@@ -209,7 +311,8 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
             <Header 
               backgroundColor={headerColor} 
               logoUrl={uploadedLogo || undefined}
-              showAdminButton={false} 
+              showAdminButton={false}
+              establishmentName={establishmentName} 
             />
           </div>
         </div>
