@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 
 const BackToMenu = () => {
   return (
-    <div className="w-full bg-white py-2 px-4 shadow-sm">
+    <div className="w-full py-2 px-4">
       <Link 
         to="/menu" 
         className="flex items-center gap-2 text-emerald-700 font-medium"
