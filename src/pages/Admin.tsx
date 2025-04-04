@@ -188,7 +188,7 @@ const Admin: React.FC = () => {
             <UserManagementView />
           </div>
         ) : (
-          // Se è un utente normale Admin, mostra tutti i tab
+          // Se è un utente normale Admin, mostra tutti i tab tranne gestione utenti
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-8 w-full justify-start border-b rounded-none bg-transparent h-auto pb-0">
               <TabsTrigger 
@@ -214,12 +214,6 @@ const Admin: React.FC = () => {
                 className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
               >
                 Impostazioni Chatbot
-              </TabsTrigger>
-              <TabsTrigger 
-                value="user-management"
-                className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
-              >
-                Gestione Utenti
               </TabsTrigger>
             </TabsList>
             
@@ -254,10 +248,6 @@ const Admin: React.FC = () => {
                   setChatbotCode={setChatbotCode}
                   onSave={handleSaveChatbotSettings}
                 />
-              </TabsContent>
-              
-              <TabsContent value="user-management">
-                <UserManagementView />
               </TabsContent>
             </div>
           </Tabs>
