@@ -57,7 +57,7 @@ const Header: React.FC<HeaderProps> = ({
             <img 
               src={logoUrl} 
               alt="Logo" 
-              className="h-12 md:h-14 object-contain" 
+              className="h-16 md:h-20 object-contain" 
             />
           </div>
         )}
