@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
@@ -65,7 +64,6 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
     },
   });
 
-  // Format page content to include image data
   const formatPageContent = (content: string, images: ImageItem[]) => {
     if (images.length === 0) return content;
     
@@ -89,14 +87,18 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       const pageId = uuidv4();
-      const finalPath = isSubmenu 
-        ? `${parentPath}/${values.path}` 
-        : `/${values.path}`;
       
-      // Format the content including image data
+      const pathValue = values.title
+        .toLowerCase()
+        .replace(/[^\w\s]/gi, '')  // Remove special chars
+        .replace(/\s+/g, '-');     // Replace spaces with hyphens
+      
+      const finalPath = isSubmenu 
+        ? `${parentPath}/${pathValue}` 
+        : `/${pathValue}`;
+      
       const formattedContent = formatPageContent(values.content, pageImages);
       
-      // Prepare data for insertion to custom_pages table
       const pageData = {
         id: pageId,
         title: values.title,
@@ -108,11 +110,9 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         parent_path: isSubmenu ? parentPath : null,
         list_type: listType,
         list_items: listType && locationItems.length > 0 ? locationItems : null,
-        page_images: pageImages.length > 0 ? pageImages.map(img => ({...img, type: "image"})) : null,
-        published: false // Default to not published
+        published: false
       };
 
-      // Save the new page data to show in the publish dialog
       setNewPageData(pageData);
       setShowPublishDialog(true);
     } catch (error) {
@@ -125,7 +125,6 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
     try {
       if (!newPageData) return;
       
-      // Update the published state based on user choice
       const pageDataToSave = {
         ...newPageData,
         published: shouldPublish
@@ -133,7 +132,6 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
       
       console.log("Page data for insertion:", pageDataToSave);
 
-      // 1. Insert into custom_pages table
       const { data: insertedPage, error: pagesError } = await supabase
         .from('custom_pages')
         .insert(pageDataToSave)
@@ -147,7 +145,6 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
       
       console.log("Page inserted successfully:", insertedPage);
       
-      // 2. Insert into menu_icons table
       const iconData = {
         label: pageDataToSave.title,
         path: pageDataToSave.path,
@@ -155,7 +152,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         bg_color: "bg-blue-200",
         is_submenu: pageDataToSave.is_submenu,
         parent_path: pageDataToSave.parent_path,
-        published: shouldPublish // Set published state for menu icon
+        published: shouldPublish
       };
 
       console.log("Icon data for insertion:", iconData);
@@ -173,7 +170,6 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
       
       console.log("Icon inserted successfully:", insertedIcon);
       
-      // Fetch all pages to update the list
       const { data: pagesData, error: fetchError } = await supabase
         .from('custom_pages')
         .select('*');
@@ -195,17 +191,15 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
           listItems: page.list_items as { name: string; description?: string; phoneNumber?: string; mapsUrl?: string; }[] | undefined,
           isSubmenu: page.is_submenu || false,
           parentPath: page.parent_path || undefined,
-          pageImages: page.page_images ? (page.page_images as any[]).map(img => ({...img, type: "image"})) : [],
+          pageImages: page.page_images || [],
           published: page.published || false
         }));
         
-        // Update pages list in parent component
         onPageCreated(formattedPages);
         
         console.log("Updated pages list:", formattedPages);
       }
       
-      // Reset form and state
       form.reset();
       setUploadedImage(null);
       setIsSubmenu(false);
@@ -250,22 +244,22 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
           
           <FormField
             control={form.control}
-            name="path"
+            name="icon"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Percorso URL</FormLabel>
-                <FormControl>
-                  <div className="flex items-center space-x-2">
-                    {isSubmenu && (
-                      <span className="text-gray-500">{parentPath}/</span>
-                    )}
-                    <Input placeholder="percorso-url" {...field} />
-                  </div>
-                </FormControl>
+                <PageIconSection 
+                  icon={selectedIcon}
+                  setIcon={(icon) => {
+                    setSelectedIcon(icon);
+                    field.onChange(icon);
+                  }}
+                />
                 <FormMessage />
               </FormItem>
             )}
           />
+          
+          <input type="hidden" {...form.register('path')} />
           
           <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
             <TabsList className="grid grid-cols-3 mb-4">
@@ -316,31 +310,10 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
             parentPages={parentPages}
           />
           
-          <FormField
-            control={form.control}
-            name="icon"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Icona</FormLabel>
-                <FormControl>
-                  <PageIconSection 
-                    icon={selectedIcon}
-                    setIcon={(icon) => {
-                      setSelectedIcon(icon);
-                      field.onChange(icon);
-                    }}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
           <Button type="submit" className="w-full">Crea pagina</Button>
         </form>
       </Form>
 
-      {/* Publish Dialog */}
       <AlertDialog open={showPublishDialog} onOpenChange={setShowPublishDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

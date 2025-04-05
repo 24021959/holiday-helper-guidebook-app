@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -113,7 +112,7 @@ const Admin: React.FC = () => {
             parentPath: page.parent_path,
             listItems: Array.isArray(page.list_items) ? page.list_items : [],
             listType: page.list_type as 'restaurants' | 'activities' | 'locations',
-            pageImages: page.page_images ? page.page_images as ImageItem[] : [],
+            pageImages: [],
             published: page.published || false
           }));
           setPages(formattedPages);

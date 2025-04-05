@@ -114,11 +114,6 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         return;
       }
       
-      if (!path.trim()) {
-        toast.error("Il percorso è obbligatorio");
-        return;
-      }
-      
       if (isSubmenu && !parentPath) {
         toast.error("Seleziona una pagina genitore");
         return;
@@ -137,7 +132,6 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         icon,
         list_items: listItems,
         list_type: listType || null,
-        page_images: pageImages.length > 0 ? pageImages : null,
         published: isPublished
       };
       
@@ -173,7 +167,7 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         parentPath: data.parent_path,
         listItems: Array.isArray(data.list_items) ? data.list_items : [],
         listType: data.list_type as 'restaurants' | 'activities' | 'locations' | undefined,
-        pageImages: Array.isArray(data.page_images) ? data.page_images.map(img => ({...img, type: "image"})) : [],
+        pageImages: data.page_images || [],
         published: data.published || false
       };
       
@@ -203,6 +197,14 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
           placeholder="Titolo della pagina"
         />
       </div>
+      
+      <PageIconSection 
+        icon={icon}
+        setIcon={setIcon}
+      />
+
+      {/* Hidden field for path */}
+      <input type="hidden" value={path} />
       
       <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
         <TabsList className="grid grid-cols-3 mb-4">
@@ -236,11 +238,6 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         parentPath={parentPath}
         setParentPath={setParentPath}
         parentPages={parentPages}
-      />
-      
-      <PageIconSection 
-        icon={icon}
-        setIcon={setIcon}
       />
 
       <div className="flex items-center space-x-2 py-4">
