@@ -72,6 +72,12 @@ const Admin: React.FC = () => {
   useEffect(() => {
     const fetchChatbotSettings = async () => {
       try {
+        const localStorageCode = localStorage.getItem("chatbotCode");
+        if (localStorageCode) {
+          setChatbotCode(localStorageCode);
+          return;
+        }
+        
         const { data, error } = await supabase
           .from('chatbot_settings')
           .select('code')
@@ -83,9 +89,9 @@ const Admin: React.FC = () => {
           return;
         }
         
-        if (data) {
-          setChatbotCode(data.code || "");
-          localStorage.setItem("chatbotCode", data.code || "");
+        if (data && data.code) {
+          setChatbotCode(data.code);
+          localStorage.setItem("chatbotCode", data.code);
         }
       } catch (error) {
         console.error("Error fetching chatbot settings:", error);
@@ -188,14 +194,20 @@ const Admin: React.FC = () => {
   
   const handleSaveChatbotSettings = async () => {
     try {
-      const { error } = await supabase
-        .from('chatbot_settings')
-        .upsert({ id: 1, code: chatbotCode })
-        .select();
-
-      if (error) throw error;
-      
       localStorage.setItem("chatbotCode", chatbotCode);
+      
+      try {
+        const { error } = await supabase
+          .from('chatbot_settings')
+          .upsert({ id: 1, code: chatbotCode })
+          .select();
+
+        if (error) {
+          console.warn("Nota: Errore nel salvataggio su Supabase, usando localStorage come fallback:", error);
+        }
+      } catch (e) {
+        console.warn("Errore Supabase:", e);
+      }
       
       toast.success("Impostazioni chatbot salvate con successo");
       return Promise.resolve();

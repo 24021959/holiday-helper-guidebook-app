@@ -1,162 +1,143 @@
-
 import React, { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { PageData } from "@/pages/Admin";
-import { PageContentSection } from "./form/PageContentSection";
-import { PageTypeSection } from "./form/PageTypeSection";
-import { PageImageSection } from "./form/PageImageSection";
-import { PageIconSection } from "./form/PageIconSection";
-import { PageMultiImageSection, ImageItem } from "./form/PageMultiImageSection";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
+import { Editor } from "@tinymce/tinymce-react";
+import { ImageItem } from "@/pages/Admin";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Plus, Trash2 } from "lucide-react";
 
 interface EditPageFormProps {
-  page: PageData;
-  parentPages: PageData[];
-  onPageUpdated: (updatedPage: PageData) => void;
+  page: any;
+  parentPages: any[];
+  onPageUpdated: (updatedPage: any) => void;
+  onFormClose: () => void;
   keywordToIconMap: Record<string, string>;
-  isSystemPage?: boolean;
 }
 
-export const EditPageForm: React.FC<EditPageFormProps> = ({
+export const EditPageForm: React.FC<EditPageFormProps> = ({ 
   page,
   parentPages,
   onPageUpdated,
-  keywordToIconMap,
-  isSystemPage = false
+  onFormClose,
+  keywordToIconMap
 }) => {
   const [title, setTitle] = useState(page.title);
-  const [content, setContent] = useState("");
-  const [rawContent, setRawContent] = useState(page.content);
   const [path, setPath] = useState(page.path);
+  const [imageUrl, setImageUrl] = useState(page.imageUrl || "");
+  const [selectedIcon, setSelectedIcon] = useState(page.icon || "");
   const [isSubmenu, setIsSubmenu] = useState(page.isSubmenu || false);
   const [parentPath, setParentPath] = useState(page.parentPath || "");
-  const [imageUrl, setImageUrl] = useState(page.imageUrl || "");
-  const [icon, setIcon] = useState(page.icon || "FileText");
-  const [isLoading, setIsLoading] = useState(false);
+  const [editorState, setEditorState] = useState(page.content);
   const [listItems, setListItems] = useState(page.listItems || []);
-  const [listType, setListType] = useState(page.listType || "");
-  const [pageImages, setPageImages] = useState<ImageItem[]>([]);
-  const [currentTab, setCurrentTab] = useState<string>("content");
+  const [listType, setListType] = useState<string | undefined>(page.listType || undefined);
+  const [pageImages, setPageImages] = useState<ImageItem[]>(page.pageImages || []);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPublished, setIsPublished] = useState(page.published || false);
-
-  // Estrai le immagini e il contenuto quando il componente viene montato
+  
   useEffect(() => {
-    if (rawContent) {
-      let processedContent = rawContent;
-      const extractedImages: ImageItem[] = [];
-
-      if (rawContent.includes("<!-- IMAGES -->")) {
-        const parts = rawContent.split("<!-- IMAGES -->");
-        processedContent = parts[0]; // Contenuto testuale
-        
-        if (parts[1]) {
-          const imageLines = parts[1].split("\n").filter(line => line.trim());
-          
-          for (const line of imageLines) {
-            try {
-              if (line.includes('"type":"image"')) {
-                const imageData = JSON.parse(line);
-                if (imageData.type === "image") {
-                  extractedImages.push(imageData as ImageItem);
-                }
-              }
-            } catch (e) {
-              console.error("Errore nel parsing dell'immagine:", e);
-            }
-          }
-        }
-      }
-
-      setContent(processedContent);
-      setPageImages(extractedImages);
-    }
-  }, [rawContent]);
-
-  // Funzione per convertire le immagini nel formato per il database
-  const formatPageContent = (content: string, images: ImageItem[]) => {
-    if (images.length === 0) return content;
-    
-    let enhancedContent = content;
-    enhancedContent += "\n\n<!-- IMAGES -->\n";
-    
-    images.forEach((image, index) => {
-      const imageMarkup = JSON.stringify({
-        type: "image",
-        url: image.url,
-        position: image.position,
-        caption: image.caption || ""
-      });
-      
-      enhancedContent += `\n${imageMarkup}\n`;
-    });
-    
-    return enhancedContent;
+    setTitle(page.title);
+    setPath(page.path);
+    setImageUrl(page.imageUrl || "");
+    setSelectedIcon(page.icon || "");
+    setIsSubmenu(page.isSubmenu || false);
+    setParentPath(page.parentPath || "");
+    setEditorState(page.content);
+    setListItems(page.listItems || []);
+    setListType(page.listType || undefined);
+    setPageImages(page.pageImages || []);
+    setIsPublished(page.published || false);
+  }, [page]);
+  
+  const handleEditorChange = (content: string) => {
+    setEditorState(content);
+  };
+  
+  const handleAddImage = () => {
+    setPageImages([...pageImages, { url: '', position: 'center', caption: '', type: 'image' }]);
+  };
+  
+  const handleImageChange = (index: number, field: string, value: string) => {
+    const newImages = [...pageImages];
+    newImages[index][field] = value;
+    setPageImages(newImages);
+  };
+  
+  const handleRemoveImage = (index: number) => {
+    const newImages = pageImages.filter((_, i) => i !== index);
+    setPageImages(newImages);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     
     try {
-      setIsLoading(true);
+      setIsSubmitting(true);
       
-      if (!title.trim()) {
-        toast.error("Il titolo è obbligatorio");
+      // Process multiple images
+      let processedImages = pageImages.map(img => ({
+        url: img.url,
+        position: img.position,
+        caption: img.caption,
+        type: "image" as const // Ensure type is explicitly set as required
+      }));
+      
+      // Handle empty content
+      if (!editorState.trim()) {
+        toast.error("Il contenuto non può essere vuoto");
+        setIsSubmitting(false);
         return;
       }
       
-      if (!content.trim()) {
-        toast.error("Il contenuto è obbligatorio");
-        return;
+      // Prepare content with images section at the end if there are images
+      let fullContent = editorState;
+      
+      if (processedImages.length > 0) {
+        fullContent += '\n\n<!-- IMAGES -->\n';
+        processedImages.forEach(img => {
+          fullContent += JSON.stringify(img) + '\n';
+        });
       }
       
-      if (isSubmenu && !parentPath) {
-        toast.error("Seleziona una pagina genitore");
-        return;
-      }
-      
-      // Formatta il contenuto con le immagini
-      const formattedContent = formatPageContent(content, pageImages);
-      
-      const updateData = {
-        title,
-        content: formattedContent,
-        path,
+      // Prepare the page data
+      const data = {
+        id: page.id,
+        title: title,
+        content: fullContent,
+        path: path,
+        image_url: imageUrl,
+        icon: selectedIcon,
         is_submenu: isSubmenu,
         parent_path: isSubmenu ? parentPath : null,
-        image_url: imageUrl,
-        icon,
         list_items: listItems,
-        list_type: listType || null,
+        list_type: listType,
         published: isPublished
       };
       
-      const { data, error } = await supabase
+      // Update the page in Supabase
+      const { error } = await supabase
         .from('custom_pages')
-        .update(updateData)
-        .eq('id', page.id)
-        .select('*')
-        .single();
+        .update(data)
+        .eq('id', page.id);
       
       if (error) throw error;
       
-      await supabase
-        .from('menu_icons')
-        .update({
-          label: title,
-          icon,
-          path,
-          is_submenu: isSubmenu,
-          parent_path: isSubmenu ? parentPath : null,
-          published: isPublished
-        })
-        .eq('path', page.path);
-      
-      const updatedPage: PageData = {
+      // Prepare the page data for the parent callback
+      const updatedPage = {
         id: data.id,
         title: data.title,
         content: data.content,
@@ -167,93 +148,215 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         parentPath: data.parent_path,
         listItems: Array.isArray(data.list_items) ? data.list_items : [],
         listType: data.list_type as 'restaurants' | 'activities' | 'locations' | undefined,
-        pageImages: pageImages, // Use our local state instead of trying to access data.page_images
+        pageImages: processedImages, // Use our processed images with the correct type
         published: data.published || false
       };
       
+      // Call the parent callback
       onPageUpdated(updatedPage);
       
       toast.success("Pagina aggiornata con successo");
+      onFormClose();
     } catch (error) {
       console.error("Errore nell'aggiornamento della pagina:", error);
       toast.error("Errore nell'aggiornamento della pagina");
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
-
-  const handleImageUploaded = (url: string) => {
-    setImageUrl(url);
-  };
-
+  
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
+      <div>
         <Label htmlFor="title">Titolo</Label>
-        <Input 
-          id="title" 
-          value={title} 
-          onChange={(e) => setTitle(e.target.value)} 
-          placeholder="Titolo della pagina"
+        <Input
+          type="text"
+          id="title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          required
         />
       </div>
       
-      <PageIconSection 
-        icon={icon}
-        setIcon={setIcon}
-      />
-
-      {/* Hidden field for path */}
-      <input type="hidden" value={path} />
-      
-      <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-        <TabsList className="grid grid-cols-3 mb-4">
-          <TabsTrigger value="content">Contenuto</TabsTrigger>
-          <TabsTrigger value="images">Galleria Immagini</TabsTrigger>
-          <TabsTrigger value="thumbnail">Immagine Principale</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="content">
-          <PageContentSection content={content} setContent={setContent} />
-        </TabsContent>
-        
-        <TabsContent value="images">
-          <PageMultiImageSection 
-            images={pageImages}
-            onImagesChange={setPageImages}
-          />
-        </TabsContent>
-        
-        <TabsContent value="thumbnail">
-          <PageImageSection 
-            imageUrl={imageUrl}
-            onImageUploaded={handleImageUploaded}
-          />
-        </TabsContent>
-      </Tabs>
-      
-      <PageTypeSection 
-        isSubmenu={isSubmenu}
-        setIsSubmenu={setIsSubmenu}
-        parentPath={parentPath}
-        setParentPath={setParentPath}
-        parentPages={parentPages}
-      />
-
-      <div className="flex items-center space-x-2 py-4">
-        <Switch 
-          id="published" 
-          checked={isPublished} 
-          onCheckedChange={setIsPublished} 
+      <div>
+        <Label htmlFor="path">Percorso (path)</Label>
+        <Input
+          type="text"
+          id="path"
+          value={path}
+          onChange={(e) => setPath(e.target.value)}
+          required
         />
-        <Label htmlFor="published" className="font-medium cursor-pointer">
-          {isPublished ? "Pagina pubblicata nel menu" : "Pagina bozza (non visibile nel menu)"}
-        </Label>
       </div>
       
-      <Button type="submit" disabled={isLoading} className="w-full">
-        {isLoading ? "Aggiornamento in corso..." : "Aggiorna pagina"}
-      </Button>
+      <div>
+        <Label htmlFor="imageUrl">URL Immagine</Label>
+        <Input
+          type="text"
+          id="imageUrl"
+          value={imageUrl}
+          onChange={(e) => setImageUrl(e.target.value)}
+        />
+      </div>
+      
+      <div>
+        <Label htmlFor="icon">Icona</Label>
+        <Select value={selectedIcon} onValueChange={setSelectedIcon}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Seleziona un'icona" />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(keywordToIconMap).map(([keyword, icon]) => (
+              <SelectItem key={keyword} value={icon}>
+                {keyword}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="flex items-center space-x-2">
+        <Label htmlFor="isSubmenu">È un sottomenu?</Label>
+        <Switch
+          id="isSubmenu"
+          checked={isSubmenu}
+          onCheckedChange={(checked) => setIsSubmenu(checked)}
+        />
+      </div>
+      
+      {isSubmenu && (
+        <div>
+          <Label htmlFor="parentPath">Percorso del menu principale</Label>
+          <Select value={parentPath} onValueChange={setParentPath}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Seleziona un percorso principale" />
+            </SelectTrigger>
+            <SelectContent>
+              {parentPages.map((parentPage) => (
+                <SelectItem key={parentPage.path} value={parentPage.path}>
+                  {parentPage.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      
+      <div>
+        <Label>Contenuto</Label>
+        <Editor
+          apiKey="YOUR_TINYMCE_API_KEY"
+          value={editorState}
+          init={{
+            height: 300,
+            menubar: false,
+            plugins: [
+              'advlist autolink lists link image charmap print preview anchor',
+              'searchreplace visualblocks code fullscreen',
+              'insertdatetime media table paste code help wordcount'
+            ],
+            toolbar:
+              'undo redo | formatselect | ' +
+              'bold italic backcolor | alignleft aligncenter ' +
+              'alignright alignjustify | bullist numlist outdent indent | ' +
+              'removeformat | help'
+          }}
+          onEditorChange={handleEditorChange}
+        />
+      </div>
+      
+      <div>
+        <Label>Immagini</Label>
+        {pageImages.map((img, index) => (
+          <div key={index} className="mb-4 p-4 border rounded">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor={`image-url-${index}`}>URL Immagine</Label>
+                <Input
+                  type="text"
+                  id={`image-url-${index}`}
+                  value={img.url}
+                  onChange={(e) => handleImageChange(index, 'url', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor={`image-position-${index}`}>Posizione</Label>
+                <Select
+                  value={img.position}
+                  onValueChange={(value) => handleImageChange(index, 'position', value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Seleziona la posizione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="left">Sinistra</SelectItem>
+                    <SelectItem value="center">Centro</SelectItem>
+                    <SelectItem value="right">Destra</SelectItem>
+                    <SelectItem value="full">Larghezza Intera</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor={`image-caption-${index}`}>Didascalia</Label>
+                <Input
+                  type="text"
+                  id={`image-caption-${index}`}
+                  value={img.caption || ''}
+                  onChange={(e) => handleImageChange(index, 'caption', e.target.value)}
+                />
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              className="mt-2"
+              onClick={() => handleRemoveImage(index)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Rimuovi
+            </Button>
+          </div>
+        ))}
+        <Button type="button" variant="secondary" size="sm" onClick={handleAddImage}>
+          <Plus className="h-4 w-4 mr-2" />
+          Aggiungi Immagine
+        </Button>
+      </div>
+      
+      <div>
+        <Label htmlFor="listType">Tipo di Lista</Label>
+        <Select value={listType} onValueChange={(value) => setListType(value)}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Seleziona un tipo di lista" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="restaurants">Ristoranti</SelectItem>
+            <SelectItem value="activities">Attività</SelectItem>
+            <SelectItem value="locations">Luoghi</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="flex items-center space-x-2">
+        <Label htmlFor="isPublished">Pubblicata</Label>
+        <Switch
+          id="isPublished"
+          checked={isPublished}
+          onCheckedChange={(checked) => setIsPublished(checked)}
+        />
+      </div>
+      
+      <div className="flex justify-end">
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Aggiornamento..." : "Aggiorna Pagina"}
+        </Button>
+        <DialogClose asChild>
+          <Button type="button" variant="secondary" onClick={onFormClose}>
+            Annulla
+          </Button>
+        </DialogClose>
+      </div>
     </form>
   );
 };
