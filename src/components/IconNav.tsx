@@ -20,7 +20,6 @@ interface IconData {
   path: string;
   parent_path: string | null;
   published?: boolean;
-  order?: number; // Make order optional since it doesn't exist in the database
 }
 
 const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
@@ -127,32 +126,9 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
     );
   }
 
-  // Add the static links for Welcome and Storia pages as IconData objects
-  const staticIcons: IconData[] = [
-    {
-      id: "welcome",
-      title: "Benvenuto",
-      icon: "Home",
-      path: "/welcome",
-      parent_path: null,
-      published: true
-    },
-    {
-      id: "storia",
-      title: "Storia",
-      icon: "Book",
-      path: "/storia",
-      parent_path: null,
-      published: true
-    }
-  ];
-
-  // Combine static icons with dynamic icons
-  const allIcons = [...staticIcons, ...icons];
-
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 p-6 max-w-6xl mx-auto">
-      {allIcons.map((icon) => (
+      {icons.map((icon) => (
         <div 
           key={icon.id}
           className="flex flex-col items-center bg-white rounded-xl shadow-md p-5 cursor-pointer transform transition-transform hover:scale-105 active:scale-95"

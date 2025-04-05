@@ -107,6 +107,12 @@ function App() {
           />
           <Route path="/home" element={<Home />} />
           
+          {/* Specific routes for submenu */}
+          <Route path="/submenu/:parentPath" element={<SubMenu />} />
+          
+          {/* Preview route for admin */}
+          <Route path="/preview/:pageRoute" element={<PreviewPage />} />
+          
           {/* Rotta speciale per tutte le altre pagine - cattura le pagine dinamiche */}
           <Route path="/:pageRoute/*" element={<DynamicPage />} />
           
