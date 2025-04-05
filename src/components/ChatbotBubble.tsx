@@ -5,154 +5,118 @@ import { supabase } from "@/integrations/supabase/client";
 
 const ChatbotBubble: React.FC = () => {
   const location = useLocation();
-  const [isAdmin, setIsAdmin] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
+  const [scriptError, setScriptError] = useState(false);
+  
+  // Skip rendering on admin pages
+  const isAdminPage = location.pathname.includes('/admin') || 
+                       location.pathname.includes('/login');
 
   useEffect(() => {
-    // Check if we're on an admin page to not show chatbot there
-    const isAdminPage = location.pathname.includes("/admin") || location.pathname.includes("/preview");
-    setIsAdmin(isAdminPage);
-
-    // If we're on admin page, don't load the chatbot
-    if (isAdminPage) {
-      return;
-    }
-
-    const loadChatbotSettings = async () => {
+    if (isAdminPage || isLoaded) return;
+    
+    const loadChatbot = async () => {
       try {
-        // Try to load from localStorage first as it's more reliable
-        const localStorageCode = localStorage.getItem("chatbotCode");
-        let chatbotCode = '';
+        console.log("Attempting to load chatbot script...");
         
-        if (localStorageCode) {
-          chatbotCode = localStorageCode;
-          console.log("Caricato codice chatbot da localStorage");
-        } else {
-          // Try to load from Supabase as backup
+        // Try to load from localStorage first (faster and more reliable)
+        const localCode = localStorage.getItem("chatbotCode");
+        let chatbotCode = localCode;
+        
+        // If not in localStorage, try to load from Supabase
+        if (!chatbotCode) {
+          console.log("No chatbot code in localStorage, trying Supabase...");
           try {
             const { data, error } = await supabase
               .from('chatbot_settings')
               .select('code')
               .eq('id', 1)
               .maybeSingle();
-
-            if (!error && data && data.code) {
+              
+            if (error) {
+              console.warn("Failed to load from Supabase:", error);
+            } else if (data && data.code) {
               chatbotCode = data.code;
-              console.log("Caricato codice chatbot da Supabase");
+              // Store in localStorage for future use
+              localStorage.setItem("chatbotCode", data.code);
             }
-          } catch (supabaseError) {
-            console.warn("Errore nel caricamento delle impostazioni chatbot da Supabase:", supabaseError);
+          } catch (error) {
+            console.warn("Supabase request failed:", error);
           }
         }
-
-        // If we have chatbot code, initialize it
-        if (chatbotCode && !isLoaded && !hasAttemptedLoad) {
-          console.log("Tentativo di inizializzazione chatbot");
-          initializeChatbot(chatbotCode);
-          setIsLoaded(true);
-          setHasAttemptedLoad(true);
+        
+        if (!chatbotCode) {
+          console.log("No chatbot code found, skipping...");
+          return;
         }
+
+        // Extract <script> tag and attributes from the code
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(chatbotCode, 'text/html');
+        const scriptTag = doc.querySelector('script');
+        
+        if (!scriptTag) {
+          console.warn("Invalid chatbot code (no script tag found)");
+          return;
+        }
+        
+        // Create and append the script element
+        const script = document.createElement('script');
+        
+        // Copy all attributes from the provided script
+        Array.from(scriptTag.attributes).forEach(attr => {
+          script.setAttribute(attr.name, attr.value);
+        });
+        
+        // Set source if present
+        if (scriptTag.src) {
+          script.src = scriptTag.src;
+        }
+        
+        // Set inner content if present
+        if (scriptTag.textContent) {
+          script.textContent = scriptTag.textContent;
+        }
+        
+        // Add error handling
+        script.onerror = () => {
+          console.error("Error loading chatbot script");
+          setScriptError(true);
+        };
+        
+        // Add load handler
+        script.onload = () => {
+          console.log("Chatbot script loaded successfully");
+          setIsLoaded(true);
+        };
+        
+        // Add the script to the document
+        document.head.appendChild(script);
+        console.log("Chatbot script appended to document head");
+        
       } catch (error) {
-        console.error("Error loading chatbot settings:", error);
+        console.error("Error loading chatbot:", error);
+        setScriptError(true);
       }
     };
-
-    // Only load if not already loaded
-    if (!isLoaded) {
-      loadChatbotSettings();
-    }
-  }, [location.pathname, isLoaded, hasAttemptedLoad]);
-
-  const initializeChatbot = (chatbotCode: string) => {
-    try {
-      // Remove existing script if any
-      const existingScript = document.getElementById("chatbot-script");
-      if (existingScript) {
-        existingScript.remove();
+    
+    loadChatbot();
+    
+    // Attempt to reload chatbot after 2 seconds if not loaded initially
+    // This helps with some chatbot providers that have timing issues
+    const retryTimer = setTimeout(() => {
+      if (!isLoaded && !scriptError) {
+        console.log("Retrying chatbot script load...");
+        loadChatbot();
       }
+    }, 2000);
+    
+    return () => {
+      clearTimeout(retryTimer);
+    };
+  }, [isAdminPage, isLoaded, scriptError]);
 
-      // Create container if it doesn't exist
-      if (!document.getElementById("chatbot-container")) {
-        const chatbotContainer = document.createElement("div");
-        chatbotContainer.id = "chatbot-container";
-        document.body.appendChild(chatbotContainer);
-      }
-
-      // Extract script details
-      const srcMatch = chatbotCode.match(/src=['"](.*?)['"]/);
-      const dataIdMatch = chatbotCode.match(/data-chatbot-id=['"](.*?)['"]/);
-      
-      if (srcMatch && srcMatch[1]) {
-        // Create new script element
-        const script = document.createElement("script");
-        script.id = "chatbot-script";
-        script.defer = true;
-        script.src = srcMatch[1];
-        
-        if (dataIdMatch && dataIdMatch[1]) {
-          script.setAttribute("data-chatbot-id", dataIdMatch[1]);
-        }
-        
-        // Use data-element and data-position to ensure proper placement
-        script.setAttribute("data-element", "chatbot-container");
-        script.setAttribute("data-position", "right");
-        
-        // Log before appending
-        console.log("Inizializzazione chatbot con src:", srcMatch[1]);
-        if (dataIdMatch && dataIdMatch[1]) {
-          console.log("ID Chatbot:", dataIdMatch[1]);
-        }
-        
-        // Append to document
-        document.head.appendChild(script);
-        
-        console.log("Script chatbot aggiunto al documento");
-        
-        // Create a fallback initialization for some chatbot providers
-        setTimeout(() => {
-          // Some chatbots need to be re-triggered if they don't initialize correctly
-          if (typeof window !== 'undefined' && window.document.getElementById("chatbot-container") && 
-              !window.document.getElementById("chatbot-container").firstChild) {
-            console.log("Tentativo di reinizializzazione del chatbot dopo timeout");
-            
-            // Remove and re-add the script tag
-            const existingScript = document.getElementById("chatbot-script");
-            if (existingScript) {
-              existingScript.remove();
-              
-              const newScript = document.createElement("script");
-              newScript.id = "chatbot-script";
-              newScript.defer = true;
-              newScript.src = srcMatch[1];
-              
-              if (dataIdMatch && dataIdMatch[1]) {
-                newScript.setAttribute("data-chatbot-id", dataIdMatch[1]);
-              }
-              
-              // Add these attributes to ensure proper placement
-              newScript.setAttribute("data-element", "chatbot-container");
-              newScript.setAttribute("data-position", "right");
-              
-              document.head.appendChild(newScript);
-              console.log("Chatbot reinizializzato dopo timeout");
-            }
-          }
-        }, 3000);
-      } else {
-        console.warn("Formato script chatbot non valido");
-      }
-    } catch (error) {
-      console.error("Errore nell'inizializzazione del chatbot:", error);
-    }
-  };
-
-  // If on admin page, don't render anything
-  if (isAdmin) {
-    return null;
-  }
-
-  // The chatbot will be inserted into the chatbot-container div
+  // This component doesn't render anything visible
   return null;
 };
 

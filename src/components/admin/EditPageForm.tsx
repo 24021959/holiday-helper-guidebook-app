@@ -21,20 +21,22 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Trash2 } from "lucide-react";
 
-interface EditPageFormProps {
+export interface EditPageFormProps {
   page: any;
   parentPages: any[];
   onPageUpdated: (updatedPage: any) => void;
-  onFormClose: () => void;
+  onFormClose?: () => void;
   keywordToIconMap: Record<string, string>;
+  isSystemPage?: boolean;
 }
 
 export const EditPageForm: React.FC<EditPageFormProps> = ({ 
   page,
   parentPages,
   onPageUpdated,
-  onFormClose,
-  keywordToIconMap
+  onFormClose = () => {},
+  keywordToIconMap,
+  isSystemPage = false
 }) => {
   const [title, setTitle] = useState(page.title);
   const [path, setPath] = useState(page.path);

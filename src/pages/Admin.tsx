@@ -74,6 +74,7 @@ const Admin: React.FC = () => {
       try {
         const localStorageCode = localStorage.getItem("chatbotCode");
         if (localStorageCode) {
+          console.log("Loaded chatbot code from localStorage");
           setChatbotCode(localStorageCode);
           return;
         }
@@ -85,11 +86,12 @@ const Admin: React.FC = () => {
           .maybeSingle();
           
         if (error && error.code !== 'PGRST116') {
-          console.warn("Errore nel caricamento delle impostazioni chatbot:", error);
+          console.warn("Error loading chatbot settings:", error);
           return;
         }
         
         if (data && data.code) {
+          console.log("Loaded chatbot code from Supabase");
           setChatbotCode(data.code);
           localStorage.setItem("chatbotCode", data.code);
         }
@@ -195,6 +197,7 @@ const Admin: React.FC = () => {
   const handleSaveChatbotSettings = async () => {
     try {
       localStorage.setItem("chatbotCode", chatbotCode);
+      console.log("Chatbot code saved to localStorage");
       
       try {
         const { error } = await supabase
@@ -203,16 +206,18 @@ const Admin: React.FC = () => {
           .select();
 
         if (error) {
-          console.warn("Nota: Errore nel salvataggio su Supabase, usando localStorage come fallback:", error);
+          console.warn("Error saving to Supabase, using localStorage as fallback:", error);
+        } else {
+          console.log("Chatbot code saved to Supabase successfully");
         }
       } catch (e) {
-        console.warn("Errore Supabase:", e);
+        console.warn("Supabase request failed:", e);
       }
       
       toast.success("Impostazioni chatbot salvate con successo");
       return Promise.resolve();
     } catch (error) {
-      console.error("Errore nel salvataggio delle impostazioni chatbot:", error);
+      console.error("Error saving chatbot settings:", error);
       toast.error("Errore nel salvataggio delle impostazioni chatbot");
       return Promise.reject(error);
     }

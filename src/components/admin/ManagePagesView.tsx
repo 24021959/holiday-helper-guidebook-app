@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -30,7 +29,6 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
   const [showUnpublished, setShowUnpublished] = useState(false);
 
   useEffect(() => {
-    // Ensure pages are loaded
     if (pages) {
       setIsLoading(false);
     }
@@ -83,7 +81,6 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     try {
       const newPublishedState = !page.published;
       
-      // Update the custom_pages table
       const { error: pageError } = await supabase
         .from('custom_pages')
         .update({ published: newPublishedState })
@@ -91,7 +88,6 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
       
       if (pageError) throw pageError;
       
-      // Update the menu_icons table
       const { error: iconError } = await supabase
         .from('menu_icons')
         .update({ published: newPublishedState })
@@ -99,7 +95,6 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
       
       if (iconError) throw iconError;
       
-      // Update the local state
       const updatedPages = pages.map(p => 
         p.id === page.id ? { ...p, published: newPublishedState } : p
       );
@@ -138,12 +133,10 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     );
   }
 
-  // Filter pages based on showUnpublished toggle
   const filteredPages = showUnpublished 
     ? [...pages] 
     : pages.filter(page => page.published);
     
-  // Sort pages by title
   const sortedPages = [...filteredPages].sort((a, b) => a.title.localeCompare(b.title));
 
   return (
@@ -179,7 +172,6 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
         </div>
       )}
 
-      {/* Edit Page Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -191,6 +183,7 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
               page={selectedPage}
               parentPages={parentPages}
               onPageUpdated={handlePageUpdated}
+              onFormClose={() => setIsEditDialogOpen(false)}
               keywordToIconMap={keywordToIconMap}
               isSystemPage={false}
             />
