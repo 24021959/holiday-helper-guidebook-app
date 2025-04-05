@@ -19,6 +19,7 @@ interface IconData {
   icon: string;
   path: string;
   parent_path: string | null;
+  published?: boolean;
   order?: number; // Make order optional since it doesn't exist in the database
 }
 
@@ -33,11 +34,12 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
       try {
         setIsLoading(true);
         
-        // Query per ottenere le icone dal database
+        // Query to get icons from the database that are published
         const { data, error } = await supabase
           .from('menu_icons')
           .select('*')
-          .eq('parent_path', parentPath);
+          .eq('parent_path', parentPath)
+          .eq('published', true); // Only show published items
         
         if (error) throw error;
         
@@ -47,7 +49,8 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
           title: icon.label, // Use label as title
           icon: icon.icon,
           path: icon.path,
-          parent_path: icon.parent_path
+          parent_path: icon.parent_path,
+          published: icon.published
         })) || [];
         
         setIcons(transformedData);
@@ -66,7 +69,7 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
     navigate(path);
   };
 
-  // Funzione per convertire il nome dell'icona in componente Lucide
+  // Function to render the icon component based on icon name
   const renderIcon = (iconName: string) => {
     switch (iconName) {
       case 'FileText': return <FileText className="w-12 h-12" />;
@@ -131,14 +134,16 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
       title: "Benvenuto",
       icon: "Home",
       path: "/welcome",
-      parent_path: null
+      parent_path: null,
+      published: true
     },
     {
       id: "storia",
       title: "Storia",
       icon: "Book",
       path: "/storia",
-      parent_path: null
+      parent_path: null,
+      published: true
     }
   ];
 

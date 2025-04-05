@@ -72,6 +72,7 @@ export type Database = {
           list_type: string | null
           parent_path: string | null
           path: string
+          published: boolean | null
           title: string
           updated_at: string | null
         }
@@ -86,6 +87,7 @@ export type Database = {
           list_type?: string | null
           parent_path?: string | null
           path: string
+          published?: boolean | null
           title: string
           updated_at?: string | null
         }
@@ -100,6 +102,7 @@ export type Database = {
           list_type?: string | null
           parent_path?: string | null
           path?: string
+          published?: boolean | null
           title?: string
           updated_at?: string | null
         }
@@ -142,6 +145,7 @@ export type Database = {
           label: string
           parent_path: string | null
           path: string
+          published: boolean | null
           updated_at: string | null
         }
         Insert: {
@@ -153,6 +157,7 @@ export type Database = {
           label: string
           parent_path?: string | null
           path: string
+          published?: boolean | null
           updated_at?: string | null
         }
         Update: {
@@ -164,6 +169,7 @@ export type Database = {
           label?: string
           parent_path?: string | null
           path?: string
+          published?: boolean | null
           updated_at?: string | null
         }
         Relationships: []

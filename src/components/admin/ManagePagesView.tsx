@@ -7,7 +7,8 @@ import { PageData } from "@/pages/Admin";
 import { useNavigate } from "react-router-dom";
 import { EditPageForm } from "./EditPageForm";
 import { PageListItem } from "./PageListItem";
-import { Loader2 } from "lucide-react";
+import { Loader2, EyeOff, Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ManagePagesViewProps {
   pages: PageData[];
@@ -26,6 +27,7 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPage, setSelectedPage] = useState<PageData | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [showUnpublished, setShowUnpublished] = useState(false);
 
   useEffect(() => {
     // Ensure pages are loaded
@@ -77,6 +79,43 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     setIsEditDialogOpen(true);
   };
 
+  const handleTogglePublish = async (page: PageData) => {
+    try {
+      const newPublishedState = !page.published;
+      
+      // Update the custom_pages table
+      const { error: pageError } = await supabase
+        .from('custom_pages')
+        .update({ published: newPublishedState })
+        .eq('id', page.id);
+      
+      if (pageError) throw pageError;
+      
+      // Update the menu_icons table
+      const { error: iconError } = await supabase
+        .from('menu_icons')
+        .update({ published: newPublishedState })
+        .eq('path', page.path);
+      
+      if (iconError) throw iconError;
+      
+      // Update the local state
+      const updatedPages = pages.map(p => 
+        p.id === page.id ? { ...p, published: newPublishedState } : p
+      );
+      
+      onPagesUpdate(updatedPages);
+      
+      toast.success(newPublishedState 
+        ? "Pagina pubblicata" 
+        : "Pagina nascosta dal menu");
+        
+    } catch (error) {
+      console.error("Errore nell'aggiornare lo stato di pubblicazione:", error);
+      toast.error("Errore nell'aggiornare lo stato di pubblicazione");
+    }
+  };
+
   const handlePageUpdated = (updatedPage: PageData) => {
     const updatedPages = pages.map(p => 
       p.id === updatedPage.id ? updatedPage : p
@@ -99,12 +138,28 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     );
   }
 
+  // Filter pages based on showUnpublished toggle
+  const filteredPages = showUnpublished 
+    ? [...pages] 
+    : pages.filter(page => page.published);
+    
   // Sort pages by title
-  const sortedPages = [...pages].sort((a, b) => a.title.localeCompare(b.title));
+  const sortedPages = [...filteredPages].sort((a, b) => a.title.localeCompare(b.title));
 
   return (
     <>
-      <h2 className="text-xl font-medium text-emerald-600 mb-4">Gestisci Pagine</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-medium text-emerald-600">Gestisci Pagine</h2>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => setShowUnpublished(!showUnpublished)}
+          className="flex items-center gap-2"
+        >
+          {showUnpublished ? <Eye size={16} /> : <EyeOff size={16} />}
+          {showUnpublished ? "Mostra tutte" : "Mostra anche bozze"}
+        </Button>
+      </div>
       
       {sortedPages.length === 0 ? (
         <p className="text-gray-500">Nessuna pagina creata finora</p>
@@ -117,6 +172,7 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
               onDelete={handleDeletePage}
               onEdit={handleEditPage}
               onPreview={handlePreviewPage}
+              onTogglePublish={handleTogglePublish}
               isSystemPage={false}
             />
           ))}

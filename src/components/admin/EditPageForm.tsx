@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { PageData } from "@/pages/Admin";
 import { PageContentSection } from "./form/PageContentSection";
 import { PageTypeSection } from "./form/PageTypeSection";
@@ -41,6 +42,7 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
   const [listType, setListType] = useState(page.listType || "");
   const [pageImages, setPageImages] = useState<ImageItem[]>([]);
   const [currentTab, setCurrentTab] = useState<string>("content");
+  const [isPublished, setIsPublished] = useState(page.published || false);
 
   // Estrai le immagini e il contenuto quando il componente viene montato
   useEffect(() => {
@@ -135,7 +137,8 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         icon,
         list_items: listItems,
         list_type: listType || null,
-        page_images: pageImages.length > 0 ? pageImages : null
+        page_images: pageImages.length > 0 ? pageImages : null,
+        published: isPublished
       };
       
       const { data, error } = await supabase
@@ -154,7 +157,8 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
           icon,
           path,
           is_submenu: isSubmenu,
-          parent_path: isSubmenu ? parentPath : null
+          parent_path: isSubmenu ? parentPath : null,
+          published: isPublished
         })
         .eq('path', page.path);
       
@@ -169,7 +173,8 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         parentPath: data.parent_path,
         listItems: Array.isArray(data.list_items) ? data.list_items : [],
         listType: data.list_type as 'restaurants' | 'activities' | 'locations' | undefined,
-        pageImages: Array.isArray(data.page_images) ? data.page_images.map(img => ({...img, type: "image"})) : []
+        pageImages: Array.isArray(data.page_images) ? data.page_images.map(img => ({...img, type: "image"})) : [],
+        published: data.published || false
       };
       
       onPageUpdated(updatedPage);
@@ -237,6 +242,17 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         icon={icon}
         setIcon={setIcon}
       />
+
+      <div className="flex items-center space-x-2 py-4">
+        <Switch 
+          id="published" 
+          checked={isPublished} 
+          onCheckedChange={setIsPublished} 
+        />
+        <Label htmlFor="published" className="font-medium cursor-pointer">
+          {isPublished ? "Pagina pubblicata nel menu" : "Pagina bozza (non visibile nel menu)"}
+        </Label>
+      </div>
       
       <Button type="submit" disabled={isLoading} className="w-full">
         {isLoading ? "Aggiornamento in corso..." : "Aggiorna pagina"}

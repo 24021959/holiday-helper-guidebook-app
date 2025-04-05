@@ -28,6 +28,7 @@ export interface PageData {
   listItems?: any[];
   listType?: 'restaurants' | 'activities' | 'locations';
   pageImages?: ImageItem[];
+  published?: boolean;
 }
 
 export interface UserData {
@@ -111,7 +112,8 @@ const Admin: React.FC = () => {
             parentPath: page.parent_path,
             listItems: Array.isArray(page.list_items) ? page.list_items : [],
             listType: page.list_type as 'restaurants' | 'activities' | 'locations',
-            pageImages: page.page_images ? page.page_images as ImageItem[] : []
+            pageImages: page.page_images ? page.page_images as ImageItem[] : [],
+            published: page.published || false
           }));
           setPages(formattedPages);
         }
