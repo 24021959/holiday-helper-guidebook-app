@@ -8,6 +8,7 @@ import {
   Phone, Coffee, Bike, Camera, Globe, Mountain, MapPin, Newspaper,
   Music, Heart, Trees, Users, ShoppingCart
 } from "lucide-react";
+import TranslatedText from "@/components/TranslatedText";
 
 interface IconNavProps {
   parentPath: string | null;
@@ -32,6 +33,7 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
     const fetchIcons = async () => {
       try {
         setIsLoading(true);
+        setError(null);
         
         // Query to get icons from the database that are published
         const { data, error } = await supabase
@@ -114,20 +116,34 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center p-4">
-          <p className="text-red-500">{error}</p>
+          <p className="text-red-500">
+            <TranslatedText text={error} />
+          </p>
           <button 
             onClick={() => window.location.reload()}
             className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
           >
-            Riprova
+            <TranslatedText text="Riprova" />
           </button>
         </div>
       </div>
     );
   }
 
+  if (icons.length === 0) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center p-4">
+          <p className="text-gray-500">
+            <TranslatedText text="Nessuna pagina disponibile in questa sezione" />
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 p-6 max-w-6xl mx-auto">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 p-6 max-w-6xl mx-auto overflow-y-auto">
       {icons.map((icon) => (
         <div 
           key={icon.id}
@@ -137,7 +153,9 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
           <div className="bg-emerald-100 p-4 mb-3 rounded-full text-emerald-600">
             {renderIcon(icon.icon)}
           </div>
-          <span className="text-center text-gray-700 font-medium">{icon.title}</span>
+          <span className="text-center text-gray-700 font-medium">
+            <TranslatedText text={icon.title} />
+          </span>
         </div>
       ))}
     </div>

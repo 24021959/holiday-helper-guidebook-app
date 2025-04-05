@@ -1,14 +1,12 @@
 
 import React, { useEffect, useState } from "react";
 import IconNav from "@/components/IconNav";
-import AdminButton from "@/components/AdminButton";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import TranslatedText from "@/components/TranslatedText";
-import { useTranslation } from "@/context/TranslationContext";
 
 interface HeaderSettings {
   logoUrl?: string | null;
@@ -21,11 +19,11 @@ const Menu: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { language } = useTranslation();
   
   useEffect(() => {
     const fetchHeaderSettings = async () => {
       try {
+        setLoading(true);
         const { data, error } = await supabase
           .from('header_settings')
           .select('*')
@@ -40,19 +38,28 @@ const Menu: React.FC = () => {
             headerColor: data.header_color,
             establishmentName: data.establishment_name
           });
+          
+          // Save to localStorage as backup
+          localStorage.setItem("headerSettings", JSON.stringify({
+            logoUrl: data.logo_url,
+            headerColor: data.header_color,
+            establishmentName: data.establishment_name
+          }));
         }
       } catch (error) {
         console.error("Errore nel caricamento delle impostazioni header:", error);
-        setError("Impossibile caricare le impostazioni dell'header");
         
-        // Fallback al localStorage se Supabase fallisce
+        // Fallback to localStorage if Supabase fails
         const savedHeaderSettings = localStorage.getItem("headerSettings");
         if (savedHeaderSettings) {
           try {
             setHeaderSettings(JSON.parse(savedHeaderSettings));
           } catch (err) {
             console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
+            setError("Impossibile caricare le impostazioni");
           }
+        } else {
+          setError("Impossibile caricare le impostazioni dell'header");
         }
       } finally {
         setLoading(false);
@@ -73,27 +80,9 @@ const Menu: React.FC = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex flex-col h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100">
-        <div className="bg-white p-6 rounded-lg shadow-md text-center max-w-md">
-          <p className="text-red-500 mb-4">
-            <TranslatedText text={error} />
-          </p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
-          >
-            <TranslatedText text="Riprova" />
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-screen">
-      {/* Header con le impostazioni personalizzate */}
+      {/* Header with customized settings */}
       <Header 
         logoUrl={headerSettings.logoUrl || undefined}
         backgroundColor={headerSettings.headerColor}
@@ -101,12 +90,35 @@ const Menu: React.FC = () => {
         showAdminButton={false}
       />
       
-      {/* Contenitore principale con le icone che prende tutto lo spazio disponibile */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <IconNav parentPath={null} />
+      {/* Title for the menu */}
+      <div className="bg-gradient-to-r from-emerald-100 to-teal-100 py-3 px-4 shadow-sm">
+        <h1 className="text-xl font-medium text-emerald-800 text-center">
+          <TranslatedText text="Menu principale" />
+        </h1>
       </div>
       
-      {/* Footer con logo */}
+      {/* Main container with icons that takes all available space */}
+      <div className="flex-1 flex flex-col overflow-auto">
+        {error ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="bg-white p-6 rounded-lg shadow-md text-center max-w-md">
+              <p className="text-red-500 mb-4">
+                <TranslatedText text={error} />
+              </p>
+              <button 
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
+              >
+                <TranslatedText text="Riprova" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <IconNav parentPath={null} />
+        )}
+      </div>
+      
+      {/* Footer with logo */}
       <Footer />
     </div>
   );
