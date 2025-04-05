@@ -10,6 +10,13 @@ import MasterPanel from "@/components/admin/MasterPanel";
 import AdminHeader from "@/components/admin/AdminHeader";
 import AdminLoader from "@/components/admin/AdminLoader";
 
+export interface ImageItem {
+  url: string;
+  position: "left" | "center" | "right" | "full";
+  caption?: string;
+  type: "image";
+}
+
 export interface PageData {
   id: string;
   title: string;
@@ -21,6 +28,7 @@ export interface PageData {
   parentPath?: string | null;
   listItems?: any[];
   listType?: 'restaurants' | 'activities' | 'locations';
+  pageImages?: ImageItem[];
 }
 
 export interface UserData {

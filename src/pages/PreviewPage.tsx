@@ -9,6 +9,13 @@ import { Button } from "@/components/ui/button";
 import BackToMenu from "@/components/BackToMenu";
 import TranslatedText from "@/components/TranslatedText";
 
+interface ImageItem {
+  url: string;
+  position: "left" | "center" | "right" | "full";
+  caption?: string;
+  type: "image";
+}
+
 interface PageData {
   id: string;
   title: string;
@@ -16,6 +23,7 @@ interface PageData {
   imageUrl?: string;
   listItems?: any[];
   listType?: 'restaurants' | 'activities' | 'locations';
+  pageImages?: ImageItem[];
 }
 
 interface PreviewPageProps {
@@ -30,6 +38,7 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [headerSettings, setHeaderSettings] = useState<{ logoUrl?: string; headerColor?: string }>({});
+  const [pageContentSections, setPageContentSections] = useState<(string | ImageItem)[]>([]);
 
   const path = pageRoute || location.pathname;
   const effectivePath = path.startsWith('/preview/') ? path.substring(9) : path;
@@ -58,15 +67,47 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
                 ? pageData.list_items 
                 : []
             : [];
+
+          // Estrai le immagini dal contenuto
+          const pageImages: ImageItem[] = [];
+          let processedContent = pageData.content;
+          
+          if (pageData.content.includes("<!-- IMAGES -->")) {
+            const parts = pageData.content.split("<!-- IMAGES -->");
+            processedContent = parts[0]; // Contenuto testuale
             
-          setPageData({
+            if (parts[1]) {
+              const imageLines = parts[1].split("\n").filter(line => line.trim());
+              
+              for (const line of imageLines) {
+                try {
+                  if (line.includes('"type":"image"')) {
+                    const imageData = JSON.parse(line);
+                    if (imageData.type === "image") {
+                      pageImages.push(imageData as ImageItem);
+                    }
+                  }
+                } catch (e) {
+                  console.error("Errore nel parsing dell'immagine:", e);
+                }
+              }
+            }
+          }
+          
+          const formattedPageData: PageData = {
             id: pageData.id,
             title: pageData.title,
-            content: pageData.content,
+            content: processedContent,
             imageUrl: pageData.image_url,
             listItems: listItemsArray,
-            listType: pageData.list_type as 'restaurants' | 'activities' | 'locations' | undefined
-          });
+            listType: pageData.list_type as 'restaurants' | 'activities' | 'locations' | undefined,
+            pageImages: pageImages.length > 0 ? pageImages : undefined
+          };
+          
+          setPageData(formattedPageData);
+          
+          // Prepara le sezioni di contenuto
+          parseContentSections(processedContent, pageImages);
         } else {
           throw new Error(`Pagina non trovata: ${effectivePath}`);
         }
@@ -93,6 +134,47 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
     
     fetchData();
   }, [effectivePath]);
+
+  // Funzione per analizzare il contenuto della pagina e preparare le sezioni
+  const parseContentSections = (content: string, images: ImageItem[]) => {
+    const sections: (string | ImageItem)[] = [];
+    
+    // Aggiungi il contenuto testuale
+    if (content.trim()) {
+      sections.push(content);
+    }
+    
+    // Aggiungi le immagini
+    images.forEach(image => {
+      sections.push(image);
+    });
+    
+    setPageContentSections(sections);
+  };
+
+  // Funzione per renderizzare un'immagine con posizionamento
+  const renderImage = (image: ImageItem, index: number) => {
+    const positionClass = 
+      image.position === "left" ? "float-left mr-4 mb-4 w-1/3" :
+      image.position === "right" ? "float-right ml-4 mb-4 w-1/3" : 
+      image.position === "center" ? "mx-auto mb-4 w-2/3" :
+      "w-full mb-4"; // full width
+    
+    return (
+      <figure key={`img-${index}`} className={`${positionClass} my-4`}>
+        <img 
+          src={image.url} 
+          alt={image.caption || `Immagine ${index + 1}`} 
+          className="rounded-lg shadow-md w-full"
+        />
+        {image.caption && (
+          <figcaption className="text-sm text-gray-600 text-center mt-2">
+            <TranslatedText text={image.caption} />
+          </figcaption>
+        )}
+      </figure>
+    );
+  };
 
   if (loading) {
     return (
@@ -183,14 +265,23 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
           )}
           
           <div className="bg-white p-5 rounded-lg shadow-md mb-6">
-            <div className="prose max-w-none">
-              {pageData.content.split('\n').map((paragraph, index) => (
-                paragraph ? 
-                  <p key={index} className="mb-4">
-                    <TranslatedText text={paragraph} />
-                  </p> 
-                  : <br key={index} />
-              ))}
+            <div className="prose max-w-none clearfix">
+              {/* Renderizza le sezioni di contenuto */}
+              {pageContentSections.map((section, index) => {
+                if (typeof section === 'string') {
+                  // Sezione di testo
+                  return section.split('\n').map((paragraph, pIndex) => (
+                    paragraph ? 
+                      <p key={`p-${index}-${pIndex}`} className="mb-4">
+                        <TranslatedText text={paragraph} />
+                      </p> 
+                      : <br key={`br-${index}-${pIndex}`} />
+                  ));
+                } else {
+                  // Sezione immagine
+                  return renderImage(section, index);
+                }
+              })}
             </div>
           </div>
           

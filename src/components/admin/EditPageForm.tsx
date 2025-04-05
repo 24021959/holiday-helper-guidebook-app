@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,8 @@ import { PageImageSection } from "./form/PageImageSection";
 import { PageIconSection } from "./form/PageIconSection";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ShieldAlert } from "lucide-react";
+import { PageMultiImageSection, ImageItem } from "./form/PageMultiImageSection";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface EditPageFormProps {
   page: PageData;
@@ -29,16 +31,72 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
   isSystemPage = false
 }) => {
   const [title, setTitle] = useState(page.title);
-  const [content, setContent] = useState(page.content);
+  const [content, setContent] = useState("");
+  const [rawContent, setRawContent] = useState(page.content);
   const [path, setPath] = useState(page.path); // Keep state but hide UI element
   const [isSubmenu, setIsSubmenu] = useState(page.isSubmenu || false);
   const [parentPath, setParentPath] = useState(page.parentPath || "");
   const [imageUrl, setImageUrl] = useState(page.imageUrl || "");
   const [icon, setIcon] = useState(page.icon || "FileText");
   const [isLoading, setIsLoading] = useState(false);
-
   const [listItems, setListItems] = useState(page.listItems || []);
   const [listType, setListType] = useState(page.listType || "");
+  const [pageImages, setPageImages] = useState<ImageItem[]>([]);
+  const [currentTab, setCurrentTab] = useState<string>("content");
+
+  // Estrai le immagini e il contenuto quando il componente viene montato
+  useEffect(() => {
+    if (rawContent) {
+      let processedContent = rawContent;
+      const extractedImages: ImageItem[] = [];
+
+      if (rawContent.includes("<!-- IMAGES -->")) {
+        const parts = rawContent.split("<!-- IMAGES -->");
+        processedContent = parts[0]; // Contenuto testuale
+        
+        if (parts[1]) {
+          const imageLines = parts[1].split("\n").filter(line => line.trim());
+          
+          for (const line of imageLines) {
+            try {
+              if (line.includes('"type":"image"')) {
+                const imageData = JSON.parse(line);
+                if (imageData.type === "image") {
+                  extractedImages.push(imageData as ImageItem);
+                }
+              }
+            } catch (e) {
+              console.error("Errore nel parsing dell'immagine:", e);
+            }
+          }
+        }
+      }
+
+      setContent(processedContent);
+      setPageImages(extractedImages);
+    }
+  }, [rawContent]);
+
+  // Funzione per convertire le immagini nel formato per il database
+  const formatPageContent = (content: string, images: ImageItem[]) => {
+    if (images.length === 0) return content;
+    
+    let enhancedContent = content;
+    enhancedContent += "\n\n<!-- IMAGES -->\n";
+    
+    images.forEach((image, index) => {
+      const imageMarkup = JSON.stringify({
+        type: "image",
+        url: image.url,
+        position: image.position,
+        caption: image.caption || ""
+      });
+      
+      enhancedContent += `\n${imageMarkup}\n`;
+    });
+    
+    return enhancedContent;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,23 +125,27 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         return;
       }
       
+      // Formatta il contenuto con le immagini
+      const formattedContent = formatPageContent(content, pageImages);
+      
       // For system pages, only allow updating title, content and image_url
       const updateData = isSystemPage 
         ? { 
             title, 
-            content, 
+            content: formattedContent, 
             image_url: imageUrl 
           } 
         : {
             title,
-            content,
+            content: formattedContent,
             path,
             is_submenu: isSubmenu,
             parent_path: isSubmenu ? parentPath : null,
             image_url: imageUrl,
             icon,
             list_items: listItems,
-            list_type: listType || null
+            list_type: listType || null,
+            page_images: pageImages.length > 0 ? pageImages : null
           };
       
       const { data, error } = await supabase
@@ -119,7 +181,8 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         isSubmenu: data.is_submenu,
         parentPath: data.parent_path,
         listItems: Array.isArray(data.list_items) ? data.list_items : [],
-        listType: data.list_type as 'restaurants' | 'activities' | 'locations' | undefined
+        listType: data.list_type as 'restaurants' | 'activities' | 'locations' | undefined,
+        pageImages: Array.isArray(data.page_images) ? data.page_images : []
       };
       
       onPageUpdated(updatedPage);
@@ -158,7 +221,31 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         />
       </div>
       
-      <PageContentSection content={content} setContent={setContent} />
+      <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
+        <TabsList className="grid grid-cols-3 mb-4">
+          <TabsTrigger value="content">Contenuto</TabsTrigger>
+          <TabsTrigger value="images">Galleria Immagini</TabsTrigger>
+          <TabsTrigger value="thumbnail">Immagine Principale</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="content">
+          <PageContentSection content={content} setContent={setContent} />
+        </TabsContent>
+        
+        <TabsContent value="images">
+          <PageMultiImageSection 
+            images={pageImages}
+            onImagesChange={setPageImages}
+          />
+        </TabsContent>
+        
+        <TabsContent value="thumbnail">
+          <PageImageSection 
+            imageUrl={imageUrl}
+            onImageUploaded={handleImageUploaded}
+          />
+        </TabsContent>
+      </Tabs>
       
       {!isSystemPage && (
         <PageTypeSection 
@@ -169,11 +256,6 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
           parentPages={parentPages}
         />
       )}
-      
-      <PageImageSection 
-        imageUrl={imageUrl}
-        onImageUploaded={handleImageUploaded}
-      />
       
       {!isSystemPage && (
         <PageIconSection 

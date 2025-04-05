@@ -33,6 +33,8 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { PageMultiImageSection, ImageItem } from "./form/PageMultiImageSection";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface CreatePageFormProps {
   parentPages: PageData[];
@@ -65,6 +67,8 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
   const [locationMapsUrl, setLocationMapsUrl] = useState<string>("");
   const [listType, setListType] = useState<"locations" | "activities" | "restaurants" | undefined>(undefined);
   const [selectedIcon, setSelectedIcon] = useState<string>("FileText");
+  const [pageImages, setPageImages] = useState<ImageItem[]>([]);
+  const [currentTab, setCurrentTab] = useState<string>("content");
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -144,6 +148,27 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
     setLocationItems(updatedLocations);
   };
 
+  // Funzione per convertire le immagini nel formato per il database
+  const formatPageContent = (content: string, images: ImageItem[]) => {
+    if (images.length === 0) return content;
+    
+    let enhancedContent = content;
+    enhancedContent += "\n\n<!-- IMAGES -->\n";
+    
+    images.forEach((image, index) => {
+      const imageMarkup = JSON.stringify({
+        type: "image",
+        url: image.url,
+        position: image.position,
+        caption: image.caption || ""
+      });
+      
+      enhancedContent += `\n${imageMarkup}\n`;
+    });
+    
+    return enhancedContent;
+  };
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       const pageId = uuidv4();
@@ -151,21 +176,22 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         ? `${parentPath}/${values.path}` 
         : `/${values.path}`;
       
-      // Aggiunto console.log per debug
-      console.log("Creating page with path:", finalPath);
+      // Formatta il contenuto includendo i dati delle immagini
+      const formattedContent = formatPageContent(values.content, pageImages);
       
       // Prepare data for insertion to custom_pages table
       const pageData = {
         id: pageId,
         title: values.title,
-        content: values.content,
+        content: formattedContent,
         path: finalPath,
         image_url: uploadedImage,
         icon: values.icon || selectedIcon,
         is_submenu: isSubmenu,
         parent_path: isSubmenu ? parentPath : null,
         list_type: listType,
-        list_items: listType && locationItems.length > 0 ? locationItems : null
+        list_items: listType && locationItems.length > 0 ? locationItems : null,
+        page_images: pageImages.length > 0 ? pageImages : null
       };
 
       console.log("Page data for insertion:", pageData);
@@ -230,7 +256,8 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
           listType: page.list_type as "locations" | "activities" | "restaurants" | undefined,
           listItems: page.list_items as { name: string; description?: string; phoneNumber?: string; mapsUrl?: string; }[] | undefined,
           isSubmenu: page.is_submenu || false,
-          parentPath: page.parent_path || undefined
+          parentPath: page.parent_path || undefined,
+          pageImages: page.page_images as ImageItem[] | undefined
         }));
         
         // Update pages list in parent component
@@ -247,6 +274,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
       setLocationItems([]);
       setListType(undefined);
       setSelectedIcon("FileText");
+      setPageImages([]);
       
       toast.success("Pagina creata con successo");
       
@@ -382,49 +410,68 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
           />
         </div>
         
-        <FormField
-          control={form.control}
-          name="content"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Contenuto</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Inserisci il contenuto della pagina"
-                  className="min-h-32"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <div>
-          <FormLabel>Immagine</FormLabel>
-          <div className="mt-2">
-            <ImageUploader onImageUpload={setUploadedImage} />
-            
-            {uploadedImage && (
-              <div className="mt-3 relative inline-block">
-                <img 
-                  src={uploadedImage} 
-                  alt="Preview" 
-                  className="h-32 object-cover rounded-md" 
-                />
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  className="absolute top-1 right-1"
-                  onClick={() => setUploadedImage(null)}
-                >
-                  Rimuovi
-                </Button>
+        <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
+          <TabsList className="grid grid-cols-3 mb-4">
+            <TabsTrigger value="content">Contenuto</TabsTrigger>
+            <TabsTrigger value="images">Galleria Immagini</TabsTrigger>
+            <TabsTrigger value="thumbnail">Immagine Principale</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="content">
+            <FormField
+              control={form.control}
+              name="content"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contenuto</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Inserisci il contenuto della pagina"
+                      className="min-h-32"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </TabsContent>
+          
+          <TabsContent value="images">
+            <PageMultiImageSection 
+              images={pageImages}
+              onImagesChange={setPageImages}
+            />
+          </TabsContent>
+          
+          <TabsContent value="thumbnail">
+            <div>
+              <FormLabel>Immagine principale (anteprima)</FormLabel>
+              <div className="mt-2">
+                <ImageUploader onImageUpload={setUploadedImage} />
+                
+                {uploadedImage && (
+                  <div className="mt-3 relative inline-block">
+                    <img 
+                      src={uploadedImage} 
+                      alt="Preview" 
+                      className="h-32 object-cover rounded-md" 
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-1 right-1"
+                      onClick={() => setUploadedImage(null)}
+                    >
+                      Rimuovi
+                    </Button>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+          </TabsContent>
+        </Tabs>
 
         <div>
           <FormLabel>Tipo di Lista (opzionale)</FormLabel>
