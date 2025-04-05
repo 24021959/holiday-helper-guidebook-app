@@ -7,15 +7,15 @@ import { useNavigate } from "react-router-dom";
 type Language = {
   code: string;
   name: string;
-  flag: string;
+  flagSrc: string;
 };
 
 const languages: Language[] = [
-  { code: "it", name: "Italiano", flag: "🇮🇹" },
-  { code: "en", name: "English", flag: "🇬🇧" },
-  { code: "fr", name: "Français", flag: "🇫🇷" },
-  { code: "es", name: "Español", flag: "🇪🇸" },
-  { code: "de", name: "Deutsch", flag: "🇩🇪" },
+  { code: "it", name: "Italiano", flagSrc: "/flags/italy.png" },
+  { code: "en", name: "English", flagSrc: "/flags/uk.png" },
+  { code: "fr", name: "Français", flagSrc: "/flags/france.png" },
+  { code: "es", name: "Español", flagSrc: "/flags/spain.png" },
+  { code: "de", name: "Deutsch", flagSrc: "/flags/germany.png" },
 ];
 
 interface LanguageSelectorProps {
@@ -66,7 +66,11 @@ export const LanguageSelector = ({ onSelectLanguage }: LanguageSelectorProps) =>
             onClick={() => handleSelectLanguage(language.code)}
           >
             <div className="flex items-center gap-3">
-              <span className="text-4xl">{language.flag}</span>
+              <img 
+                src={language.flagSrc} 
+                alt={`${language.name} flag`} 
+                className="w-10 h-auto object-contain rounded"
+              />
               <span className="text-2xl font-medium text-gray-700">{language.name}</span>
             </div>
             <span className="text-emerald-500">
