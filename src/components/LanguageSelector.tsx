@@ -72,16 +72,18 @@ export const LanguageSelector = ({ onSelectLanguage }: LanguageSelectorProps) =>
             onClick={() => handleSelectLanguage(language.code)}
           >
             <div className="flex items-center gap-3">
-              {imageFailed[language.code] ? (
-                <span className="text-4xl">{language.flag}</span>
-              ) : (
-                <img 
-                  src={language.flagSrc} 
-                  alt={`${language.name} flag`} 
-                  className="w-10 h-auto object-contain rounded"
-                  onError={() => handleImageError(language.code)}
-                />
-              )}
+              <div className="w-10 h-7 flex items-center justify-center">
+                {imageFailed[language.code] ? (
+                  <span className="text-3xl">{language.flag}</span>
+                ) : (
+                  <img 
+                    src={language.flagSrc} 
+                    alt="" 
+                    className="w-full h-auto object-contain rounded"
+                    onError={() => handleImageError(language.code)}
+                  />
+                )}
+              </div>
               <span className="text-2xl font-medium text-gray-700">{language.name}</span>
             </div>
             <span className="text-emerald-500">
