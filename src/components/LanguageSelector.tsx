@@ -65,15 +65,13 @@ export const LanguageSelector = ({ onSelectLanguage }: LanguageSelectorProps) =>
               rounded-xl shadow-sm hover:shadow-md transition-all`}
             onClick={() => handleSelectLanguage(language.code)}
           >
-            <div className="text-2xl font-medium text-left text-gray-700">
-              {language.name}
+            <div className="flex items-center gap-3">
+              <span className="text-4xl">{language.flag}</span>
+              <span className="text-2xl font-medium text-gray-700">{language.name}</span>
             </div>
-            <div className="flex items-center">
-              <span className="text-4xl mr-2">{language.flag}</span>
-              <span className="text-emerald-500 opacity-0 group-hover:opacity-100">
-                →
-              </span>
-            </div>
+            <span className="text-emerald-500">
+              {currentLanguage === language.code ? "✓" : "→"}
+            </span>
           </Button>
         </div>
       ))}
