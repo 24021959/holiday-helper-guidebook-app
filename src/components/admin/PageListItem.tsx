@@ -2,17 +2,35 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { PageData } from "@/pages/Admin";
-import { Edit, Trash, Eye, ShieldAlert } from "lucide-react";
+import { 
+  Edit, 
+  Trash, 
+  Eye, 
+  ShieldAlert, 
+  FileText, 
+  Image, 
+  MessageCircle, 
+  Info, 
+  Map, 
+  Utensils, 
+  Landmark, 
+  Hotel, 
+  Wifi, 
+  Bus, 
+  ShoppingBag, 
+  Calendar, 
+  Phone, 
+  Book, 
+  Coffee, 
+  Home, 
+  Bike 
+} from "lucide-react";
 
 interface PageIconProps {
   iconName: string;
 }
 
 export const PageIcon: React.FC<PageIconProps> = ({ iconName }) => {
-  // Importare dinamicamente le icone necessarie
-  const { FileText, Image, MessageCircle, Info, Map, Utensils, Landmark, Hotel, 
-    Wifi, Bus, ShoppingBag, Calendar, Phone, Book, Coffee, Home, Bike } = require("lucide-react");
-  
   switch (iconName) {
     case 'FileText': return <FileText className="w-6 h-6" />;
     case 'Image': return <Image className="w-6 h-6" />;
