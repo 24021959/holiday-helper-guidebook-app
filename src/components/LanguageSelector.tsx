@@ -1,8 +1,9 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/context/TranslationContext";
 import { useNavigate } from "react-router-dom";
+import { getFallbackFlag } from "../../public/flags/fallback";
 
 type Language = {
   code: string;
@@ -26,6 +27,7 @@ export const LanguageSelector = ({ onSelectLanguage }: LanguageSelectorProps) =>
   const [isOpen, setIsOpen] = useState(false);
   const { setLanguage, language: currentLanguage } = useTranslation();
   const navigate = useNavigate();
+  const [imageFailed, setImageFailed] = useState<Record<string, boolean>>({});
 
   const toggleLanguageSelector = () => {
     setIsOpen(!isOpen);
@@ -49,6 +51,10 @@ export const LanguageSelector = ({ onSelectLanguage }: LanguageSelectorProps) =>
     setIsOpen(false);
   };
 
+  const handleImageError = (code: string) => {
+    setImageFailed(prev => ({...prev, [code]: true}));
+  };
+
   return (
     <div className="w-full flex flex-col justify-between h-full">
       {languages.map((language) => (
@@ -66,11 +72,16 @@ export const LanguageSelector = ({ onSelectLanguage }: LanguageSelectorProps) =>
             onClick={() => handleSelectLanguage(language.code)}
           >
             <div className="flex items-center gap-3">
-              <img 
-                src={language.flagSrc} 
-                alt={`${language.name} flag`} 
-                className="w-10 h-auto object-contain rounded"
-              />
+              {imageFailed[language.code] ? (
+                <span className="text-4xl">{getFallbackFlag(language.code)}</span>
+              ) : (
+                <img 
+                  src={language.flagSrc} 
+                  alt={`${language.name} flag`} 
+                  className="w-10 h-auto object-contain rounded"
+                  onError={() => handleImageError(language.code)}
+                />
+              )}
               <span className="text-2xl font-medium text-gray-700">{language.name}</span>
             </div>
             <span className="text-emerald-500">

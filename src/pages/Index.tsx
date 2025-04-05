@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { Card, CardContent } from "@/components/ui/card";
@@ -86,7 +85,7 @@ const Index: React.FC = () => {
         
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-emerald-800">
-            <TranslatedText text="Seleziona la tua lingua" as="h1" />
+            <TranslatedText text="Seleziona la lingua" as="h1" />
           </h1>
         </div>
         
