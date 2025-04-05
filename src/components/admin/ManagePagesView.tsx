@@ -39,12 +39,6 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
       const pageToDelete = pages.find(page => page.id === id);
       if (!pageToDelete) return;
       
-      // Don't allow deletion of system pages
-      if (pageToDelete.path === "welcome" || pageToDelete.path === "storia") {
-        toast.error("Non puoi eliminare questa pagina di sistema");
-        return;
-      }
-      
       const { error: pageError } = await supabase
         .from('custom_pages')
         .delete()
@@ -93,12 +87,7 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
   };
 
   const handlePreviewPage = (path: string) => {
-    // For system pages use the direct route
-    if (path === "welcome" || path === "storia") {
-      navigate(`/${path}`);
-    } else {
-      navigate(`/preview/${path}`);
-    }
+    navigate(`/preview/${path}`);
   };
 
   if (isLoading) {
@@ -110,18 +99,8 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     );
   }
 
-  // Sort pages: system pages first, then custom pages
-  const sortedPages = [...pages].sort((a, b) => {
-    // System pages first
-    const aIsSystem = a.path === "welcome" || a.path === "storia";
-    const bIsSystem = b.path === "welcome" || b.path === "storia";
-    
-    if (aIsSystem && !bIsSystem) return -1;
-    if (!aIsSystem && bIsSystem) return 1;
-    
-    // Then sort by title
-    return a.title.localeCompare(b.title);
-  });
+  // Sort pages by title
+  const sortedPages = [...pages].sort((a, b) => a.title.localeCompare(b.title));
 
   return (
     <>
@@ -138,7 +117,7 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
               onDelete={handleDeletePage}
               onEdit={handleEditPage}
               onPreview={handlePreviewPage}
-              isSystemPage={page.path === "welcome" || page.path === "storia"}
+              isSystemPage={false}
             />
           ))}
         </div>
@@ -157,7 +136,7 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
               parentPages={parentPages}
               onPageUpdated={handlePageUpdated}
               keywordToIconMap={keywordToIconMap}
-              isSystemPage={selectedPage.path === "welcome" || selectedPage.path === "storia"}
+              isSystemPage={false}
             />
           )}
         </DialogContent>

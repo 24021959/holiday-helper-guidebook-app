@@ -5,12 +5,13 @@ import ImageUploader from "../../ImageUploader";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { ArrowUp, ArrowDown, Trash, Move } from "lucide-react";
+import { ArrowUp, ArrowDown, Trash } from "lucide-react";
 
 export interface ImageItem {
   url: string;
   position: "left" | "center" | "right" | "full";
   caption?: string;
+  type?: "image";
 }
 
 interface PageMultiImageSectionProps {
@@ -34,7 +35,8 @@ export const PageMultiImageSection: React.FC<PageMultiImageSectionProps> = ({
     const newImage: ImageItem = {
       url: currentImageUrl,
       position: "center",
-      caption: ""
+      caption: "",
+      type: "image"
     };
     
     onImagesChange([...images, newImage]);

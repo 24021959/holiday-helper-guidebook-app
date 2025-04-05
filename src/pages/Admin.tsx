@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -58,7 +57,6 @@ const Admin: React.FC = () => {
   const keywordToIconMap = useKeywordToIconMap();
   const isMaster = localStorage.getItem("user_role") === "master";
   
-  // Set active tab based on URL parameters or user role
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
@@ -70,7 +68,6 @@ const Admin: React.FC = () => {
     }
   }, [location.search, isMaster]);
   
-  // Fetch chatbot settings
   useEffect(() => {
     const fetchChatbotSettings = async () => {
       try {
@@ -81,14 +78,12 @@ const Admin: React.FC = () => {
           .maybeSingle();
           
         if (error && error.code !== 'PGRST116') {
-          // PGRST116 è "did not return a single row"
           console.warn("Errore nel caricamento delle impostazioni chatbot:", error);
           return;
         }
         
         if (data) {
           setChatbotCode(data.code || "");
-          // Store in localStorage for client-side access
           localStorage.setItem("chatbotCode", data.code || "");
         }
       } catch (error) {
@@ -96,7 +91,6 @@ const Admin: React.FC = () => {
       }
     };
     
-    // Fetch all pages 
     const fetchPages = async () => {
       try {
         const { data, error } = await supabase
@@ -106,46 +100,7 @@ const Admin: React.FC = () => {
         if (error) throw error;
         
         if (data) {
-          // Ensure system pages are included
-          const hasWelcomePage = data.some(page => page.path === "welcome");
-          const hasStoriaPage = data.some(page => page.path === "storia");
-          
-          // If system pages don't exist in the database, create them
-          const createSystemPages = async () => {
-            if (!hasWelcomePage) {
-              const { error: welcomeError } = await supabase.from('custom_pages').insert({
-                title: "Benvenuto alla Locanda dell'Angelo",
-                content: "Benvenuto alla Locanda dell'Angelo, il luogo ideale per trascorrere una vacanza all'insegna del relax e della scoperta.",
-                path: "welcome",
-                icon: "Home",
-                image_url: "/lovable-uploads/47eda6f0-892f-48ac-a78f-d40b2f7a41df.png"
-              });
-              
-              if (welcomeError) console.error("Error creating welcome page:", welcomeError);
-            }
-            
-            if (!hasStoriaPage) {
-              const { error: storiaError } = await supabase.from('custom_pages').insert({
-                title: "La Nostra Storia",
-                content: "Benvenuti nella sezione dedicata alla storia del nostro stabilimento. Qui potrete scoprire come è nato e si è evoluto nel tempo il nostro locale.",
-                path: "storia",
-                icon: "Book"
-              });
-              
-              if (storiaError) console.error("Error creating storia page:", storiaError);
-            }
-            
-            // Fetch again to get the newly created pages
-            const { data: refreshedData } = await supabase.from('custom_pages').select('*');
-            if (refreshedData) return refreshedData;
-            return data;
-          };
-          
-          const finalData = (!hasWelcomePage || !hasStoriaPage) 
-            ? await createSystemPages() 
-            : data;
-          
-          const formattedPages: PageData[] = finalData.map(page => ({
+          const formattedPages: PageData[] = data.map(page => ({
             id: page.id,
             title: page.title,
             content: page.content,
@@ -155,7 +110,8 @@ const Admin: React.FC = () => {
             isSubmenu: page.is_submenu,
             parentPath: page.parent_path,
             listItems: Array.isArray(page.list_items) ? page.list_items : [],
-            listType: page.list_type as 'restaurants' | 'activities' | 'locations'
+            listType: page.list_type as 'restaurants' | 'activities' | 'locations',
+            pageImages: page.page_images ? page.page_images as ImageItem[] : []
           }));
           setPages(formattedPages);
         }
@@ -173,11 +129,9 @@ const Admin: React.FC = () => {
     }
   }, [isAuthenticated, isMaster]);
   
-  // Check if user is authenticated
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // For this demo, we'll use localStorage to check if admin is logged in
         const adminToken = localStorage.getItem("admin_token");
         
         if (!adminToken) {
@@ -185,7 +139,6 @@ const Admin: React.FC = () => {
           return;
         }
         
-        // Simple validation, could be enhanced with supabase auth
         setIsAuthenticated(true);
         setIsLoading(false);
       } catch (error) {
@@ -214,7 +167,6 @@ const Admin: React.FC = () => {
 
       if (error) throw error;
       
-      // Also save to localStorage for client-side access
       localStorage.setItem("chatbotCode", chatbotCode);
       
       toast.success("Impostazioni chatbot salvate con successo");
@@ -231,10 +183,9 @@ const Admin: React.FC = () => {
   }
   
   if (!isAuthenticated) {
-    return null; // Will be redirected by useEffect
+    return null;
   }
 
-  // Get only parent pages (non-submenu pages)
   const parentPages = pages.filter(page => !page.isSubmenu);
 
   return (

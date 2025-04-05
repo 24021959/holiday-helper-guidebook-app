@@ -10,8 +10,6 @@ import { PageContentSection } from "./form/PageContentSection";
 import { PageTypeSection } from "./form/PageTypeSection";
 import { PageImageSection } from "./form/PageImageSection";
 import { PageIconSection } from "./form/PageIconSection";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ShieldAlert } from "lucide-react";
 import { PageMultiImageSection, ImageItem } from "./form/PageMultiImageSection";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -33,7 +31,7 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
   const [title, setTitle] = useState(page.title);
   const [content, setContent] = useState("");
   const [rawContent, setRawContent] = useState(page.content);
-  const [path, setPath] = useState(page.path); // Keep state but hide UI element
+  const [path, setPath] = useState(page.path);
   const [isSubmenu, setIsSubmenu] = useState(page.isSubmenu || false);
   const [parentPath, setParentPath] = useState(page.parentPath || "");
   const [imageUrl, setImageUrl] = useState(page.imageUrl || "");
@@ -114,7 +112,6 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         return;
       }
       
-      // We still validate the path even though it's hidden
       if (!path.trim()) {
         toast.error("Il percorso è obbligatorio");
         return;
@@ -128,25 +125,18 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
       // Formatta il contenuto con le immagini
       const formattedContent = formatPageContent(content, pageImages);
       
-      // For system pages, only allow updating title, content and image_url
-      const updateData = isSystemPage 
-        ? { 
-            title, 
-            content: formattedContent, 
-            image_url: imageUrl 
-          } 
-        : {
-            title,
-            content: formattedContent,
-            path,
-            is_submenu: isSubmenu,
-            parent_path: isSubmenu ? parentPath : null,
-            image_url: imageUrl,
-            icon,
-            list_items: listItems,
-            list_type: listType || null,
-            page_images: pageImages.length > 0 ? pageImages : null
-          };
+      const updateData = {
+        title,
+        content: formattedContent,
+        path,
+        is_submenu: isSubmenu,
+        parent_path: isSubmenu ? parentPath : null,
+        image_url: imageUrl,
+        icon,
+        list_items: listItems,
+        list_type: listType || null,
+        page_images: pageImages.length > 0 ? pageImages : null
+      };
       
       const { data, error } = await supabase
         .from('custom_pages')
@@ -157,19 +147,16 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
       
       if (error) throw error;
       
-      // For non-system pages, also update the menu_icons table
-      if (!isSystemPage) {
-        await supabase
-          .from('menu_icons')
-          .update({
-            label: title,
-            icon,
-            path,
-            is_submenu: isSubmenu,
-            parent_path: isSubmenu ? parentPath : null
-          })
-          .eq('path', page.path);
-      }
+      await supabase
+        .from('menu_icons')
+        .update({
+          label: title,
+          icon,
+          path,
+          is_submenu: isSubmenu,
+          parent_path: isSubmenu ? parentPath : null
+        })
+        .eq('path', page.path);
       
       const updatedPage: PageData = {
         id: data.id,
@@ -182,7 +169,7 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         parentPath: data.parent_path,
         listItems: Array.isArray(data.list_items) ? data.list_items : [],
         listType: data.list_type as 'restaurants' | 'activities' | 'locations' | undefined,
-        pageImages: Array.isArray(data.page_images) ? data.page_images : []
+        pageImages: Array.isArray(data.page_images) ? data.page_images.map(img => ({...img, type: "image"})) : []
       };
       
       onPageUpdated(updatedPage);
@@ -202,15 +189,6 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {isSystemPage && (
-        <Alert className="bg-blue-50 border-blue-200">
-          <ShieldAlert className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-blue-700">
-            Questa è una pagina di sistema. Puoi modificare solo il titolo, il contenuto e l'immagine.
-          </AlertDescription>
-        </Alert>
-      )}
-      
       <div className="space-y-2">
         <Label htmlFor="title">Titolo</Label>
         <Input 
@@ -247,22 +225,18 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         </TabsContent>
       </Tabs>
       
-      {!isSystemPage && (
-        <PageTypeSection 
-          isSubmenu={isSubmenu}
-          setIsSubmenu={setIsSubmenu}
-          parentPath={parentPath}
-          setParentPath={setParentPath}
-          parentPages={parentPages}
-        />
-      )}
+      <PageTypeSection 
+        isSubmenu={isSubmenu}
+        setIsSubmenu={setIsSubmenu}
+        parentPath={parentPath}
+        setParentPath={setParentPath}
+        parentPages={parentPages}
+      />
       
-      {!isSystemPage && (
-        <PageIconSection 
-          icon={icon}
-          setIcon={setIcon}
-        />
-      )}
+      <PageIconSection 
+        icon={icon}
+        setIcon={setIcon}
+      />
       
       <Button type="submit" disabled={isLoading} className="w-full">
         {isLoading ? "Aggiornamento in corso..." : "Aggiorna pagina"}
