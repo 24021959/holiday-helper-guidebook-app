@@ -35,16 +35,28 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
         setIsLoading(true);
         setError(null);
         
-        // Query to get icons from the database that are published
+        console.log("Fetching icons with parent_path:", parentPath);
+        
+        // Query to get icons from the database
         const { data, error } = await supabase
           .from('menu_icons')
           .select('*')
-          .eq('parent_path', parentPath)
-          .eq('published', true); // Only show published items
+          .eq('parent_path', parentPath);
         
         if (error) throw error;
         
+        console.log("Icons data from database:", data);
+        
+        if (data && data.length === 0) {
+          console.log("No icons found for this parent path. Checking if we need to show all top-level icons.");
+          // If we're at the top level and no icons are found, log an info message
+          if (parentPath === null) {
+            console.log("This is the main menu, but no top-level icons were found.");
+          }
+        }
+        
         // Transform the data to match the IconData interface
+        // Note: We're not filtering by published here to debug what icons exist
         const transformedData = data?.map(icon => ({
           id: icon.id,
           title: icon.label, // Use label as title
@@ -54,7 +66,13 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
           published: icon.published
         })) || [];
         
-        setIcons(transformedData);
+        console.log("Transformed icons data:", transformedData);
+        
+        // Now filter to only show published icons in the actual UI
+        const publishedIcons = transformedData.filter(icon => icon.published === true);
+        console.log("Published icons that will be displayed:", publishedIcons);
+        
+        setIcons(publishedIcons);
       } catch (error) {
         console.error("Errore nel caricamento delle icone:", error);
         setError("Impossibile caricare le icone del menu");
@@ -136,6 +154,9 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
         <div className="text-center p-4">
           <p className="text-gray-500">
             <TranslatedText text="Nessuna pagina disponibile in questa sezione" />
+          </p>
+          <p className="text-sm text-gray-400 mt-2">
+            <TranslatedText text="Assicurati di aver pubblicato la pagina dall'area admin" />
           </p>
         </div>
       </div>
