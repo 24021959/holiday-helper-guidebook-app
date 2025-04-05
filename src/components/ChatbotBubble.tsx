@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { MessageCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -43,10 +42,6 @@ const ChatbotBubble: React.FC = () => {
   
   const loadChatbotSettings = async () => {
     try {
-      if (chatbotInitialized.current) {
-        return; // Avoid re-initializing if already done
-      }
-      
       // First try to get from localStorage (faster)
       let code = localStorage.getItem("chatbotCode");
       
@@ -72,19 +67,18 @@ const ChatbotBubble: React.FC = () => {
       
       setChatbotCode(code);
       
-      if (code && code.includes('<script')) {
-        cleanupChatbot(); // Clean up any existing chatbot before initializing
-        setTimeout(() => initializeChatbot(code), 100);
+      // If we have a valid code from either localStorage or Supabase, initialize
+      // Otherwise, initialize the default chatbot
+      if (code && code.trim() !== '' && code.includes('<script')) {
+        initializeChatbot(code);
       } else {
         // If no valid code is configured, load the default chatbot
-        cleanupChatbot();
-        setTimeout(() => initializeDefaultChatbot(), 100);
+        initializeDefaultChatbot();
       }
     } catch (error) {
       console.error("Errore nel caricamento delle impostazioni chatbot:", error);
       // Fallback to default chatbot
-      cleanupChatbot();
-      setTimeout(() => initializeDefaultChatbot(), 100);
+      initializeDefaultChatbot();
     }
   };
   
@@ -144,7 +138,7 @@ const ChatbotBubble: React.FC = () => {
         document.body.appendChild(chatbotContainer);
       }
       
-      // Set up default script
+      // Set up default script - using a reliable, working chatbot service
       const script = document.createElement("script");
       script.id = "chatbot-script";
       script.defer = true;
@@ -170,7 +164,7 @@ const ChatbotBubble: React.FC = () => {
       // 1. Click on any chatbot UI elements that might be present
       const buttons = document.querySelectorAll('button[aria-label*="chat"], div[class*="chat-button"], div[class*="chatbot"]');
       for (const button of Array.from(buttons)) {
-        if (button instanceof HTMLElement) {
+        if (button instanceof HTMLElement && button.offsetParent !== null) {
           console.log("Elemento chatbot trovato, tentativo di apertura:", button);
           button.click();
           return;
@@ -197,8 +191,8 @@ const ChatbotBubble: React.FC = () => {
       const openEvent = new CustomEvent("open-chatbot");
       window.dispatchEvent(openEvent);
       
-      // 4. Check if reinitializing helps
-      if (!chatbotInitialized.current || !document.getElementById("chatbot-script")) {
+      // 4. If nothing worked, try to reinitialize the chatbot
+      if (!chatbotInitialized.current) {
         console.log("Chatbot non inizializzato, reinizializzazione in corso...");
         if (chatbotCode) {
           initializeChatbot(chatbotCode);
@@ -220,7 +214,7 @@ const ChatbotBubble: React.FC = () => {
         }, 1000);
       }
       
-      // 5. Notify user
+      // 5. Show a notification to the user
       toast.info("Chatbot in caricamento", {
         description: "Il chatbot sta per aprirsi, attendi un momento...",
         duration: 3000
@@ -234,28 +228,26 @@ const ChatbotBubble: React.FC = () => {
     }
   };
 
-  // Non mostrare il bubble se siamo in una pagina admin
+  // Don't show the bubble if we're on an admin page
   if (!isVisible) {
     return null;
   }
 
   return (
-    <>
-      <div className="fixed bottom-5 right-5 z-50">
-        <button 
-          className="bg-gradient-to-r from-teal-500 to-emerald-600 rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-300 text-white"
-          aria-label="Chatta con noi"
-          title="Chatta con noi"
-          onClick={handleOpenChat}
-        >
-          <MessageCircle size={24} />
-        </button>
-      </div>
-    </>
+    <div className="fixed bottom-5 right-5 z-50">
+      <button 
+        className="bg-gradient-to-r from-teal-500 to-emerald-600 rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-300 text-white"
+        aria-label="Chatta con noi"
+        title="Chatta con noi"
+        onClick={handleOpenChat}
+      >
+        <MessageCircle size={24} />
+      </button>
+    </div>
   );
 };
 
-// Aggiungi questo per TypeScript
+// Add this for TypeScript
 declare global {
   interface Window {
     ChatbotComponent?: {

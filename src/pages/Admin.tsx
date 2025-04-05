@@ -50,7 +50,7 @@ const Admin: React.FC = () => {
   const keywordToIconMap = useKeywordToIconMap();
   const isMaster = localStorage.getItem("user_role") === "master";
   
-  // Imposta la scheda attiva in base ai parametri URL o al ruolo dell'utente
+  // Set active tab based on URL parameters or user role
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
@@ -69,8 +69,8 @@ const Admin: React.FC = () => {
         const { data, error } = await supabase
           .from('chatbot_settings')
           .select('code')
-          .limit(1)
-          .single();
+          .eq('id', 1)
+          .maybeSingle();
           
         if (error && error.code !== 'PGRST116') {
           // PGRST116 è "did not return a single row"
@@ -79,9 +79,9 @@ const Admin: React.FC = () => {
         }
         
         if (data) {
-          setChatbotCode(data.code);
+          setChatbotCode(data.code || "");
           // Store in localStorage for client-side access
-          localStorage.setItem("chatbotCode", data.code);
+          localStorage.setItem("chatbotCode", data.code || "");
         }
       } catch (error) {
         console.error("Error fetching chatbot settings:", error);

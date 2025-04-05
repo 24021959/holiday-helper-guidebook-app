@@ -41,7 +41,7 @@ const Index: React.FC = () => {
       } catch (error) {
         console.error("Errore nel caricamento delle impostazioni header:", error);
         
-        // Fallback al localStorage se Supabase fallisce
+        // Fallback to localStorage if Supabase fails
         const savedHeaderSettings = localStorage.getItem("headerSettings");
         if (savedHeaderSettings) {
           try {
@@ -56,6 +56,13 @@ const Index: React.FC = () => {
     };
     
     fetchHeaderSettings();
+    
+    // Create a chatbot container if it doesn't exist yet
+    if (!document.getElementById("chatbot-container")) {
+      const chatbotContainer = document.createElement("div");
+      chatbotContainer.id = "chatbot-container";
+      document.body.appendChild(chatbotContainer);
+    }
   }, []);
   
   if (loading) {
