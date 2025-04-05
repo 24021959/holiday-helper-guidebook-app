@@ -12,11 +12,11 @@ type Language = {
 };
 
 const languages: Language[] = [
-  { code: "it", name: "Italiano", flag: "🇮🇹", flagSrc: "/flags/italy.png" },
-  { code: "en", name: "English", flag: "🇬🇧", flagSrc: "/flags/uk.png" },
-  { code: "fr", name: "Français", flag: "🇫🇷", flagSrc: "/flags/france.png" },
-  { code: "es", name: "Español", flag: "🇪🇸", flagSrc: "/flags/spain.png" },
-  { code: "de", name: "Deutsch", flag: "🇩🇪", flagSrc: "/flags/germany.png" },
+  { code: "it", name: "Italiano", flag: "🇮🇹", flagSrc: "/lovable-uploads/5303c7bc-6aa0-4c3b-bbc2-1c94e0d01b97.png" },
+  { code: "en", name: "English", flag: "🇬🇧", flagSrc: "/lovable-uploads/af6207d5-0a3c-4cad-84bc-b6c071c9d6f6.png" },
+  { code: "fr", name: "Français", flag: "🇫🇷", flagSrc: "/lovable-uploads/075a9ac2-23e8-482c-beb3-45d28a3dcd94.png" },
+  { code: "es", name: "Español", flag: "🇪🇸", flagSrc: "/lovable-uploads/5db5eda4-9c7f-4ef5-ae67-f9372ffda8e1.png" },
+  { code: "de", name: "Deutsch", flag: "🇩🇪", flagSrc: "/lovable-uploads/537376f3-5c3d-4d02-ba0d-37cb86165489.png" },
 ];
 
 interface LanguageSelectorProps {
@@ -71,15 +71,15 @@ export const LanguageSelector = ({ onSelectLanguage }: LanguageSelectorProps) =>
               rounded-xl shadow-sm hover:shadow-md transition-all`}
             onClick={() => handleSelectLanguage(language.code)}
           >
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-7 flex items-center justify-center">
+            <div className="flex items-center gap-6">
+              <div className="w-12 h-8 flex items-center justify-center overflow-hidden rounded shadow-sm">
                 {imageFailed[language.code] ? (
                   <span className="text-3xl">{language.flag}</span>
                 ) : (
                   <img 
                     src={language.flagSrc} 
                     alt={language.name}
-                    className="w-full h-auto object-contain rounded"
+                    className="w-full h-full object-cover"
                     onError={() => handleImageError(language.code)}
                   />
                 )}
