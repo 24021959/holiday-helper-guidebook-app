@@ -101,20 +101,46 @@ const Admin: React.FC = () => {
         if (error) throw error;
         
         if (data) {
-          const formattedPages: PageData[] = data.map(page => ({
-            id: page.id,
-            title: page.title,
-            content: page.content,
-            path: page.path,
-            imageUrl: page.image_url,
-            icon: page.icon,
-            isSubmenu: page.is_submenu,
-            parentPath: page.parent_path,
-            listItems: Array.isArray(page.list_items) ? page.list_items : [],
-            listType: page.list_type as 'restaurants' | 'activities' | 'locations',
-            pageImages: [],
-            published: page.published || false
-          }));
+          const formattedPages: PageData[] = data.map(page => {
+            let pageImages: ImageItem[] = [];
+            
+            try {
+              if (page.content && page.content.includes('<!-- IMAGES -->')) {
+                const contentParts = page.content.split('<!-- IMAGES -->');
+                
+                if (contentParts.length > 1) {
+                  const imagesSection = contentParts[1].trim();
+                  const imageStringList = imagesSection.split('\n').filter(line => line.trim() !== '');
+                  
+                  pageImages = imageStringList.map(img => {
+                    try {
+                      return JSON.parse(img.trim());
+                    } catch (e) {
+                      return null;
+                    }
+                  }).filter(img => img !== null);
+                }
+              }
+            } catch (e) {
+              console.error("Error parsing page images:", e);
+            }
+            
+            return {
+              id: page.id,
+              title: page.title,
+              content: page.content,
+              path: page.path,
+              imageUrl: page.image_url,
+              icon: page.icon,
+              isSubmenu: page.is_submenu,
+              parentPath: page.parent_path,
+              listItems: Array.isArray(page.list_items) ? page.list_items : [],
+              listType: page.list_type as 'restaurants' | 'activities' | 'locations',
+              pageImages: pageImages,
+              published: page.published || false
+            };
+          });
+          
           setPages(formattedPages);
         }
       } catch (error) {

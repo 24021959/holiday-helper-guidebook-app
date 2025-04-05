@@ -51,7 +51,6 @@ export const PageIconSection: React.FC<PageIconSectionProps> = ({
         <SelectTrigger className="flex items-center">
           <div className="flex items-center gap-2">
             <SelectedIcon className="h-5 w-5" />
-            <SelectValue placeholder="Seleziona un'icona" />
           </div>
         </SelectTrigger>
         <SelectContent className="max-h-80">

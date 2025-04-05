@@ -1,6 +1,5 @@
 
 import React from "react";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 interface PageContentSectionProps {
@@ -14,7 +13,6 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
 }) => {
   return (
     <div className="space-y-2">
-      <Label htmlFor="content">Contenuto</Label>
       <Textarea 
         id="content" 
         value={content} 

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
@@ -28,7 +29,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 const formSchema = z.object({
   title: z.string().min(1, "Il titolo è obbligatorio"),
   content: z.string().min(1, "Il contenuto è obbligatorio"),
-  path: z.string().min(1, "Il percorso è obbligatorio"),
   icon: z.string().optional(),
 });
 
@@ -59,7 +59,6 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
     defaultValues: {
       title: "",
       content: "",
-      path: "",
       icon: "FileText",
     },
   });
@@ -191,7 +190,8 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
           listItems: page.list_items as { name: string; description?: string; phoneNumber?: string; mapsUrl?: string; }[] | undefined,
           isSubmenu: page.is_submenu || false,
           parentPath: page.parent_path || undefined,
-          pageImages: page.page_images || [],
+          // Fix for the TypeScript error
+          pageImages: [],
           published: page.published || false
         }));
         
@@ -259,8 +259,6 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
             )}
           />
           
-          <input type="hidden" {...form.register('path')} />
-          
           <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
             <TabsList className="grid grid-cols-3 mb-4">
               <TabsTrigger value="content">Contenuto</TabsTrigger>
@@ -274,7 +272,6 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
                 name="content"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Contenuto</FormLabel>
                     <FormControl>
                       <PageContentSection 
                         content={field.value} 
