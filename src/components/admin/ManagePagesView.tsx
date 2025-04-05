@@ -7,6 +7,7 @@ import { PageData } from "@/pages/Admin";
 import { useNavigate } from "react-router-dom";
 import { EditPageForm } from "./EditPageForm";
 import { PageListItem } from "./PageListItem";
+import { Loader2 } from "lucide-react";
 
 interface ManagePagesViewProps {
   pages: PageData[];
@@ -37,6 +38,12 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     try {
       const pageToDelete = pages.find(page => page.id === id);
       if (!pageToDelete) return;
+      
+      // Don't allow deletion of system pages
+      if (pageToDelete.path === "welcome" || pageToDelete.path === "storia") {
+        toast.error("Non puoi eliminare questa pagina di sistema");
+        return;
+      }
       
       const { error: pageError } = await supabase
         .from('custom_pages')
@@ -82,31 +89,56 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     );
     onPagesUpdate(updatedPages);
     setIsEditDialogOpen(false);
+    toast.success("Pagina aggiornata con successo");
   };
 
   const handlePreviewPage = (path: string) => {
-    navigate(`/preview/${path}`);
+    // For system pages use the direct route
+    if (path === "welcome" || path === "storia") {
+      navigate(`/${path}`);
+    } else {
+      navigate(`/preview/${path}`);
+    }
   };
 
   if (isLoading) {
-    return <p className="text-gray-500">Caricamento pagine...</p>;
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 text-emerald-500 animate-spin" />
+        <p className="ml-2 text-emerald-600">Caricamento pagine...</p>
+      </div>
+    );
   }
+
+  // Sort pages: system pages first, then custom pages
+  const sortedPages = [...pages].sort((a, b) => {
+    // System pages first
+    const aIsSystem = a.path === "welcome" || a.path === "storia";
+    const bIsSystem = b.path === "welcome" || b.path === "storia";
+    
+    if (aIsSystem && !bIsSystem) return -1;
+    if (!aIsSystem && bIsSystem) return 1;
+    
+    // Then sort by title
+    return a.title.localeCompare(b.title);
+  });
 
   return (
     <>
       <h2 className="text-xl font-medium text-emerald-600 mb-4">Gestisci Pagine</h2>
       
-      {pages.length === 0 ? (
+      {sortedPages.length === 0 ? (
         <p className="text-gray-500">Nessuna pagina creata finora</p>
       ) : (
         <div className="space-y-4">
-          {pages.map((page) => (
+          {sortedPages.map((page) => (
             <PageListItem
               key={page.id}
               page={page}
               onDelete={handleDeletePage}
               onEdit={handleEditPage}
               onPreview={handlePreviewPage}
+              isSystemPage={page.path === "welcome" || page.path === "storia"}
             />
           ))}
         </div>
@@ -125,6 +157,7 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
               parentPages={parentPages}
               onPageUpdated={handlePageUpdated}
               keywordToIconMap={keywordToIconMap}
+              isSystemPage={selectedPage.path === "welcome" || selectedPage.path === "storia"}
             />
           )}
         </DialogContent>

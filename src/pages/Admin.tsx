@@ -98,7 +98,46 @@ const Admin: React.FC = () => {
         if (error) throw error;
         
         if (data) {
-          const formattedPages: PageData[] = data.map(page => ({
+          // Ensure system pages are included
+          const hasWelcomePage = data.some(page => page.path === "welcome");
+          const hasStoriaPage = data.some(page => page.path === "storia");
+          
+          // If system pages don't exist in the database, create them
+          const createSystemPages = async () => {
+            if (!hasWelcomePage) {
+              const { error: welcomeError } = await supabase.from('custom_pages').insert({
+                title: "Benvenuto alla Locanda dell'Angelo",
+                content: "Benvenuto alla Locanda dell'Angelo, il luogo ideale per trascorrere una vacanza all'insegna del relax e della scoperta.",
+                path: "welcome",
+                icon: "Home",
+                image_url: "/lovable-uploads/47eda6f0-892f-48ac-a78f-d40b2f7a41df.png"
+              });
+              
+              if (welcomeError) console.error("Error creating welcome page:", welcomeError);
+            }
+            
+            if (!hasStoriaPage) {
+              const { error: storiaError } = await supabase.from('custom_pages').insert({
+                title: "La Nostra Storia",
+                content: "Benvenuti nella sezione dedicata alla storia del nostro stabilimento. Qui potrete scoprire come è nato e si è evoluto nel tempo il nostro locale.",
+                path: "storia",
+                icon: "Book"
+              });
+              
+              if (storiaError) console.error("Error creating storia page:", storiaError);
+            }
+            
+            // Fetch again to get the newly created pages
+            const { data: refreshedData } = await supabase.from('custom_pages').select('*');
+            if (refreshedData) return refreshedData;
+            return data;
+          };
+          
+          const finalData = (!hasWelcomePage || !hasStoriaPage) 
+            ? await createSystemPages() 
+            : data;
+          
+          const formattedPages: PageData[] = finalData.map(page => ({
             id: page.id,
             title: page.title,
             content: page.content,

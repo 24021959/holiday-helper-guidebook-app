@@ -2,7 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { PageData } from "@/pages/Admin";
-import { Edit, Trash, Eye } from "lucide-react";
+import { Edit, Trash, Eye, ShieldAlert } from "lucide-react";
 
 interface PageIconProps {
   iconName: string;
@@ -40,22 +40,32 @@ interface PageListItemProps {
   onDelete: (id: string) => Promise<void>;
   onEdit: (page: PageData) => void;
   onPreview: (path: string) => void;
+  isSystemPage?: boolean;
 }
 
 export const PageListItem: React.FC<PageListItemProps> = ({ 
   page, 
   onDelete, 
   onEdit, 
-  onPreview 
+  onPreview,
+  isSystemPage = false
 }) => {
   return (
-    <div className="border rounded-lg p-4 flex justify-between items-center">
+    <div className={`border rounded-lg p-4 flex justify-between items-center ${isSystemPage ? 'bg-blue-50' : ''}`}>
       <div className="flex items-center gap-3">
-        <div className="bg-blue-200 p-2 rounded-md">
+        <div className={`p-2 rounded-md ${isSystemPage ? 'bg-blue-200' : 'bg-blue-100'}`}>
           <PageIcon iconName={page.icon || "FileText"} />
         </div>
         <div>
-          <h3 className="font-medium text-lg">{page.title}</h3>
+          <div className="flex items-center">
+            <h3 className="font-medium text-lg">{page.title}</h3>
+            {isSystemPage && (
+              <div className="ml-2 flex items-center text-sm text-blue-600">
+                <ShieldAlert className="w-4 h-4 mr-1" />
+                <span>Pagina di sistema</span>
+              </div>
+            )}
+          </div>
           {page.isSubmenu && (
             <p className="text-xs text-teal-600 mt-1">
               Sottopagina di: {page.parentPath}
@@ -96,6 +106,8 @@ export const PageListItem: React.FC<PageListItemProps> = ({
           variant="destructive" 
           onClick={() => onDelete(page.id)}
           className="flex items-center gap-1"
+          disabled={isSystemPage}
+          title={isSystemPage ? "Non puoi eliminare una pagina di sistema" : "Elimina pagina"}
         >
           <Trash className="w-4 h-4" />
           <span className="hidden sm:inline">Elimina</span>

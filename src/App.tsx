@@ -25,6 +25,15 @@ const DynamicPage = () => {
     return <Navigate to="/menu" replace />;
   }
   
+  // Per le pagine di sistema, utilizzare i componenti dedicati
+  if (pageRoute === 'welcome') {
+    return <Welcome />;
+  }
+  
+  if (pageRoute === 'storia') {
+    return <Storia />;
+  }
+  
   // Costruisci il path effettivo basato sull'URL corrente
   const actualPath = location.pathname;
   

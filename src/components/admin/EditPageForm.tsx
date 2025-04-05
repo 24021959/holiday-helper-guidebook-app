@@ -10,19 +10,23 @@ import { PageContentSection } from "./form/PageContentSection";
 import { PageTypeSection } from "./form/PageTypeSection";
 import { PageImageSection } from "./form/PageImageSection";
 import { PageIconSection } from "./form/PageIconSection";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ShieldAlert } from "lucide-react";
 
 interface EditPageFormProps {
   page: PageData;
   parentPages: PageData[];
   onPageUpdated: (updatedPage: PageData) => void;
   keywordToIconMap: Record<string, string>;
+  isSystemPage?: boolean;
 }
 
 export const EditPageForm: React.FC<EditPageFormProps> = ({
   page,
   parentPages,
   onPageUpdated,
-  keywordToIconMap
+  keywordToIconMap,
+  isSystemPage = false
 }) => {
   const [title, setTitle] = useState(page.title);
   const [content, setContent] = useState(page.content);
@@ -63,35 +67,47 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         return;
       }
       
+      // For system pages, only allow updating title, content and image_url
+      const updateData = isSystemPage 
+        ? { 
+            title, 
+            content, 
+            image_url: imageUrl 
+          } 
+        : {
+            title,
+            content,
+            path,
+            is_submenu: isSubmenu,
+            parent_path: isSubmenu ? parentPath : null,
+            image_url: imageUrl,
+            icon,
+            list_items: listItems,
+            list_type: listType || null
+          };
+      
       const { data, error } = await supabase
         .from('custom_pages')
-        .update({
-          title,
-          content,
-          path,
-          is_submenu: isSubmenu,
-          parent_path: isSubmenu ? parentPath : null,
-          image_url: imageUrl,
-          icon,
-          list_items: listItems,
-          list_type: listType || null
-        })
+        .update(updateData)
         .eq('id', page.id)
         .select('*')
         .single();
       
       if (error) throw error;
       
-      await supabase
-        .from('menu_icons')
-        .update({
-          label: title,
-          icon,
-          path,
-          is_submenu: isSubmenu,
-          parent_path: isSubmenu ? parentPath : null
-        })
-        .eq('path', page.path);
+      // For non-system pages, also update the menu_icons table
+      if (!isSystemPage) {
+        await supabase
+          .from('menu_icons')
+          .update({
+            label: title,
+            icon,
+            path,
+            is_submenu: isSubmenu,
+            parent_path: isSubmenu ? parentPath : null
+          })
+          .eq('path', page.path);
+      }
       
       const updatedPage: PageData = {
         id: data.id,
@@ -123,6 +139,15 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {isSystemPage && (
+        <Alert className="bg-blue-50 border-blue-200">
+          <ShieldAlert className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-700">
+            Questa è una pagina di sistema. Puoi modificare solo il titolo, il contenuto e l'immagine.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <div className="space-y-2">
         <Label htmlFor="title">Titolo</Label>
         <Input 
@@ -135,23 +160,27 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
       
       <PageContentSection content={content} setContent={setContent} />
       
-      <PageTypeSection 
-        isSubmenu={isSubmenu}
-        setIsSubmenu={setIsSubmenu}
-        parentPath={parentPath}
-        setParentPath={setParentPath}
-        parentPages={parentPages}
-      />
+      {!isSystemPage && (
+        <PageTypeSection 
+          isSubmenu={isSubmenu}
+          setIsSubmenu={setIsSubmenu}
+          parentPath={parentPath}
+          setParentPath={setParentPath}
+          parentPages={parentPages}
+        />
+      )}
       
       <PageImageSection 
         imageUrl={imageUrl}
         onImageUploaded={handleImageUploaded}
       />
       
-      <PageIconSection 
-        icon={icon}
-        setIcon={setIcon}
-      />
+      {!isSystemPage && (
+        <PageIconSection 
+          icon={icon}
+          setIcon={setIcon}
+        />
+      )}
       
       <Button type="submit" disabled={isLoading} className="w-full">
         {isLoading ? "Aggiornamento in corso..." : "Aggiorna pagina"}
