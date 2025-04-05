@@ -84,11 +84,16 @@ const Index: React.FC = () => {
         <div className="absolute top-10 left-10 w-40 h-40 rounded-full bg-teal-100 opacity-50 blur-xl"></div>
         <div className="absolute bottom-10 right-10 w-40 h-40 rounded-full bg-emerald-100 opacity-50 blur-xl"></div>
         
-        <Card className="max-w-md w-full bg-white/90 backdrop-blur-sm shadow-xl border-0 rounded-2xl overflow-hidden mb-4">
-          <CardContent className="p-6">
-            <LanguageSelector />
-          </CardContent>
-        </Card>
+        <div className="max-w-md w-full mb-4">
+          <h1 className="text-3xl font-bold text-center mb-6 text-emerald-800">
+            <TranslatedText text="Seleziona la tua lingua" />
+          </h1>
+          <Card className="bg-white/90 backdrop-blur-sm shadow-xl border-0 rounded-2xl overflow-hidden">
+            <CardContent className="p-6">
+              <LanguageSelector />
+            </CardContent>
+          </Card>
+        </div>
       </div>
       
       {/* Footer con credenziali */}

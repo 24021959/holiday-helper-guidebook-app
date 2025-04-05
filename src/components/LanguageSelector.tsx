@@ -71,14 +71,14 @@ export const LanguageSelector = ({ onSelectLanguage }: LanguageSelectorProps) =>
               rounded-xl shadow-sm hover:shadow-md transition-all`}
             onClick={() => handleSelectLanguage(language.code)}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <div className="w-10 h-7 flex items-center justify-center">
                 {imageFailed[language.code] ? (
                   <span className="text-3xl">{language.flag}</span>
                 ) : (
                   <img 
                     src={language.flagSrc} 
-                    alt="" 
+                    alt={language.name}
                     className="w-full h-auto object-contain rounded"
                     onError={() => handleImageError(language.code)}
                   />
