@@ -21,29 +21,28 @@ const ChatbotBubble: React.FC = () => {
 
     const loadChatbotSettings = async () => {
       try {
-        // First try to load from Supabase
-        const { data, error } = await supabase
-          .from('chatbot_settings')
-          .select('code')
-          .eq('id', 1)
-          .maybeSingle();
-
-        if (error && error.code !== 'PGRST116') {
-          console.warn("Errore nel caricamento delle impostazioni chatbot:", error);
-          return;
-        }
-
+        // Try to load from localStorage first as it's more reliable
+        const localStorageCode = localStorage.getItem("chatbotCode");
         let chatbotCode = '';
         
-        // Use data from Supabase if available
-        if (data && data.code) {
-          chatbotCode = data.code;
-        } 
-        // Otherwise, check localStorage as fallback
-        else {
-          const localStorageCode = localStorage.getItem("chatbotCode");
-          if (localStorageCode) {
-            chatbotCode = localStorageCode;
+        if (localStorageCode) {
+          chatbotCode = localStorageCode;
+          console.log("Caricato codice chatbot da localStorage");
+        } else {
+          // Try to load from Supabase as backup
+          try {
+            const { data, error } = await supabase
+              .from('chatbot_settings')
+              .select('code')
+              .eq('id', 1)
+              .maybeSingle();
+
+            if (!error && data && data.code) {
+              chatbotCode = data.code;
+              console.log("Caricato codice chatbot da Supabase");
+            }
+          } catch (supabaseError) {
+            console.warn("Errore nel caricamento delle impostazioni chatbot da Supabase:", supabaseError);
           }
         }
 
@@ -130,6 +129,10 @@ const ChatbotBubble: React.FC = () => {
               if (dataIdMatch && dataIdMatch[1]) {
                 newScript.setAttribute("data-chatbot-id", dataIdMatch[1]);
               }
+              
+              // Add these attributes to ensure proper placement
+              newScript.setAttribute("data-element", "chatbot-container");
+              newScript.setAttribute("data-position", "right");
               
               document.head.appendChild(newScript);
               console.log("Chatbot reinizializzato dopo timeout");

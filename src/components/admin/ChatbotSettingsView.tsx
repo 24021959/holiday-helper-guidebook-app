@@ -33,16 +33,24 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
         return;
       }
       
-      // Save to Supabase
-      const { error } = await supabase
-        .from('chatbot_settings')
-        .upsert({ id: 1, code: chatbotCode })
-        .select();
-
-      if (error) throw error;
-      
-      // Also save to localStorage for client-side access
+      // Save to localStorage first for client-side access
       localStorage.setItem("chatbotCode", chatbotCode);
+      
+      try {
+        // Try to save to Supabase - if this fails, we'll still have localStorage
+        const { error } = await supabase
+          .from('chatbot_settings')
+          .upsert({ id: 1, code: chatbotCode })
+          .select();
+
+        if (error) {
+          console.warn("Nota: Errore nel salvataggio su Supabase, usando localStorage come fallback:", error);
+          // Continue with the process even if Supabase save fails
+        }
+      } catch (e) {
+        console.warn("Errore Supabase:", e);
+        // Continue with the process even if Supabase save fails
+      }
       
       // Call the parent onSave function
       await onSave();

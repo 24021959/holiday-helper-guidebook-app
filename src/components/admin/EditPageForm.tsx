@@ -167,7 +167,7 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         parentPath: data.parent_path,
         listItems: Array.isArray(data.list_items) ? data.list_items : [],
         listType: data.list_type as 'restaurants' | 'activities' | 'locations' | undefined,
-        pageImages: data.page_images || [],
+        pageImages: pageImages, // Use our local state instead of trying to access data.page_images
         published: data.published || false
       };
       
