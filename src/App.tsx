@@ -33,7 +33,7 @@ const DynamicPage = () => {
 
 // Componente Protected per verificare l'autenticazione
 const Protected = ({ children }: { children: React.ReactNode }) => {
-  const isAuth = localStorage.getItem("isAuthenticated") === "true";
+  const isAuth = localStorage.getItem("admin_token") !== null;
   
   if (!isAuth) {
     return <Navigate to="/login" replace />;
@@ -57,7 +57,7 @@ function App() {
           .from('header_settings')
           .select('*')
           .limit(1)
-          .single();
+          .maybeSingle();
         
         if (error && error.code !== 'PGRST116') {
           // PGRST116 è "did not return a single row" 
@@ -118,7 +118,7 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
         
-        {/* ChatbotBubble will be conditionally rendered based on current route */}
+        {/* ChatbotBubble will handle its own visibility based on route */}
         <ChatbotBubble />
       </Router>
     </TranslationProvider>
