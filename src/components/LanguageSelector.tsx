@@ -3,20 +3,20 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/context/TranslationContext";
 import { useNavigate } from "react-router-dom";
-import { getFallbackFlag } from "../../public/flags/fallback";
 
 type Language = {
   code: string;
   name: string;
+  flag: string; // Emoji fallback
   flagSrc: string;
 };
 
 const languages: Language[] = [
-  { code: "it", name: "Italiano", flagSrc: "/flags/italy.png" },
-  { code: "en", name: "English", flagSrc: "/flags/uk.png" },
-  { code: "fr", name: "Français", flagSrc: "/flags/france.png" },
-  { code: "es", name: "Español", flagSrc: "/flags/spain.png" },
-  { code: "de", name: "Deutsch", flagSrc: "/flags/germany.png" },
+  { code: "it", name: "Italiano", flag: "🇮🇹", flagSrc: "/flags/italy.png" },
+  { code: "en", name: "English", flag: "🇬🇧", flagSrc: "/flags/uk.png" },
+  { code: "fr", name: "Français", flag: "🇫🇷", flagSrc: "/flags/france.png" },
+  { code: "es", name: "Español", flag: "🇪🇸", flagSrc: "/flags/spain.png" },
+  { code: "de", name: "Deutsch", flag: "🇩🇪", flagSrc: "/flags/germany.png" },
 ];
 
 interface LanguageSelectorProps {
@@ -73,7 +73,7 @@ export const LanguageSelector = ({ onSelectLanguage }: LanguageSelectorProps) =>
           >
             <div className="flex items-center gap-3">
               {imageFailed[language.code] ? (
-                <span className="text-4xl">{getFallbackFlag(language.code)}</span>
+                <span className="text-4xl">{language.flag}</span>
               ) : (
                 <img 
                   src={language.flagSrc} 
