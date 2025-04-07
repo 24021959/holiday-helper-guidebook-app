@@ -42,7 +42,7 @@ const Menu: React.FC = () => {
           establishmentName: data.establishment_name
         });
         
-        // Save to localStorage as backup
+        // Salva in localStorage come backup
         localStorage.setItem("headerSettings", JSON.stringify({
           logoUrl: data.logo_url,
           headerColor: data.header_color,
@@ -52,7 +52,7 @@ const Menu: React.FC = () => {
     } catch (error) {
       console.error("Errore nel caricamento delle impostazioni header:", error);
       
-      // Fallback to localStorage if Supabase fails
+      // Fallback a localStorage se Supabase fallisce
       const savedHeaderSettings = localStorage.getItem("headerSettings");
       if (savedHeaderSettings) {
         try {
@@ -79,8 +79,8 @@ const Menu: React.FC = () => {
     setRefreshTrigger(prev => prev + 1);
     toast.info("Aggiornamento menu in corso...");
     
-    // Give a brief delay before setting refreshing to false
-    // This ensures the toast is visible long enough
+    // Aggiungiamo un breve ritardo prima di impostare refreshing a false
+    // per assicurarci che il toast sia visibile abbastanza a lungo
     setTimeout(() => {
       setRefreshing(false);
       toast.success("Menu aggiornato");
@@ -100,7 +100,7 @@ const Menu: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen">
-      {/* Header with customized settings */}
+      {/* Header con impostazioni personalizzate */}
       <Header 
         logoUrl={headerSettings.logoUrl || undefined}
         backgroundColor={headerSettings.headerColor}
@@ -108,7 +108,7 @@ const Menu: React.FC = () => {
         showAdminButton={false}
       />
       
-      {/* Title for the menu with refresh button */}
+      {/* Titolo per il menu con pulsante di aggiornamento */}
       <div className="bg-gradient-to-r from-emerald-100 to-teal-100 py-3 px-4 shadow-sm flex items-center justify-between">
         <h1 className="text-xl font-medium text-emerald-800 flex-1 text-center">
           <TranslatedText text="Menu principale" />
@@ -125,7 +125,7 @@ const Menu: React.FC = () => {
         </Button>
       </div>
       
-      {/* Main container with icons that takes all available space */}
+      {/* Contenitore principale con icone che occupa tutto lo spazio disponibile */}
       <div className="flex-1 flex flex-col overflow-auto">
         {error ? (
           <div className="flex-1 flex items-center justify-center">
@@ -150,7 +150,7 @@ const Menu: React.FC = () => {
         )}
       </div>
       
-      {/* Footer with logo */}
+      {/* Footer con logo */}
       <Footer />
     </div>
   );

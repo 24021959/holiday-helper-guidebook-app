@@ -7,8 +7,7 @@ import { PageData } from "@/pages/Admin";
 import { useNavigate } from "react-router-dom";
 import { EditPageForm } from "./EditPageForm";
 import { PageListItem } from "./PageListItem";
-import { Loader2, EyeOff, Eye } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 interface ManagePagesViewProps {
   pages: PageData[];
@@ -27,7 +26,6 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPage, setSelectedPage] = useState<PageData | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [showUnpublished, setShowUnpublished] = useState(false);
 
   useEffect(() => {
     if (pages) {
@@ -78,86 +76,6 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     setIsEditDialogOpen(true);
   };
 
-  const handleTogglePublish = async (page: PageData) => {
-    try {
-      const newPublishedState = !page.published;
-      
-      console.log(`Pubblicazione pagina: ${page.title}. Nuovo stato: ${newPublishedState ? 'Pubblicata' : 'Bozza'}`);
-      
-      // Update published state in custom_pages table
-      const { error: pageError } = await supabase
-        .from('custom_pages')
-        .update({ published: newPublishedState })
-        .eq('id', page.id);
-      
-      if (pageError) {
-        console.error("Errore nell'aggiornare la tabella custom_pages:", pageError);
-        throw pageError;
-      }
-      
-      // Check if icon exists for this page
-      const { data: existingIcon, error: iconCheckError } = await supabase
-        .from('menu_icons')
-        .select('*')
-        .eq('path', page.path)
-        .maybeSingle();
-      
-      if (iconCheckError && iconCheckError.code !== 'PGRST116') {
-        console.error("Errore nel controllare se esiste già l'icona:", iconCheckError);
-        throw iconCheckError;
-      }
-      
-      // If icon exists, update published state
-      if (existingIcon) {
-        console.log(`Aggiornamento icona esistente per ${page.path} - Stato pubblicazione: ${newPublishedState}`);
-        const { error: iconUpdateError } = await supabase
-          .from('menu_icons')
-          .update({ published: newPublishedState })
-          .eq('path', page.path);
-        
-        if (iconUpdateError) {
-          console.error("Errore nell'aggiornare l'icona del menu:", iconUpdateError);
-          throw iconUpdateError;
-        }
-      } 
-      // If icon doesn't exist, create it
-      else {
-        console.log(`Creazione nuova icona per ${page.path} - Stato pubblicazione: ${newPublishedState}`);
-        const { error: iconCreateError } = await supabase
-          .from('menu_icons')
-          .insert({
-            path: page.path,
-            icon: page.icon || 'FileText',
-            label: page.title,
-            published: newPublishedState,
-            parent_path: page.parentPath || null,
-            is_submenu: page.isSubmenu || false,
-            bg_color: 'bg-emerald-100'
-          });
-        
-        if (iconCreateError) {
-          console.error("Errore nella creazione dell'icona del menu:", iconCreateError);
-          throw iconCreateError;
-        }
-      }
-      
-      // Update local state
-      const updatedPages = pages.map(p => 
-        p.id === page.id ? { ...p, published: newPublishedState } : p
-      );
-      
-      onPagesUpdate(updatedPages);
-      
-      toast.success(newPublishedState 
-        ? "Pagina pubblicata con successo! Torna al menu e clicca 'Aggiorna'" 
-        : "Pagina nascosta dal menu");
-        
-    } catch (error) {
-      console.error("Errore nell'aggiornare lo stato di pubblicazione:", error);
-      toast.error("Errore nell'aggiornare lo stato di pubblicazione");
-    }
-  };
-
   const handlePageUpdated = (updatedPage: PageData) => {
     const updatedPages = pages.map(p => 
       p.id === updatedPage.id ? updatedPage : p
@@ -180,25 +98,16 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     );
   }
 
-  const filteredPages = showUnpublished 
-    ? [...pages] 
-    : pages.filter(page => page.published);
-    
-  const sortedPages = [...filteredPages].sort((a, b) => a.title.localeCompare(b.title));
+  // Ordina le pagine per titolo
+  const sortedPages = [...pages].sort((a, b) => a.title.localeCompare(b.title));
 
   return (
     <>
-      <div className="flex justify-between items-center mb-4">
+      <div className="mb-4">
         <h2 className="text-xl font-medium text-emerald-600">Gestisci Pagine</h2>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => setShowUnpublished(!showUnpublished)}
-          className="flex items-center gap-2"
-        >
-          {showUnpublished ? <Eye size={16} /> : <EyeOff size={16} />}
-          {showUnpublished ? "Mostra tutte" : "Mostra anche bozze"}
-        </Button>
+        <p className="text-sm text-gray-500 mt-1">
+          Tutte le pagine create sono automaticamente visibili nel menu principale
+        </p>
       </div>
       
       {sortedPages.length === 0 ? (
@@ -212,7 +121,6 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
               onDelete={handleDeletePage}
               onEdit={handleEditPage}
               onPreview={handlePreviewPage}
-              onTogglePublish={handleTogglePublish}
               isSystemPage={false}
             />
           ))}

@@ -4,14 +4,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageData } from "@/pages/Admin";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Pencil, Trash2, Eye, EyeOff } from "lucide-react";
+import { Pencil, Trash2, Eye } from "lucide-react";
 
 interface PageListItemProps {
   page: PageData;
   onDelete: (id: string) => void;
   onEdit: (page: PageData) => void;
   onPreview: (path: string) => void;
-  onTogglePublish?: (page: PageData) => void;
   isSystemPage: boolean;
 }
 
@@ -20,7 +19,6 @@ export const PageListItem: React.FC<PageListItemProps> = ({
   onDelete, 
   onEdit, 
   onPreview,
-  onTogglePublish,
   isSystemPage 
 }) => {
   return (
@@ -29,19 +27,7 @@ export const PageListItem: React.FC<PageListItemProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="flex-1">
-              <h3 className="text-lg font-medium flex items-center">
-                {page.title}
-                {page.published === false && (
-                  <span className="ml-2 text-xs px-2 py-1 bg-amber-100 text-amber-800 rounded-full">
-                    Bozza
-                  </span>
-                )}
-                {page.published === true && (
-                  <span className="ml-2 text-xs px-2 py-1 bg-emerald-100 text-emerald-800 rounded-full">
-                    Pubblicata
-                  </span>
-                )}
-              </h3>
+              <h3 className="text-lg font-medium">{page.title}</h3>
               <p className="text-sm text-gray-500">
                 {page.isSubmenu ? 'Sottomenu' : 'Pagina principale'} - {page.path}
               </p>
@@ -57,18 +43,6 @@ export const PageListItem: React.FC<PageListItemProps> = ({
             >
               <Eye className="h-4 w-4" />
             </Button>
-            
-            {onTogglePublish && (
-              <Button 
-                variant={page.published ? "default" : "outline"} 
-                size="sm"
-                onClick={() => onTogglePublish(page)}
-                title={page.published ? "Nascondi dal menu" : "Pubblica nel menu"}
-                className={page.published ? "bg-emerald-600 hover:bg-emerald-700" : ""}
-              >
-                {page.published ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
-            )}
             
             <Button 
               variant="outline" 

@@ -6,7 +6,7 @@ import {
   Loader2, Book, Home, FileText, Image, MessageCircle, Info, Map, 
   Utensils, Landmark, Hotel, Wifi, Bus, ShoppingBag, Calendar, 
   Phone, Coffee, Bike, Camera, Globe, Mountain, MapPin, Newspaper,
-  Music, Heart, Trees, Users, ShoppingCart, Eye, RefreshCw
+  Music, Heart, Trees, Users, ShoppingCart, RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TranslatedText from "@/components/TranslatedText";
@@ -24,7 +24,6 @@ interface IconData {
   icon: string;
   path: string;
   parent_path: string | null;
-  published?: boolean;
 }
 
 const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger = 0 }) => {
@@ -39,39 +38,37 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
       setIsLoading(true);
       setError(null);
       
-      console.log("Fetching icons with parent_path:", parentPath);
+      console.log("Caricamento icone con parent_path:", parentPath);
       
-      // IMPORTANT: We now force the published filter to be true
+      // Rimuoviamo il filtro published, mostreremo tutte le pagine
       const { data, error } = await supabase
         .from('menu_icons')
         .select('*')
-        .eq('parent_path', parentPath)
-        .eq('published', true);
+        .eq('parent_path', parentPath);
       
       if (error) {
-        console.error("Error fetching icons:", error);
+        console.error("Errore caricamento icone:", error);
         throw error;
       }
       
-      console.log("Published icons data from database:", data);
+      console.log("Dati icone dal database:", data);
       
       if (!data || data.length === 0) {
-        console.log("No published icons found for parent_path:", parentPath);
+        console.log("Nessuna icona trovata per parent_path:", parentPath);
       }
       
-      // Transform the data to match the IconData interface
-      const publishedIcons = data?.map(icon => ({
+      // Trasformiamo i dati per adattarli all'interfaccia IconData
+      const transformedIcons = data?.map(icon => ({
         id: icon.id,
-        title: icon.label, // Use label as title
+        title: icon.label, // Usa label come titolo
         icon: icon.icon,
         path: icon.path,
-        parent_path: icon.parent_path,
-        published: icon.published
+        parent_path: icon.parent_path
       })) || [];
       
-      console.log("Transformed published icons that will be displayed:", publishedIcons);
+      console.log("Icone trasformate che verranno visualizzate:", transformedIcons);
       
-      setIcons(publishedIcons);
+      setIcons(transformedIcons);
     } catch (error) {
       console.error("Errore nel caricamento delle icone:", error);
       setError("Impossibile caricare le icone del menu");
@@ -83,7 +80,7 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
   
   useEffect(() => {
     fetchIcons();
-  }, [parentPath, refreshTrigger]); // Add refreshTrigger as a dependency
+  }, [parentPath, refreshTrigger]); // Aggiungiamo refreshTrigger come dipendenza
   
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -100,7 +97,7 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
     navigate(path);
   };
 
-  // Function to render the icon component based on icon name
+  // Funzione per renderizzare il componente icona basato sul nome
   const renderIcon = (iconName: string) => {
     switch (iconName) {
       case 'FileText': return <FileText className="w-12 h-12" />;
@@ -168,7 +165,7 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
             <TranslatedText text="Menu vuoto" />
           </p>
           <p className="text-gray-500 mb-3">
-            <TranslatedText text="Non ci sono pagine pubblicate disponibili in questa sezione del menu" />
+            <TranslatedText text="Non ci sono pagine disponibili in questa sezione del menu" />
           </p>
           
           <div className="mb-6 flex justify-center">
@@ -185,25 +182,20 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
           
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
             <p className="text-amber-700 mb-2 font-medium">
-              <TranslatedText text="Come pubblicare le pagine:" />
+              <TranslatedText text="Come aggiungere pagine:" />
             </p>
             <ul className="text-sm text-amber-600 list-disc pl-5 space-y-2">
               <li>
                 <TranslatedText text="Vai all'area amministrativa (/admin)" />
               </li>
               <li>
-                <TranslatedText text="Nella sezione 'Gestisci Pagine', trova le pagine che vuoi pubblicare" />
+                <TranslatedText text="Usa la funzione 'Crea Nuova Pagina'" />
               </li>
               <li>
-                <TranslatedText text="Clicca sul pulsante con l'icona dell'occhio" />
-                <Eye className="inline-block ml-1 h-4 w-4" />
-                <TranslatedText text=" per pubblicare la pagina" />
+                <TranslatedText text="Le pagine create appariranno automaticamente nel menu" />
               </li>
               <li>
-                <TranslatedText text="Le pagine pubblicate appariranno automaticamente nel menu" />
-              </li>
-              <li>
-                <TranslatedText text="Dopo aver pubblicato, torna al menu e clicca 'Aggiorna'" />
+                <TranslatedText text="Dopo aver creato nuove pagine, torna al menu e clicca 'Aggiorna'" />
               </li>
             </ul>
           </div>

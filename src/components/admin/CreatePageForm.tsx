@@ -22,7 +22,6 @@ import { PageTypeSection } from "./form/PageTypeSection";
 import { PageImageSection } from "./form/PageImageSection";
 import { PageIconSection } from "./form/PageIconSection";
 import { PageMultiImageSection, ImageItem } from "./form/PageMultiImageSection";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Form schema validation
@@ -51,8 +50,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
   const [selectedIcon, setSelectedIcon] = useState("FileText");
   const [pageImages, setPageImages] = useState<ImageItem[]>([]);
   const [currentTab, setCurrentTab] = useState<string>("content");
-  const [showPublishDialog, setShowPublishDialog] = useState(false);
-  const [newPageData, setNewPageData] = useState<any>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -85,6 +83,8 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      setIsCreating(true);
+      
       const pageId = uuidv4();
       
       const pathValue = values.title
@@ -98,6 +98,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
       
       const formattedContent = formatPageContent(values.content, pageImages);
       
+      // Sempre pubblicato
       const pageData = {
         id: pageId,
         title: values.title,
@@ -109,52 +110,35 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         parent_path: isSubmenu ? parentPath : null,
         list_type: listType,
         list_items: listType && locationItems.length > 0 ? locationItems : null,
-        published: false
-      };
-
-      setNewPageData(pageData);
-      setShowPublishDialog(true);
-    } catch (error) {
-      console.error("Errore nella creazione della pagina:", error);
-      toast.error("Errore nel salvare la pagina");
-    }
-  };
-
-  const savePageToDatabase = async (shouldPublish: boolean) => {
-    try {
-      if (!newPageData) return;
-      
-      const pageDataToSave = {
-        ...newPageData,
-        published: shouldPublish
+        published: true // Sempre pubblicato automaticamente
       };
       
-      console.log("Page data for insertion:", pageDataToSave);
+      console.log("Dati pagina per inserimento:", pageData);
 
       const { data: insertedPage, error: pagesError } = await supabase
         .from('custom_pages')
-        .insert(pageDataToSave)
+        .insert(pageData)
         .select('*')
         .single();
       
       if (pagesError) {
-        console.error("Error inserting page:", pagesError);
+        console.error("Errore nell'inserimento della pagina:", pagesError);
         throw pagesError;
       }
       
-      console.log("Page inserted successfully:", insertedPage);
+      console.log("Pagina inserita con successo:", insertedPage);
       
       const iconData = {
-        label: pageDataToSave.title,
-        path: pageDataToSave.path,
-        icon: pageDataToSave.icon,
+        label: pageData.title,
+        path: pageData.path,
+        icon: pageData.icon,
         bg_color: "bg-blue-200",
-        is_submenu: pageDataToSave.is_submenu,
-        parent_path: pageDataToSave.parent_path,
-        published: shouldPublish
+        is_submenu: pageData.is_submenu,
+        parent_path: pageData.parent_path,
+        published: true // Sempre pubblicato automaticamente
       };
 
-      console.log("Icon data for insertion:", iconData);
+      console.log("Dati icona per inserimento:", iconData);
 
       const { data: insertedIcon, error: iconError } = await supabase
         .from('menu_icons')
@@ -163,18 +147,18 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         .single();
       
       if (iconError) {
-        console.error("Error inserting icon:", iconError);
+        console.error("Errore nell'inserimento dell'icona:", iconError);
         throw iconError;
       }
       
-      console.log("Icon inserted successfully:", insertedIcon);
+      console.log("Icona inserita con successo:", insertedIcon);
       
       const { data: pagesData, error: fetchError } = await supabase
         .from('custom_pages')
         .select('*');
       
       if (fetchError) {
-        console.error("Error fetching pages:", fetchError);
+        console.error("Errore nel recupero delle pagine:", fetchError);
         throw fetchError;
       }
       
@@ -190,14 +174,13 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
           listItems: page.list_items as { name: string; description?: string; phoneNumber?: string; mapsUrl?: string; }[] | undefined,
           isSubmenu: page.is_submenu || false,
           parentPath: page.parent_path || undefined,
-          // Fix for the TypeScript error
           pageImages: [],
-          published: page.published || false
+          published: page.published || true // Sempre pubblicato
         }));
         
         onPageCreated(formattedPages);
         
-        console.log("Updated pages list:", formattedPages);
+        console.log("Lista pagine aggiornata:", formattedPages);
       }
       
       form.reset();
@@ -208,17 +191,14 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
       setListType(undefined);
       setSelectedIcon("FileText");
       setPageImages([]);
-      setShowPublishDialog(false);
-      setNewPageData(null);
       
-      toast.success(shouldPublish 
-        ? "Pagina creata e pubblicata con successo" 
-        : "Pagina salvata come bozza");
+      toast.success("Pagina creata e aggiunta al menu con successo");
       
     } catch (error) {
       console.error("Errore nella creazione della pagina:", error);
       toast.error("Errore nel salvare la pagina");
-      setShowPublishDialog(false);
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -307,28 +287,11 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
             parentPages={parentPages}
           />
           
-          <Button type="submit" className="w-full">Crea pagina</Button>
+          <Button type="submit" className="w-full" disabled={isCreating}>
+            {isCreating ? "Creazione in corso..." : "Crea pagina"}
+          </Button>
         </form>
       </Form>
-
-      <AlertDialog open={showPublishDialog} onOpenChange={setShowPublishDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Pubblicare la pagina?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Vuoi pubblicare questa pagina subito? Se pubblichi, la pagina sarà visibile nel menu. In caso contrario, sarà salvata come bozza e potrai pubblicarla successivamente.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => savePageToDatabase(false)}>
-              Salva come bozza
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={() => savePageToDatabase(true)}>
-              Pubblica ora
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 };
