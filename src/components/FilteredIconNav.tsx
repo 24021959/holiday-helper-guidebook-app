@@ -27,12 +27,10 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Function to remove duplicate menu items
   const removeDuplicates = useCallback(async () => {
     try {
       setIsLoading(true);
       
-      // Get all icons
       const { data, error } = await supabase
         .from('menu_icons')
         .select('*')
@@ -42,7 +40,6 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
       
       if (!data || data.length === 0) return;
       
-      // Find duplicate paths
       const pathsMap = new Map<string, IconData[]>();
       
       data.forEach((icon) => {
@@ -61,7 +58,6 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
         }
       });
       
-      // Find paths with duplicates
       const duplicatePaths: string[] = [];
       const idsToDelete: string[] = [];
       
@@ -69,13 +65,11 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
         if (items.length > 1) {
           duplicatePaths.push(path);
           
-          // Keep the first one, delete the rest
           const itemsToDelete = items.slice(1);
           itemsToDelete.forEach(item => idsToDelete.push(item.id));
         }
       });
       
-      // Delete duplicates if found
       if (idsToDelete.length > 0) {
         for (const id of idsToDelete) {
           const { error: deleteError } = await supabase
@@ -88,13 +82,11 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
           }
         }
         
-        // Specific check for "Storia della locanda" duplicate
         const storiaIconIds = data
           .filter(icon => icon.path === "/storia-della-locanda" || icon.label.toLowerCase().includes("storia della locanda"))
           .map(icon => icon.id);
         
         if (storiaIconIds.length > 1) {
-          // Keep only the first one, delete the rest
           for (let i = 1; i < storiaIconIds.length; i++) {
             await supabase
               .from('menu_icons')
@@ -121,11 +113,9 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     });
   }, [removeDuplicates, refreshTrigger]);
 
-  // Delete specific "Storia della locanda" page
   useEffect(() => {
     const deleteStoriaDellaLocanda = async () => {
       try {
-        // First, check for specific ids from the screenshot
         const { data, error } = await supabase
           .from('menu_icons')
           .select('*')
@@ -134,14 +124,12 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
         if (error) throw error;
         
         if (data && data.length > 0) {
-          // Keep only one "Storia della locanda" entry if multiple exist
           const storiaEntries = data.filter(item => 
             item.path === "/storia-della-locanda" || 
             item.label.toLowerCase().includes("storia della locanda")
           );
           
           if (storiaEntries.length > 1) {
-            // Delete all but the first one
             for (let i = 1; i < storiaEntries.length; i++) {
               const { error: deleteError } = await supabase
                 .from('menu_icons')

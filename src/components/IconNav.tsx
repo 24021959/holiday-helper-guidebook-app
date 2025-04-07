@@ -22,6 +22,7 @@ interface IconData {
   icon: string;
   path: string;
   parent_path: string | null;
+  is_parent?: boolean;
 }
 
 const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger = 0 }) => {
@@ -49,7 +50,7 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
       
       console.log("Caricamento icone con parent_path:", parentPath);
       
-      // Query semplificata senza filtri per mostrare tutte le icone
+      // First, get all icons
       const { data, error } = await supabase
         .from('menu_icons')
         .select('*');
@@ -70,14 +71,22 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
         console.log("Nessuna icona trovata per parent_path:", parentPath);
       }
       
+      // Check which icons are parent pages by seeing if any icons have them as parent_path
+      const allPaths = data?.map(icon => icon.path) || [];
+      
       // Trasformiamo i dati per adattarli all'interfaccia IconData
-      const transformedIcons = filteredData?.map(icon => ({
-        id: icon.id,
-        title: icon.label, // Usa label come titolo
-        icon: icon.icon,
-        path: icon.path,
-        parent_path: icon.parent_path
-      })) || [];
+      const transformedIcons = filteredData?.map(icon => {
+        const isParent = data?.some(item => item.parent_path === icon.path);
+        
+        return {
+          id: icon.id,
+          title: icon.label, // Usa label come titolo
+          icon: icon.icon,
+          path: icon.path,
+          parent_path: icon.parent_path,
+          is_parent: isParent
+        };
+      }) || [];
       
       console.log("Icone trasformate che verranno visualizzate:", transformedIcons);
       
@@ -94,6 +103,17 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
     console.log("IconNav - refreshTrigger aggiornato:", refreshTrigger);
     fetchIcons();
   }, [parentPath, refreshTrigger, fetchIcons]);
+
+  // Funzione per gestire il click su un'icona
+  const handleIconClick = (icon: IconData) => {
+    if (icon.is_parent) {
+      // Se è un genitore, naviga al sottomenu
+      navigate(`/submenu${icon.path}`);
+    } else {
+      // Altrimenti naviga alla pagina
+      navigate(icon.path);
+    }
+  };
 
   // Funzione per renderizzare il componente icona basato sul nome
   const renderIcon = (iconName: string) => {
@@ -195,11 +215,14 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
           const colorIndex = index % pastelColors.length;
           const colorScheme = pastelColors[colorIndex];
           
+          // Per le icone che sono genitori (hanno sottopagine), usiamo un colore speciale
+          const isParentStyle = icon.is_parent ? "border-2 border-emerald-300" : "";
+          
           return (
             <div 
               key={icon.id}
-              className="flex flex-col items-center justify-center bg-white rounded-xl shadow-md p-6 cursor-pointer transform transition-transform hover:scale-102 active:scale-98 h-full"
-              onClick={() => navigate(icon.path)}
+              className={`flex flex-col items-center justify-center bg-white rounded-xl shadow-md p-6 cursor-pointer transform transition-transform hover:scale-102 active:scale-98 h-full ${isParentStyle}`}
+              onClick={() => handleIconClick(icon)}
             >
               <div className={`${colorScheme.bg} p-5 mb-4 rounded-full ${colorScheme.text} flex items-center justify-center`}>
                 {renderIcon(icon.icon)}
@@ -207,6 +230,11 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
               <span className="text-center text-gray-700 font-medium text-lg">
                 <TranslatedText text={icon.title} />
               </span>
+              {icon.is_parent && (
+                <span className="mt-2 text-xs text-emerald-600 font-medium">
+                  <TranslatedText text="Contiene sottomenu" />
+                </span>
+              )}
             </div>
           );
         })}
