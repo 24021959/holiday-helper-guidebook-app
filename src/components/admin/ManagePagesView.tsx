@@ -1,149 +1,167 @@
-
-import React, { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useState, useEffect } from "react";
 import { PageData } from "@/pages/Admin";
-import { useNavigate } from "react-router-dom";
-import { EditPageForm } from "./EditPageForm";
-import { PageListItem } from "./PageListItem";
-import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import PageListItem from "./PageListItem";
+import { CreatePageForm } from "./CreatePageForm";
+import EditPageForm from "./EditPageForm";  // Fixed import statement
+import { PlusCircle, RefreshCw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import useKeywordToIconMap from "@/hooks/useKeywordToIconMap";
 
 interface ManagePagesViewProps {
-  pages: PageData[];
-  onPagesUpdate: (pages: PageData[]) => void;
-  parentPages: PageData[];
-  keywordToIconMap: Record<string, string>;
+  initialPages: PageData[];
 }
 
-export const ManagePagesView: React.FC<ManagePagesViewProps> = ({ 
-  pages, 
-  onPagesUpdate,
-  parentPages,
-  keywordToIconMap
-}) => {
-  const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
+const ManagePagesView: React.FC<ManagePagesViewProps> = ({ initialPages }) => {
+  const [pages, setPages] = useState<PageData[]>(initialPages);
   const [selectedPage, setSelectedPage] = useState<PageData | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isCreateMode, setIsCreateMode] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const keywordToIconMap = useKeywordToIconMap();
 
   useEffect(() => {
-    if (pages) {
-      setIsLoading(false);
-    }
-  }, [pages]);
+    console.log("ManagePagesView - refreshTrigger aggiornato:", refreshTrigger);
+  }, [refreshTrigger]);
 
-  const handleDeletePage = async (id: string) => {
+  const handlePageCreated = (newPages: PageData[]) => {
+    setPages(newPages);
+    setIsCreateMode(false);
+    setSelectedPage(null);
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  const handlePageUpdated = (updatedPages: PageData[]) => {
+    setPages(updatedPages);
+    setSelectedPage(null);
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  const handlePageDelete = async (pageId: string) => {
     try {
-      const pageToDelete = pages.find(page => page.id === id);
-      if (!pageToDelete) return;
-      
       const { error: pageError } = await supabase
         .from('custom_pages')
         .delete()
-        .eq('id', id);
+        .eq('id', pageId);
       
-      if (pageError) throw pageError;
+      if (pageError) {
+        console.error("Errore nella cancellazione della pagina:", pageError);
+        throw pageError;
+      }
       
       const { error: iconError } = await supabase
         .from('menu_icons')
         .delete()
-        .eq('path', pageToDelete.path);
+        .eq('path', pages.find(p => p.id === pageId)?.path);
       
-      if (iconError) throw iconError;
-      
-      if (!pageToDelete.isSubmenu) {
-        const subPages = pages.filter(page => page.parentPath === pageToDelete.path);
-        
-        for (const subPage of subPages) {
-          await supabase.from('custom_pages').delete().eq('id', subPage.id);
-          await supabase.from('menu_icons').delete().eq('path', subPage.path);
-        }
+      if (iconError) {
+        console.error("Errore nella cancellazione dell'icona:", iconError);
       }
       
-      const updatedPages = pages.filter(page => page.id !== id);
-      onPagesUpdate(updatedPages);
+      const { data: pagesData, error: fetchError } = await supabase
+        .from('custom_pages')
+        .select('*');
       
-      toast.info("Pagina eliminata");
+      if (fetchError) {
+        console.error("Errore nel recupero delle pagine:", fetchError);
+        throw fetchError;
+      }
+      
+      if (pagesData) {
+        const formattedPages = pagesData.map(page => ({
+          id: page.id,
+          title: page.title,
+          content: page.content,
+          path: page.path,
+          imageUrl: page.image_url,
+          icon: page.icon,
+          listType: page.list_type as "locations" | "activities" | "restaurants" | undefined,
+          listItems: page.list_items as { name: string; description?: string; phoneNumber?: string; mapsUrl?: string; }[] | undefined,
+          isSubmenu: page.is_submenu || false,
+          parentPath: page.parent_path || undefined,
+          pageImages: [],
+          published: page.published
+        }));
+        
+        setPages(formattedPages);
+        toast.success("Pagina cancellata con successo");
+        setSelectedPage(null);
+        setRefreshTrigger(prev => prev + 1);
+      }
+      
     } catch (error) {
-      console.error("Errore nell'eliminare la pagina:", error);
-      toast.error("Errore nell'eliminare la pagina");
+      console.error("Errore nella cancellazione della pagina:", error);
+      toast.error("Errore nella cancellazione della pagina");
     }
   };
 
-  const handleEditPage = (page: PageData) => {
-    setSelectedPage(page);
-    setIsEditDialogOpen(true);
-  };
-
-  const handlePageUpdated = (updatedPage: PageData) => {
-    const updatedPages = pages.map(p => 
-      p.id === updatedPage.id ? updatedPage : p
-    );
-    onPagesUpdate(updatedPages);
-    setIsEditDialogOpen(false);
-    toast.success("Pagina aggiornata con successo");
-  };
-
-  const handlePreviewPage = (path: string) => {
-    navigate(`/preview/${path}`);
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 text-emerald-500 animate-spin" />
-        <p className="ml-2 text-emerald-600">Caricamento pagine...</p>
-      </div>
-    );
-  }
-
-  // Ordina le pagine per titolo
-  const sortedPages = [...pages].sort((a, b) => a.title.localeCompare(b.title));
-
   return (
-    <>
-      <div className="mb-4">
-        <h2 className="text-xl font-medium text-emerald-600">Gestisci Pagine</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Tutte le pagine create sono automaticamente visibili nel menu principale
-        </p>
-      </div>
-      
-      {sortedPages.length === 0 ? (
-        <p className="text-gray-500">Nessuna pagina creata finora</p>
-      ) : (
-        <div className="space-y-4">
-          {sortedPages.map((page) => (
-            <PageListItem
-              key={page.id}
-              page={page}
-              onDelete={handleDeletePage}
-              onEdit={handleEditPage}
-              onPreview={handlePreviewPage}
-            />
-          ))}
+    <div className="container mx-auto py-10">
+      <div className="mb-8 flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-emerald-700">Gestisci Pagine</h1>
+        <div className="space-x-2">
+          <Button 
+            onClick={() => setRefreshTrigger(prev => prev + 1)}
+            variant="outline"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Aggiorna
+          </Button>
+          <Button onClick={() => setIsCreateMode(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Crea Nuova Pagina
+          </Button>
         </div>
-      )}
+      </div>
 
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Modifica Pagina: {selectedPage?.title}</DialogTitle>
-          </DialogHeader>
-          
+      <Tabs defaultValue={selectedPage ? "edit" : "create"} className="w-full">
+        <TabsList className="mb-4">
           {selectedPage && (
-            <EditPageForm 
-              page={selectedPage}
-              parentPages={parentPages}
-              onPageUpdated={handlePageUpdated}
-              onFormClose={() => setIsEditDialogOpen(false)}
-              keywordToIconMap={keywordToIconMap}
-              isSystemPage={false}
-            />
+            <TabsTrigger value="edit">Modifica Pagina</TabsTrigger>
           )}
-        </DialogContent>
-      </Dialog>
-    </>
+          {isCreateMode && (
+            <TabsTrigger value="create">Crea Pagina</TabsTrigger>
+          )}
+        </TabsList>
+        
+        {selectedPage && (
+          <TabsContent value="edit">
+            <EditPageForm 
+              selectedPage={selectedPage}
+              parentPages={pages}
+              onPageUpdated={handlePageUpdated}
+              keywordToIconMap={keywordToIconMap}
+            />
+          </TabsContent>
+        )}
+        
+        {isCreateMode && (
+          <TabsContent value="create">
+            <CreatePageForm
+              parentPages={pages}
+              onPageCreated={handlePageCreated}
+              keywordToIconMap={keywordToIconMap}
+            />
+          </TabsContent>
+        )}
+      </Tabs>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {pages.map((page) => (
+          <PageListItem
+            key={page.id}
+            page={page}
+            onEdit={() => {
+              setSelectedPage(page);
+              setIsCreateMode(false);
+            }}
+            onDelete={handlePageDelete}
+          />
+        ))}
+      </div>
+    </div>
   );
 };
+
+export default ManagePagesView;

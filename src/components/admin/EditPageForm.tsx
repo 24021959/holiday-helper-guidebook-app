@@ -1,217 +1,237 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+
+import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { v4 as uuidv4 } from "uuid";
+import { PageData } from "@/pages/Admin";
+import { toast } from "sonner";
+import { useForm, FormProvider } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { 
-  Loader2, Book, Home, FileText, Image, MessageCircle, Info, Map, 
-  Utensils, Landmark, Hotel, Wifi, Bus, ShoppingBag, Calendar, 
-  Phone, Coffee, Bike, Camera, Globe, Mountain, MapPin, Newspaper,
-  Music, Heart, Trees, Users, ShoppingCart
-} from "lucide-react";
-import TranslatedText from "@/components/TranslatedText";
+  Form, 
+  FormControl, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageIconSection } from "./form/PageIconSection";
+import { PageImageSection } from "./form/PageImageSection";
+import { PageContentSection } from "./form/PageContentSection";
+import { PageMultiImageSection, ImageItem } from "./form/PageMultiImageSection";
 
-interface IconNavProps {
-  parentPath: string | null;
-  onRefresh?: () => void;
-  refreshTrigger?: number;
+interface EditPageFormProps {
+  selectedPage: PageData;
+  parentPages: PageData[];
+  onPageUpdated: (updatedPages: PageData[]) => void;
+  keywordToIconMap: Record<string, string>;
 }
 
-interface IconData {
-  id: string;
-  title: string;
-  icon: string;
-  path: string;
-  parent_path: string | null;
-}
+// Form schema validation
+const formSchema = z.object({
+  title: z.string().min(1, "Il titolo è obbligatorio"),
+  content: z.string().min(1, "Il contenuto è obbligatorio"),
+  icon: z.string().optional(),
+});
 
-const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger = 0 }) => {
-  const [icons, setIcons] = useState<IconData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
+const EditPageForm: React.FC<EditPageFormProps> = ({ 
+  selectedPage,
+  parentPages,
+  onPageUpdated,
+  keywordToIconMap
+}) => {
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [selectedIcon, setSelectedIcon] = useState(selectedPage.icon || "FileText");
+  const [uploadedImage, setUploadedImage] = useState<string | null>(selectedPage.imageUrl || null);
+  const [pageImages, setPageImages] = useState<ImageItem[]>(selectedPage.pageImages || []);
+  const [currentTab, setCurrentTab] = useState<string>("content");
+  
+  // Create form with react-hook-form
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: selectedPage.title,
+      content: selectedPage.content,
+      icon: selectedPage.icon || "FileText",
+    },
+  });
 
-  // Array di colori pastello per le icone
-  const pastelColors = [
-    { bg: "bg-[#F2FCE2]", text: "text-emerald-700" }, // verde chiaro
-    { bg: "bg-[#FEF7CD]", text: "text-amber-700" },   // giallo chiaro
-    { bg: "bg-[#FEC6A1]", text: "text-orange-700" },  // arancione chiaro
-    { bg: "bg-[#E5DEFF]", text: "text-indigo-700" },  // viola chiaro
-    { bg: "bg-[#FFDEE2]", text: "text-rose-700" },    // rosa chiaro
-    { bg: "bg-[#FDE1D3]", text: "text-orange-600" },  // pesca chiaro
-    { bg: "bg-[#D3E4FD]", text: "text-blue-700" },    // blu chiaro
-    { bg: "bg-[#F1F0FB]", text: "text-slate-700" },   // grigio chiaro
-  ];
+  const formatPageContent = (content: string, images: ImageItem[]) => {
+    if (images.length === 0) return content;
+    
+    let enhancedContent = content;
+    enhancedContent += "\n\n<!-- IMAGES -->\n";
+    
+    images.forEach((image) => {
+      const imageMarkup = JSON.stringify({
+        type: "image",
+        url: image.url,
+        position: image.position,
+        caption: image.caption || ""
+      });
+      
+      enhancedContent += `\n${imageMarkup}\n`;
+    });
+    
+    return enhancedContent;
+  };
 
-  const fetchIcons = useCallback(async () => {
+  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      setIsLoading(true);
-      setError(null);
+      setIsUpdating(true);
       
-      console.log("Caricamento icone con parent_path:", parentPath);
+      const formattedContent = formatPageContent(values.content, pageImages);
       
-      // Query semplificata senza filtri per mostrare tutte le icone
-      const { data, error } = await supabase
+      // Aggiorna i dati della pagina
+      const updateData = {
+        title: values.title,
+        content: formattedContent,
+        image_url: uploadedImage,
+        icon: selectedIcon,
+      };
+      
+      const { error: pageError } = await supabase
+        .from('custom_pages')
+        .update(updateData)
+        .eq('id', selectedPage.id);
+      
+      if (pageError) {
+        throw pageError;
+      }
+      
+      // Aggiorna anche l'icona nel menu
+      const iconData = {
+        label: values.title,
+        icon: selectedIcon,
+        bg_color: "bg-blue-200" // Colore di sfondo predefinito
+      };
+      
+      const { error: iconError } = await supabase
         .from('menu_icons')
+        .update(iconData)
+        .eq('path', selectedPage.path);
+      
+      if (iconError) {
+        console.error("Errore nell'aggiornamento dell'icona:", iconError);
+        // Non blocca l'aggiornamento della pagina
+      }
+      
+      // Ricarica tutte le pagine per aggiornare l'elenco
+      const { data: pagesData, error: fetchError } = await supabase
+        .from('custom_pages')
         .select('*');
       
-      if (error) {
-        console.error("Errore caricamento icone:", error);
-        throw error;
+      if (fetchError) {
+        throw fetchError;
       }
       
-      console.log("Tutti i dati icone dal database:", data);
-      
-      // Filtriamo lato client per parent_path
-      const filteredData = data?.filter(icon => icon.parent_path === parentPath);
-      
-      console.log("Dati filtrati per parent_path:", parentPath, filteredData);
-      
-      if (!filteredData || filteredData.length === 0) {
-        console.log("Nessuna icona trovata per parent_path:", parentPath);
+      if (pagesData) {
+        const formattedPages = pagesData.map(page => ({
+          id: page.id,
+          title: page.title,
+          content: page.content,
+          path: page.path,
+          imageUrl: page.image_url,
+          icon: page.icon,
+          listType: page.list_type as "locations" | "activities" | "restaurants" | undefined,
+          listItems: page.list_items as { name: string; description?: string; phoneNumber?: string; mapsUrl?: string; }[] | undefined,
+          isSubmenu: page.is_submenu || false,
+          parentPath: page.parent_path || undefined,
+          pageImages: [],
+          published: page.published
+        }));
+        
+        onPageUpdated(formattedPages);
+        toast.success("Pagina aggiornata con successo");
       }
       
-      // Trasformiamo i dati per adattarli all'interfaccia IconData
-      const transformedIcons = filteredData?.map(icon => ({
-        id: icon.id,
-        title: icon.label, // Usa label come titolo
-        icon: icon.icon,
-        path: icon.path,
-        parent_path: icon.parent_path
-      })) || [];
-      
-      console.log("Icone trasformate che verranno visualizzate:", transformedIcons);
-      
-      setIcons(transformedIcons);
     } catch (error) {
-      console.error("Errore nel caricamento delle icone:", error);
-      setError("Impossibile caricare le icone del menu");
+      console.error("Errore nell'aggiornamento della pagina:", error);
+      toast.error("Errore nell'aggiornamento della pagina");
     } finally {
-      setIsLoading(false);
-    }
-  }, [parentPath]);
-  
-  useEffect(() => {
-    console.log("IconNav - refreshTrigger aggiornato:", refreshTrigger);
-    fetchIcons();
-  }, [parentPath, refreshTrigger, fetchIcons]);
-
-  // Funzione per renderizzare il componente icona basato sul nome
-  const renderIcon = (iconName: string) => {
-    switch (iconName) {
-      case 'FileText': return <FileText className="w-14 h-14" />;
-      case 'Image': return <Image className="w-14 h-14" />;
-      case 'MessageCircle': return <MessageCircle className="w-14 h-14" />;
-      case 'Info': return <Info className="w-14 h-14" />;
-      case 'Map': return <Map className="w-14 h-14" />;
-      case 'Utensils': return <Utensils className="w-14 h-14" />;
-      case 'Landmark': return <Landmark className="w-14 h-14" />;
-      case 'Hotel': return <Hotel className="w-14 h-14" />;
-      case 'Wifi': return <Wifi className="w-14 h-14" />;
-      case 'Bus': return <Bus className="w-14 h-14" />;
-      case 'ShoppingBag': return <ShoppingBag className="w-14 h-14" />;
-      case 'Calendar': return <Calendar className="w-14 h-14" />;
-      case 'Phone': return <Phone className="w-14 h-14" />;
-      case 'Coffee': return <Coffee className="w-14 h-14" />;
-      case 'Book': return <Book className="w-14 h-14" />;
-      case 'Home': return <Home className="w-14 h-14" />;
-      case 'Bike': return <Bike className="w-14 h-14" />;
-      case 'Camera': return <Camera className="w-14 h-14" />;
-      case 'Globe': return <Globe className="w-14 h-14" />;
-      case 'Mountain': return <Mountain className="w-14 h-14" />;
-      case 'MapPin': return <MapPin className="w-14 h-14" />;
-      case 'Newspaper': return <Newspaper className="w-14 h-14" />;
-      case 'Music': return <Music className="w-14 h-14" />;
-      case 'Heart': return <Heart className="w-14 h-14" />;
-      case 'Trees': return <Trees className="w-14 h-14" />;
-      case 'Users': return <Users className="w-14 h-14" />;
-      case 'ShoppingCart': return <ShoppingCart className="w-14 h-14" />;
-      default: return <FileText className="w-14 h-14" />;
+      setIsUpdating(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 text-emerald-600 animate-spin" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-center p-4">
-          <p className="text-red-500">
-            <TranslatedText text={error} />
-          </p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
-          >
-            <TranslatedText text="Riprova" />
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (icons.length === 0) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center">
-        <div className="text-center p-4 max-w-md">
-          <p className="text-gray-600 text-lg font-medium mb-3">
-            <TranslatedText text="Menu vuoto" />
-          </p>
-          <p className="text-gray-500 mb-3">
-            <TranslatedText text="Non ci sono pagine disponibili in questa sezione del menu" />
-          </p>
-          
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <p className="text-amber-700 mb-2 font-medium">
-              <TranslatedText text="Come aggiungere pagine:" />
-            </p>
-            <ul className="text-sm text-amber-600 list-disc pl-5 space-y-2">
-              <li>
-                <TranslatedText text="Vai all'area amministrativa (/admin)" />
-              </li>
-              <li>
-                <TranslatedText text="Usa la funzione 'Crea Nuova Pagina'" />
-              </li>
-              <li>
-                <TranslatedText text="Le pagine create appariranno automaticamente nel menu" />
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex-1 flex flex-col p-3">
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 h-full">
-        {icons.map((icon, index) => {
-          // Seleziona un colore pastello dall'array in base all'indice
-          const colorIndex = index % pastelColors.length;
-          const colorScheme = pastelColors[colorIndex];
+    <FormProvider {...form}>
+      <h2 className="text-xl font-medium text-emerald-600 mb-4">Modifica Pagina</h2>
+      
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Titolo</FormLabel>
+                <FormControl>
+                  <Input placeholder="Titolo della pagina" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           
-          return (
-            <div 
-              key={icon.id}
-              className="flex flex-col items-center justify-center bg-white rounded-xl shadow-md p-6 cursor-pointer transform transition-transform hover:scale-102 active:scale-98 h-full"
-              onClick={() => navigate(icon.path)}
+          <FormField
+            control={form.control}
+            name="icon"
+            render={({ field }) => (
+              <FormItem>
+                <PageIconSection 
+                  icon={selectedIcon}
+                  setIcon={(icon) => {
+                    setSelectedIcon(icon);
+                    field.onChange(icon);
+                  }}
+                />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
+            <TabsList className="grid grid-cols-3 mb-4">
+              <TabsTrigger value="content">Contenuto</TabsTrigger>
+              <TabsTrigger value="images">Galleria Immagini</TabsTrigger>
+              <TabsTrigger value="thumbnail">Immagine Principale</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="content">
+              <PageContentSection name="content" label="Contenuto della pagina" />
+            </TabsContent>
+            
+            <TabsContent value="images">
+              <PageMultiImageSection 
+                images={pageImages}
+                onImagesChange={setPageImages}
+              />
+            </TabsContent>
+            
+            <TabsContent value="thumbnail">
+              <PageImageSection 
+                imageUrl={uploadedImage}
+                onImageUploaded={setUploadedImage}
+              />
+            </TabsContent>
+          </Tabs>
+          
+          <div className="pt-4 border-t flex justify-end space-x-4">
+            <Button 
+              type="submit" 
+              disabled={isUpdating}
+              className="bg-emerald-600 hover:bg-emerald-700"
             >
-              <div className={`${colorScheme.bg} p-5 mb-4 rounded-full ${colorScheme.text} flex items-center justify-center`}>
-                {renderIcon(icon.icon)}
-              </div>
-              <span className="text-center text-gray-700 font-medium text-lg">
-                <TranslatedText text={icon.title} />
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+              {isUpdating ? "Aggiornamento..." : "Salva modifiche"}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </FormProvider>
   );
 };
 
-export default IconNav;
+export default EditPageForm;
