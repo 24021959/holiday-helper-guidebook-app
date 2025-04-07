@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -93,36 +94,51 @@ const Storia: React.FC = () => {
         showAdminButton={false}
       />
       
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
+      <main className="flex-1 container mx-auto px-4 py-8 content-container">
+        <div className="bg-white rounded-lg shadow-md p-6 md:p-8">
           <h1 className="text-2xl font-bold text-emerald-800 mb-6">
             <TranslatedText text="La Nostra Storia" />
           </h1>
           
-          <div className="prose max-w-none">
-            <p className="mb-4">
+          <div className="prose max-w-none readable-text">
+            <p>
               <TranslatedText text="Benvenuti nella sezione dedicata alla storia del nostro stabilimento. Qui potrete scoprire come è nato e si è evoluto nel tempo il nostro locale." />
             </p>
             
-            <h2 className="text-xl font-semibold text-emerald-700 mt-6 mb-3">
+            <h2 className="text-xl font-semibold text-emerald-700 mt-8 mb-4">
               <TranslatedText text="Le Origini" />
             </h2>
-            <p className="mb-4">
-              <TranslatedText text="Il nostro stabilimento è stato fondato nel 1985 da una famiglia con una grande passione per l'ospitalità e la cucina tradizionale. Inizialmente era un piccolo locale con pochi tavoli, ma grazie alla qualità del servizio e all'autenticità delle ricette, ha rapidamente guadagnato popolarità." />
+            
+            <p>
+              <TranslatedText text="Il nostro stabilimento è stato fondato nel 1985 da una famiglia con una grande passione per l'ospitalità e la cucina tradizionale." />
             </p>
             
-            <h2 className="text-xl font-semibold text-emerald-700 mt-6 mb-3">
+            <p>
+              <TranslatedText text="Inizialmente era un piccolo locale con pochi tavoli, ma grazie alla qualità del servizio e all'autenticità delle ricette, ha rapidamente guadagnato popolarità tra i residenti e i turisti della zona." />
+            </p>
+            
+            <h2 className="text-xl font-semibold text-emerald-700 mt-8 mb-4">
               <TranslatedText text="L'Evoluzione" />
             </h2>
-            <p className="mb-4">
-              <TranslatedText text="Nel corso degli anni, lo stabilimento si è ampliato e rinnovato più volte, mantenendo sempre vivo lo spirito originale. Abbiamo introdotto nuovi piatti, seguendo le tendenze culinarie ma senza mai dimenticare le nostre radici." />
+            
+            <p>
+              <TranslatedText text="Nel corso degli anni, lo stabilimento si è ampliato e rinnovato più volte, mantenendo sempre vivo lo spirito originale." />
             </p>
             
-            <h2 className="text-xl font-semibold text-emerald-700 mt-6 mb-3">
+            <p>
+              <TranslatedText text="Abbiamo introdotto nuovi piatti, seguendo le tendenze culinarie ma senza mai dimenticare le nostre radici. La nostra filosofia è sempre stata quella di valorizzare i prodotti locali e le ricette della tradizione." />
+            </p>
+            
+            <h2 className="text-xl font-semibold text-emerald-700 mt-8 mb-4">
               <TranslatedText text="Oggi" />
             </h2>
-            <p className="mb-4">
-              <TranslatedText text="Oggi il nostro stabilimento è un punto di riferimento per la gastronomia locale. Continuiamo a servire piatti preparati con ingredienti freschi e di qualità, in un ambiente accogliente e familiare. La nostra missione è far sentire ogni cliente come a casa propria." />
+            
+            <p>
+              <TranslatedText text="Oggi il nostro stabilimento è un punto di riferimento per la gastronomia locale. Continuiamo a servire piatti preparati con ingredienti freschi e di qualità, in un ambiente accogliente e familiare." />
+            </p>
+            
+            <p>
+              <TranslatedText text="La nostra missione è far sentire ogni cliente come a casa propria, offrendo un'esperienza culinaria autentica e memorabile. Siamo orgogliosi di mantenere viva la tradizione gastronomica del nostro territorio." />
             </p>
           </div>
         </div>

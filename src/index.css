@@ -102,24 +102,32 @@
   
   /* Typography improvements for web readability */
   p {
-    @apply text-base leading-relaxed md:text-lg text-gray-700;
+    @apply text-base leading-relaxed md:text-lg text-gray-700 dark:text-gray-300;
     line-height: 1.8;
+    margin-bottom: 1.5rem; /* Add space between paragraphs */
+    max-width: 70ch; /* Optimal line length for readability */
   }
   
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold text-gray-800 mb-4 mt-6;
+    @apply font-semibold text-gray-800 dark:text-gray-100 mb-4 mt-8;
+    line-height: 1.3;
   }
   
   h1 {
-    @apply text-2xl md:text-3xl;
+    @apply text-2xl md:text-3xl lg:text-4xl;
+    margin-bottom: 1.5rem;
   }
   
   h2 {
-    @apply text-xl md:text-2xl;
+    @apply text-xl md:text-2xl lg:text-3xl;
+    margin-top: 2rem;
+    margin-bottom: 1.25rem;
   }
   
   h3 {
-    @apply text-lg md:text-xl;
+    @apply text-lg md:text-xl lg:text-2xl;
+    margin-top: 1.75rem;
+    margin-bottom: 1rem;
   }
   
   ul, ol {
@@ -127,25 +135,64 @@
   }
   
   li {
-    @apply mb-1;
+    @apply mb-2 leading-relaxed;
+    line-height: 1.7;
   }
   
   a {
-    @apply text-emerald-600 hover:underline;
+    @apply text-emerald-600 hover:underline dark:text-emerald-400;
+  }
+  
+  blockquote {
+    @apply pl-4 italic text-gray-600 dark:text-gray-400 border-l-4 border-emerald-500 my-6;
+    padding: 0.5rem 0 0.5rem 1rem;
   }
   
   /* Images inside prose content */
   .prose img {
-    @apply rounded-lg shadow-md;
+    @apply rounded-lg shadow-md my-6;
+    max-width: 100%;
+    height: auto;
   }
   
   /* Consistent image styling */
   figure {
-    @apply my-6;
+    @apply my-8;
   }
   
   figcaption {
-    @apply text-sm text-gray-600 text-center mt-2 italic;
+    @apply text-sm text-gray-600 dark:text-gray-400 text-center mt-2 italic;
+  }
+  
+  /* Content container readability */
+  .content-container {
+    @apply max-w-4xl mx-auto px-4 md:px-6 py-8;
+  }
+  
+  /* Text formatting for better readability */
+  .readable-text p {
+    @apply mb-6;
+  }
+  
+  .readable-text p:last-child {
+    @apply mb-0;
+  }
+  
+  /* Image sizing and positioning */
+  .image-left {
+    @apply float-left mr-6 mb-4 w-full sm:w-1/3 md:w-1/3;
+  }
+  
+  .image-right {
+    @apply float-right ml-6 mb-4 w-full sm:w-1/3 md:w-1/3;
+  }
+  
+  .image-center {
+    @apply mx-auto mb-6 w-full sm:w-2/3 md:w-2/3;
+  }
+  
+  .image-full {
+    @apply w-full mb-6;
   }
 }
 
@@ -172,4 +219,20 @@ html, body {
   right: 0;
   bottom: 0;
   left: 0;
+}
+
+/* Content formatting helpers */
+.content-section {
+  @apply max-w-4xl mx-auto;
+}
+
+.paragraph-container p {
+  @apply mb-6 max-w-prose;
+}
+
+/* Clear floats after image sections */
+.clearfix::after {
+  content: "";
+  clear: both;
+  display: table;
 }

@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useFormContext } from "react-hook-form";
 import ImageInsertionDialog from "./ImageInsertionDialog";
 import { Button } from "@/components/ui/button";
-import { ImageIcon, Info } from "lucide-react";
+import { ImageIcon, Info, Rows3, PanelRight, PanelLeft } from "lucide-react";
 import { ImageItem } from "./PageMultiImageSection";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -40,6 +40,49 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
       setClickPosition(textareaRef.current.selectionStart);
       setShowGalleryDialog(true);
     }
+  };
+
+  const handleFormatClick = (format: 'paragraph' | 'left' | 'right' | 'center') => {
+    if (!textareaRef.current) return;
+    
+    const textarea = textareaRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    const content = getValues(name) as string;
+    
+    let formattedText = '';
+    
+    switch (format) {
+      case 'paragraph':
+        // Split selected text by line breaks and wrap each paragraph with an extra line break
+        formattedText = selectedText
+          .split('.')
+          .map(sentence => sentence.trim())
+          .filter(sentence => sentence.length > 0)
+          .join('.\n\n');
+        
+        if (!formattedText.endsWith('.')) formattedText += '.';
+        break;
+      
+      case 'left':
+      case 'right':
+      case 'center':
+        // Add special comment for future image alignment
+        formattedText = `<!-- FORMAT:${format.toUpperCase()} -->\n${selectedText}`;
+        break;
+    }
+    
+    // Insert the formatted text
+    const newContent = content.substring(0, start) + formattedText + content.substring(end);
+    setValue(name, newContent, { shouldDirty: true });
+    
+    // Set cursor position after the formatted text
+    setTimeout(() => {
+      textarea.focus();
+      textarea.selectionStart = start + formattedText.length;
+      textarea.selectionEnd = start + formattedText.length;
+    }, 0);
   };
 
   const handleInsertImage = (imageUrl: string) => {
@@ -105,12 +148,94 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
               </TooltipProvider>
             </div>
             <div className="space-y-2">
+              <div className="flex flex-wrap gap-2 mb-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleFormatClick('paragraph')}
+                        className="text-xs"
+                      >
+                        <Rows3 className="h-4 w-4 mr-1" />
+                        Separa in paragrafi
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Divide il testo selezionato in paragrafi dopo ogni punto</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleFormatClick('left')}
+                        className="text-xs"
+                      >
+                        <PanelLeft className="h-4 w-4 mr-1" />
+                        Allinea a sinistra
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Allinea il testo selezionato a sinistra</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleFormatClick('center')}
+                        className="text-xs"
+                      >
+                        <Rows3 className="h-4 w-4 mr-1" />
+                        Centra
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Centra il testo selezionato</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleFormatClick('right')}
+                        className="text-xs"
+                      >
+                        <PanelRight className="h-4 w-4 mr-1" />
+                        Allinea a destra
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Allinea il testo selezionato a destra</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              
               <FormControl>
                 <Textarea
                   {...field}
                   ref={textareaRef}
-                  className="min-h-[250px] font-medium leading-relaxed p-4"
-                  style={{ lineHeight: "1.6" }}
+                  className="min-h-[350px] font-medium leading-relaxed p-4"
+                  style={{ lineHeight: "1.8" }}
                 />
               </FormControl>
               <div className="flex flex-wrap gap-2">

@@ -167,7 +167,7 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
       
       parsedContent.forEach(section => {
         if (typeof section === 'string') {
-          const paragraphs = section.split('\n').filter(p => p.trim());
+          const paragraphs = section.split('\n').filter(p => p.trim() !== '');
           
           paragraphs.forEach(paragraph => {
             contentSectionsTemp.push(paragraph);
@@ -245,21 +245,15 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
 
   const renderImage = (image: ImageItem, index: number) => {
     const positionClass = image.position === "left" 
-      ? "float-left mr-6 mb-6" 
+      ? "image-left" 
       : image.position === "right" 
-        ? "float-right ml-6 mb-6" 
+        ? "image-right" 
         : image.position === "center" 
-          ? "mx-auto mb-6" 
-          : "w-full mb-6";
+          ? "image-center" 
+          : "image-full";
     
-    const widthClass = image.position === "left" || image.position === "right"
-      ? "w-full sm:w-1/3 md:w-1/3 lg:w-1/3" 
-      : image.position === "center"
-        ? "w-full sm:w-2/3 md:w-2/3 lg:w-2/3" 
-        : "w-full";
-        
     return (
-      <figure key={`img-${index}`} className={`${positionClass} ${widthClass} my-6 max-w-full`}>
+      <figure key={`img-${index}`} className={`${positionClass} my-6`}>
         <div className="rounded-lg overflow-hidden shadow-md">
           <AspectRatio ratio={16/9} className="bg-gray-100">
             <img 
@@ -349,7 +343,7 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
       />
       
       <div className="flex-1 p-4 md:p-6 lg:p-8 bg-gray-50">
-        <div className="container mx-auto max-w-4xl">
+        <div className="container mx-auto max-w-4xl content-container">
           <BackToMenu />
           
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mt-6 mb-8">
@@ -368,14 +362,20 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
             </div>
           )}
           
-          <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-            <div className="prose max-w-none clearfix text-base md:text-lg leading-relaxed text-gray-700">
+          <div className="bg-white p-6 md:p-8 rounded-lg shadow-md mb-8">
+            <div className="prose max-w-none clearfix readable-text">
               {pageContentSections.map((section, index) => {
                 if (typeof section === 'string') {
+                  const paragraphs = section.split('\n').filter(p => p.trim() !== '');
+                  
                   return (
-                    <p key={`p-${index}`} className="mb-6">
-                      <TranslatedText text={section} />
-                    </p>
+                    <React.Fragment key={`p-${index}`}>
+                      {paragraphs.map((paragraph, pIndex) => (
+                        <p key={`p-${index}-${pIndex}`} className="mb-6">
+                          <TranslatedText text={paragraph} />
+                        </p>
+                      ))}
+                    </React.Fragment>
                   );
                 } else {
                   return renderImage(section, index);
