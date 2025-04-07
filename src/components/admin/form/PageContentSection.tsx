@@ -4,6 +4,8 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Textarea } from "@/components/ui/textarea";
 import { useFormContext } from "react-hook-form";
 import ImageInsertionDialog from "./ImageInsertionDialog";
+import { Button } from "@/components/ui/button";
+import { ImageIcon } from "lucide-react";
 
 interface PageContentSectionProps {
   name: string;
@@ -19,11 +21,11 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
   const [clickPosition, setClickPosition] = useState<number | null>(null);
   const [showImageDialog, setShowImageDialog] = useState(false);
 
-  const handleTextareaClick = (e: React.MouseEvent<HTMLTextAreaElement>) => {
-    const textarea = e.currentTarget;
-    const clickedPosition = textarea.selectionStart;
-    setClickPosition(clickedPosition);
-    setShowImageDialog(true);
+  const handleInsertImageClick = () => {
+    if (textareaRef.current) {
+      setClickPosition(textareaRef.current.selectionStart);
+      setShowImageDialog(true);
+    }
   };
 
   const handleInsertImage = (imageUrl: string) => {
@@ -57,14 +59,24 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
         render={({ field }) => (
           <FormItem>
             <FormLabel>{label}</FormLabel>
-            <FormControl>
-              <Textarea
-                {...field}
-                ref={textareaRef}
-                className="min-h-[200px]"
-                onClick={handleTextareaClick}
-              />
-            </FormControl>
+            <div className="space-y-2">
+              <FormControl>
+                <Textarea
+                  {...field}
+                  ref={textareaRef}
+                  className="min-h-[200px]"
+                />
+              </FormControl>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleInsertImageClick}
+                className="flex items-center"
+              >
+                <ImageIcon className="h-4 w-4 mr-2" />
+                Inserisci immagine
+              </Button>
+            </div>
             <FormMessage />
           </FormItem>
         )}
