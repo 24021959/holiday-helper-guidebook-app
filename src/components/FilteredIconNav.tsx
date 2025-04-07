@@ -65,6 +65,35 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
       
       if (!data || data.length === 0) {
         console.log("No icons found for parent_path:", parentPath);
+        
+        // Check if we should try to load all published pages as icons
+        if (parentPath === null) {
+          console.log("Trying to load published pages as root menu items");
+          const { data: pagesData, error: pagesError } = await supabase
+            .from('custom_pages')
+            .select('id, title, path, icon, parent_path, is_submenu')
+            .eq('published', true)
+            .eq('parent_path', parentPath);
+            
+          if (!pagesError && pagesData && pagesData.length > 0) {
+            console.log("Found published pages to use as menu items:", pagesData.length);
+            
+            // Convert pages to menu icons
+            const newIcons = pagesData.map(page => ({
+              id: page.id,
+              path: page.path,
+              label: page.title,
+              icon: page.icon || 'FileText',
+              parent_path: page.parent_path
+            }));
+            
+            // Save to cache
+            localStorage.setItem(cacheKey, JSON.stringify(newIcons));
+            setIcons(newIcons);
+            return newIcons;
+          }
+        }
+        
         setIcons([]);
         return [];
       }
@@ -99,6 +128,50 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     }
   }, [parentPath, icons.length]);
 
+  const loadPublishedPagesAsIcons = useCallback(async () => {
+    try {
+      console.log("Trying to load all published pages for parent_path:", parentPath);
+      
+      const { data, error } = await supabase
+        .from('custom_pages')
+        .select('id, title, path, icon, parent_path, is_submenu')
+        .eq('published', true)
+        .eq('parent_path', parentPath || null);
+        
+      if (error) {
+        console.error("Error loading published pages:", error);
+        return [];
+      }
+      
+      if (!data || data.length === 0) {
+        console.log("No published pages found for parent_path:", parentPath);
+        return [];
+      }
+      
+      console.log("Found published pages:", data.length);
+      
+      // Convert pages to menu icons format
+      const iconData = data.map(page => ({
+        id: page.id,
+        path: page.path,
+        label: page.title,
+        icon: page.icon || 'FileText',
+        parent_path: page.parent_path
+      }));
+      
+      // Cache these icons
+      const cacheKey = `icons_${parentPath || 'root'}`;
+      localStorage.setItem(cacheKey, JSON.stringify(iconData));
+      
+      // Update state
+      setIcons(iconData);
+      return iconData;
+    } catch (err) {
+      console.error("Error loading published pages as icons:", err);
+      return [];
+    }
+  }, [parentPath]);
+
   const removeDuplicates = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -106,7 +179,14 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
       
       console.log("Checking for duplicate menu items with parent_path:", parentPath);
       
-      const data = await fetchIcons();
+      // First, try to get icons from menu_icons table
+      let data = await fetchIcons();
+      
+      // If no icons found in menu_icons table, try to load published pages as icons
+      if (!data || data.length === 0) {
+        console.log("No menu items found in menu_icons table, trying published pages");
+        data = await loadPublishedPagesAsIcons();
+      }
       
       if (!data || data.length === 0) {
         console.log("No menu items found for parent_path:", parentPath);
@@ -205,7 +285,7 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [parentPath, fetchIcons, icons, hasConnectionError]);
+  }, [parentPath, fetchIcons, icons, hasConnectionError, loadPublishedPagesAsIcons]);
 
   // Try to reconnect if there's a connection error
   useEffect(() => {

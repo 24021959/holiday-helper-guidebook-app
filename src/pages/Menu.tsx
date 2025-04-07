@@ -75,7 +75,7 @@ const Menu: React.FC = () => {
     }
   }, []);
   
-  const checkForPages = useCallback(async () => {
+  const checkForPagesOrIcons = useCallback(async () => {
     try {
       // First try localStorage for cached icons
       const cachedIcons = localStorage.getItem("icons_root");
@@ -83,25 +83,43 @@ const Menu: React.FC = () => {
         try {
           const icons = JSON.parse(cachedIcons);
           console.log("Utilizzando icone in cache:", icons.length);
-          return icons.length;
+          
+          if (icons.length > 0) {
+            return icons.length;
+          }
         } catch (err) {
           console.error("Errore nel parsing delle icone dalla cache:", err);
         }
       }
       
-      const { count, error } = await supabase
+      // Try menu_icons table first
+      const { count: iconsCount, error: iconsError } = await supabase
         .from('menu_icons')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .eq('parent_path', null);
         
-      if (error) {
-        console.error("Errore nel conteggio delle icone:", error);
-        throw error;
+      if (!iconsError && iconsCount && iconsCount > 0) {
+        console.log("Numero di icone nel menu principale:", iconsCount);
+        return iconsCount;
       }
       
-      console.log("Numero totale di icone nel database:", count);
-      return count;
+      // If no icons in menu_icons, check for published pages
+      console.log("Checking for published pages as fallback");
+      const { count: pagesCount, error: pagesError } = await supabase
+        .from('custom_pages')
+        .select('*', { count: 'exact', head: true })
+        .eq('published', true)
+        .eq('parent_path', null);
+        
+      if (pagesError) {
+        console.error("Errore nel conteggio delle pagine pubblicate:", pagesError);
+        throw pagesError;
+      }
+      
+      console.log("Numero di pagine pubblicate nel menu principale:", pagesCount);
+      return pagesCount || 0;
     } catch (error) {
-      console.error("Errore nel conteggio delle icone:", error);
+      console.error("Errore nel conteggio delle icone o pagine:", error);
       
       // Incrementa i tentativi di connessione
       setConnectionAttempts(prev => prev + 1);
@@ -122,14 +140,14 @@ const Menu: React.FC = () => {
         await fetchHeaderSettings();
         console.log("Menu - Forzando l'aggiornamento del menu all'avvio");
         
-        // Controlla se ci sono pagine e forza l'aggiornamento a intervalli regolari
-        const count = await checkForPages();
-        console.log(`Trovate ${count} icone nel database`);
+        // Controlla se ci sono pagine o icone e forza l'aggiornamento a intervalli regolari
+        const count = await checkForPagesOrIcons();
+        console.log(`Trovate ${count} icone o pagine nel menu principale`);
         
         // Forza l'aggiornamento del menu
         setRefreshTrigger(prev => prev + 1);
         
-        // Se non ci sono icone o c'è un errore di connessione
+        // Se non ci sono icone o pagine o c'è un errore di connessione
         if (count === 0) {
           // Prova a ricaricare i dati più volte con backoff esponenziale
           const retryIntervals = [3000, 5000, 10000]; // 3s, 5s, 10s
@@ -139,7 +157,7 @@ const Menu: React.FC = () => {
             await new Promise(resolve => setTimeout(resolve, retryIntervals[i]));
             
             console.log(`Tentativo di riconnessione ${i + 1}...`);
-            const newCount = await checkForPages();
+            const newCount = await checkForPagesOrIcons();
             
             if (newCount > 0) {
               console.log("Connessione riuscita, aggiornamento menu");
@@ -158,7 +176,7 @@ const Menu: React.FC = () => {
     };
     
     loadData();
-  }, [fetchHeaderSettings, checkForPages]);
+  }, [fetchHeaderSettings, checkForPagesOrIcons]);
   
   const handleRefresh = () => {
     console.log("Menu - Refresh manuale attivato");
@@ -171,7 +189,7 @@ const Menu: React.FC = () => {
     
     // Ritenta la connessione
     fetchHeaderSettings().then(() => {
-      checkForPages().then((count) => {
+      checkForPagesOrIcons().then((count) => {
         if (count > 0) {
           toast.success("Menu aggiornato con successo");
         } else {
@@ -200,7 +218,7 @@ const Menu: React.FC = () => {
         logoUrl={headerSettings.logoUrl || undefined}
         backgroundColor={headerSettings.headerColor}
         establishmentName={headerSettings.establishmentName || undefined}
-        showAdminButton={false}
+        showAdminButton={true}
       />
       
       {/* Contenitore principale con icone che occupa tutto lo spazio disponibile */}
