@@ -1,12 +1,12 @@
-
 import React, { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import TranslatedText from "@/components/TranslatedText";
 import FilteredIconNav from "@/components/FilteredIconNav";
+import NavigateBack from "@/components/NavigateBack";
 
 interface HeaderSettings {
   logoUrl?: string | null;
@@ -123,13 +123,7 @@ const SubMenu: React.FC = () => {
       
       {/* Submenu title with back button */}
       <div className="bg-gradient-to-r from-emerald-100 to-teal-100 py-3 px-4 shadow-sm flex items-center">
-        <button 
-          onClick={handleBackToMenu}
-          className="mr-2 p-1 rounded-full hover:bg-teal-200 transition-colors"
-          aria-label="Back to menu"
-        >
-          <ArrowLeft className="h-5 w-5 text-emerald-700" />
-        </button>
+        <NavigateBack />
         <h1 className="text-xl font-medium text-emerald-800 flex-1 text-center pr-6">
           {pageDetails ? (
             <TranslatedText text={pageDetails.title} />
