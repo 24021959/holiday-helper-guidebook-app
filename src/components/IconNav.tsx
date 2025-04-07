@@ -6,11 +6,9 @@ import {
   Loader2, Book, Home, FileText, Image, MessageCircle, Info, Map, 
   Utensils, Landmark, Hotel, Wifi, Bus, ShoppingBag, Calendar, 
   Phone, Coffee, Bike, Camera, Globe, Mountain, MapPin, Newspaper,
-  Music, Heart, Trees, Users, ShoppingCart, RefreshCw
+  Music, Heart, Trees, Users, ShoppingCart
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import TranslatedText from "@/components/TranslatedText";
-import { toast } from "sonner";
 
 interface IconNavProps {
   parentPath: string | null;
@@ -30,7 +28,6 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
   const [icons, setIcons] = useState<IconData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const navigate = useNavigate();
 
   // Array di colori pastello per le icone
@@ -90,7 +87,6 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
       setError("Impossibile caricare le icone del menu");
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false);
     }
   }, [parentPath]);
   
@@ -98,22 +94,6 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
     console.log("IconNav - refreshTrigger aggiornato:", refreshTrigger);
     fetchIcons();
   }, [parentPath, refreshTrigger, fetchIcons]);
-  
-  const handleRefresh = () => {
-    console.log("Aggiornamento manuale del menu avviato");
-    setIsRefreshing(true);
-    fetchIcons();
-    if (onRefresh) {
-      onRefresh();
-    } else {
-      toast.info("Menu aggiornato");
-      setTimeout(() => setIsRefreshing(false), 500);
-    }
-  };
-  
-  const handleIconClick = (path: string) => {
-    navigate(path);
-  };
 
   // Funzione per renderizzare il componente icona basato sul nome
   const renderIcon = (iconName: string) => {
@@ -165,7 +145,7 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
             <TranslatedText text={error} />
           </p>
           <button 
-            onClick={handleRefresh}
+            onClick={() => window.location.reload()}
             className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
           >
             <TranslatedText text="Riprova" />
@@ -186,17 +166,6 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
             <TranslatedText text="Non ci sono pagine disponibili in questa sezione del menu" />
           </p>
           
-          <div className="mb-6 flex justify-center">
-            <Button 
-              onClick={handleRefresh} 
-              variant="outline"
-              className="flex items-center justify-center w-10 h-10 rounded-full p-0"
-              disabled={isRefreshing}
-            >
-              <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
-          
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
             <p className="text-amber-700 mb-2 font-medium">
               <TranslatedText text="Come aggiungere pagine:" />
@@ -211,9 +180,6 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
               <li>
                 <TranslatedText text="Le pagine create appariranno automaticamente nel menu" />
               </li>
-              <li>
-                <TranslatedText text="Dopo aver creato nuove pagine, torna al menu e clicca 'Aggiorna'" />
-              </li>
             </ul>
           </div>
         </div>
@@ -223,18 +189,6 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
 
   return (
     <div className="flex flex-col flex-1">
-      <div className="p-2 flex justify-end">
-        <Button 
-          onClick={handleRefresh} 
-          variant="ghost" 
-          size="sm"
-          className="flex items-center justify-center w-10 h-10 rounded-full p-0 hover:bg-emerald-100"
-          disabled={isRefreshing}
-        >
-          <RefreshCw className={`h-5 w-5 text-emerald-600 ${isRefreshing ? 'animate-spin' : ''}`} />
-        </Button>
-      </div>
-      
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 p-6 max-w-6xl mx-auto overflow-y-auto flex-1">
         {icons.map((icon, index) => {
           // Seleziona un colore pastello dall'array in base all'indice
@@ -245,7 +199,7 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
             <div 
               key={icon.id}
               className="flex flex-col items-center bg-white rounded-xl shadow-md p-5 cursor-pointer transform transition-transform hover:scale-105 active:scale-95"
-              onClick={() => handleIconClick(icon.path)}
+              onClick={() => navigate(icon.path)}
             >
               <div className={`${colorScheme.bg} p-4 mb-3 rounded-full ${colorScheme.text}`}>
                 {renderIcon(icon.icon)}

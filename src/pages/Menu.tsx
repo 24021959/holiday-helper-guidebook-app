@@ -152,7 +152,7 @@ const Menu: React.FC = () => {
       {/* Titolo per il menu */}
       <div className="bg-gradient-to-r from-emerald-100 to-teal-100 py-3 px-4 shadow-sm">
         <h1 className="text-xl font-medium text-emerald-800 text-center">
-          <TranslatedText text="Menu principale" />
+          <TranslatedText text="Menu" />
         </h1>
       </div>
       
