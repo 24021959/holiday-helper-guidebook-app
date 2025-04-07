@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,6 +74,9 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
     if (lowerTitle.includes("aeroporto") || lowerTitle.includes("volo")) return "Plane";
     if (lowerTitle.includes("auto") || lowerTitle.includes("noleggio")) return "Car";
     if (lowerTitle.includes("treno") || lowerTitle.includes("stazione")) return "Train";
+    if (lowerTitle.includes("territorio") || lowerTitle.includes("scopri il territorio")) return "Globe";
+    if (lowerTitle.includes("servizi esterni")) return "Mountain";
+    if (lowerTitle.includes("soccorso") || lowerTitle.includes("stradale")) return "Bike";
     
     // Check for keywords in the mapping
     for (const [keyword, iconName] of Object.entries(keywordToIconMap)) {
@@ -139,7 +143,7 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
     } finally {
       setIsLoading(false);
     }
-  }, [parentPath, keywordToIconMap, identifyIconFromTitle]);
+  }, [parentPath, keywordToIconMap]);
   
   useEffect(() => {
     console.log("IconNav - refreshTrigger aggiornato:", refreshTrigger);

@@ -44,11 +44,13 @@ export const useKeywordToIconMap = () => {
     "treno": "Train",
     "stazione": "Train",
     "navetta": "Bus",
-    "taxi": "Car", // Changed from Taxi to Car
+    "taxi": "Car", 
     "noleggio": "Car",
     "auto": "Car",
     "aeroporto": "Plane",
     "volo": "Plane",
+    "soccorso": "Car",
+    "stradale": "Car",
     
     // Luoghi e viaggi
     "viaggio": "Globe",
@@ -56,11 +58,13 @@ export const useKeywordToIconMap = () => {
     "montagna": "Mountain",
     "mare": "Palmtree",
     "spiaggia": "Palmtree",
-    "piscina": "Bike", // Changed from duplicate "Palmtree" to "Bike"
+    "piscina": "Bike", 
     "città": "Building",
     "centro": "Building",
     "borgo": "Building",
     "paese": "Building",
+    "territorio": "Globe",
+    "scopri": "Globe",
     
     // Acquisti
     "shopping": "ShoppingBag",
@@ -81,7 +85,7 @@ export const useKeywordToIconMap = () => {
     // Informazioni
     "news": "Newspaper",
     "notizie": "Newspaper",
-    "informazioni": "Info", // Keep only one "informazioni" entry
+    "informazioni": "Info", 
     "info": "Info",
     "orari": "Calendar",
     "regole": "Info",
@@ -108,7 +112,6 @@ export const useKeywordToIconMap = () => {
     "intrattenimento": "Music",
     "musica": "Music",
     "giochi": "Trophy",
-    // "piscina": "Bike", // Removed duplicate "piscina"
     "tennis": "Trophy",
     "golf": "Trophy",
     
@@ -118,7 +121,6 @@ export const useKeywordToIconMap = () => {
     "tradizione": "Book",
     "locale": "Book",
     "guida": "Book",
-    // "informazioni": "Book", // Removed duplicate "informazioni"
     
     // Servizi
     "wifi": "Wifi",
@@ -126,6 +128,7 @@ export const useKeywordToIconMap = () => {
     "connessione": "Wifi",
     "servizi": "Hotel",
     "servizio": "Hotel",
+    "esterni": "Mountain",
     
     // Natura e animali
     "animali": "PawPrint",
@@ -154,7 +157,8 @@ export const useKeywordToIconMap = () => {
     "welcome": "Home",
     "benvenuto": "Home",
     "accoglienza": "Home",
-    "vacanza": "Palmtree"
+    "vacanza": "Palmtree",
+    "duse": "Landmark"
   };
   
   return keywordToIconMap;

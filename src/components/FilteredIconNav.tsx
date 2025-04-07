@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback } from "react";
 import IconNav from "./IconNav";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,7 +39,10 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
       
       if (error) throw error;
       
-      if (!data || data.length === 0) return;
+      if (!data || data.length === 0) {
+        setIsLoading(false);
+        return;
+      }
       
       const pathsMap = new Map<string, IconData[]>();
       
@@ -108,9 +112,7 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
   }, [parentPath]);
 
   useEffect(() => {
-    removeDuplicates().then(() => {
-      console.log("Completed duplicate check");
-    });
+    removeDuplicates();
   }, [removeDuplicates, refreshTrigger]);
 
   useEffect(() => {
