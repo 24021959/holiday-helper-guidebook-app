@@ -21,6 +21,7 @@ const Menu: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const navigate = useNavigate();
   
   const fetchHeaderSettings = useCallback(async () => {
@@ -75,8 +76,15 @@ const Menu: React.FC = () => {
   
   const handleRefresh = () => {
     setRefreshing(true);
-    fetchHeaderSettings();
+    setRefreshTrigger(prev => prev + 1);
     toast.info("Aggiornamento menu in corso...");
+    
+    // Give a brief delay before setting refreshing to false
+    // This ensures the toast is visible long enough
+    setTimeout(() => {
+      setRefreshing(false);
+      toast.success("Menu aggiornato");
+    }, 1000);
   };
   
   if (loading) {
@@ -134,7 +142,11 @@ const Menu: React.FC = () => {
             </div>
           </div>
         ) : (
-          <IconNav parentPath={null} onRefresh={handleRefresh} />
+          <IconNav 
+            parentPath={null} 
+            onRefresh={handleRefresh} 
+            refreshTrigger={refreshTrigger} 
+          />
         )}
       </div>
       

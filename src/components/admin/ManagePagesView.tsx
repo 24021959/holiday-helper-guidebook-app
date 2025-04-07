@@ -84,7 +84,7 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
       
       console.log(`Pubblicazione pagina: ${page.title}. Nuovo stato: ${newPublishedState ? 'Pubblicata' : 'Bozza'}`);
       
-      // Aggiorna lo stato di pubblicazione nella tabella custom_pages
+      // Update published state in custom_pages table
       const { error: pageError } = await supabase
         .from('custom_pages')
         .update({ published: newPublishedState })
@@ -95,7 +95,7 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
         throw pageError;
       }
       
-      // Controlla se esiste già un'icona per questa pagina
+      // Check if icon exists for this page
       const { data: existingIcon, error: iconCheckError } = await supabase
         .from('menu_icons')
         .select('*')
@@ -107,9 +107,9 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
         throw iconCheckError;
       }
       
-      // Se l'icona esiste, aggiorna lo stato di pubblicazione
+      // If icon exists, update published state
       if (existingIcon) {
-        console.log(`Aggiornamento icona esistente per ${page.path}`);
+        console.log(`Aggiornamento icona esistente per ${page.path} - Stato pubblicazione: ${newPublishedState}`);
         const { error: iconUpdateError } = await supabase
           .from('menu_icons')
           .update({ published: newPublishedState })
@@ -120,9 +120,9 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
           throw iconUpdateError;
         }
       } 
-      // Se l'icona non esiste, creala
+      // If icon doesn't exist, create it
       else {
-        console.log(`Creazione nuova icona per ${page.path}`);
+        console.log(`Creazione nuova icona per ${page.path} - Stato pubblicazione: ${newPublishedState}`);
         const { error: iconCreateError } = await supabase
           .from('menu_icons')
           .insert({
@@ -141,7 +141,7 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
         }
       }
       
-      // Aggiorna lo stato locale
+      // Update local state
       const updatedPages = pages.map(p => 
         p.id === page.id ? { ...p, published: newPublishedState } : p
       );
@@ -149,7 +149,7 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
       onPagesUpdate(updatedPages);
       
       toast.success(newPublishedState 
-        ? "Pagina pubblicata con successo" 
+        ? "Pagina pubblicata con successo! Torna al menu e clicca 'Aggiorna'" 
         : "Pagina nascosta dal menu");
         
     } catch (error) {

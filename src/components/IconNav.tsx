@@ -15,6 +15,7 @@ import { toast } from "sonner";
 interface IconNavProps {
   parentPath: string | null;
   onRefresh?: () => void;
+  refreshTrigger?: number;
 }
 
 interface IconData {
@@ -26,7 +27,7 @@ interface IconData {
   published?: boolean;
 }
 
-const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh }) => {
+const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger = 0 }) => {
   const [icons, setIcons] = useState<IconData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +41,7 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh }) => {
       
       console.log("Fetching icons with parent_path:", parentPath);
       
-      // Simplified query to get only published icons
+      // IMPORTANT: We now force the published filter to be true
       const { data, error } = await supabase
         .from('menu_icons')
         .select('*')
@@ -53,6 +54,10 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh }) => {
       }
       
       console.log("Published icons data from database:", data);
+      
+      if (!data || data.length === 0) {
+        console.log("No published icons found for parent_path:", parentPath);
+      }
       
       // Transform the data to match the IconData interface
       const publishedIcons = data?.map(icon => ({
@@ -78,15 +83,17 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh }) => {
   
   useEffect(() => {
     fetchIcons();
-  }, [parentPath]);
+  }, [parentPath, refreshTrigger]); // Add refreshTrigger as a dependency
   
   const handleRefresh = () => {
     setIsRefreshing(true);
     fetchIcons();
     if (onRefresh) {
       onRefresh();
+    } else {
+      toast.info("Menu aggiornato");
+      setTimeout(() => setIsRefreshing(false), 500);
     }
-    toast.info("Menu aggiornato");
   };
   
   const handleIconClick = (path: string) => {
