@@ -35,11 +35,11 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
       console.log("Loading icons for parent_path:", parentPath);
       
       const cacheKey = `icons_${parentPath || 'root'}`;
-      const cachedIcons = localStorage.getItem(cacheKey);
+      const cachedIconsStr = localStorage.getItem(cacheKey);
       
-      if (cachedIcons) {
+      if (cachedIconsStr) {
         try {
-          const parsedIcons = JSON.parse(cachedIcons);
+          const parsedIcons = JSON.parse(cachedIconsStr);
           console.log("Using cached icons:", parsedIcons.length);
           setIcons(parsedIcons);
         } catch (err) {
@@ -75,9 +75,12 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     } catch (error) {
       console.error("Error loading icons:", error);
       
-      if (icons.length === 0 && cachedIcons) {
+      const cacheKey = `icons_${parentPath || 'root'}`;
+      const cachedIconsStr = localStorage.getItem(cacheKey);
+      
+      if (icons.length === 0 && cachedIconsStr) {
         try {
-          const parsedIcons = JSON.parse(cachedIcons);
+          const parsedIcons = JSON.parse(cachedIconsStr);
           setIcons(parsedIcons);
         } catch (err) {
           console.error("Error parsing icons from cache as fallback:", err);
@@ -86,7 +89,7 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
       
       return [];
     }
-  }, [parentPath, icons]);
+  }, [parentPath]);
 
   const removeDuplicates = useCallback(async () => {
     try {

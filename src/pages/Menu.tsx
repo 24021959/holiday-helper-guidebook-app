@@ -148,6 +148,8 @@ const Menu: React.FC = () => {
           }
         }
       }
+      
+      setLoading(false);
     };
     
     loadData();
