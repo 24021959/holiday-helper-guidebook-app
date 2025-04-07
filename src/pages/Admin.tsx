@@ -1,8 +1,11 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 import AdminPanel from "@/components/admin/AdminPanel";
 import MasterPanel from "@/components/admin/MasterPanel";
@@ -53,6 +56,7 @@ const Admin: React.FC = () => {
   const [headerColor, setHeaderColor] = useState<string>("bg-gradient-to-r from-teal-500 to-emerald-600");
   const [chatbotCode, setChatbotCode] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("create-page");
+  const [loadError, setLoadError] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const keywordToIconMap = useKeywordToIconMap();
@@ -69,98 +73,133 @@ const Admin: React.FC = () => {
     }
   }, [location.search, isMaster]);
   
-  useEffect(() => {
-    const fetchChatbotSettings = async () => {
-      try {
-        const localStorageCode = localStorage.getItem("chatbotCode");
-        if (localStorageCode) {
-          console.log("Loaded chatbot code from localStorage");
-          setChatbotCode(localStorageCode);
-          return;
-        }
-        
-        const { data, error } = await supabase
-          .from('chatbot_settings')
-          .select('code')
-          .eq('id', 1)
-          .maybeSingle();
-          
-        if (error && error.code !== 'PGRST116') {
-          console.warn("Error loading chatbot settings:", error);
-          return;
-        }
-        
-        if (data && data.code) {
-          console.log("Loaded chatbot code from Supabase");
-          setChatbotCode(data.code);
-          localStorage.setItem("chatbotCode", data.code);
-        }
-      } catch (error) {
-        console.error("Error fetching chatbot settings:", error);
+  const fetchChatbotSettings = async () => {
+    try {
+      const localStorageCode = localStorage.getItem("chatbotCode");
+      if (localStorageCode) {
+        console.log("Loaded chatbot code from localStorage");
+        setChatbotCode(localStorageCode);
+        return;
       }
-    };
-    
-    const fetchPages = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('custom_pages')
-          .select('*');
-          
-        if (error) throw error;
+      
+      const { data, error } = await supabase
+        .from('chatbot_settings')
+        .select('code')
+        .eq('id', 1)
+        .maybeSingle();
         
-        if (data) {
-          const formattedPages: PageData[] = data.map(page => {
-            let pageImages: ImageItem[] = [];
-            
-            try {
-              if (page.content && page.content.includes('<!-- IMAGES -->')) {
-                const contentParts = page.content.split('<!-- IMAGES -->');
+      if (error && error.code !== 'PGRST116') {
+        console.warn("Error loading chatbot settings:", error);
+        return;
+      }
+      
+      if (data && data.code) {
+        console.log("Loaded chatbot code from Supabase");
+        setChatbotCode(data.code);
+        localStorage.setItem("chatbotCode", data.code);
+      }
+    } catch (error) {
+      console.error("Error fetching chatbot settings:", error);
+    }
+  };
+  
+  const fetchPages = async () => {
+    try {
+      setLoadError(null);
+      console.log("Admin - Fetching pages from database");
+      
+      // First try to use cached pages as temp data while loading
+      const cachedPagesString = localStorage.getItem('cached_pages');
+      if (cachedPagesString) {
+        try {
+          const cachedPages = JSON.parse(cachedPagesString);
+          console.log("Admin - Using cached pages temporarily:", cachedPages.length);
+          setPages(cachedPages);
+        } catch (err) {
+          console.error("Error parsing cached pages:", err);
+        }
+      }
+      
+      const { data, error } = await supabase
+        .from('custom_pages')
+        .select('*');
+        
+      if (error) {
+        throw error;
+      }
+      
+      if (data) {
+        const formattedPages: PageData[] = data.map(page => {
+          let pageImages: ImageItem[] = [];
+          
+          try {
+            if (page.content && page.content.includes('<!-- IMAGES -->')) {
+              const contentParts = page.content.split('<!-- IMAGES -->');
+              
+              if (contentParts.length > 1) {
+                const imagesSection = contentParts[1].trim();
+                const imageStringList = imagesSection.split('\n').filter(line => line.trim() !== '');
                 
-                if (contentParts.length > 1) {
-                  const imagesSection = contentParts[1].trim();
-                  const imageStringList = imagesSection.split('\n').filter(line => line.trim() !== '');
-                  
-                  pageImages = imageStringList.map(img => {
-                    try {
-                      return JSON.parse(img.trim());
-                    } catch (e) {
-                      return null;
-                    }
-                  }).filter(img => img !== null);
-                }
+                pageImages = imageStringList.map(img => {
+                  try {
+                    return JSON.parse(img.trim());
+                  } catch (e) {
+                    return null;
+                  }
+                }).filter(img => img !== null);
               }
-            } catch (e) {
-              console.error("Error parsing page images:", e);
             }
-            
-            return {
-              id: page.id,
-              title: page.title,
-              content: page.content,
-              path: page.path,
-              imageUrl: page.image_url,
-              icon: page.icon,
-              isSubmenu: page.is_submenu,
-              parentPath: page.parent_path,
-              listItems: Array.isArray(page.list_items) ? page.list_items : [],
-              listType: page.list_type as 'restaurants' | 'activities' | 'locations',
-              pageImages: pageImages,
-              published: page.published || false
-            };
-          });
+          } catch (e) {
+            console.error("Error parsing page images:", e);
+          }
           
-          setPages(formattedPages);
+          return {
+            id: page.id,
+            title: page.title,
+            content: page.content,
+            path: page.path,
+            imageUrl: page.image_url,
+            icon: page.icon,
+            isSubmenu: page.is_submenu,
+            parentPath: page.parent_path,
+            listItems: Array.isArray(page.list_items) ? page.list_items : [],
+            listType: page.list_type as 'restaurants' | 'activities' | 'locations',
+            pageImages: pageImages,
+            published: page.published || false
+          };
+        });
+        
+        console.log("Admin - Pages loaded from database:", formattedPages.length);
+        setPages(formattedPages);
+        
+        // Cache pages for faster loading next time
+        localStorage.setItem('cached_pages', JSON.stringify(formattedPages));
+      } else {
+        console.log("Admin - No pages data returned from database");
+        setPages([]);
+      }
+    } catch (error) {
+      console.error("Error fetching pages:", error);
+      setLoadError("Errore nel recupero delle pagine. Prova ad aggiornare la pagina.");
+      toast.error("Errore nel recupero delle pagine");
+      
+      // Try to use cached pages as fallback
+      const cachedPagesString = localStorage.getItem('cached_pages');
+      if (cachedPagesString) {
+        try {
+          const cachedPages = JSON.parse(cachedPagesString);
+          console.log("Admin - Using cached pages as fallback after error:", cachedPages.length);
+          setPages(cachedPages);
+        } catch (err) {
+          console.error("Error parsing cached pages for fallback:", err);
         }
-      } catch (error) {
-        console.error("Error fetching pages:", error);
-        toast.error("Errore nel recupero delle pagine");
       }
-    };
-    
-    if (isAuthenticated) {
-      if (!isMaster) {
-        fetchPages();
-      }
+    }
+  };
+  
+  useEffect(() => {
+    if (isAuthenticated && !isMaster) {
+      fetchPages();
       fetchChatbotSettings();
     }
   }, [isAuthenticated, isMaster]);
@@ -187,11 +226,17 @@ const Admin: React.FC = () => {
   }, [navigate]);
   
   const handlePageCreated = (newPages: PageData[]) => {
+    console.log("Admin - Page created, new pages count:", newPages.length);
     setPages(newPages);
+    // Cache pages for faster loading next time
+    localStorage.setItem('cached_pages', JSON.stringify(newPages));
   };
   
   const handlePagesUpdate = (updatedPages: PageData[]) => {
+    console.log("Admin - Pages updated, count:", updatedPages.length);
     setPages(updatedPages);
+    // Cache pages for faster loading next time
+    localStorage.setItem('cached_pages', JSON.stringify(updatedPages));
   };
   
   const handleSaveChatbotSettings = async () => {
@@ -238,6 +283,22 @@ const Admin: React.FC = () => {
       <AdminHeader isMaster={isMaster} />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {loadError && (
+          <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+            <p className="text-red-600">{loadError}</p>
+            <Button 
+              onClick={() => {
+                setIsLoading(true);
+                fetchPages().finally(() => setIsLoading(false));
+              }}
+              className="mt-2 bg-red-600 hover:bg-red-700 text-white"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Riprova
+            </Button>
+          </div>
+        )}
+        
         {isMaster ? (
           <MasterPanel />
         ) : (

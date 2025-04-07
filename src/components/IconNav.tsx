@@ -1,6 +1,5 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { 
   Loader2, RefreshCw, Book, Home, FileText, Image, MessageCircle, Info, Map, 
   Utensils, Landmark, Hotel, Wifi, Bus, ShoppingBag, Calendar, 
@@ -90,9 +89,12 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
     return "FileText";
   };
 
-  const fetchIcons = useCallback(async () => {
+  useEffect(() => {
+    console.log("IconNav - refreshTrigger updated:", refreshTrigger);
+    
     // If icons are provided directly, use those
     if (providedIcons) {
+      console.log("IconNav - Using provided icons:", providedIcons.length);
       const transformedIcons = providedIcons.map(icon => {
         // Format the data in our expected format
         const isParent = providedIcons.some(item => item.parent_path === icon.path);
@@ -116,109 +118,18 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
       
       setIcons(transformedIcons);
       setIsLoading(false);
-      return;
-    }
-    
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      console.log("Caricamento icone con parent_path:", parentPath);
-      
-      // First try to load from localStorage cache
-      const cacheKey = `icons_${parentPath || 'root'}`;
-      const cachedIcons = localStorage.getItem(cacheKey);
-      
-      if (cachedIcons) {
-        try {
-          const parsedIcons = JSON.parse(cachedIcons);
-          console.log("Utilizzando icone in cache temporaneamente:", parsedIcons.length);
-          setIcons(parsedIcons);
-        } catch (err) {
-          console.error("Errore nel parsing delle icone dalla cache:", err);
-        }
-      }
-      
-      const { data, error } = await supabase
-        .from('menu_icons')
-        .select('*');
-      
-      if (error) {
-        console.error("Errore caricamento icone:", error);
-        throw error;
-      }
-      
-      console.log("Tutti i dati icone dal database:", data);
-      
-      const filteredData = data?.filter(icon => icon.parent_path === parentPath);
-      
-      console.log("Dati filtrati per parent_path:", parentPath, filteredData);
-      
-      if (!filteredData || filteredData.length === 0) {
-        console.log("Nessuna icona trovata per parent_path:", parentPath);
-        setIcons([]);
-        setIsLoading(false);
-        return;
-      }
-      
-      const transformedIcons = filteredData?.map(icon => {
-        const isParent = data?.some(item => item.parent_path === icon.path);
-        let iconName = icon.icon;
-        
-        // Auto-detect more suitable icon if the current one is generic
-        if (iconName === "FileText" || !iconName) {
-          iconName = identifyIconFromTitle(icon.label);
-        }
-        
-        return {
-          id: icon.id,
-          title: icon.label,
-          icon: iconName,
-          path: icon.path,
-          parent_path: icon.parent_path,
-          is_parent: isParent
-        };
-      }) || [];
-      
-      console.log("Icone trasformate che verranno visualizzate:", transformedIcons);
-      
-      // Cache the icons in localStorage
-      localStorage.setItem(cacheKey, JSON.stringify(transformedIcons));
-      
-      setIcons(transformedIcons);
-    } catch (error) {
-      console.error("Errore nel caricamento delle icone:", error);
-      setError("Impossibile caricare le icone del menu");
-      
-      // If we have icons from the initial load (from cache), keep using them
-      if (icons.length === 0) {
-        // Try to load from localStorage cache as fallback
-        const cacheKey = `icons_${parentPath || 'root'}`;
-        const cachedIcons = localStorage.getItem(cacheKey);
-        
-        if (cachedIcons) {
-          try {
-            setIcons(JSON.parse(cachedIcons));
-            setError(null);
-          } catch (err) {
-            console.error("Errore nel parsing delle icone dalla cache:", err);
-          }
-        }
-      }
-    } finally {
+    } else {
+      console.log("IconNav - No icons provided, waiting for parent component");
       setIsLoading(false);
     }
-  }, [parentPath, keywordToIconMap, providedIcons, icons.length]);
-  
-  useEffect(() => {
-    console.log("IconNav - refreshTrigger aggiornato:", refreshTrigger);
-    fetchIcons();
-  }, [parentPath, refreshTrigger, fetchIcons]);
+  }, [providedIcons, refreshTrigger, keywordToIconMap]);
 
   const handleIconClick = (icon: IconData) => {
     if (icon.is_parent) {
+      console.log("Navigating to submenu:", icon.path);
       navigate(`/submenu${icon.path}`);
     } else {
+      console.log("Navigating to page:", icon.path);
       navigate(icon.path, { 
         state: { 
           parentPath: parentPath 
@@ -229,11 +140,8 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
 
   const handleRefresh = () => {
     if (onRefresh) {
+      console.log("IconNav - Refresh requested, calling parent refresh handler");
       onRefresh();
-    } else {
-      setError(null);
-      setIsLoading(true);
-      fetchIcons();
     }
   };
 

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback } from "react";
 import IconNav from "./IconNav";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,19 +35,21 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     try {
       console.log("Loading icons for parent_path:", parentPath);
       
+      // First try to load from localStorage cache
       const cacheKey = `icons_${parentPath || 'root'}`;
       const cachedIconsStr = localStorage.getItem(cacheKey);
       
       if (cachedIconsStr) {
         try {
           const parsedIcons = JSON.parse(cachedIconsStr);
-          console.log("Using cached icons:", parsedIcons.length);
+          console.log("Using cached icons temporarily:", parsedIcons.length);
           setIcons(parsedIcons);
         } catch (err) {
           console.error("Error parsing icons from cache:", err);
         }
       }
       
+      // Always attempt to get fresh data from server
       const { data, error } = await supabase
         .from('menu_icons')
         .select('*')
@@ -68,6 +71,7 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
       
       console.log("Icons loaded from server:", data.length);
       
+      // Update the cache with fresh data
       localStorage.setItem(cacheKey, JSON.stringify(data));
       setIcons(data);
       
@@ -75,6 +79,7 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     } catch (error) {
       console.error("Error loading icons:", error);
       
+      // If we don't have any icons loaded yet, try to use cached icons as fallback
       if (icons.length === 0) {
         const cacheKey = `icons_${parentPath || 'root'}`;
         const cachedIconsStr = localStorage.getItem(cacheKey);
@@ -122,8 +127,10 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
         return;
       }
       
+      // If we reached this point, we have loaded icons successfully
       setIcons(data);
       
+      // Check for and remove duplicates
       const pathsMap = new Map<string, IconData[]>();
       
       data.forEach((icon) => {
@@ -185,6 +192,7 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
         
         toast.success(`Rimossi ${idsToDelete.length} elementi duplicati dal menu`);
         
+        // Reload icons after removing duplicates
         await fetchIcons();
       } else {
         console.log("No duplicate menu items found");
@@ -199,6 +207,7 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     }
   }, [parentPath, fetchIcons, icons, hasConnectionError]);
 
+  // Try to reconnect if there's a connection error
   useEffect(() => {
     if (hasConnectionError && retryCount < 3) {
       const timer = setTimeout(() => {
@@ -211,7 +220,9 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     }
   }, [hasConnectionError, retryCount, removeDuplicates]);
 
+  // Load icons when component mounts or when refreshTrigger changes
   useEffect(() => {
+    console.log("FilteredIconNav - loading icons, refreshTrigger:", refreshTrigger);
     setRetryCount(0);
     removeDuplicates();
   }, [removeDuplicates, refreshTrigger]);
@@ -219,10 +230,10 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
   const handleRefresh = () => {
     setError(null);
     setRetryCount(0);
+    setIsLoading(true);
     if (onRefresh) {
       onRefresh();
     } else {
-      setIsLoading(true);
       removeDuplicates();
     }
   };

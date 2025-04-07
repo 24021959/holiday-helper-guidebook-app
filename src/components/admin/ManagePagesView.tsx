@@ -29,15 +29,19 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [localPages, setLocalPages] = useState<PageData[]>(pages);
 
   useEffect(() => {
-    console.log("ManagePagesView - refreshTrigger aggiornato:", refreshTrigger);
-  }, [refreshTrigger]);
+    console.log("ManagePagesView - pages received from props:", pages.length);
+    setLocalPages(pages);
+  }, [pages]);
 
   const fetchPages = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
+      
+      console.log("ManagePagesView - Fetching pages from database");
       
       const { data: pagesData, error: fetchError } = await supabase
         .from('custom_pages')
@@ -64,33 +68,53 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
           published: page.published
         }));
         
+        console.log("ManagePagesView - Pages loaded from database:", formattedPages.length);
+        setLocalPages(formattedPages);
         onPagesUpdate(formattedPages);
         toast.success("Pagine aggiornate con successo");
+      } else {
+        console.log("ManagePagesView - No pages data returned from database");
+        setLocalPages([]);
+        onPagesUpdate([]);
       }
     } catch (error) {
       console.error("Errore nel recupero delle pagine:", error);
       setError("Impossibile recuperare le pagine. Riprova più tardi.");
       toast.error("Errore nel recupero delle pagine");
+      
+      // Try to use pages from props as fallback
+      if (pages.length > 0) {
+        console.log("Using pages from props as fallback:", pages.length);
+        setLocalPages(pages);
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [onPagesUpdate]);
+  }, [onPagesUpdate, pages]);
 
   useEffect(() => {
     if (refreshTrigger > 0) {
       fetchPages();
+    } else if (localPages.length === 0 && pages.length === 0) {
+      // Initial load if both local and props pages are empty
+      console.log("ManagePagesView - Initial fetch because no pages are available");
+      fetchPages();
     }
-  }, [refreshTrigger, fetchPages]);
+  }, [refreshTrigger, fetchPages, localPages.length, pages.length]);
 
   const handlePageCreated = (newPages: PageData[]) => {
+    console.log("ManagePagesView - Page created, new pages count:", newPages.length);
     onPagesUpdate(newPages);
+    setLocalPages(newPages);
     setIsCreateMode(false);
     setSelectedPage(null);
     setRefreshTrigger(prev => prev + 1);
   };
 
   const handlePageUpdated = (updatedPages: PageData[]) => {
+    console.log("ManagePagesView - Page updated, updated pages count:", updatedPages.length);
     onPagesUpdate(updatedPages);
+    setLocalPages(updatedPages);
     setSelectedPage(null);
     setRefreshTrigger(prev => prev + 1);
   };
@@ -109,8 +133,9 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
         throw pageError;
       }
       
-      const pageToDelete = pages.find(p => p.id === pageId);
+      const pageToDelete = localPages.find(p => p.id === pageId);
       if (pageToDelete) {
+        console.log("Deleting menu icon for path:", pageToDelete.path);
         const { error: iconError } = await supabase
           .from('menu_icons')
           .delete()
@@ -123,6 +148,7 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
       
       // Refresh pages list
       await fetchPages();
+      toast.success("Pagina eliminata con successo");
       
     } catch (error) {
       console.error("Errore nella cancellazione della pagina:", error);
@@ -206,7 +232,7 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {pages.length === 0 ? (
+              {localPages.length === 0 ? (
                 <div className="col-span-full bg-amber-50 border border-amber-200 rounded-lg p-6 text-center">
                   <p className="text-amber-700 mb-4">Nessuna pagina creata finora</p>
                   <Button 
@@ -221,7 +247,7 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
                   </Button>
                 </div>
               ) : (
-                pages.map((page) => (
+                localPages.map((page) => (
                   <PageListItem
                     key={page.id}
                     page={page}
