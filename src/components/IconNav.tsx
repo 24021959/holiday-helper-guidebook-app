@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -151,13 +150,32 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
   if (icons.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="text-center p-4">
-          <p className="text-gray-500">
-            <TranslatedText text="Nessuna pagina disponibile in questa sezione" />
+        <div className="text-center p-4 max-w-md">
+          <p className="text-gray-600 text-lg font-medium mb-3">
+            <TranslatedText text="Menu vuoto" />
           </p>
-          <p className="text-sm text-gray-400 mt-2">
-            <TranslatedText text="Assicurati di aver pubblicato la pagina dall'area admin" />
+          <p className="text-gray-500 mb-3">
+            <TranslatedText text="Non ci sono pagine disponibili in questa sezione del menu" />
           </p>
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <p className="text-amber-700 mb-2 font-medium">
+              <TranslatedText text="Come risolvere:" />
+            </p>
+            <ul className="text-sm text-amber-600 list-disc pl-5 space-y-2">
+              <li>
+                <TranslatedText text="Vai all'area amministrativa (/admin)" />
+              </li>
+              <li>
+                <TranslatedText text="Verifica che le pagine desiderate esistano nella sezione 'Gestisci Pagine'" />
+              </li>
+              <li>
+                <TranslatedText text="Assicurati che ogni pagina sia contrassegnata come 'Pubblicata'" />
+              </li>
+              <li>
+                <TranslatedText text="Se la pagina non è pubblicata, fai clic sul pulsante a forma di occhio per pubblicarla" />
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     );
