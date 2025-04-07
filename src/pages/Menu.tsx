@@ -5,9 +5,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import TranslatedText from "@/components/TranslatedText";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 interface HeaderSettings {
@@ -19,7 +18,6 @@ interface HeaderSettings {
 const Menu: React.FC = () => {
   const [headerSettings, setHeaderSettings] = useState<HeaderSettings>({});
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const navigate = useNavigate();
@@ -66,7 +64,6 @@ const Menu: React.FC = () => {
       }
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, []);
   
@@ -122,13 +119,11 @@ const Menu: React.FC = () => {
   
   const handleRefresh = () => {
     console.log("Menu - Refresh manuale attivato");
-    setRefreshing(true);
     setRefreshTrigger(prev => prev + 1);
     toast.info("Aggiornamento menu in corso...");
     
-    // Forza un refresh completo dei dati
+    // Aggiorna il menu dopo un breve ritardo
     setTimeout(() => {
-      setRefreshing(false);
       toast.success("Menu aggiornato");
     }, 1000);
   };
@@ -154,21 +149,11 @@ const Menu: React.FC = () => {
         showAdminButton={false}
       />
       
-      {/* Titolo per il menu con pulsante di aggiornamento */}
-      <div className="bg-gradient-to-r from-emerald-100 to-teal-100 py-3 px-4 shadow-sm flex items-center justify-between">
-        <h1 className="text-xl font-medium text-emerald-800 flex-1 text-center">
+      {/* Titolo per il menu */}
+      <div className="bg-gradient-to-r from-emerald-100 to-teal-100 py-3 px-4 shadow-sm">
+        <h1 className="text-xl font-medium text-emerald-800 text-center">
           <TranslatedText text="Menu principale" />
         </h1>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="text-emerald-700 hover:text-emerald-800 hover:bg-emerald-200"
-        >
-          <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? 'animate-spin' : ''}`} />
-          <TranslatedText text="Aggiorna" />
-        </Button>
       </div>
       
       {/* Contenitore principale con icone che occupa tutto lo spazio disponibile */}

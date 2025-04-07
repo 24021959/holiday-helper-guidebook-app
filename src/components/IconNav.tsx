@@ -33,6 +33,18 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
   const [isRefreshing, setIsRefreshing] = useState(false);
   const navigate = useNavigate();
 
+  // Array di colori pastello per le icone
+  const pastelColors = [
+    { bg: "bg-[#F2FCE2]", text: "text-emerald-700" }, // verde chiaro
+    { bg: "bg-[#FEF7CD]", text: "text-amber-700" },   // giallo chiaro
+    { bg: "bg-[#FEC6A1]", text: "text-orange-700" },  // arancione chiaro
+    { bg: "bg-[#E5DEFF]", text: "text-indigo-700" },  // viola chiaro
+    { bg: "bg-[#FFDEE2]", text: "text-rose-700" },    // rosa chiaro
+    { bg: "bg-[#FDE1D3]", text: "text-orange-600" },  // pesca chiaro
+    { bg: "bg-[#D3E4FD]", text: "text-blue-700" },    // blu chiaro
+    { bg: "bg-[#F1F0FB]", text: "text-slate-700" },   // grigio chiaro
+  ];
+
   const fetchIcons = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -178,11 +190,10 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
             <Button 
               onClick={handleRefresh} 
               variant="outline"
-              className="flex items-center gap-2"
+              className="flex items-center justify-center w-10 h-10 rounded-full p-0"
               disabled={isRefreshing}
             >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <TranslatedText text="Aggiorna menu" />
+              <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
             </Button>
           </div>
           
@@ -217,29 +228,34 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
           onClick={handleRefresh} 
           variant="ghost" 
           size="sm"
-          className="flex items-center gap-1"
+          className="flex items-center justify-center w-10 h-10 rounded-full p-0 hover:bg-emerald-100"
           disabled={isRefreshing}
         >
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          <span className="text-xs"><TranslatedText text="Aggiorna" /></span>
+          <RefreshCw className={`h-5 w-5 text-emerald-600 ${isRefreshing ? 'animate-spin' : ''}`} />
         </Button>
       </div>
       
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 p-6 max-w-6xl mx-auto overflow-y-auto flex-1">
-        {icons.map((icon) => (
-          <div 
-            key={icon.id}
-            className="flex flex-col items-center bg-white rounded-xl shadow-md p-5 cursor-pointer transform transition-transform hover:scale-105 active:scale-95"
-            onClick={() => handleIconClick(icon.path)}
-          >
-            <div className="bg-emerald-100 p-4 mb-3 rounded-full text-emerald-600">
-              {renderIcon(icon.icon)}
+        {icons.map((icon, index) => {
+          // Seleziona un colore pastello dall'array in base all'indice
+          const colorIndex = index % pastelColors.length;
+          const colorScheme = pastelColors[colorIndex];
+          
+          return (
+            <div 
+              key={icon.id}
+              className="flex flex-col items-center bg-white rounded-xl shadow-md p-5 cursor-pointer transform transition-transform hover:scale-105 active:scale-95"
+              onClick={() => handleIconClick(icon.path)}
+            >
+              <div className={`${colorScheme.bg} p-4 mb-3 rounded-full ${colorScheme.text}`}>
+                {renderIcon(icon.icon)}
+              </div>
+              <span className="text-center text-gray-700 font-medium">
+                <TranslatedText text={icon.title} />
+              </span>
             </div>
-            <span className="text-center text-gray-700 font-medium">
-              <TranslatedText text={icon.title} />
-            </span>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
