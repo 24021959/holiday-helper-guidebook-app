@@ -72,6 +72,8 @@ const Menu: React.FC = () => {
   
   useEffect(() => {
     fetchHeaderSettings();
+    // Forza sempre un aggiornamento del menu quando viene caricato
+    setRefreshTrigger(prev => prev + 1);
   }, [fetchHeaderSettings]);
   
   const handleRefresh = () => {

@@ -121,7 +121,6 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
               onDelete={handleDeletePage}
               onEdit={handleEditPage}
               onPreview={handlePreviewPage}
-              isSystemPage={false}
             />
           ))}
         </div>

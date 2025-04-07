@@ -11,15 +11,13 @@ interface PageListItemProps {
   onDelete: (id: string) => void;
   onEdit: (page: PageData) => void;
   onPreview: (path: string) => void;
-  isSystemPage: boolean;
 }
 
 export const PageListItem: React.FC<PageListItemProps> = ({ 
   page, 
   onDelete, 
   onEdit, 
-  onPreview,
-  isSystemPage 
+  onPreview
 }) => {
   return (
     <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
@@ -53,34 +51,32 @@ export const PageListItem: React.FC<PageListItemProps> = ({
               <Pencil className="h-4 w-4" />
             </Button>
             
-            {!isSystemPage && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="destructive" 
-                    size="sm"
-                    title="Elimina"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Sei sicuro di voler eliminare questa pagina? Questa azione non può essere annullata.
-                      {!page.isSubmenu && " Verranno eliminate anche tutte le sottopagine."}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Annulla</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => onDelete(page.id)}>
-                      Elimina
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  title="Elimina"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Sei sicuro di voler eliminare questa pagina? Questa azione non può essere annullata.
+                    {!page.isSubmenu && " Verranno eliminate anche tutte le sottopagine."}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annulla</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => onDelete(page.id)}>
+                    Elimina
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </CardContent>

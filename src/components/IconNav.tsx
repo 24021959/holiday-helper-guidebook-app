@@ -40,7 +40,7 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
       
       console.log("Caricamento icone con parent_path:", parentPath);
       
-      // Rimuoviamo il filtro published, mostreremo tutte le pagine
+      // Rimuoviamo filtri inutili, mostriamo tutte le icone
       const { data, error } = await supabase
         .from('menu_icons')
         .select('*')
@@ -80,7 +80,7 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
   
   useEffect(() => {
     fetchIcons();
-  }, [parentPath, refreshTrigger]); // Aggiungiamo refreshTrigger come dipendenza
+  }, [parentPath, refreshTrigger]);
   
   const handleRefresh = () => {
     setIsRefreshing(true);
