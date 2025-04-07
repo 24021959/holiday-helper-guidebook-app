@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { PageContentSection } from "./form/PageContentSection";
+import { Textarea } from "@/components/ui/textarea";
 import { PageTypeSection } from "./form/PageTypeSection";
 import { PageImageSection } from "./form/PageImageSection";
 import { PageIconSection } from "./form/PageIconSection";
@@ -98,7 +98,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
       
       const formattedContent = formatPageContent(values.content, pageImages);
       
-      // Sempre pubblicato
+      // Dati pagina
       const pageData = {
         id: pageId,
         title: values.title,
@@ -128,7 +128,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
       
       console.log("Pagina inserita con successo:", insertedPage);
       
-      // Importante: creiamo anche l'icona del menu
+      // IMPORTANTE: Creiamo l'icona del menu in modo separato 
       const iconData = {
         label: pageData.title,
         path: pageData.path,
@@ -176,7 +176,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
           isSubmenu: page.is_submenu || false,
           parentPath: page.parent_path || undefined,
           pageImages: [],
-          published: page.published || true // Sempre pubblicato
+          published: true // Sempre pubblicato
         }));
         
         onPageCreated(formattedPages);
@@ -185,6 +185,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         toast.success("Pagina creata e aggiunta al menu con successo");
       }
       
+      // Reset form
       form.reset();
       setUploadedImage(null);
       setIsSubmenu(false);
@@ -252,10 +253,12 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
                 name="content"
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel>Contenuto della pagina</FormLabel>
                     <FormControl>
-                      <PageContentSection 
-                        content={field.value} 
-                        setContent={(value) => field.onChange(value)} 
+                      <Textarea
+                        placeholder="Inserisci qui il contenuto della pagina..."
+                        className="min-h-[200px]"
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />

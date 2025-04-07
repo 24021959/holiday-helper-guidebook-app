@@ -44,7 +44,7 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
   const [selectedIcon, setSelectedIcon] = useState(page.icon || "");
   const [isSubmenu, setIsSubmenu] = useState(page.isSubmenu || false);
   const [parentPath, setParentPath] = useState(page.parentPath || "");
-  const [editorState, setEditorState] = useState(page.content);
+  const [content, setContent] = useState(page.content || "");
   const [listItems, setListItems] = useState(page.listItems || []);
   const [listType, setListType] = useState<string | undefined>(page.listType || undefined);
   const [pageImages, setPageImages] = useState<ImageItem[]>(page.pageImages || []);
@@ -58,7 +58,7 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
     setSelectedIcon(page.icon || "");
     setIsSubmenu(page.isSubmenu || false);
     setParentPath(page.parentPath || "");
-    setEditorState(page.content);
+    setContent(page.content || "");
     setListItems(page.listItems || []);
     setListType(page.listType || undefined);
     setPageImages(page.pageImages || []);
@@ -80,14 +80,14 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
       }));
       
       // Handle empty content
-      if (!editorState.trim()) {
+      if (!content.trim()) {
         toast.error("Il contenuto non può essere vuoto");
         setIsSubmitting(false);
         return;
       }
       
       // Prepare content with images section at the end if there are images
-      let fullContent = editorState;
+      let fullContent = content;
       
       if (processedImages.length > 0) {
         fullContent += '\n\n<!-- IMAGES -->\n';
@@ -119,21 +119,50 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
       
       if (error) throw error;
       
-      // Aggiorna anche l'icona del menu
+      // IMPORTANTE: Aggiorniamo anche l'icona del menu
       const iconData = {
         label: data.title,
         path: data.path,
         icon: data.icon,
-        parent_path: data.parent_path
+        parent_path: data.parent_path,
+        published: true
       };
       
-      const { error: iconError } = await supabase
+      // Verifichiamo se esiste già un'icona per questo percorso
+      const { data: existingIcons, error: checkError } = await supabase
         .from('menu_icons')
-        .update(iconData)
+        .select('*')
         .eq('path', data.path);
+        
+      if (checkError) {
+        console.warn("Errore nella verifica dell'icona esistente:", checkError);
+      }
       
-      if (iconError) {
-        console.warn("Errore nell'aggiornamento dell'icona del menu:", iconError);
+      if (existingIcons && existingIcons.length > 0) {
+        // Aggiorna l'icona esistente
+        const { error: iconError } = await supabase
+          .from('menu_icons')
+          .update(iconData)
+          .eq('path', data.path);
+        
+        if (iconError) {
+          console.warn("Errore nell'aggiornamento dell'icona del menu:", iconError);
+        } else {
+          console.log("Icona del menu aggiornata con successo");
+        }
+      } else {
+        // Crea una nuova icona se non esiste
+        iconData.bg_color = "bg-blue-200"; // Aggiunto il colore di sfondo richiesto
+        
+        const { error: iconError } = await supabase
+          .from('menu_icons')
+          .insert(iconData);
+        
+        if (iconError) {
+          console.warn("Errore nella creazione dell'icona del menu:", iconError);
+        } else {
+          console.log("Nuova icona del menu creata con successo");
+        }
       }
       
       // Prepare the page data for the parent callback
@@ -243,10 +272,11 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
       )}
       
       <div>
-        <Label>Contenuto</Label>
+        <Label htmlFor="content">Contenuto</Label>
         <Textarea 
-          value={editorState}
-          onChange={(e) => setEditorState(e.target.value)}
+          id="content"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
           className="min-h-[300px]"
           placeholder="Inserisci il contenuto della pagina..."
         />

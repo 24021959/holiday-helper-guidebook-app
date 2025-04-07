@@ -70,14 +70,55 @@ const Menu: React.FC = () => {
     }
   }, []);
   
+  // Funzione per verificare se ci sono pagine nel database
+  const checkForPages = useCallback(async () => {
+    try {
+      const { count, error } = await supabase
+        .from('menu_icons')
+        .select('*', { count: 'exact', head: true });
+        
+      if (error) throw error;
+      
+      console.log("Numero totale di icone nel database:", count);
+      return count;
+    } catch (error) {
+      console.error("Errore nel conteggio delle icone:", error);
+      return 0;
+    }
+  }, []);
+  
   useEffect(() => {
     fetchHeaderSettings();
     console.log("Menu - Forzando l'aggiornamento del menu all'avvio");
-    // Forza sempre un aggiornamento del menu quando viene caricato
-    setTimeout(() => {
+    
+    // Controlla se ci sono pagine e forza l'aggiornamento a intervalli regolari
+    const checkAndRefresh = async () => {
+      const count = await checkForPages();
+      console.log(`Trovate ${count} icone nel database`);
+      
+      // Forza l'aggiornamento del menu
       setRefreshTrigger(prev => prev + 1);
-    }, 500); // Piccolo ritardo per garantire che tutto sia pronto
-  }, [fetchHeaderSettings]);
+      
+      // Se non ci sono icone, imposta un intervallo per controllare nuovamente
+      if (count === 0) {
+        const interval = setInterval(async () => {
+          const newCount = await checkForPages();
+          if (newCount > 0) {
+            console.log("Nuove icone trovate, aggiornamento menu");
+            setRefreshTrigger(prev => prev + 1);
+            clearInterval(interval);
+          }
+        }, 3000); // Controlla ogni 3 secondi
+        
+        // Pulisci l'intervallo dopo 30 secondi per evitare cicli infiniti
+        setTimeout(() => clearInterval(interval), 30000);
+        
+        return () => clearInterval(interval);
+      }
+    };
+    
+    checkAndRefresh();
+  }, [fetchHeaderSettings, checkForPages]);
   
   const handleRefresh = () => {
     console.log("Menu - Refresh manuale attivato");
@@ -85,8 +126,7 @@ const Menu: React.FC = () => {
     setRefreshTrigger(prev => prev + 1);
     toast.info("Aggiornamento menu in corso...");
     
-    // Aggiungiamo un breve ritardo prima di impostare refreshing a false
-    // per assicurarci che il toast sia visibile abbastanza a lungo
+    // Forza un refresh completo dei dati
     setTimeout(() => {
       setRefreshing(false);
       toast.success("Menu aggiornato");

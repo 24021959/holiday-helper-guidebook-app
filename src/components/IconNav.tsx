@@ -40,25 +40,29 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
       
       console.log("Caricamento icone con parent_path:", parentPath);
       
-      // Importante! Non filtrare per published perché vogliamo mostrare tutte le icone
+      // Query semplificata senza filtri per mostrare tutte le icone
       const { data, error } = await supabase
         .from('menu_icons')
-        .select('*')
-        .eq('parent_path', parentPath);
+        .select('*');
       
       if (error) {
         console.error("Errore caricamento icone:", error);
         throw error;
       }
       
-      console.log("Dati icone dal database:", data);
+      console.log("Tutti i dati icone dal database:", data);
       
-      if (!data || data.length === 0) {
+      // Filtriamo lato client per parent_path
+      const filteredData = data?.filter(icon => icon.parent_path === parentPath);
+      
+      console.log("Dati filtrati per parent_path:", parentPath, filteredData);
+      
+      if (!filteredData || filteredData.length === 0) {
         console.log("Nessuna icona trovata per parent_path:", parentPath);
       }
       
       // Trasformiamo i dati per adattarli all'interfaccia IconData
-      const transformedIcons = data?.map(icon => ({
+      const transformedIcons = filteredData?.map(icon => ({
         id: icon.id,
         title: icon.label, // Usa label come titolo
         icon: icon.icon,
