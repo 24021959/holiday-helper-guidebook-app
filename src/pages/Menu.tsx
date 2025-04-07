@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -67,7 +66,6 @@ const Menu: React.FC = () => {
     }
   }, []);
   
-  // Funzione per verificare se ci sono pagine nel database
   const checkForPages = useCallback(async () => {
     try {
       const { count, error } = await supabase
@@ -148,13 +146,6 @@ const Menu: React.FC = () => {
         establishmentName={headerSettings.establishmentName || undefined}
         showAdminButton={false}
       />
-      
-      {/* Titolo per il menu */}
-      <div className="bg-gradient-to-r from-emerald-100 to-teal-100 py-3 px-4 shadow-sm">
-        <h1 className="text-xl font-medium text-emerald-800 text-center">
-          <TranslatedText text="Menu" />
-        </h1>
-      </div>
       
       {/* Contenitore principale con icone che occupa tutto lo spazio disponibile */}
       <div className="flex-1 flex flex-col overflow-auto">

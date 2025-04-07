@@ -44,7 +44,7 @@ export const useKeywordToIconMap = () => {
     "treno": "Train",
     "stazione": "Train",
     "navetta": "Bus",
-    "taxi": "Taxi",
+    "taxi": "Car", // Changed from Taxi to Car
     "noleggio": "Car",
     "auto": "Car",
     "aeroporto": "Plane",
@@ -56,7 +56,7 @@ export const useKeywordToIconMap = () => {
     "montagna": "Mountain",
     "mare": "Palmtree",
     "spiaggia": "Palmtree",
-    "piscina": "Palmtree",
+    "piscina": "Bike", // Changed from duplicate "Palmtree" to "Bike"
     "città": "Building",
     "centro": "Building",
     "borgo": "Building",
@@ -81,7 +81,7 @@ export const useKeywordToIconMap = () => {
     // Informazioni
     "news": "Newspaper",
     "notizie": "Newspaper",
-    "informazioni": "Info",
+    "informazioni": "Info", // Keep only one "informazioni" entry
     "info": "Info",
     "orari": "Calendar",
     "regole": "Info",
@@ -108,7 +108,7 @@ export const useKeywordToIconMap = () => {
     "intrattenimento": "Music",
     "musica": "Music",
     "giochi": "Trophy",
-    "piscina": "Bike",
+    // "piscina": "Bike", // Removed duplicate "piscina"
     "tennis": "Trophy",
     "golf": "Trophy",
     
@@ -118,7 +118,7 @@ export const useKeywordToIconMap = () => {
     "tradizione": "Book",
     "locale": "Book",
     "guida": "Book",
-    "informazioni": "Book",
+    // "informazioni": "Book", // Removed duplicate "informazioni"
     
     // Servizi
     "wifi": "Wifi",

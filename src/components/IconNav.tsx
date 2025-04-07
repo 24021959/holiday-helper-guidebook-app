@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,9 +5,9 @@ import {
   Loader2, Book, Home, FileText, Image, MessageCircle, Info, Map, 
   Utensils, Landmark, Hotel, Wifi, Bus, ShoppingBag, Calendar, 
   Phone, Coffee, Bike, Camera, Globe, Mountain, MapPin, Newspaper,
-  Music, Heart, Trees, Users, ShoppingCart, Taxi, Building, Palmtree,
+  Music, Heart, Trees, Users, ShoppingCart, Car, Building, Palmtree,
   UtensilsCrossed, Bed, Shirt, Key, PawPrint, PartyPopper, Trophy,
-  Plane, Car, Train
+  Plane, Train
 } from "lucide-react";
 import TranslatedText from "@/components/TranslatedText";
 import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";
@@ -53,7 +52,7 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
     const lowerTitle = title.toLowerCase();
     
     // Direct mapping for common titles
-    if (lowerTitle.includes("taxi") || lowerTitle.includes("trasporto privato")) return "Taxi";
+    if (lowerTitle.includes("taxi") || lowerTitle.includes("trasporto privato")) return "Car";
     if (lowerTitle.includes("storia")) return "Book";
     if (lowerTitle.includes("città") || lowerTitle.includes("centro")) return "Building";
     if (lowerTitle.includes("hotel") || lowerTitle.includes("servizi hotel")) return "Hotel";
@@ -190,7 +189,7 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
       case 'Trees': return <Trees className={iconSize} />;
       case 'Users': return <Users className={iconSize} />;
       case 'ShoppingCart': return <ShoppingCart className={iconSize} />;
-      case 'Taxi': return <Taxi className={iconSize} />;
+      case 'Car': return <Car className={iconSize} />;
       case 'Building': return <Building className={iconSize} />;
       case 'Palmtree': return <Palmtree className={iconSize} />;
       case 'UtensilsCrossed': return <UtensilsCrossed className={iconSize} />;
@@ -201,7 +200,6 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
       case 'PartyPopper': return <PartyPopper className={iconSize} />;
       case 'Trophy': return <Trophy className={iconSize} />;
       case 'Plane': return <Plane className={iconSize} />;
-      case 'Car': return <Car className={iconSize} />;
       case 'Train': return <Train className={iconSize} />;
       default: return <FileText className={iconSize} />;
     }
@@ -272,13 +270,10 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
           const colorIndex = index % pastelColors.length;
           const colorScheme = pastelColors[colorIndex];
           
-          // Use a subtle border for parent menu items instead of text
-          const isParentStyle = icon.is_parent ? "border-2 border-emerald-300" : "";
-          
           return (
             <div 
               key={icon.id}
-              className={`flex flex-col items-center justify-center bg-white rounded-xl shadow-md p-6 cursor-pointer transform transition-transform hover:scale-102 active:scale-98 h-full ${isParentStyle}`}
+              className={`flex flex-col items-center justify-center bg-white rounded-xl shadow-md p-6 cursor-pointer transform transition-transform hover:scale-102 active:scale-98 h-full ${icon.is_parent ? 'border-2 border-emerald-300' : ''}`}
               onClick={() => handleIconClick(icon)}
             >
               <div className={`${colorScheme.bg} p-5 mb-4 rounded-full ${colorScheme.text} flex items-center justify-center`}>

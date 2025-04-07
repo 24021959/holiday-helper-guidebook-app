@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -7,9 +6,9 @@ import {
   FileText, Image, MessageCircle, Info, Map, Utensils, Landmark, 
   Hotel, Wifi, Bus, ShoppingBag, Calendar, Phone, Book, Coffee, 
   Home, Bike, Camera, Globe, Mountain, MapPin, Newspaper, Music, 
-  Heart, Trees, Users, ShoppingCart, Taxi, Building, Palmtree,
+  Heart, Trees, Users, ShoppingCart, Car, Building, Palmtree,
   UtensilsCrossed, Bed, Shirt, Key, PawPrint, PartyPopper, Trophy,
-  Plane, Car, Train, LucideIcon
+  Plane, Train, LucideIcon
 } from "lucide-react";
 
 interface PageIconSectionProps {
@@ -46,7 +45,7 @@ const iconComponents: Record<string, LucideIcon> = {
   Trees,
   Users,
   ShoppingCart,
-  Taxi,
+  Car,
   Building,
   Palmtree,
   UtensilsCrossed,
@@ -57,7 +56,6 @@ const iconComponents: Record<string, LucideIcon> = {
   PartyPopper,
   Trophy,
   Plane,
-  Car,
   Train
 };
 
@@ -90,7 +88,7 @@ const iconTranslations: Record<string, string> = {
   'Trees': 'Alberi',
   'Users': 'Persone',
   'ShoppingCart': 'Carrello',
-  'Taxi': 'Taxi',
+  'Car': 'Auto/Taxi',
   'Building': 'Edificio',
   'Palmtree': 'Palma',
   'UtensilsCrossed': 'Menù',
@@ -101,7 +99,6 @@ const iconTranslations: Record<string, string> = {
   'PartyPopper': 'Festa',
   'Trophy': 'Sport',
   'Plane': 'Aereo',
-  'Car': 'Auto',
   'Train': 'Treno'
 };
 
