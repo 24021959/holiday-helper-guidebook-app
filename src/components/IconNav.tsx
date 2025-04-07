@@ -98,34 +98,34 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
   // Funzione per renderizzare il componente icona basato sul nome
   const renderIcon = (iconName: string) => {
     switch (iconName) {
-      case 'FileText': return <FileText className="w-12 h-12" />;
-      case 'Image': return <Image className="w-12 h-12" />;
-      case 'MessageCircle': return <MessageCircle className="w-12 h-12" />;
-      case 'Info': return <Info className="w-12 h-12" />;
-      case 'Map': return <Map className="w-12 h-12" />;
-      case 'Utensils': return <Utensils className="w-12 h-12" />;
-      case 'Landmark': return <Landmark className="w-12 h-12" />;
-      case 'Hotel': return <Hotel className="w-12 h-12" />;
-      case 'Wifi': return <Wifi className="w-12 h-12" />;
-      case 'Bus': return <Bus className="w-12 h-12" />;
-      case 'ShoppingBag': return <ShoppingBag className="w-12 h-12" />;
-      case 'Calendar': return <Calendar className="w-12 h-12" />;
-      case 'Phone': return <Phone className="w-12 h-12" />;
-      case 'Coffee': return <Coffee className="w-12 h-12" />;
-      case 'Book': return <Book className="w-12 h-12" />;
-      case 'Home': return <Home className="w-12 h-12" />;
-      case 'Bike': return <Bike className="w-12 h-12" />;
-      case 'Camera': return <Camera className="w-12 h-12" />;
-      case 'Globe': return <Globe className="w-12 h-12" />;
-      case 'Mountain': return <Mountain className="w-12 h-12" />;
-      case 'MapPin': return <MapPin className="w-12 h-12" />;
-      case 'Newspaper': return <Newspaper className="w-12 h-12" />;
-      case 'Music': return <Music className="w-12 h-12" />;
-      case 'Heart': return <Heart className="w-12 h-12" />;
-      case 'Trees': return <Trees className="w-12 h-12" />;
-      case 'Users': return <Users className="w-12 h-12" />;
-      case 'ShoppingCart': return <ShoppingCart className="w-12 h-12" />;
-      default: return <FileText className="w-12 h-12" />;
+      case 'FileText': return <FileText className="w-14 h-14" />;
+      case 'Image': return <Image className="w-14 h-14" />;
+      case 'MessageCircle': return <MessageCircle className="w-14 h-14" />;
+      case 'Info': return <Info className="w-14 h-14" />;
+      case 'Map': return <Map className="w-14 h-14" />;
+      case 'Utensils': return <Utensils className="w-14 h-14" />;
+      case 'Landmark': return <Landmark className="w-14 h-14" />;
+      case 'Hotel': return <Hotel className="w-14 h-14" />;
+      case 'Wifi': return <Wifi className="w-14 h-14" />;
+      case 'Bus': return <Bus className="w-14 h-14" />;
+      case 'ShoppingBag': return <ShoppingBag className="w-14 h-14" />;
+      case 'Calendar': return <Calendar className="w-14 h-14" />;
+      case 'Phone': return <Phone className="w-14 h-14" />;
+      case 'Coffee': return <Coffee className="w-14 h-14" />;
+      case 'Book': return <Book className="w-14 h-14" />;
+      case 'Home': return <Home className="w-14 h-14" />;
+      case 'Bike': return <Bike className="w-14 h-14" />;
+      case 'Camera': return <Camera className="w-14 h-14" />;
+      case 'Globe': return <Globe className="w-14 h-14" />;
+      case 'Mountain': return <Mountain className="w-14 h-14" />;
+      case 'MapPin': return <MapPin className="w-14 h-14" />;
+      case 'Newspaper': return <Newspaper className="w-14 h-14" />;
+      case 'Music': return <Music className="w-14 h-14" />;
+      case 'Heart': return <Heart className="w-14 h-14" />;
+      case 'Trees': return <Trees className="w-14 h-14" />;
+      case 'Users': return <Users className="w-14 h-14" />;
+      case 'ShoppingCart': return <ShoppingCart className="w-14 h-14" />;
+      default: return <FileText className="w-14 h-14" />;
     }
   };
 
@@ -188,8 +188,8 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
   }
 
   return (
-    <div className="flex flex-col flex-1">
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 p-6 max-w-6xl mx-auto overflow-y-auto flex-1">
+    <div className="flex-1 flex flex-col p-3">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 h-full">
         {icons.map((icon, index) => {
           // Seleziona un colore pastello dall'array in base all'indice
           const colorIndex = index % pastelColors.length;
@@ -198,13 +198,13 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
           return (
             <div 
               key={icon.id}
-              className="flex flex-col items-center bg-white rounded-xl shadow-md p-5 cursor-pointer transform transition-transform hover:scale-105 active:scale-95"
+              className="flex flex-col items-center justify-center bg-white rounded-xl shadow-md p-6 cursor-pointer transform transition-transform hover:scale-102 active:scale-98 h-full"
               onClick={() => navigate(icon.path)}
             >
-              <div className={`${colorScheme.bg} p-4 mb-3 rounded-full ${colorScheme.text}`}>
+              <div className={`${colorScheme.bg} p-5 mb-4 rounded-full ${colorScheme.text} flex items-center justify-center`}>
                 {renderIcon(icon.icon)}
               </div>
-              <span className="text-center text-gray-700 font-medium">
+              <span className="text-center text-gray-700 font-medium text-lg">
                 <TranslatedText text={icon.title} />
               </span>
             </div>

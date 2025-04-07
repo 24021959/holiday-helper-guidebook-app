@@ -1,387 +1,217 @@
-
-import React, { useState, useEffect } from "react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import React, { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ImageItem } from "@/pages/Admin";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Plus, Trash2 } from "lucide-react";
+import { 
+  Loader2, Book, Home, FileText, Image, MessageCircle, Info, Map, 
+  Utensils, Landmark, Hotel, Wifi, Bus, ShoppingBag, Calendar, 
+  Phone, Coffee, Bike, Camera, Globe, Mountain, MapPin, Newspaper,
+  Music, Heart, Trees, Users, ShoppingCart
+} from "lucide-react";
+import TranslatedText from "@/components/TranslatedText";
 
-export interface EditPageFormProps {
-  page: any;
-  parentPages: any[];
-  onPageUpdated: (updatedPage: any) => void;
-  onFormClose?: () => void;
-  keywordToIconMap: Record<string, string>;
-  isSystemPage?: boolean;
+interface IconNavProps {
+  parentPath: string | null;
+  onRefresh?: () => void;
+  refreshTrigger?: number;
 }
 
-export const EditPageForm: React.FC<EditPageFormProps> = ({ 
-  page,
-  parentPages,
-  onPageUpdated,
-  onFormClose = () => {},
-  keywordToIconMap,
-  isSystemPage = false
-}) => {
-  const [title, setTitle] = useState(page.title);
-  const [path, setPath] = useState(page.path);
-  const [imageUrl, setImageUrl] = useState(page.imageUrl || "");
-  const [selectedIcon, setSelectedIcon] = useState(page.icon || "");
-  const [isSubmenu, setIsSubmenu] = useState(page.isSubmenu || false);
-  const [parentPath, setParentPath] = useState(page.parentPath || "");
-  const [content, setContent] = useState(page.content || "");
-  const [listItems, setListItems] = useState(page.listItems || []);
-  const [listType, setListType] = useState<string | undefined>(page.listType || undefined);
-  const [pageImages, setPageImages] = useState<ImageItem[]>(page.pageImages || []);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPublished, setIsPublished] = useState(page.published || false);
+interface IconData {
+  id: string;
+  title: string;
+  icon: string;
+  path: string;
+  parent_path: string | null;
+}
+
+const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger = 0 }) => {
+  const [icons, setIcons] = useState<IconData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  // Array di colori pastello per le icone
+  const pastelColors = [
+    { bg: "bg-[#F2FCE2]", text: "text-emerald-700" }, // verde chiaro
+    { bg: "bg-[#FEF7CD]", text: "text-amber-700" },   // giallo chiaro
+    { bg: "bg-[#FEC6A1]", text: "text-orange-700" },  // arancione chiaro
+    { bg: "bg-[#E5DEFF]", text: "text-indigo-700" },  // viola chiaro
+    { bg: "bg-[#FFDEE2]", text: "text-rose-700" },    // rosa chiaro
+    { bg: "bg-[#FDE1D3]", text: "text-orange-600" },  // pesca chiaro
+    { bg: "bg-[#D3E4FD]", text: "text-blue-700" },    // blu chiaro
+    { bg: "bg-[#F1F0FB]", text: "text-slate-700" },   // grigio chiaro
+  ];
+
+  const fetchIcons = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      console.log("Caricamento icone con parent_path:", parentPath);
+      
+      // Query semplificata senza filtri per mostrare tutte le icone
+      const { data, error } = await supabase
+        .from('menu_icons')
+        .select('*');
+      
+      if (error) {
+        console.error("Errore caricamento icone:", error);
+        throw error;
+      }
+      
+      console.log("Tutti i dati icone dal database:", data);
+      
+      // Filtriamo lato client per parent_path
+      const filteredData = data?.filter(icon => icon.parent_path === parentPath);
+      
+      console.log("Dati filtrati per parent_path:", parentPath, filteredData);
+      
+      if (!filteredData || filteredData.length === 0) {
+        console.log("Nessuna icona trovata per parent_path:", parentPath);
+      }
+      
+      // Trasformiamo i dati per adattarli all'interfaccia IconData
+      const transformedIcons = filteredData?.map(icon => ({
+        id: icon.id,
+        title: icon.label, // Usa label come titolo
+        icon: icon.icon,
+        path: icon.path,
+        parent_path: icon.parent_path
+      })) || [];
+      
+      console.log("Icone trasformate che verranno visualizzate:", transformedIcons);
+      
+      setIcons(transformedIcons);
+    } catch (error) {
+      console.error("Errore nel caricamento delle icone:", error);
+      setError("Impossibile caricare le icone del menu");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [parentPath]);
   
   useEffect(() => {
-    setTitle(page.title);
-    setPath(page.path);
-    setImageUrl(page.imageUrl || "");
-    setSelectedIcon(page.icon || "");
-    setIsSubmenu(page.isSubmenu || false);
-    setParentPath(page.parentPath || "");
-    setContent(page.content || "");
-    setListItems(page.listItems || []);
-    setListType(page.listType || undefined);
-    setPageImages(page.pageImages || []);
-    setIsPublished(page.published || false);
-  }, [page]);
-  
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    
-    try {
-      setIsSubmitting(true);
-      
-      // Process multiple images
-      let processedImages = pageImages.map(img => ({
-        url: img.url,
-        position: img.position,
-        caption: img.caption,
-        type: "image" as const // Ensure type is explicitly set as required
-      }));
-      
-      // Handle empty content
-      if (!content.trim()) {
-        toast.error("Il contenuto non può essere vuoto");
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // Prepare content with images section at the end if there are images
-      let fullContent = content;
-      
-      if (processedImages.length > 0) {
-        fullContent += '\n\n<!-- IMAGES -->\n';
-        processedImages.forEach(img => {
-          fullContent += JSON.stringify(img) + '\n';
-        });
-      }
-      
-      // Prepare the page data
-      const data = {
-        id: page.id,
-        title: title,
-        content: fullContent,
-        path: path,
-        image_url: imageUrl,
-        icon: selectedIcon,
-        is_submenu: isSubmenu,
-        parent_path: isSubmenu ? parentPath : null,
-        list_items: listItems,
-        list_type: listType,
-        published: true // Sempre pubblicato automaticamente
-      };
-      
-      // Update the page in Supabase
-      const { error } = await supabase
-        .from('custom_pages')
-        .update(data)
-        .eq('id', page.id);
-      
-      if (error) throw error;
-      
-      // IMPORTANTE: Aggiorniamo anche l'icona del menu
-      const iconData = {
-        label: data.title,
-        path: data.path,
-        icon: data.icon,
-        parent_path: data.parent_path,
-        published: true
-      };
-      
-      // Verifichiamo se esiste già un'icona per questo percorso
-      const { data: existingIcons, error: checkError } = await supabase
-        .from('menu_icons')
-        .select('*')
-        .eq('path', data.path);
-        
-      if (checkError) {
-        console.warn("Errore nella verifica dell'icona esistente:", checkError);
-      }
-      
-      if (existingIcons && existingIcons.length > 0) {
-        // Aggiorna l'icona esistente
-        const { error: iconError } = await supabase
-          .from('menu_icons')
-          .update(iconData)
-          .eq('path', data.path);
-        
-        if (iconError) {
-          console.warn("Errore nell'aggiornamento dell'icona del menu:", iconError);
-        } else {
-          console.log("Icona del menu aggiornata con successo");
-        }
-      } else {
-        // Crea una nuova icona se non esiste
-        iconData.bg_color = "bg-blue-200"; // Aggiunto il colore di sfondo richiesto
-        
-        const { error: iconError } = await supabase
-          .from('menu_icons')
-          .insert(iconData);
-        
-        if (iconError) {
-          console.warn("Errore nella creazione dell'icona del menu:", iconError);
-        } else {
-          console.log("Nuova icona del menu creata con successo");
-        }
-      }
-      
-      // Prepare the page data for the parent callback
-      const updatedPage = {
-        id: data.id,
-        title: data.title,
-        content: data.content,
-        path: data.path,
-        imageUrl: data.image_url,
-        icon: data.icon,
-        isSubmenu: data.is_submenu,
-        parentPath: data.parent_path,
-        listItems: Array.isArray(data.list_items) ? data.list_items : [],
-        listType: data.list_type as 'restaurants' | 'activities' | 'locations' | undefined,
-        pageImages: processedImages, // Use our processed images with the correct type
-        published: true // Sempre pubblicato automaticamente
-      };
-      
-      // Call the parent callback
-      onPageUpdated(updatedPage);
-      
-      toast.success("Pagina aggiornata con successo");
-      onFormClose();
-    } catch (error) {
-      console.error("Errore nell'aggiornamento della pagina:", error);
-      toast.error("Errore nell'aggiornamento della pagina");
-    } finally {
-      setIsSubmitting(false);
+    console.log("IconNav - refreshTrigger aggiornato:", refreshTrigger);
+    fetchIcons();
+  }, [parentPath, refreshTrigger, fetchIcons]);
+
+  // Funzione per renderizzare il componente icona basato sul nome
+  const renderIcon = (iconName: string) => {
+    switch (iconName) {
+      case 'FileText': return <FileText className="w-14 h-14" />;
+      case 'Image': return <Image className="w-14 h-14" />;
+      case 'MessageCircle': return <MessageCircle className="w-14 h-14" />;
+      case 'Info': return <Info className="w-14 h-14" />;
+      case 'Map': return <Map className="w-14 h-14" />;
+      case 'Utensils': return <Utensils className="w-14 h-14" />;
+      case 'Landmark': return <Landmark className="w-14 h-14" />;
+      case 'Hotel': return <Hotel className="w-14 h-14" />;
+      case 'Wifi': return <Wifi className="w-14 h-14" />;
+      case 'Bus': return <Bus className="w-14 h-14" />;
+      case 'ShoppingBag': return <ShoppingBag className="w-14 h-14" />;
+      case 'Calendar': return <Calendar className="w-14 h-14" />;
+      case 'Phone': return <Phone className="w-14 h-14" />;
+      case 'Coffee': return <Coffee className="w-14 h-14" />;
+      case 'Book': return <Book className="w-14 h-14" />;
+      case 'Home': return <Home className="w-14 h-14" />;
+      case 'Bike': return <Bike className="w-14 h-14" />;
+      case 'Camera': return <Camera className="w-14 h-14" />;
+      case 'Globe': return <Globe className="w-14 h-14" />;
+      case 'Mountain': return <Mountain className="w-14 h-14" />;
+      case 'MapPin': return <MapPin className="w-14 h-14" />;
+      case 'Newspaper': return <Newspaper className="w-14 h-14" />;
+      case 'Music': return <Music className="w-14 h-14" />;
+      case 'Heart': return <Heart className="w-14 h-14" />;
+      case 'Trees': return <Trees className="w-14 h-14" />;
+      case 'Users': return <Users className="w-14 h-14" />;
+      case 'ShoppingCart': return <ShoppingCart className="w-14 h-14" />;
+      default: return <FileText className="w-14 h-14" />;
     }
   };
-  
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <Label htmlFor="title">Titolo</Label>
-        <Input
-          type="text"
-          id="title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-        />
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 text-emerald-600 animate-spin" />
       </div>
-      
-      <div>
-        <Label htmlFor="path">Percorso (path)</Label>
-        <Input
-          type="text"
-          id="path"
-          value={path}
-          onChange={(e) => setPath(e.target.value)}
-          required
-        />
-      </div>
-      
-      <div>
-        <Label htmlFor="imageUrl">URL Immagine</Label>
-        <Input
-          type="text"
-          id="imageUrl"
-          value={imageUrl}
-          onChange={(e) => setImageUrl(e.target.value)}
-        />
-      </div>
-      
-      <div>
-        <Label htmlFor="icon">Icona</Label>
-        <Select value={selectedIcon} onValueChange={setSelectedIcon}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Seleziona un'icona" />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.entries(keywordToIconMap).map(([keyword, icon]) => (
-              <SelectItem key={keyword} value={icon}>
-                {keyword}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <div className="flex items-center space-x-2">
-        <Label htmlFor="isSubmenu">È un sottomenu?</Label>
-        <Switch
-          id="isSubmenu"
-          checked={isSubmenu}
-          onCheckedChange={(checked) => setIsSubmenu(checked)}
-        />
-      </div>
-      
-      {isSubmenu && (
-        <div>
-          <Label htmlFor="parentPath">Percorso del menu principale</Label>
-          <Select value={parentPath} onValueChange={setParentPath}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Seleziona un percorso principale" />
-            </SelectTrigger>
-            <SelectContent>
-              {parentPages.map((parentPage) => (
-                <SelectItem key={parentPage.path} value={parentPage.path}>
-                  {parentPage.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center p-4">
+          <p className="text-red-500">
+            <TranslatedText text={error} />
+          </p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+          >
+            <TranslatedText text="Riprova" />
+          </button>
         </div>
-      )}
-      
-      <div>
-        <Label htmlFor="content">Contenuto</Label>
-        <Textarea 
-          id="content"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          className="min-h-[300px]"
-          placeholder="Inserisci il contenuto della pagina..."
-        />
       </div>
-      
-      <div>
-        <Label>Immagini</Label>
-        {pageImages.map((img, index) => (
-          <div key={index} className="mb-4 p-4 border rounded">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor={`image-url-${index}`}>URL Immagine</Label>
-                <Input
-                  type="text"
-                  id={`image-url-${index}`}
-                  value={img.url}
-                  onChange={(e) => {
-                    const newImages = [...pageImages];
-                    newImages[index].url = e.target.value;
-                    setPageImages(newImages);
-                  }}
-                />
-              </div>
-              <div>
-                <Label htmlFor={`image-position-${index}`}>Posizione</Label>
-                <Select
-                  value={img.position}
-                  onValueChange={(value) => {
-                    const newImages = [...pageImages];
-                    newImages[index].position = value as "left" | "center" | "right" | "full";
-                    setPageImages(newImages);
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Seleziona la posizione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="left">Sinistra</SelectItem>
-                    <SelectItem value="center">Centro</SelectItem>
-                    <SelectItem value="right">Destra</SelectItem>
-                    <SelectItem value="full">Larghezza Intera</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor={`image-caption-${index}`}>Didascalia</Label>
-                <Input
-                  type="text"
-                  id={`image-caption-${index}`}
-                  value={img.caption || ''}
-                  onChange={(e) => {
-                    const newImages = [...pageImages];
-                    newImages[index].caption = e.target.value;
-                    setPageImages(newImages);
-                  }}
-                />
-              </div>
-            </div>
-            <Button
-              type="button"
-              variant="destructive"
-              size="sm"
-              className="mt-2"
-              onClick={() => {
-                const newImages = pageImages.filter((_, i) => i !== index);
-                setPageImages(newImages);
-              }}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Rimuovi
-            </Button>
+    );
+  }
+
+  if (icons.length === 0) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center">
+        <div className="text-center p-4 max-w-md">
+          <p className="text-gray-600 text-lg font-medium mb-3">
+            <TranslatedText text="Menu vuoto" />
+          </p>
+          <p className="text-gray-500 mb-3">
+            <TranslatedText text="Non ci sono pagine disponibili in questa sezione del menu" />
+          </p>
+          
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <p className="text-amber-700 mb-2 font-medium">
+              <TranslatedText text="Come aggiungere pagine:" />
+            </p>
+            <ul className="text-sm text-amber-600 list-disc pl-5 space-y-2">
+              <li>
+                <TranslatedText text="Vai all'area amministrativa (/admin)" />
+              </li>
+              <li>
+                <TranslatedText text="Usa la funzione 'Crea Nuova Pagina'" />
+              </li>
+              <li>
+                <TranslatedText text="Le pagine create appariranno automaticamente nel menu" />
+              </li>
+            </ul>
           </div>
-        ))}
-        <Button type="button" variant="secondary" size="sm" onClick={() => {
-          setPageImages([...pageImages, { url: '', position: 'center', caption: '', type: 'image' }]);
-        }}>
-          <Plus className="h-4 w-4 mr-2" />
-          Aggiungi Immagine
-        </Button>
+        </div>
       </div>
-      
-      <div>
-        <Label htmlFor="listType">Tipo di Lista</Label>
-        <Select value={listType} onValueChange={(value) => setListType(value)}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Seleziona un tipo di lista" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="restaurants">Ristoranti</SelectItem>
-            <SelectItem value="activities">Attività</SelectItem>
-            <SelectItem value="locations">Luoghi</SelectItem>
-          </SelectContent>
-        </Select>
+    );
+  }
+
+  return (
+    <div className="flex-1 flex flex-col p-3">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 h-full">
+        {icons.map((icon, index) => {
+          // Seleziona un colore pastello dall'array in base all'indice
+          const colorIndex = index % pastelColors.length;
+          const colorScheme = pastelColors[colorIndex];
+          
+          return (
+            <div 
+              key={icon.id}
+              className="flex flex-col items-center justify-center bg-white rounded-xl shadow-md p-6 cursor-pointer transform transition-transform hover:scale-102 active:scale-98 h-full"
+              onClick={() => navigate(icon.path)}
+            >
+              <div className={`${colorScheme.bg} p-5 mb-4 rounded-full ${colorScheme.text} flex items-center justify-center`}>
+                {renderIcon(icon.icon)}
+              </div>
+              <span className="text-center text-gray-700 font-medium text-lg">
+                <TranslatedText text={icon.title} />
+              </span>
+            </div>
+          );
+        })}
       </div>
-      
-      <div className="flex justify-end">
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Aggiornamento..." : "Aggiorna Pagina"}
-        </Button>
-        <DialogClose asChild>
-          <Button type="button" variant="secondary" onClick={onFormClose}>
-            Annulla
-          </Button>
-        </DialogClose>
-      </div>
-    </form>
+    </div>
   );
 };
+
+export default IconNav;
