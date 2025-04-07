@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
-import { Editor } from "@tinymce/tinymce-react";
 import { ImageItem } from "@/pages/Admin";
 import {
   Dialog,
@@ -65,25 +65,6 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
     setIsPublished(page.published || false);
   }, [page]);
   
-  const handleEditorChange = (content: string) => {
-    setEditorState(content);
-  };
-  
-  const handleAddImage = () => {
-    setPageImages([...pageImages, { url: '', position: 'center', caption: '', type: 'image' }]);
-  };
-  
-  const handleImageChange = (index: number, field: string, value: string) => {
-    const newImages = [...pageImages];
-    newImages[index][field] = value;
-    setPageImages(newImages);
-  };
-  
-  const handleRemoveImage = (index: number) => {
-    const newImages = pageImages.filter((_, i) => i !== index);
-    setPageImages(newImages);
-  };
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     
@@ -127,7 +108,7 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         parent_path: isSubmenu ? parentPath : null,
         list_items: listItems,
         list_type: listType,
-        published: isPublished
+        published: true // Sempre pubblicato automaticamente
       };
       
       // Update the page in Supabase
@@ -137,6 +118,23 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         .eq('id', page.id);
       
       if (error) throw error;
+      
+      // Aggiorna anche l'icona del menu
+      const iconData = {
+        label: data.title,
+        path: data.path,
+        icon: data.icon,
+        parent_path: data.parent_path
+      };
+      
+      const { error: iconError } = await supabase
+        .from('menu_icons')
+        .update(iconData)
+        .eq('path', data.path);
+      
+      if (iconError) {
+        console.warn("Errore nell'aggiornamento dell'icona del menu:", iconError);
+      }
       
       // Prepare the page data for the parent callback
       const updatedPage = {
@@ -151,7 +149,7 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
         listItems: Array.isArray(data.list_items) ? data.list_items : [],
         listType: data.list_type as 'restaurants' | 'activities' | 'locations' | undefined,
         pageImages: processedImages, // Use our processed images with the correct type
-        published: data.published || false
+        published: true // Sempre pubblicato automaticamente
       };
       
       // Call the parent callback
@@ -246,24 +244,11 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
       
       <div>
         <Label>Contenuto</Label>
-        <Editor
-          apiKey="YOUR_TINYMCE_API_KEY"
+        <Textarea 
           value={editorState}
-          init={{
-            height: 300,
-            menubar: false,
-            plugins: [
-              'advlist autolink lists link image charmap print preview anchor',
-              'searchreplace visualblocks code fullscreen',
-              'insertdatetime media table paste code help wordcount'
-            ],
-            toolbar:
-              'undo redo | formatselect | ' +
-              'bold italic backcolor | alignleft aligncenter ' +
-              'alignright alignjustify | bullist numlist outdent indent | ' +
-              'removeformat | help'
-          }}
-          onEditorChange={handleEditorChange}
+          onChange={(e) => setEditorState(e.target.value)}
+          className="min-h-[300px]"
+          placeholder="Inserisci il contenuto della pagina..."
         />
       </div>
       
@@ -278,14 +263,22 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
                   type="text"
                   id={`image-url-${index}`}
                   value={img.url}
-                  onChange={(e) => handleImageChange(index, 'url', e.target.value)}
+                  onChange={(e) => {
+                    const newImages = [...pageImages];
+                    newImages[index].url = e.target.value;
+                    setPageImages(newImages);
+                  }}
                 />
               </div>
               <div>
                 <Label htmlFor={`image-position-${index}`}>Posizione</Label>
                 <Select
                   value={img.position}
-                  onValueChange={(value) => handleImageChange(index, 'position', value)}
+                  onValueChange={(value) => {
+                    const newImages = [...pageImages];
+                    newImages[index].position = value as "left" | "center" | "right" | "full";
+                    setPageImages(newImages);
+                  }}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Seleziona la posizione" />
@@ -304,7 +297,11 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
                   type="text"
                   id={`image-caption-${index}`}
                   value={img.caption || ''}
-                  onChange={(e) => handleImageChange(index, 'caption', e.target.value)}
+                  onChange={(e) => {
+                    const newImages = [...pageImages];
+                    newImages[index].caption = e.target.value;
+                    setPageImages(newImages);
+                  }}
                 />
               </div>
             </div>
@@ -313,14 +310,19 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
               variant="destructive"
               size="sm"
               className="mt-2"
-              onClick={() => handleRemoveImage(index)}
+              onClick={() => {
+                const newImages = pageImages.filter((_, i) => i !== index);
+                setPageImages(newImages);
+              }}
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Rimuovi
             </Button>
           </div>
         ))}
-        <Button type="button" variant="secondary" size="sm" onClick={handleAddImage}>
+        <Button type="button" variant="secondary" size="sm" onClick={() => {
+          setPageImages([...pageImages, { url: '', position: 'center', caption: '', type: 'image' }]);
+        }}>
           <Plus className="h-4 w-4 mr-2" />
           Aggiungi Immagine
         </Button>
@@ -338,15 +340,6 @@ export const EditPageForm: React.FC<EditPageFormProps> = ({
             <SelectItem value="locations">Luoghi</SelectItem>
           </SelectContent>
         </Select>
-      </div>
-      
-      <div className="flex items-center space-x-2">
-        <Label htmlFor="isPublished">Pubblicata</Label>
-        <Switch
-          id="isPublished"
-          checked={isPublished}
-          onCheckedChange={(checked) => setIsPublished(checked)}
-        />
       </div>
       
       <div className="flex justify-end">

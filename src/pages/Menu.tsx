@@ -72,11 +72,15 @@ const Menu: React.FC = () => {
   
   useEffect(() => {
     fetchHeaderSettings();
+    console.log("Menu - Forzando l'aggiornamento del menu all'avvio");
     // Forza sempre un aggiornamento del menu quando viene caricato
-    setRefreshTrigger(prev => prev + 1);
+    setTimeout(() => {
+      setRefreshTrigger(prev => prev + 1);
+    }, 500); // Piccolo ritardo per garantire che tutto sia pronto
   }, [fetchHeaderSettings]);
   
   const handleRefresh = () => {
+    console.log("Menu - Refresh manuale attivato");
     setRefreshing(true);
     setRefreshTrigger(prev => prev + 1);
     toast.info("Aggiornamento menu in corso...");

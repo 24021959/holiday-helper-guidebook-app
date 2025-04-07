@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -33,7 +33,7 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
   const [isRefreshing, setIsRefreshing] = useState(false);
   const navigate = useNavigate();
 
-  const fetchIcons = async () => {
+  const fetchIcons = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -76,13 +76,15 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [parentPath]);
   
   useEffect(() => {
+    console.log("IconNav - refreshTrigger aggiornato:", refreshTrigger);
     fetchIcons();
-  }, [parentPath, refreshTrigger]);
+  }, [parentPath, refreshTrigger, fetchIcons]);
   
   const handleRefresh = () => {
+    console.log("Aggiornamento manuale del menu avviato");
     setIsRefreshing(true);
     fetchIcons();
     if (onRefresh) {
