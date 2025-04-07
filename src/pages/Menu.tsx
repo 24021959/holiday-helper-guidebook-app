@@ -1,12 +1,14 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import IconNav from "@/components/IconNav";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import TranslatedText from "@/components/TranslatedText";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface HeaderSettings {
   logoUrl?: string | null;
@@ -17,57 +19,65 @@ interface HeaderSettings {
 const Menu: React.FC = () => {
   const [headerSettings, setHeaderSettings] = useState<HeaderSettings>({});
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   
-  useEffect(() => {
-    const fetchHeaderSettings = async () => {
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('header_settings')
-          .select('*')
-          .limit(1)
-          .maybeSingle();
-          
-        if (error) throw error;
+  const fetchHeaderSettings = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('header_settings')
+        .select('*')
+        .limit(1)
+        .maybeSingle();
         
-        if (data) {
-          setHeaderSettings({
-            logoUrl: data.logo_url,
-            headerColor: data.header_color,
-            establishmentName: data.establishment_name
-          });
-          
-          // Save to localStorage as backup
-          localStorage.setItem("headerSettings", JSON.stringify({
-            logoUrl: data.logo_url,
-            headerColor: data.header_color,
-            establishmentName: data.establishment_name
-          }));
-        }
-      } catch (error) {
-        console.error("Errore nel caricamento delle impostazioni header:", error);
+      if (error) throw error;
+      
+      if (data) {
+        setHeaderSettings({
+          logoUrl: data.logo_url,
+          headerColor: data.header_color,
+          establishmentName: data.establishment_name
+        });
         
-        // Fallback to localStorage if Supabase fails
-        const savedHeaderSettings = localStorage.getItem("headerSettings");
-        if (savedHeaderSettings) {
-          try {
-            setHeaderSettings(JSON.parse(savedHeaderSettings));
-          } catch (err) {
-            console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
-            setError("Impossibile caricare le impostazioni");
-          }
-        } else {
-          setError("Impossibile caricare le impostazioni dell'header");
-        }
-      } finally {
-        setLoading(false);
+        // Save to localStorage as backup
+        localStorage.setItem("headerSettings", JSON.stringify({
+          logoUrl: data.logo_url,
+          headerColor: data.header_color,
+          establishmentName: data.establishment_name
+        }));
       }
-    };
-    
-    fetchHeaderSettings();
+    } catch (error) {
+      console.error("Errore nel caricamento delle impostazioni header:", error);
+      
+      // Fallback to localStorage if Supabase fails
+      const savedHeaderSettings = localStorage.getItem("headerSettings");
+      if (savedHeaderSettings) {
+        try {
+          setHeaderSettings(JSON.parse(savedHeaderSettings));
+        } catch (err) {
+          console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
+          setError("Impossibile caricare le impostazioni");
+        }
+      } else {
+        setError("Impossibile caricare le impostazioni dell'header");
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
+  
+  useEffect(() => {
+    fetchHeaderSettings();
+  }, [fetchHeaderSettings]);
+  
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchHeaderSettings();
+    toast.info("Aggiornamento menu in corso...");
+  };
   
   if (loading) {
     return (
@@ -90,11 +100,21 @@ const Menu: React.FC = () => {
         showAdminButton={false}
       />
       
-      {/* Title for the menu */}
-      <div className="bg-gradient-to-r from-emerald-100 to-teal-100 py-3 px-4 shadow-sm">
-        <h1 className="text-xl font-medium text-emerald-800 text-center">
+      {/* Title for the menu with refresh button */}
+      <div className="bg-gradient-to-r from-emerald-100 to-teal-100 py-3 px-4 shadow-sm flex items-center justify-between">
+        <h1 className="text-xl font-medium text-emerald-800 flex-1 text-center">
           <TranslatedText text="Menu principale" />
         </h1>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="text-emerald-700 hover:text-emerald-800 hover:bg-emerald-200"
+        >
+          <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? 'animate-spin' : ''}`} />
+          <TranslatedText text="Aggiorna" />
+        </Button>
       </div>
       
       {/* Main container with icons that takes all available space */}
@@ -114,7 +134,7 @@ const Menu: React.FC = () => {
             </div>
           </div>
         ) : (
-          <IconNav parentPath={null} />
+          <IconNav parentPath={null} onRefresh={handleRefresh} />
         )}
       </div>
       

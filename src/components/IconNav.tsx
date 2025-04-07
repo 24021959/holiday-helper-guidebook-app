@@ -10,9 +10,11 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TranslatedText from "@/components/TranslatedText";
+import { toast } from "sonner";
 
 interface IconNavProps {
   parentPath: string | null;
+  onRefresh?: () => void;
 }
 
 interface IconData {
@@ -24,7 +26,7 @@ interface IconData {
   published?: boolean;
 }
 
-const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
+const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh }) => {
   const [icons, setIcons] = useState<IconData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,14 +40,17 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
       
       console.log("Fetching icons with parent_path:", parentPath);
       
-      // Query to get icons from the database
+      // Simplified query to get only published icons
       const { data, error } = await supabase
         .from('menu_icons')
         .select('*')
         .eq('parent_path', parentPath)
-        .eq('published', true); // Only fetch published icons
+        .eq('published', true);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching icons:", error);
+        throw error;
+      }
       
       console.log("Published icons data from database:", data);
       
@@ -78,6 +83,10 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
   const handleRefresh = () => {
     setIsRefreshing(true);
     fetchIcons();
+    if (onRefresh) {
+      onRefresh();
+    }
+    toast.info("Menu aggiornato");
   };
   
   const handleIconClick = (path: string) => {
@@ -185,6 +194,9 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
               </li>
               <li>
                 <TranslatedText text="Le pagine pubblicate appariranno automaticamente nel menu" />
+              </li>
+              <li>
+                <TranslatedText text="Dopo aver pubblicato, torna al menu e clicca 'Aggiorna'" />
               </li>
             </ul>
           </div>
