@@ -1,6 +1,7 @@
 
 export const useKeywordToIconMap = () => {
   const keywordToIconMap: Record<string, string> = {
+    // Ristorante e cibo
     "ristorante": "Utensils",
     "ristoro": "Utensils",
     "cucina": "Utensils",
@@ -11,73 +12,149 @@ export const useKeywordToIconMap = () => {
     "caffè": "Coffee",
     "bar": "Coffee",
     "bevande": "Coffee",
+    "menu": "UtensilsCrossed",
+    "cantina": "UtensilsCrossed",
+    "vini": "UtensilsCrossed",
+    
+    // Attrazioni e cultura
     "museo": "Landmark",
     "mostra": "Landmark",
     "esposizione": "Landmark",
     "galleria": "Image",
     "immagini": "Image",
     "foto": "Camera",
+    "monumento": "Landmark",
+    "chiesa": "Landmark",
+    "arte": "Landmark",
+    
+    // Alloggio
     "hotel": "Hotel",
     "alloggio": "Hotel",
-    "camera": "Hotel",
-    "dormire": "Hotel",
+    "camera": "Bed",
+    "dormire": "Bed",
     "albergo": "Hotel",
     "soggiorno": "Hotel",
+    "prenotazione": "Calendar",
+    "receptionist": "Key",
+    "chiave": "Key",
+    
+    // Trasporti
     "trasporto": "Bus",
     "bus": "Bus",
-    "treno": "Bus",
+    "treno": "Train",
+    "stazione": "Train",
     "navetta": "Bus",
+    "taxi": "Taxi",
+    "noleggio": "Car",
+    "auto": "Car",
+    "aeroporto": "Plane",
+    "volo": "Plane",
+    
+    // Luoghi e viaggi
     "viaggio": "Globe",
     "escursione": "Mountain",
     "montagna": "Mountain",
-    "mare": "Map",
-    "spiaggia": "Map",
+    "mare": "Palmtree",
+    "spiaggia": "Palmtree",
+    "piscina": "Palmtree",
+    "città": "Building",
+    "centro": "Building",
+    "borgo": "Building",
+    "paese": "Building",
+    
+    // Acquisti
     "shopping": "ShoppingBag",
     "acquisti": "ShoppingCart",
     "negozi": "ShoppingBag",
+    "souvenir": "ShoppingBag",
+    "boutique": "Shirt",
+    
+    // Eventi
     "eventi": "Calendar",
     "evento": "Calendar",
     "programma": "Calendar",
+    "festa": "PartyPopper",
+    "celebrazione": "PartyPopper",
+    "concerto": "Music",
+    "spettacolo": "PartyPopper",
+    
+    // Informazioni
     "news": "Newspaper",
     "notizie": "Newspaper",
     "informazioni": "Info",
     "info": "Info",
+    "orari": "Calendar",
+    "regole": "Info",
+    
+    // Contatti
     "contatti": "Phone",
     "contatto": "Phone",
     "telefono": "Phone",
     "email": "MessageCircle",
     "messaggio": "MessageCircle",
     "chat": "MessageCircle",
+    
+    // Posizione
     "posizione": "MapPin",
     "mappa": "Map",
     "indirizzo": "MapPin",
     "dove": "MapPin",
     "come arrivare": "MapPin",
+    "direzioni": "Map",
+    
+    // Attività
     "attività": "Bike",
     "sport": "Bike",
     "intrattenimento": "Music",
     "musica": "Music",
+    "giochi": "Trophy",
+    "piscina": "Bike",
+    "tennis": "Trophy",
+    "golf": "Trophy",
+    
+    // Cultura e tradizione
     "storia": "Book",
     "cultura": "Book",
     "tradizione": "Book",
+    "locale": "Book",
+    "guida": "Book",
+    "informazioni": "Book",
+    
+    // Servizi
     "wifi": "Wifi",
     "internet": "Wifi",
     "connessione": "Wifi",
+    "servizi": "Hotel",
+    "servizio": "Hotel",
+    
+    // Natura e animali
     "animali": "PawPrint",
     "pet": "PawPrint",
+    "cane": "PawPrint",
+    "gatto": "PawPrint",
     "natura": "Trees",
     "parco": "Trees",
     "giardino": "Trees",
+    
+    // Persone
     "persone": "Users",
     "ospiti": "Users",
     "clienti": "Users",
     "staff": "Users",
+    "personale": "Users",
+    
+    // Benessere
     "benessere": "Heart",
     "spa": "Heart",
     "relax": "Heart",
+    "massaggio": "Heart",
+    "trattamento": "Heart",
+    
+    // Altro
     "welcome": "Home",
     "benvenuto": "Home",
-    "accoglienza": "Home"
+    "accoglienza": "Home",
+    "vacanza": "Palmtree"
   };
   
   return keywordToIconMap;
