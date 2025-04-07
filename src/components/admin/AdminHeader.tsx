@@ -21,7 +21,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ isMaster }) => {
   };
   
   const goToPreview = () => {
-    // Modifica: indirizza l'utente verso /welcome o /index anziché alla root
+    // Indirizza l'utente verso /welcome
     navigate("/welcome");
   };
   

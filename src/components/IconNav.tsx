@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,7 +30,6 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Array di colori pastello per le icone
   const pastelColors = [
     { bg: "bg-[#F2FCE2]", text: "text-emerald-700" }, // verde chiaro
     { bg: "bg-[#FEF7CD]", text: "text-amber-700" },   // giallo chiaro
@@ -50,7 +48,6 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
       
       console.log("Caricamento icone con parent_path:", parentPath);
       
-      // First, get all icons
       const { data, error } = await supabase
         .from('menu_icons')
         .select('*');
@@ -62,7 +59,6 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
       
       console.log("Tutti i dati icone dal database:", data);
       
-      // Filtriamo lato client per parent_path
       const filteredData = data?.filter(icon => icon.parent_path === parentPath);
       
       console.log("Dati filtrati per parent_path:", parentPath, filteredData);
@@ -71,16 +67,14 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
         console.log("Nessuna icona trovata per parent_path:", parentPath);
       }
       
-      // Check which icons are parent pages by seeing if any icons have them as parent_path
       const allPaths = data?.map(icon => icon.path) || [];
       
-      // Trasformiamo i dati per adattarli all'interfaccia IconData
       const transformedIcons = filteredData?.map(icon => {
         const isParent = data?.some(item => item.parent_path === icon.path);
         
         return {
           id: icon.id,
-          title: icon.label, // Usa label come titolo
+          title: icon.label,
           icon: icon.icon,
           path: icon.path,
           parent_path: icon.parent_path,
@@ -104,18 +98,18 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
     fetchIcons();
   }, [parentPath, refreshTrigger, fetchIcons]);
 
-  // Funzione per gestire il click su un'icona
   const handleIconClick = (icon: IconData) => {
     if (icon.is_parent) {
-      // Se è un genitore, naviga al sottomenu
       navigate(`/submenu${icon.path}`);
     } else {
-      // Altrimenti naviga alla pagina
-      navigate(icon.path);
+      navigate(icon.path, { 
+        state: { 
+          parentPath: parentPath 
+        } 
+      });
     }
   };
 
-  // Funzione per renderizzare il componente icona basato sul nome
   const renderIcon = (iconName: string) => {
     switch (iconName) {
       case 'FileText': return <FileText className="w-14 h-14" />;
@@ -211,11 +205,9 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
     <div className="flex-1 flex flex-col p-3">
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 h-full">
         {icons.map((icon, index) => {
-          // Seleziona un colore pastello dall'array in base all'indice
           const colorIndex = index % pastelColors.length;
           const colorScheme = pastelColors[colorIndex];
           
-          // Per le icone che sono genitori (hanno sottopagine), usiamo un colore speciale
           const isParentStyle = icon.is_parent ? "border-2 border-emerald-300" : "";
           
           return (
