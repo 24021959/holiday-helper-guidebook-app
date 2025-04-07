@@ -27,12 +27,24 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
   };
 
   const handleInsertImage = (imageUrl: string) => {
-    const content = getValues(name) as string;
-    if (clickPosition !== null) {
-      // Insert image markup at cursor position
-      const imageMarkup = `\n![Immagine](${imageUrl})\n`;
-      const newContent = content.substring(0, clickPosition) + imageMarkup + content.substring(clickPosition);
-      setValue(name, newContent, { shouldDirty: true });
+    try {
+      const content = getValues(name) as string;
+      if (clickPosition !== null) {
+        // Create a shorter preview version if it's a base64 image
+        let displayUrl = imageUrl;
+        if (imageUrl.startsWith('data:image')) {
+          displayUrl = '[Immagine]';
+        }
+        
+        // Insert image markup at cursor position
+        const imageMarkup = `\n![${displayUrl}](${imageUrl})\n`;
+        const newContent = content.substring(0, clickPosition) + imageMarkup + content.substring(clickPosition);
+        setValue(name, newContent, { shouldDirty: true });
+        
+        console.log("Immagine inserita correttamente come markdown:", displayUrl);
+      }
+    } catch (error) {
+      console.error("Errore durante l'inserimento dell'immagine:", error);
     }
     setShowImageDialog(false);
   };
