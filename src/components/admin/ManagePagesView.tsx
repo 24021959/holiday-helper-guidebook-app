@@ -12,29 +12,35 @@ import { toast } from "sonner";
 import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";  // Fixed import
 
 interface ManagePagesViewProps {
-  initialPages: PageData[];
+  pages: PageData[];
+  onPagesUpdate: (updatedPages: PageData[]) => void;
+  parentPages: PageData[];
+  keywordToIconMap: Record<string, string>;
 }
 
-const ManagePagesView: React.FC<ManagePagesViewProps> = ({ initialPages }) => {
-  const [pages, setPages] = useState<PageData[]>(initialPages);
+const ManagePagesView: React.FC<ManagePagesViewProps> = ({ 
+  pages,
+  onPagesUpdate,
+  parentPages,
+  keywordToIconMap
+}) => {
   const [selectedPage, setSelectedPage] = useState<PageData | null>(null);
   const [isCreateMode, setIsCreateMode] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const keywordToIconMap = useKeywordToIconMap();
 
   useEffect(() => {
     console.log("ManagePagesView - refreshTrigger aggiornato:", refreshTrigger);
   }, [refreshTrigger]);
 
   const handlePageCreated = (newPages: PageData[]) => {
-    setPages(newPages);
+    onPagesUpdate(newPages);
     setIsCreateMode(false);
     setSelectedPage(null);
     setRefreshTrigger(prev => prev + 1);
   };
 
   const handlePageUpdated = (updatedPages: PageData[]) => {
-    setPages(updatedPages);
+    onPagesUpdate(updatedPages);
     setSelectedPage(null);
     setRefreshTrigger(prev => prev + 1);
   };
@@ -85,7 +91,7 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({ initialPages }) => {
           published: page.published
         }));
         
-        setPages(formattedPages);
+        onPagesUpdate(formattedPages);
         toast.success("Pagina cancellata con successo");
         setSelectedPage(null);
         setRefreshTrigger(prev => prev + 1);
@@ -97,9 +103,14 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({ initialPages }) => {
     }
   };
 
+  // Preview handler
+  const handlePagePreview = (path: string) => {
+    window.open(`/preview${path}`, '_blank');
+  };
+
   return (
-    <div className="container mx-auto py-10">
-      <div className="mb-8 flex justify-between items-center">
+    <div className="container mx-auto py-6">
+      <div className="mb-6 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-emerald-700">Gestisci Pagine</h1>
         <div className="space-x-2">
           <Button 
@@ -130,7 +141,7 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({ initialPages }) => {
           <TabsContent value="edit">
             <EditPageForm 
               selectedPage={selectedPage}
-              parentPages={pages}
+              parentPages={parentPages}
               onPageUpdated={handlePageUpdated}
               keywordToIconMap={keywordToIconMap}
             />
@@ -140,7 +151,7 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({ initialPages }) => {
         {isCreateMode && (
           <TabsContent value="create">
             <CreatePageForm
-              parentPages={pages}
+              parentPages={parentPages}
               onPageCreated={handlePageCreated}
               keywordToIconMap={keywordToIconMap}
             />
@@ -148,7 +159,7 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({ initialPages }) => {
         )}
       </Tabs>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
         {pages.map((page) => (
           <PageListItem
             key={page.id}
@@ -158,6 +169,7 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({ initialPages }) => {
               setIsCreateMode(false);
             }}
             onDelete={handlePageDelete}
+            onPreview={handlePagePreview}
           />
         ))}
       </div>

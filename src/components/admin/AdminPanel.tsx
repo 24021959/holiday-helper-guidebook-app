@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ManagePagesView from "@/components/admin/ManagePagesView";  // Fixed import
+import ManagePagesView from "@/components/admin/ManagePagesView";
 import { HeaderSettingsView } from "@/components/admin/HeaderSettingsView";
 import { ChatbotSettingsView } from "@/components/admin/ChatbotSettingsView";
 import { CreatePageForm } from "@/components/admin/CreatePageForm";
