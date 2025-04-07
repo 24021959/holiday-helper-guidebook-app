@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState, useCallback } from "react";
 import IconNav from "./IconNav";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import TranslatedText from "@/components/TranslatedText";
 import { toast } from "sonner";
 
@@ -27,6 +26,55 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [icons, setIcons] = useState<IconData[]>([]);
+  const [hasConnectionError, setHasConnectionError] = useState(false);
+
+  const fetchIcons = useCallback(async () => {
+    try {
+      console.log("Caricando icone per parent_path:", parentPath);
+      
+      const cacheKey = `icons_${parentPath || 'root'}`;
+      const cachedIcons = localStorage.getItem(cacheKey);
+      
+      if (cachedIcons) {
+        try {
+          const parsedIcons = JSON.parse(cachedIcons);
+          console.log("Utilizzando icone in cache:", parsedIcons.length);
+          setIcons(parsedIcons);
+        } catch (err) {
+          console.error("Errore nel parsing delle icone dalla cache:", err);
+        }
+      }
+      
+      const { data, error } = await supabase
+        .from('menu_icons')
+        .select('*')
+        .eq('parent_path', parentPath);
+      
+      if (error) {
+        console.error("Errore caricamento icone:", error);
+        setHasConnectionError(true);
+        throw error;
+      }
+      
+      setHasConnectionError(false);
+      
+      if (!data || data.length === 0) {
+        console.log("Nessuna icona trovata per parent_path:", parentPath);
+        setIcons([]);
+        return data || [];
+      }
+      
+      console.log("Icone caricate dal server:", data.length);
+      
+      localStorage.setItem(cacheKey, JSON.stringify(data));
+      
+      return data;
+    } catch (error) {
+      console.error("Errore nel caricamento delle icone:", error);
+      return [];
+    }
+  }, [parentPath]);
 
   const removeDuplicates = useCallback(async () => {
     try {
@@ -35,21 +83,26 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
       
       console.log("Checking for duplicate menu items with parent_path:", parentPath);
       
-      const { data, error } = await supabase
-        .from('menu_icons')
-        .select('*')
-        .eq('parent_path', parentPath);
-      
-      if (error) {
-        console.error("Error fetching menu items:", error);
-        throw error;
-      }
+      const data = await fetchIcons();
       
       if (!data || data.length === 0) {
         console.log("No menu items found for parent_path:", parentPath);
         setIsLoading(false);
+        
+        if (hasConnectionError && icons.length > 0) {
+          console.log("Using cached icons due to connection error");
+          return;
+        }
+        
+        if (hasConnectionError) {
+          setError("Impossibile connettersi al database. Controlla la tua connessione e riprova.");
+          return;
+        }
+        
         return;
       }
+      
+      setIcons(data);
       
       const pathsMap = new Map<string, IconData[]>();
       
@@ -116,55 +169,27 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
       }
     } catch (error) {
       console.error("Error removing duplicates:", error);
-      setError("Errore nella rimozione dei duplicati");
+      if (icons.length === 0) {
+        setError("Errore nel caricamento delle icone. Riprova più tardi.");
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [parentPath]);
+  }, [parentPath, fetchIcons, icons, hasConnectionError]);
 
   useEffect(() => {
     removeDuplicates();
   }, [removeDuplicates, refreshTrigger]);
 
-  useEffect(() => {
-    const deleteStoriaDellaLocanda = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('menu_icons')
-          .select('*')
-          .or('id.eq.bf7769fa-fc88-42bd-8be5-72b62f8e4841,id.eq.b3c7b3ec-4149-42b8-be78-1c17bc52229c');
-        
-        if (error) throw error;
-        
-        if (data && data.length > 0) {
-          const storiaEntries = data.filter(item => 
-            item.path === "/storia-della-locanda" || 
-            item.label.toLowerCase().includes("storia della locanda")
-          );
-          
-          if (storiaEntries.length > 1) {
-            for (let i = 1; i < storiaEntries.length; i++) {
-              const { error: deleteError } = await supabase
-                .from('menu_icons')
-                .delete()
-                .eq('id', storiaEntries[i].id);
-              
-              if (deleteError) {
-                console.error("Error deleting specific Storia page:", deleteError);
-              } else {
-                console.log(`Deleted duplicate Storia della locanda with id: ${storiaEntries[i].id}`);
-                toast.success("Pagina Storia della locanda duplicata rimossa correttamente");
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error handling specific Storia della locanda deletion:", error);
-      }
-    };
-    
-    deleteStoriaDellaLocanda();
-  }, []);
+  const handleRefresh = () => {
+    setError(null);
+    if (onRefresh) {
+      onRefresh();
+    } else {
+      setIsLoading(true);
+      removeDuplicates();
+    }
+  };
 
   if (isLoading) {
     return (
@@ -178,13 +203,14 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center p-4">
-          <p className="text-red-500">
+          <p className="text-red-500 mb-4">
             <TranslatedText text={error} />
           </p>
           <button 
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+            onClick={handleRefresh}
+            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center justify-center mx-auto"
           >
+            <RefreshCw className="w-4 h-4 mr-2" />
             <TranslatedText text="Riprova" />
           </button>
         </div>
@@ -194,8 +220,9 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
 
   return (
     <IconNav 
+      icons={icons}
       parentPath={parentPath} 
-      onRefresh={onRefresh} 
+      onRefresh={onRefresh || handleRefresh} 
       refreshTrigger={refreshTrigger} 
     />
   );

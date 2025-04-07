@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import TranslatedText from "@/components/TranslatedText";
 import { toast } from "sonner";
 import FilteredIconNav from "@/components/FilteredIconNav";
@@ -20,48 +20,57 @@ const Menu: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [connectionAttempts, setConnectionAttempts] = useState(0);
   const navigate = useNavigate();
   
   const fetchHeaderSettings = useCallback(async () => {
     try {
-      setLoading(true);
+      // First try to get from localStorage as immediate fallback
+      const savedHeaderSettings = localStorage.getItem("headerSettings");
+      let localSettings = null;
+      
+      if (savedHeaderSettings) {
+        try {
+          localSettings = JSON.parse(savedHeaderSettings);
+          setHeaderSettings(localSettings);
+        } catch (err) {
+          console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
+        }
+      }
+      
+      // Then try to get from Supabase
       const { data, error } = await supabase
         .from('header_settings')
         .select('*')
         .limit(1)
         .maybeSingle();
         
-      if (error) throw error;
+      if (error) {
+        console.warn("Errore nel caricamento delle impostazioni header:", error);
+        
+        // If we already set from localStorage, don't show error
+        if (localSettings) return;
+        
+        setError("Impossibile connettersi al database. Controlla la tua connessione e riprova.");
+        return;
+      }
       
       if (data) {
-        setHeaderSettings({
+        const newSettings = {
           logoUrl: data.logo_url,
           headerColor: data.header_color,
           establishmentName: data.establishment_name
-        });
+        };
+        
+        setHeaderSettings(newSettings);
         
         // Salva in localStorage come backup
-        localStorage.setItem("headerSettings", JSON.stringify({
-          logoUrl: data.logo_url,
-          headerColor: data.header_color,
-          establishmentName: data.establishment_name
-        }));
+        localStorage.setItem("headerSettings", JSON.stringify(newSettings));
       }
     } catch (error) {
       console.error("Errore nel caricamento delle impostazioni header:", error);
       
-      // Fallback a localStorage se Supabase fallisce
-      const savedHeaderSettings = localStorage.getItem("headerSettings");
-      if (savedHeaderSettings) {
-        try {
-          setHeaderSettings(JSON.parse(savedHeaderSettings));
-        } catch (err) {
-          console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
-          setError("Impossibile caricare le impostazioni");
-        }
-      } else {
-        setError("Impossibile caricare le impostazioni dell'header");
-      }
+      // Fallback a localStorage (già gestito sopra)
     } finally {
       setLoading(false);
     }
@@ -69,6 +78,18 @@ const Menu: React.FC = () => {
   
   const checkForPages = useCallback(async () => {
     try {
+      // First try localStorage for cached icons
+      const cachedIcons = localStorage.getItem("menuIcons");
+      if (cachedIcons) {
+        try {
+          const icons = JSON.parse(cachedIcons);
+          console.log("Utilizzando icone in cache:", icons.length);
+          return icons.length;
+        } catch (err) {
+          console.error("Errore nel parsing delle icone dalla cache:", err);
+        }
+      }
+      
       const { count, error } = await supabase
         .from('menu_icons')
         .select('*', { count: 'exact', head: true });
@@ -82,9 +103,18 @@ const Menu: React.FC = () => {
       return count;
     } catch (error) {
       console.error("Errore nel conteggio delle icone:", error);
+      
+      // Incrementa i tentativi di connessione
+      setConnectionAttempts(prev => prev + 1);
+      
+      // Dopo 3 tentativi, mostra un errore più utile
+      if (connectionAttempts >= 3) {
+        setError("Sembra che ci siano problemi di connessione al database. Riprova più tardi o contatta l'amministratore.");
+      }
+      
       return 0;
     }
-  }, []);
+  }, [connectionAttempts]);
   
   useEffect(() => {
     const loadData = async () => {
@@ -98,21 +128,25 @@ const Menu: React.FC = () => {
       // Forza l'aggiornamento del menu
       setRefreshTrigger(prev => prev + 1);
       
-      // Se non ci sono icone, imposta un intervallo per controllare nuovamente
+      // Se non ci sono icone o c'è un errore di connessione
       if (count === 0) {
-        const interval = setInterval(async () => {
+        // Prova a ricaricare i dati più volte con backoff esponenziale
+        const retryIntervals = [3000, 5000, 10000]; // 3s, 5s, 10s
+        
+        for (let i = 0; i < retryIntervals.length; i++) {
+          // Aspetta il tempo specificato
+          await new Promise(resolve => setTimeout(resolve, retryIntervals[i]));
+          
+          console.log(`Tentativo di riconnessione ${i + 1}...`);
           const newCount = await checkForPages();
+          
           if (newCount > 0) {
-            console.log("Nuove icone trovate, aggiornamento menu");
+            console.log("Connessione riuscita, aggiornamento menu");
             setRefreshTrigger(prev => prev + 1);
-            clearInterval(interval);
+            setError(null);
+            break;
           }
-        }, 3000); // Controlla ogni 3 secondi
-        
-        // Pulisci l'intervallo dopo 30 secondi per evitare cicli infiniti
-        setTimeout(() => clearInterval(interval), 30000);
-        
-        return () => clearInterval(interval);
+        }
       }
     };
     
@@ -124,10 +158,21 @@ const Menu: React.FC = () => {
     setRefreshTrigger(prev => prev + 1);
     toast.info("Aggiornamento menu in corso...");
     
-    // Aggiorna il menu dopo un breve ritardo
-    setTimeout(() => {
-      toast.success("Menu aggiornato");
-    }, 1000);
+    // Reset error state on manual refresh
+    setError(null);
+    setLoading(true);
+    
+    // Ritenta la connessione
+    fetchHeaderSettings().then(() => {
+      checkForPages().then((count) => {
+        if (count > 0) {
+          toast.success("Menu aggiornato con successo");
+        } else {
+          toast.error("Impossibile aggiornare il menu. Riprova più tardi.");
+        }
+        setLoading(false);
+      });
+    });
   };
   
   if (loading) {
@@ -159,12 +204,21 @@ const Menu: React.FC = () => {
               <p className="text-red-500 mb-4">
                 <TranslatedText text={error} />
               </p>
-              <button 
-                onClick={() => window.location.reload()}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
-              >
-                <TranslatedText text="Riprova" />
-              </button>
+              <div className="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-2">
+                <button 
+                  onClick={handleRefresh}
+                  className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 flex items-center justify-center"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  <TranslatedText text="Riprova" />
+                </button>
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                >
+                  <TranslatedText text="Ricarica pagina" />
+                </button>
+              </div>
             </div>
           </div>
         ) : (

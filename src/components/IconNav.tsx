@@ -1,9 +1,8 @@
-
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { 
-  Loader2, Book, Home, FileText, Image, MessageCircle, Info, Map, 
+  Loader2, RefreshCw, Book, Home, FileText, Image, MessageCircle, Info, Map, 
   Utensils, Landmark, Hotel, Wifi, Bus, ShoppingBag, Calendar, 
   Phone, Coffee, Bike, Camera, Globe, Mountain, MapPin, Newspaper,
   Music, Heart, Trees, Users, ShoppingCart, Car, Building, Palmtree,
@@ -13,24 +12,26 @@ import {
 import TranslatedText from "@/components/TranslatedText";
 import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";
 
-interface IconNavProps {
-  parentPath: string | null;
-  onRefresh?: () => void;
-  refreshTrigger?: number;
-}
-
 interface IconData {
   id: string;
-  title: string;
+  title?: string;
+  label?: string;
   icon: string;
   path: string;
   parent_path: string | null;
   is_parent?: boolean;
 }
 
-const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger = 0 }) => {
+interface IconNavProps {
+  parentPath: string | null;
+  onRefresh?: () => void;
+  refreshTrigger?: number;
+  icons?: IconData[];
+}
+
+const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger = 0, icons: providedIcons }) => {
   const [icons, setIcons] = useState<IconData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(providedIcons ? false : true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const keywordToIconMap = useKeywordToIconMap();
@@ -90,11 +91,53 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
   };
 
   const fetchIcons = useCallback(async () => {
+    // If icons are provided directly, use those
+    if (providedIcons) {
+      const transformedIcons = providedIcons.map(icon => {
+        // Format the data in our expected format
+        const isParent = providedIcons.some(item => item.parent_path === icon.path);
+        let iconName = icon.icon;
+        const title = icon.title || icon.label || "";
+        
+        // Auto-detect more suitable icon if the current one is generic
+        if (iconName === "FileText" || !iconName) {
+          iconName = identifyIconFromTitle(title);
+        }
+        
+        return {
+          id: icon.id,
+          title: title,
+          icon: iconName,
+          path: icon.path,
+          parent_path: icon.parent_path,
+          is_parent: isParent
+        };
+      });
+      
+      setIcons(transformedIcons);
+      setIsLoading(false);
+      return;
+    }
+    
     try {
       setIsLoading(true);
       setError(null);
       
       console.log("Caricamento icone con parent_path:", parentPath);
+      
+      // First try to load from localStorage cache
+      const cacheKey = `icons_${parentPath || 'root'}`;
+      const cachedIcons = localStorage.getItem(cacheKey);
+      
+      if (cachedIcons) {
+        try {
+          const parsedIcons = JSON.parse(cachedIcons);
+          console.log("Utilizzando icone in cache temporaneamente:", parsedIcons.length);
+          setIcons(parsedIcons);
+        } catch (err) {
+          console.error("Errore nel parsing delle icone dalla cache:", err);
+        }
+      }
       
       const { data, error } = await supabase
         .from('menu_icons')
@@ -113,6 +156,9 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
       
       if (!filteredData || filteredData.length === 0) {
         console.log("Nessuna icona trovata per parent_path:", parentPath);
+        setIcons([]);
+        setIsLoading(false);
+        return;
       }
       
       const transformedIcons = filteredData?.map(icon => {
@@ -136,14 +182,33 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
       
       console.log("Icone trasformate che verranno visualizzate:", transformedIcons);
       
+      // Cache the icons in localStorage
+      localStorage.setItem(cacheKey, JSON.stringify(transformedIcons));
+      
       setIcons(transformedIcons);
     } catch (error) {
       console.error("Errore nel caricamento delle icone:", error);
       setError("Impossibile caricare le icone del menu");
+      
+      // If we have icons from the initial load (from cache), keep using them
+      if (icons.length === 0) {
+        // Try to load from localStorage cache as fallback
+        const cacheKey = `icons_${parentPath || 'root'}`;
+        const cachedIcons = localStorage.getItem(cacheKey);
+        
+        if (cachedIcons) {
+          try {
+            setIcons(JSON.parse(cachedIcons));
+            setError(null);
+          } catch (err) {
+            console.error("Errore nel parsing delle icone dalla cache:", err);
+          }
+        }
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [parentPath, keywordToIconMap]);
+  }, [parentPath, keywordToIconMap, providedIcons, icons.length]);
   
   useEffect(() => {
     console.log("IconNav - refreshTrigger aggiornato:", refreshTrigger);
@@ -159,6 +224,16 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
           parentPath: parentPath 
         } 
       });
+    }
+  };
+
+  const handleRefresh = () => {
+    if (onRefresh) {
+      onRefresh();
+    } else {
+      setError(null);
+      setIsLoading(true);
+      fetchIcons();
     }
   };
 
@@ -221,13 +296,14 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center p-4">
-          <p className="text-red-500">
+          <p className="text-red-500 mb-4">
             <TranslatedText text={error} />
           </p>
           <button 
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+            onClick={handleRefresh}
+            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center justify-center mx-auto"
           >
+            <RefreshCw className="w-4 h-4 mr-2" />
             <TranslatedText text="Riprova" />
           </button>
         </div>
@@ -284,7 +360,7 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
                 {renderIcon(icon.icon)}
               </div>
               <span className="text-center text-gray-700 font-medium text-lg">
-                <TranslatedText text={icon.title} />
+                <TranslatedText text={icon.title || ""} />
               </span>
             </div>
           );

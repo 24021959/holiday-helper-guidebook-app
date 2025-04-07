@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import TranslatedText from "@/components/TranslatedText";
 import FilteredIconNav from "@/components/FilteredIconNav";
 import NavigateBack from "@/components/NavigateBack";
@@ -26,6 +26,7 @@ const SubMenu: React.FC = () => {
   const [pageDetails, setPageDetails] = useState<PageDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -33,28 +34,44 @@ const SubMenu: React.FC = () => {
       try {
         setLoading(true);
         
-        // 1. Fetch header settings
+        // First check localStorage for header settings
+        const savedHeaderSettings = localStorage.getItem("headerSettings");
+        let localSettings = null;
+        
+        if (savedHeaderSettings) {
+          try {
+            localSettings = JSON.parse(savedHeaderSettings);
+            setHeaderSettings(localSettings);
+          } catch (err) {
+            console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
+          }
+        }
+        
+        // 1. Fetch header settings from Supabase
         const { data: headerData, error: headerError } = await supabase
           .from('header_settings')
           .select('*')
           .limit(1)
           .single();
           
-        if (headerError) throw headerError;
-        
-        if (headerData) {
-          setHeaderSettings({
+        if (headerError) {
+          console.error("Errore nel caricamento delle impostazioni header:", headerError);
+          
+          // If we didn't set from localStorage, show error
+          if (!localSettings) {
+            setError("Impossibile connettersi al database. Controlla la tua connessione e riprova.");
+          }
+        } else if (headerData) {
+          const newSettings = {
             logoUrl: headerData.logo_url,
             headerColor: headerData.header_color,
             establishmentName: headerData.establishment_name
-          });
+          };
+          
+          setHeaderSettings(newSettings);
           
           // Save to localStorage as backup
-          localStorage.setItem("headerSettings", JSON.stringify({
-            logoUrl: headerData.logo_url,
-            headerColor: headerData.header_color,
-            establishmentName: headerData.establishment_name
-          }));
+          localStorage.setItem("headerSettings", JSON.stringify(newSettings));
         }
         
         // 2. Fetch parent page details
@@ -66,39 +83,49 @@ const SubMenu: React.FC = () => {
             .eq('path', realPath)
             .single();
             
-          if (pageError) throw pageError;
-          
-          if (pageData) {
+          if (pageError) {
+            console.error("Errore nel caricamento dei dettagli della pagina:", pageError);
+          } else if (pageData) {
             setPageDetails({
               id: pageData.id,
               title: pageData.title
             });
+            
+            // Store in localStorage for future quick access
+            localStorage.setItem(`pageDetails_${parentPath}`, JSON.stringify({
+              id: pageData.id,
+              title: pageData.title
+            }));
+          } else {
+            // Try to get from localStorage
+            const savedPageDetails = localStorage.getItem(`pageDetails_${parentPath}`);
+            if (savedPageDetails) {
+              try {
+                setPageDetails(JSON.parse(savedPageDetails));
+              } catch (err) {
+                console.error("Errore nel parsing dei dettagli della pagina dal localStorage:", err);
+              }
+            }
           }
         }
       } catch (error) {
         console.error("Errore nel caricamento dei dati:", error);
-        
-        // Fallback to localStorage for header settings
-        const savedHeaderSettings = localStorage.getItem("headerSettings");
-        if (savedHeaderSettings) {
-          try {
-            setHeaderSettings(JSON.parse(savedHeaderSettings));
-          } catch (err) {
-            console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
-          }
-        }
-        
-        setError("Impossibile caricare il sottomenu");
+        setError("Impossibile caricare il sottomenu. Riprova più tardi.");
       } finally {
         setLoading(false);
       }
     };
     
     fetchData();
-  }, [parentPath]);
+  }, [parentPath, refreshTrigger]);
 
   const handleBackToMenu = () => {
     navigate('/menu');
+  };
+
+  const handleRefresh = () => {
+    setError(null);
+    setRefreshTrigger(prev => prev + 1);
   };
 
   if (loading) {
@@ -142,16 +169,29 @@ const SubMenu: React.FC = () => {
               <p className="text-red-500 mb-4">
                 <TranslatedText text={error} />
               </p>
-              <button 
-                onClick={() => navigate('/menu')}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
-              >
-                <TranslatedText text="Torna al menu" />
-              </button>
+              <div className="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-2">
+                <button 
+                  onClick={handleRefresh}
+                  className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 flex items-center justify-center"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  <TranslatedText text="Riprova" />
+                </button>
+                <button 
+                  onClick={() => navigate('/menu')}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                >
+                  <TranslatedText text="Torna al menu" />
+                </button>
+              </div>
             </div>
           </div>
         ) : (
-          <FilteredIconNav parentPath={`/${parentPath}`} />
+          <FilteredIconNav 
+            parentPath={`/${parentPath}`} 
+            refreshTrigger={refreshTrigger}
+            onRefresh={handleRefresh}
+          />
         )}
       </div>
       
