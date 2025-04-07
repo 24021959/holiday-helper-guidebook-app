@@ -6,8 +6,9 @@ import {
   Loader2, Book, Home, FileText, Image, MessageCircle, Info, Map, 
   Utensils, Landmark, Hotel, Wifi, Bus, ShoppingBag, Calendar, 
   Phone, Coffee, Bike, Camera, Globe, Mountain, MapPin, Newspaper,
-  Music, Heart, Trees, Users, ShoppingCart, Eye
+  Music, Heart, Trees, Users, ShoppingCart, Eye, RefreshCw
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import TranslatedText from "@/components/TranslatedText";
 
 interface IconNavProps {
@@ -27,62 +28,57 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
   const [icons, setIcons] = useState<IconData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const navigate = useNavigate();
 
+  const fetchIcons = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      console.log("Fetching icons with parent_path:", parentPath);
+      
+      // Query to get icons from the database
+      const { data, error } = await supabase
+        .from('menu_icons')
+        .select('*')
+        .eq('parent_path', parentPath)
+        .eq('published', true); // Only fetch published icons
+      
+      if (error) throw error;
+      
+      console.log("Published icons data from database:", data);
+      
+      // Transform the data to match the IconData interface
+      const publishedIcons = data?.map(icon => ({
+        id: icon.id,
+        title: icon.label, // Use label as title
+        icon: icon.icon,
+        path: icon.path,
+        parent_path: icon.parent_path,
+        published: icon.published
+      })) || [];
+      
+      console.log("Transformed published icons that will be displayed:", publishedIcons);
+      
+      setIcons(publishedIcons);
+    } catch (error) {
+      console.error("Errore nel caricamento delle icone:", error);
+      setError("Impossibile caricare le icone del menu");
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+  
   useEffect(() => {
-    const fetchIcons = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        console.log("Fetching icons with parent_path:", parentPath);
-        
-        // Query to get icons from the database
-        const { data, error } = await supabase
-          .from('menu_icons')
-          .select('*')
-          .eq('parent_path', parentPath);
-        
-        if (error) throw error;
-        
-        console.log("Icons data from database:", data);
-        
-        if (data && data.length === 0) {
-          console.log("No icons found for this parent path. Checking if we need to show all top-level icons.");
-          // If we're at the top level and no icons are found, log an info message
-          if (parentPath === null) {
-            console.log("This is the main menu, but no top-level icons were found.");
-          }
-        }
-        
-        // Transform the data to match the IconData interface
-        // Note: We're not filtering by published here to debug what icons exist
-        const transformedData = data?.map(icon => ({
-          id: icon.id,
-          title: icon.label, // Use label as title
-          icon: icon.icon,
-          path: icon.path,
-          parent_path: icon.parent_path,
-          published: icon.published
-        })) || [];
-        
-        console.log("Transformed icons data:", transformedData);
-        
-        // Now filter to only show published icons in the actual UI
-        const publishedIcons = transformedData.filter(icon => icon.published === true);
-        console.log("Published icons that will be displayed:", publishedIcons);
-        
-        setIcons(publishedIcons);
-      } catch (error) {
-        console.error("Errore nel caricamento delle icone:", error);
-        setError("Impossibile caricare le icone del menu");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
     fetchIcons();
   }, [parentPath]);
+  
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    fetchIcons();
+  };
   
   const handleIconClick = (path: string) => {
     navigate(path);
@@ -138,7 +134,7 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
             <TranslatedText text={error} />
           </p>
           <button 
-            onClick={() => window.location.reload()}
+            onClick={handleRefresh}
             className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
           >
             <TranslatedText text="Riprova" />
@@ -150,7 +146,7 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
 
   if (icons.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex flex-col items-center justify-center">
         <div className="text-center p-4 max-w-md">
           <p className="text-gray-600 text-lg font-medium mb-3">
             <TranslatedText text="Menu vuoto" />
@@ -158,6 +154,19 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
           <p className="text-gray-500 mb-3">
             <TranslatedText text="Non ci sono pagine pubblicate disponibili in questa sezione del menu" />
           </p>
+          
+          <div className="mb-6 flex justify-center">
+            <Button 
+              onClick={handleRefresh} 
+              variant="outline"
+              className="flex items-center gap-2"
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <TranslatedText text="Aggiorna menu" />
+            </Button>
+          </div>
+          
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
             <p className="text-amber-700 mb-2 font-medium">
               <TranslatedText text="Come pubblicare le pagine:" />
@@ -185,21 +194,36 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 p-6 max-w-6xl mx-auto overflow-y-auto">
-      {icons.map((icon) => (
-        <div 
-          key={icon.id}
-          className="flex flex-col items-center bg-white rounded-xl shadow-md p-5 cursor-pointer transform transition-transform hover:scale-105 active:scale-95"
-          onClick={() => handleIconClick(icon.path)}
+    <div className="flex flex-col flex-1">
+      <div className="p-2 flex justify-end">
+        <Button 
+          onClick={handleRefresh} 
+          variant="ghost" 
+          size="sm"
+          className="flex items-center gap-1"
+          disabled={isRefreshing}
         >
-          <div className="bg-emerald-100 p-4 mb-3 rounded-full text-emerald-600">
-            {renderIcon(icon.icon)}
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <span className="text-xs"><TranslatedText text="Aggiorna" /></span>
+        </Button>
+      </div>
+      
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 p-6 max-w-6xl mx-auto overflow-y-auto flex-1">
+        {icons.map((icon) => (
+          <div 
+            key={icon.id}
+            className="flex flex-col items-center bg-white rounded-xl shadow-md p-5 cursor-pointer transform transition-transform hover:scale-105 active:scale-95"
+            onClick={() => handleIconClick(icon.path)}
+          >
+            <div className="bg-emerald-100 p-4 mb-3 rounded-full text-emerald-600">
+              {renderIcon(icon.icon)}
+            </div>
+            <span className="text-center text-gray-700 font-medium">
+              <TranslatedText text={icon.title} />
+            </span>
           </div>
-          <span className="text-center text-gray-700 font-medium">
-            <TranslatedText text={icon.title} />
-          </span>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 };

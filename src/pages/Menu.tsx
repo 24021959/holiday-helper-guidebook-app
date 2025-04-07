@@ -28,7 +28,7 @@ const Menu: React.FC = () => {
           .from('header_settings')
           .select('*')
           .limit(1)
-          .single();
+          .maybeSingle();
           
         if (error) throw error;
         
