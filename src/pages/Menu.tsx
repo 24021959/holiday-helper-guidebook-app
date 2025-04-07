@@ -1,6 +1,5 @@
 
 import React, { useEffect, useState, useCallback } from "react";
-import IconNav from "@/components/IconNav";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import TranslatedText from "@/components/TranslatedText";
 import { toast } from "sonner";
+import FilteredIconNav from "@/components/FilteredIconNav";
 
 interface HeaderSettings {
   logoUrl?: string | null;
@@ -173,7 +173,7 @@ const Menu: React.FC = () => {
             </div>
           </div>
         ) : (
-          <IconNav 
+          <FilteredIconNav 
             parentPath={null} 
             onRefresh={handleRefresh} 
             refreshTrigger={refreshTrigger} 
