@@ -27,6 +27,7 @@ const DynamicPage = () => {
   
   // Costruisci il path effettivo basato sull'URL corrente
   const actualPath = location.pathname;
+  console.log("DynamicPage - Path effettivo:", actualPath);
   
   return <PreviewPage pageRoute={actualPath} />;
 };

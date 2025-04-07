@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -81,20 +82,66 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     try {
       const newPublishedState = !page.published;
       
+      console.log(`Pubblicazione pagina: ${page.title}. Nuovo stato: ${newPublishedState ? 'Pubblicata' : 'Bozza'}`);
+      
+      // Aggiorna lo stato di pubblicazione nella tabella custom_pages
       const { error: pageError } = await supabase
         .from('custom_pages')
         .update({ published: newPublishedState })
         .eq('id', page.id);
       
-      if (pageError) throw pageError;
+      if (pageError) {
+        console.error("Errore nell'aggiornare la tabella custom_pages:", pageError);
+        throw pageError;
+      }
       
-      const { error: iconError } = await supabase
+      // Controlla se esiste già un'icona per questa pagina
+      const { data: existingIcon, error: iconCheckError } = await supabase
         .from('menu_icons')
-        .update({ published: newPublishedState })
-        .eq('path', page.path);
+        .select('*')
+        .eq('path', page.path)
+        .maybeSingle();
       
-      if (iconError) throw iconError;
+      if (iconCheckError && iconCheckError.code !== 'PGRST116') {
+        console.error("Errore nel controllare se esiste già l'icona:", iconCheckError);
+        throw iconCheckError;
+      }
       
+      // Se l'icona esiste, aggiorna lo stato di pubblicazione
+      if (existingIcon) {
+        console.log(`Aggiornamento icona esistente per ${page.path}`);
+        const { error: iconUpdateError } = await supabase
+          .from('menu_icons')
+          .update({ published: newPublishedState })
+          .eq('path', page.path);
+        
+        if (iconUpdateError) {
+          console.error("Errore nell'aggiornare l'icona del menu:", iconUpdateError);
+          throw iconUpdateError;
+        }
+      } 
+      // Se l'icona non esiste, creala
+      else {
+        console.log(`Creazione nuova icona per ${page.path}`);
+        const { error: iconCreateError } = await supabase
+          .from('menu_icons')
+          .insert({
+            path: page.path,
+            icon: page.icon || 'FileText',
+            label: page.title,
+            published: newPublishedState,
+            parent_path: page.parentPath || null,
+            is_submenu: page.isSubmenu || false,
+            bg_color: 'bg-emerald-100'
+          });
+        
+        if (iconCreateError) {
+          console.error("Errore nella creazione dell'icona del menu:", iconCreateError);
+          throw iconCreateError;
+        }
+      }
+      
+      // Aggiorna lo stato locale
       const updatedPages = pages.map(p => 
         p.id === page.id ? { ...p, published: newPublishedState } : p
       );
@@ -102,7 +149,7 @@ export const ManagePagesView: React.FC<ManagePagesViewProps> = ({
       onPagesUpdate(updatedPages);
       
       toast.success(newPublishedState 
-        ? "Pagina pubblicata" 
+        ? "Pagina pubblicata con successo" 
         : "Pagina nascosta dal menu");
         
     } catch (error) {

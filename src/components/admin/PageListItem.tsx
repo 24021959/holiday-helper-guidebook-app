@@ -36,6 +36,11 @@ export const PageListItem: React.FC<PageListItemProps> = ({
                     Bozza
                   </span>
                 )}
+                {page.published === true && (
+                  <span className="ml-2 text-xs px-2 py-1 bg-emerald-100 text-emerald-800 rounded-full">
+                    Pubblicata
+                  </span>
+                )}
               </h3>
               <p className="text-sm text-gray-500">
                 {page.isSubmenu ? 'Sottomenu' : 'Pagina principale'} - {page.path}
@@ -55,10 +60,11 @@ export const PageListItem: React.FC<PageListItemProps> = ({
             
             {onTogglePublish && (
               <Button 
-                variant={page.published ? "outline" : "default"} 
+                variant={page.published ? "default" : "outline"} 
                 size="sm"
                 onClick={() => onTogglePublish(page)}
                 title={page.published ? "Nascondi dal menu" : "Pubblica nel menu"}
+                className={page.published ? "bg-emerald-600 hover:bg-emerald-700" : ""}
               >
                 {page.published ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
