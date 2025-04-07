@@ -222,11 +222,6 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
               <span className="text-center text-gray-700 font-medium text-lg">
                 <TranslatedText text={icon.title} />
               </span>
-              {icon.is_parent && (
-                <span className="mt-2 text-xs text-emerald-600 font-medium">
-                  <TranslatedText text="Contiene sottomenu" />
-                </span>
-              )}
             </div>
           );
         })}
