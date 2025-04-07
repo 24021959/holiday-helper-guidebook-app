@@ -41,7 +41,7 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
   const [pageContentSections, setPageContentSections] = useState<(string | ImageItem)[]>([]);
 
   const path = pageRoute || location.pathname;
-  const effectivePath = path.startsWith('/preview/') ? path.substring(9) : path;
+  const effectivePath = path.startsWith('/preview') ? path.substring(8) : path;
 
   useEffect(() => {
     console.log("Caricamento pagina con percorso:", effectivePath);
@@ -137,19 +137,54 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
 
   // Funzione per analizzare il contenuto della pagina e preparare le sezioni
   const parseContentSections = (content: string, images: ImageItem[]) => {
-    const sections: (string | ImageItem)[] = [];
+    // Prima, separa il contenuto per gestire le immagini markdown
+    const parsedContent = parseMarkdownImages(content);
     
-    // Aggiungi il contenuto testuale
-    if (content.trim()) {
-      sections.push(content);
-    }
-    
-    // Aggiungi le immagini
+    // Aggiungi le immagini dalla galleria
     images.forEach(image => {
-      sections.push(image);
+      parsedContent.push(image);
     });
     
-    setPageContentSections(sections);
+    setPageContentSections(parsedContent);
+  };
+  
+  // Funzione per elaborare le immagini in formato markdown nel contenuto
+  const parseMarkdownImages = (content: string): (string | ImageItem)[] => {
+    const sections: (string | ImageItem)[] = [];
+    const imgRegex = /!\[(.*?)\]\((.*?)\)/g;
+    
+    let lastIndex = 0;
+    let match;
+    
+    while ((match = imgRegex.exec(content)) !== null) {
+      // Aggiungi il testo prima dell'immagine
+      if (match.index > lastIndex) {
+        sections.push(content.substring(lastIndex, match.index));
+      }
+      
+      // Aggiungi l'immagine come oggetto
+      const altText = match[1];
+      const imageUrl = match[2];
+      
+      // Crea un oggetto ImageItem per l'immagine markdown
+      const imageItem: ImageItem = {
+        url: imageUrl,
+        position: "center", // Posizione predefinita per le immagini inline
+        caption: altText !== "[Immagine]" ? altText : undefined,
+        type: "image"
+      };
+      
+      sections.push(imageItem);
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Aggiungi il testo rimanente dopo l'ultima immagine
+    if (lastIndex < content.length) {
+      sections.push(content.substring(lastIndex));
+    }
+    
+    return sections;
   };
 
   // Funzione per renderizzare un'immagine con posizionamento
@@ -167,7 +202,7 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
           alt={image.caption || `Immagine ${index + 1}`} 
           className="rounded-lg shadow-md w-full"
         />
-        {image.caption && (
+        {image.caption && image.caption !== "[Immagine]" && (
           <figcaption className="text-sm text-gray-600 text-center mt-2">
             <TranslatedText text={image.caption} />
           </figcaption>
@@ -251,10 +286,10 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
           <BackToMenu />
           
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mt-4 mb-6">
-            <TranslatedText text={pageData.title} />
+            <TranslatedText text={pageData?.title || ""} />
           </h1>
           
-          {pageData.imageUrl && (
+          {pageData?.imageUrl && (
             <div className="mb-6">
               <img 
                 src={pageData.imageUrl} 
@@ -285,7 +320,7 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
             </div>
           </div>
           
-          {pageData.listItems && pageData.listItems.length > 0 && (
+          {pageData?.listItems && pageData.listItems.length > 0 && (
             <div className="mt-8">
               <h2 className="text-xl font-semibold text-emerald-700 mb-4">
                 <TranslatedText 
