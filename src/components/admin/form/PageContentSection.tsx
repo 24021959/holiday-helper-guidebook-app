@@ -1,11 +1,10 @@
-
 import React, { useState, useRef } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { useFormContext } from "react-hook-form";
 import ImageInsertionDialog from "./ImageInsertionDialog";
 import { Button } from "@/components/ui/button";
-import { ImageIcon, Info, Rows3, PanelRight, PanelLeft } from "lucide-react";
+import { ImageIcon, Info, Rows3, PanelRight, PanelLeft, MapPin, Phone } from "lucide-react";
 import { ImageItem } from "./PageMultiImageSection";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -27,6 +26,8 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
   const [clickPosition, setClickPosition] = useState<number | null>(null);
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [showGalleryDialog, setShowGalleryDialog] = useState(false);
+  const [showMapDialog, setShowMapDialog] = useState(false);
+  const [showPhoneDialog, setShowPhoneDialog] = useState(false);
 
   const handleInsertImageClick = () => {
     if (textareaRef.current) {
@@ -39,6 +40,20 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
     if (textareaRef.current) {
       setClickPosition(textareaRef.current.selectionStart);
       setShowGalleryDialog(true);
+    }
+  };
+
+  const handleInsertMapClick = () => {
+    if (textareaRef.current) {
+      setClickPosition(textareaRef.current.selectionStart);
+      setShowMapDialog(true);
+    }
+  };
+
+  const handleInsertPhoneClick = () => {
+    if (textareaRef.current) {
+      setClickPosition(textareaRef.current.selectionStart);
+      setShowPhoneDialog(true);
     }
   };
 
@@ -55,7 +70,6 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
     
     switch (format) {
       case 'paragraph':
-        // Split selected text by line breaks and wrap each paragraph with an extra line break
         formattedText = selectedText
           .split('.')
           .map(sentence => sentence.trim())
@@ -68,16 +82,13 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
       case 'left':
       case 'right':
       case 'center':
-        // Add special comment for future image alignment
         formattedText = `<!-- FORMAT:${format.toUpperCase()} -->\n${selectedText}`;
         break;
     }
     
-    // Insert the formatted text
     const newContent = content.substring(0, start) + formattedText + content.substring(end);
     setValue(name, newContent, { shouldDirty: true });
     
-    // Set cursor position after the formatted text
     setTimeout(() => {
       textarea.focus();
       textarea.selectionStart = start + formattedText.length;
@@ -89,13 +100,11 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
     try {
       const content = getValues(name) as string;
       if (clickPosition !== null) {
-        // Create a shorter preview version if it's a base64 image
         let displayUrl = imageUrl;
         if (imageUrl.startsWith('data:image')) {
           displayUrl = '[Immagine]';
         }
         
-        // Insert image markup at cursor position
         const imageMarkup = `\n![${displayUrl}](${imageUrl})\n`;
         const newContent = content.substring(0, clickPosition) + imageMarkup + content.substring(clickPosition);
         setValue(name, newContent, { shouldDirty: true });
@@ -117,6 +126,39 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
       console.error("Errore durante l'inserimento dell'immagine dalla galleria:", error);
     }
     setShowGalleryDialog(false);
+  };
+
+  const handleInsertMap = (mapUrl: string, placeName: string) => {
+    try {
+      const content = getValues(name) as string;
+      if (clickPosition !== null) {
+        const mapMarkup = `\n[📍 ${placeName}](${mapUrl})\n`;
+        const newContent = content.substring(0, clickPosition) + mapMarkup + content.substring(clickPosition);
+        setValue(name, newContent, { shouldDirty: true });
+        
+        console.log("Link a Google Maps inserito correttamente:", placeName);
+      }
+    } catch (error) {
+      console.error("Errore durante l'inserimento del link a Google Maps:", error);
+    }
+    setShowMapDialog(false);
+  };
+
+  const handleInsertPhone = (phoneNumber: string, label: string) => {
+    try {
+      const content = getValues(name) as string;
+      if (clickPosition !== null) {
+        const formattedNumber = phoneNumber.replace(/\s+/g, '');
+        const phoneMarkup = `\n[📞 ${label || phoneNumber}](tel:${formattedNumber})\n`;
+        const newContent = content.substring(0, clickPosition) + phoneMarkup + content.substring(clickPosition);
+        setValue(name, newContent, { shouldDirty: true });
+        
+        console.log("Numero di telefono inserito correttamente:", phoneNumber);
+      }
+    } catch (error) {
+      console.error("Errore durante l'inserimento del numero di telefono:", error);
+    }
+    setShowPhoneDialog(false);
   };
 
   return (
@@ -142,6 +184,8 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
                       <li>Inserisci uno spazio vuoto tra i paragrafi</li>
                       <li>Usa elenchi puntati per informazioni importanti</li>
                       <li>Evidenzia le parole chiave in grassetto</li>
+                      <li>Aggiungi link a Google Maps per le località</li>
+                      <li>Inserisci numeri di telefono cliccabili</li>
                     </ul>
                   </TooltipContent>
                 </Tooltip>
@@ -260,6 +304,26 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
                     Inserisci da galleria
                   </Button>
                 )}
+
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleInsertMapClick}
+                  className="flex items-center"
+                >
+                  <MapPin className="h-4 w-4 mr-2" />
+                  Inserisci link Google Maps
+                </Button>
+
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleInsertPhoneClick}
+                  className="flex items-center"
+                >
+                  <Phone className="h-4 w-4 mr-2" />
+                  Inserisci numero di telefono
+                </Button>
               </div>
             </div>
             <FormMessage />
@@ -312,6 +376,117 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
                 onClick={() => setShowGalleryDialog(false)}
               >
                 Annulla
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showMapDialog && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-medium mb-4">Inserisci link a Google Maps</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nome del luogo
+                </label>
+                <input 
+                  type="text" 
+                  id="placeName"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="Es. Ristorante Da Mario"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  URL di Google Maps
+                </label>
+                <input 
+                  type="text" 
+                  id="mapUrl"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="https://maps.google.com/..."
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Cerca il luogo su Google Maps, clicca su "Condividi" e copia il link
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-2 mt-6">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowMapDialog(false)}
+              >
+                Annulla
+              </Button>
+              <Button 
+                onClick={() => {
+                  const mapUrlInput = document.getElementById('mapUrl') as HTMLInputElement;
+                  const placeNameInput = document.getElementById('placeName') as HTMLInputElement;
+                  if (mapUrlInput && placeNameInput) {
+                    handleInsertMap(mapUrlInput.value, placeNameInput.value);
+                  }
+                }}
+              >
+                Inserisci
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPhoneDialog && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-medium mb-4">Inserisci numero di telefono</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Etichetta (opzionale)
+                </label>
+                <input 
+                  type="text" 
+                  id="phoneLabel"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="Es. Prenotazioni"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Numero di telefono
+                </label>
+                <input 
+                  type="tel" 
+                  id="phoneNumber"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="+39 123 456 7890"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-2 mt-6">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowPhoneDialog(false)}
+              >
+                Annulla
+              </Button>
+              <Button 
+                onClick={() => {
+                  const phoneNumberInput = document.getElementById('phoneNumber') as HTMLInputElement;
+                  const phoneLabelInput = document.getElementById('phoneLabel') as HTMLInputElement;
+                  if (phoneNumberInput) {
+                    handleInsertPhone(phoneNumberInput.value, phoneLabelInput?.value || '');
+                  }
+                }}
+              >
+                Inserisci
               </Button>
             </div>
           </div>

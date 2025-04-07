@@ -3,7 +3,7 @@ import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Loader2 } from "lucide-react";
+import { Loader2, MapPin, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BackToMenu from "@/components/BackToMenu";
 import TranslatedText from "@/components/TranslatedText";
@@ -272,6 +272,54 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
     );
   };
 
+  const renderMarkdownLink = (link: string) => {
+    if (link.includes('tel:')) {
+      const label = link.match(/\[(.*?)\]/)?.[1] || '';
+      const phoneNumber = link.match(/\(tel:(.*?)\)/)?.[1] || '';
+      
+      return (
+        <a 
+          href={`tel:${phoneNumber}`} 
+          className="inline-flex items-center text-emerald-600 hover:underline"
+        >
+          <Phone className="h-4 w-4 mr-1" />
+          <span>{label}</span>
+        </a>
+      );
+    }
+    
+    if (link.includes('maps.google.com') || link.includes('goo.gl/maps')) {
+      const label = link.match(/\[(.*?)\]/)?.[1] || 'Vedi sulla mappa';
+      const mapUrl = link.match(/\((.*?)\)/)?.[1] || '';
+      
+      return (
+        <a 
+          href={mapUrl} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="inline-flex items-center text-emerald-600 hover:underline"
+        >
+          <MapPin className="h-4 w-4 mr-1" />
+          <span>{label}</span>
+        </a>
+      );
+    }
+    
+    const label = link.match(/\[(.*?)\]/)?.[1] || '';
+    const url = link.match(/\((.*?)\)/)?.[1] || '';
+    
+    return (
+      <a 
+        href={url} 
+        target="_blank" 
+        rel="noopener noreferrer" 
+        className="text-emerald-600 hover:underline"
+      >
+        {label}
+      </a>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100">
@@ -370,11 +418,54 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
                   
                   return (
                     <React.Fragment key={`p-${index}`}>
-                      {paragraphs.map((paragraph, pIndex) => (
-                        <p key={`p-${index}-${pIndex}`} className="mb-6">
-                          <TranslatedText text={paragraph} />
-                        </p>
-                      ))}
+                      {paragraphs.map((paragraph, pIndex) => {
+                        if (paragraph.match(/\[(.*?)\]\((.*?)\)/)) {
+                          const parts = [];
+                          let lastIndex = 0;
+                          let linkMatch;
+                          const linkRegex = /\[(.*?)\]\((.*?)\)/g;
+                          
+                          while ((linkMatch = linkRegex.exec(paragraph)) !== null) {
+                            if (linkMatch.index > lastIndex) {
+                              parts.push(
+                                <TranslatedText 
+                                  key={`text-${pIndex}-${lastIndex}`} 
+                                  text={paragraph.substring(lastIndex, linkMatch.index)} 
+                                />
+                              );
+                            }
+                            
+                            parts.push(
+                              <span key={`link-${pIndex}-${linkMatch.index}`}>
+                                {renderMarkdownLink(linkMatch[0])}
+                              </span>
+                            );
+                            
+                            lastIndex = linkMatch.index + linkMatch[0].length;
+                          }
+                          
+                          if (lastIndex < paragraph.length) {
+                            parts.push(
+                              <TranslatedText 
+                                key={`text-${pIndex}-${lastIndex}`} 
+                                text={paragraph.substring(lastIndex)} 
+                              />
+                            );
+                          }
+                          
+                          return (
+                            <p key={`p-${index}-${pIndex}`} className="mb-6">
+                              {parts}
+                            </p>
+                          );
+                        }
+                        
+                        return (
+                          <p key={`p-${index}-${pIndex}`} className="mb-6">
+                            <TranslatedText text={paragraph} />
+                          </p>
+                        );
+                      })}
                     </React.Fragment>
                   );
                 } else {
@@ -421,8 +512,8 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
                       <div className="space-y-2">
                         {item.phoneNumber && (
                           <div className="flex items-center text-sm">
-                            <span className="text-emerald-600 mr-2">📞</span>
-                            <a href={`tel:${item.phoneNumber}`} className="text-emerald-600 hover:underline">
+                            <Phone className="text-emerald-600 h-4 w-4 mr-2" />
+                            <a href={`tel:${item.phoneNumber.replace(/\s+/g, '')}`} className="text-emerald-600 hover:underline">
                               {item.phoneNumber}
                             </a>
                           </div>
@@ -430,7 +521,7 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
                         
                         {item.mapsUrl && (
                           <div className="flex items-center text-sm">
-                            <span className="text-emerald-600 mr-2">📍</span>
+                            <MapPin className="text-emerald-600 h-4 w-4 mr-2" />
                             <a href={item.mapsUrl} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">
                               <TranslatedText text="Visualizza sulla mappa" />
                             </a>
