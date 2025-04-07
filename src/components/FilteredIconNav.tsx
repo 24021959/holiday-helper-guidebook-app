@@ -28,10 +28,11 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [icons, setIcons] = useState<IconData[]>([]);
   const [hasConnectionError, setHasConnectionError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   const fetchIcons = useCallback(async () => {
     try {
-      console.log("Caricando icone per parent_path:", parentPath);
+      console.log("Loading icons for parent_path:", parentPath);
       
       const cacheKey = `icons_${parentPath || 'root'}`;
       const cachedIcons = localStorage.getItem(cacheKey);
@@ -39,10 +40,10 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
       if (cachedIcons) {
         try {
           const parsedIcons = JSON.parse(cachedIcons);
-          console.log("Utilizzando icone in cache:", parsedIcons.length);
+          console.log("Using cached icons:", parsedIcons.length);
           setIcons(parsedIcons);
         } catch (err) {
-          console.error("Errore nel parsing delle icone dalla cache:", err);
+          console.error("Error parsing icons from cache:", err);
         }
       }
       
@@ -52,7 +53,7 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
         .eq('parent_path', parentPath);
       
       if (error) {
-        console.error("Errore caricamento icone:", error);
+        console.error("Error loading icons:", error);
         setHasConnectionError(true);
         throw error;
       }
@@ -60,21 +61,32 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
       setHasConnectionError(false);
       
       if (!data || data.length === 0) {
-        console.log("Nessuna icona trovata per parent_path:", parentPath);
+        console.log("No icons found for parent_path:", parentPath);
         setIcons([]);
         return data || [];
       }
       
-      console.log("Icone caricate dal server:", data.length);
+      console.log("Icons loaded from server:", data.length);
       
       localStorage.setItem(cacheKey, JSON.stringify(data));
+      setIcons(data);
       
       return data;
     } catch (error) {
-      console.error("Errore nel caricamento delle icone:", error);
+      console.error("Error loading icons:", error);
+      
+      if (icons.length === 0 && cachedIcons) {
+        try {
+          const parsedIcons = JSON.parse(cachedIcons);
+          setIcons(parsedIcons);
+        } catch (err) {
+          console.error("Error parsing icons from cache as fallback:", err);
+        }
+      }
+      
       return [];
     }
-  }, [parentPath]);
+  }, [parentPath, icons]);
 
   const removeDuplicates = useCallback(async () => {
     try {
@@ -87,18 +99,20 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
       
       if (!data || data.length === 0) {
         console.log("No menu items found for parent_path:", parentPath);
-        setIsLoading(false);
         
         if (hasConnectionError && icons.length > 0) {
           console.log("Using cached icons due to connection error");
+          setIsLoading(false);
           return;
         }
         
         if (hasConnectionError) {
           setError("Impossibile connettersi al database. Controlla la tua connessione e riprova.");
+          setIsLoading(false);
           return;
         }
         
+        setIsLoading(false);
         return;
       }
       
@@ -164,6 +178,8 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
         }
         
         toast.success(`Rimossi ${idsToDelete.length} elementi duplicati dal menu`);
+        
+        await fetchIcons();
       } else {
         console.log("No duplicate menu items found");
       }
@@ -178,11 +194,25 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
   }, [parentPath, fetchIcons, icons, hasConnectionError]);
 
   useEffect(() => {
+    if (hasConnectionError && retryCount < 3) {
+      const timer = setTimeout(() => {
+        console.log(`Retry attempt ${retryCount + 1} for loading icons...`);
+        setRetryCount(prev => prev + 1);
+        removeDuplicates();
+      }, 3000 * (retryCount + 1)); // Exponential backoff: 3s, 6s, 9s
+      
+      return () => clearTimeout(timer);
+    }
+  }, [hasConnectionError, retryCount, removeDuplicates]);
+
+  useEffect(() => {
+    setRetryCount(0);
     removeDuplicates();
   }, [removeDuplicates, refreshTrigger]);
 
   const handleRefresh = () => {
     setError(null);
+    setRetryCount(0);
     if (onRefresh) {
       onRefresh();
     } else {

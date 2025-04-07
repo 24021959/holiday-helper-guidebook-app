@@ -27,6 +27,7 @@ const SubMenu: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [connectionAttempts, setConnectionAttempts] = useState(0);
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -42,8 +43,9 @@ const SubMenu: React.FC = () => {
           try {
             localSettings = JSON.parse(savedHeaderSettings);
             setHeaderSettings(localSettings);
+            console.log("Using cached header settings:", localSettings);
           } catch (err) {
-            console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
+            console.error("Error parsing settings from localStorage:", err);
           }
         }
         
@@ -52,10 +54,10 @@ const SubMenu: React.FC = () => {
           .from('header_settings')
           .select('*')
           .limit(1)
-          .single();
+          .maybeSingle();
           
         if (headerError) {
-          console.error("Errore nel caricamento delle impostazioni header:", headerError);
+          console.error("Error loading header settings:", headerError);
           
           // If we didn't set from localStorage, show error
           if (!localSettings) {
@@ -77,47 +79,67 @@ const SubMenu: React.FC = () => {
         // 2. Fetch parent page details
         if (parentPath) {
           const realPath = `/${parentPath}`;
+          console.log("Fetching page details for path:", realPath);
+          
+          const cachedDetails = localStorage.getItem(`pageDetails_${parentPath}`);
+          if (cachedDetails) {
+            try {
+              const parsedDetails = JSON.parse(cachedDetails);
+              console.log("Using cached page details:", parsedDetails);
+              setPageDetails(parsedDetails);
+            } catch (err) {
+              console.error("Error parsing page details from cache:", err);
+            }
+          }
+          
           const { data: pageData, error: pageError } = await supabase
             .from('custom_pages')
             .select('id, title')
             .eq('path', realPath)
-            .single();
+            .maybeSingle();
             
           if (pageError) {
-            console.error("Errore nel caricamento dei dettagli della pagina:", pageError);
+            console.error("Error loading page details:", pageError);
+            setConnectionAttempts(prev => prev + 1);
           } else if (pageData) {
-            setPageDetails({
+            const details = {
               id: pageData.id,
               title: pageData.title
-            });
+            };
+            
+            setPageDetails(details);
+            console.log("Loaded page details from database:", details);
             
             // Store in localStorage for future quick access
-            localStorage.setItem(`pageDetails_${parentPath}`, JSON.stringify({
-              id: pageData.id,
-              title: pageData.title
-            }));
+            localStorage.setItem(`pageDetails_${parentPath}`, JSON.stringify(details));
           } else {
-            // Try to get from localStorage
-            const savedPageDetails = localStorage.getItem(`pageDetails_${parentPath}`);
-            if (savedPageDetails) {
-              try {
-                setPageDetails(JSON.parse(savedPageDetails));
-              } catch (err) {
-                console.error("Errore nel parsing dei dettagli della pagina dal localStorage:", err);
-              }
-            }
+            console.log("No page details found for path:", realPath);
           }
         }
       } catch (error) {
-        console.error("Errore nel caricamento dei dati:", error);
-        setError("Impossibile caricare il sottomenu. Riprova più tardi.");
+        console.error("Error loading data:", error);
+        setConnectionAttempts(prev => prev + 1);
+        
+        if (connectionAttempts >= 2) {
+          setError("Impossibile caricare il sottomenu. Riprova più tardi.");
+        }
       } finally {
         setLoading(false);
       }
     };
     
     fetchData();
-  }, [parentPath, refreshTrigger]);
+    
+    // Retry on connection error with backoff
+    if (connectionAttempts > 0 && connectionAttempts < 3) {
+      const timer = setTimeout(() => {
+        console.log(`Retry attempt ${connectionAttempts} for submenu data...`);
+        fetchData();
+      }, 2000 * connectionAttempts); // Backoff: 2s, 4s, 6s
+      
+      return () => clearTimeout(timer);
+    }
+  }, [parentPath, refreshTrigger, connectionAttempts]);
 
   const handleBackToMenu = () => {
     navigate('/menu');
@@ -125,6 +147,7 @@ const SubMenu: React.FC = () => {
 
   const handleRefresh = () => {
     setError(null);
+    setConnectionAttempts(0);
     setRefreshTrigger(prev => prev + 1);
   };
 

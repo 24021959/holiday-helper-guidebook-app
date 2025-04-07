@@ -15,24 +15,24 @@ import { supabase } from './integrations/supabase/client'
 import { TranslationProvider } from './context/TranslationContext'
 import ChatbotBubble from '@/components/ChatbotBubble'
 
-// Componente per gestire le pagine dinamiche create dall'amministratore
+// Component to handle dynamic pages created by the administrator
 const DynamicPage = () => {
   const { pageRoute } = useParams<{ pageRoute: string }>();
   const location = useLocation();
   
-  // Se non c'è path, tornare alla homepage
+  // If there's no path, return to the homepage
   if (!pageRoute) {
     return <Navigate to="/menu" replace />;
   }
   
-  // Costruisci il path effettivo basato sull'URL corrente
+  // Build the actual path based on the current URL
   const actualPath = location.pathname;
-  console.log("DynamicPage - Path effettivo:", actualPath);
+  console.log("DynamicPage - Actual path:", actualPath);
   
   return <PreviewPage pageRoute={actualPath} />;
 };
 
-// Componente Protected per verificare l'autenticazione
+// Protected component to verify authentication
 const Protected = ({ children }: { children: React.ReactNode }) => {
   const isAuth = localStorage.getItem("admin_token") !== null;
   
@@ -51,9 +51,21 @@ function App() {
   }>({});
 
   useEffect(() => {
-    // Carica impostazioni dell'header
+    // Load header settings
     const loadHeaderSettings = async () => {
       try {
+        // First try from localStorage as fallback
+        const cachedSettings = localStorage.getItem("headerSettings");
+        if (cachedSettings) {
+          try {
+            const parsed = JSON.parse(cachedSettings);
+            setHeaderSettings(parsed);
+            console.log("Loaded header settings from cache:", parsed);
+          } catch (err) {
+            console.error("Error parsing header settings from localStorage:", err);
+          }
+        }
+        
         const { data, error } = await supabase
           .from('header_settings')
           .select('*')
@@ -61,27 +73,26 @@ function App() {
           .maybeSingle();
         
         if (error && error.code !== 'PGRST116') {
-          // PGRST116 è "did not return a single row" 
-          console.warn("Errore nel caricamento delle impostazioni header:", error);
+          // PGRST116 is "did not return a single row" 
+          console.warn("Error loading header settings:", error);
           return;
         }
         
         if (data) {
-          setHeaderSettings({
+          const newSettings = {
             logoUrl: data.logo_url,
             headerColor: data.header_color,
             establishmentName: data.establishment_name
-          });
+          };
           
-          // Salva anche in localStorage come fallback
-          localStorage.setItem("headerSettings", JSON.stringify({
-            logoUrl: data.logo_url,
-            headerColor: data.header_color,
-            establishmentName: data.establishment_name
-          }));
+          setHeaderSettings(newSettings);
+          
+          // Also save to localStorage as fallback
+          localStorage.setItem("headerSettings", JSON.stringify(newSettings));
+          console.log("Updated header settings from database:", newSettings);
         }
       } catch (error) {
-        console.warn("Errore nel caricamento delle impostazioni header:", error);
+        console.warn("Error loading header settings:", error);
       }
     };
     
@@ -114,10 +125,10 @@ function App() {
           {/* Preview route for admin */}
           <Route path="/preview/:pageRoute" element={<PreviewPage />} />
           
-          {/* Rotta speciale per tutte le altre pagine - cattura le pagine dinamiche */}
+          {/* Special route for all other pages - captures dynamic pages */}
           <Route path="/:pageRoute/*" element={<DynamicPage />} />
           
-          {/* Rotta per 404 Not Found - deve essere l'ultima */}
+          {/* Route for 404 Not Found - must be the last one */}
           <Route path="*" element={<NotFound />} />
         </Routes>
         
