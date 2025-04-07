@@ -5,13 +5,15 @@ import ImageUploader from "../../ImageUploader";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { ArrowUp, ArrowDown, Trash } from "lucide-react";
+import { ArrowUp, ArrowDown, Trash, MoveVertical } from "lucide-react";
 
 export interface ImageItem {
   url: string;
   position: "left" | "center" | "right" | "full";
   caption?: string;
   type?: "image";
+  order?: number;
+  insertInContent?: boolean;
 }
 
 interface PageMultiImageSectionProps {
@@ -36,7 +38,9 @@ export const PageMultiImageSection: React.FC<PageMultiImageSectionProps> = ({
       url: currentImageUrl,
       position: "center",
       caption: "",
-      type: "image"
+      type: "image",
+      insertInContent: false,
+      order: images.length > 0 ? Math.max(...images.map(img => img.order || 0)) + 1 : 0
     };
     
     onImagesChange([...images, newImage]);
@@ -76,6 +80,18 @@ export const PageMultiImageSection: React.FC<PageMultiImageSectionProps> = ({
   const updateImageCaption = (index: number, caption: string) => {
     const updatedImages = [...images];
     updatedImages[index].caption = caption;
+    onImagesChange(updatedImages);
+  };
+
+  const toggleInsertInContent = (index: number) => {
+    const updatedImages = [...images];
+    updatedImages[index].insertInContent = !updatedImages[index].insertInContent;
+    onImagesChange(updatedImages);
+  };
+
+  const updateImageOrder = (index: number, order: number) => {
+    const updatedImages = [...images];
+    updatedImages[index].order = order;
     onImagesChange(updatedImages);
   };
 
@@ -188,6 +204,41 @@ export const PageMultiImageSection: React.FC<PageMultiImageSectionProps> = ({
                         className="mt-1"
                       />
                     </div>
+
+                    <div className="flex items-center pt-2">
+                      <input
+                        type="checkbox"
+                        id={`img-insert-${index}`}
+                        checked={image.insertInContent || false}
+                        onChange={() => toggleInsertInContent(index)}
+                        className="mr-2 h-4 w-4 text-emerald-600 rounded border-gray-300"
+                      />
+                      <Label htmlFor={`img-insert-${index}`} className="text-sm">
+                        Inserisci nel testo della pagina
+                      </Label>
+                    </div>
+
+                    {image.insertInContent && (
+                      <div className="pt-2">
+                        <Label htmlFor={`img-order-${index}`} className="text-sm">
+                          Ordine nel testo (valore numerico)
+                        </Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <MoveVertical className="h-4 w-4 text-gray-500" />
+                          <Input
+                            id={`img-order-${index}`}
+                            type="number"
+                            min="0"
+                            value={image.order || 0}
+                            onChange={(e) => updateImageOrder(index, parseInt(e.target.value))}
+                            className="w-full"
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Più basso il valore, più in alto apparirà nel testo. Valori uguali rispetteranno l'ordine nella galleria.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

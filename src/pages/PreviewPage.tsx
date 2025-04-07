@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +15,7 @@ interface ImageItem {
   position: "left" | "center" | "right" | "full";
   caption?: string;
   type: "image";
+  contentImage?: boolean;
 }
 
 interface PageData {
@@ -75,8 +75,28 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
           const pageImages: ImageItem[] = [];
           let processedContent = pageData.content;
           
-          if (pageData.content.includes("<!-- IMAGES -->")) {
-            const parts = pageData.content.split("<!-- IMAGES -->");
+          // Estrai immagini inserite nel contenuto
+          const contentImageRegex = /<!-- IMAGE-CONTENT-\d+ -->\n({.*?})\n\n/gs;
+          let contentMatch;
+          while ((contentMatch = contentImageRegex.exec(processedContent)) !== null) {
+            try {
+              if (contentMatch[1]) {
+                const imageData = JSON.parse(contentMatch[1]);
+                if (imageData.type === "image") {
+                  pageImages.push({...imageData, contentImage: true});
+                }
+              }
+            } catch (e) {
+              console.error("Errore nel parsing dell'immagine nel contenuto:", e);
+            }
+          }
+          
+          // Rimuovi i marcatori delle immagini dal contenuto
+          processedContent = processedContent.replace(/<!-- IMAGE-CONTENT-\d+ -->\n({.*?})\n\n/gs, '');
+          
+          // Estrai le immagini della galleria
+          if (processedContent.includes("<!-- IMAGES -->")) {
+            const parts = processedContent.split("<!-- IMAGES -->");
             processedContent = parts[0]; // Contenuto testuale
             
             if (parts[1]) {
@@ -87,7 +107,7 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
                   if (line.includes('"type":"image"')) {
                     const imageData = JSON.parse(line);
                     if (imageData.type === "image") {
-                      pageImages.push(imageData as ImageItem);
+                      pageImages.push({...imageData, contentImage: false});
                     }
                   }
                 } catch (e) {
@@ -143,12 +163,68 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
     // Prima, separa il contenuto per gestire le immagini markdown
     const parsedContent = parseMarkdownImages(content);
     
-    // Aggiungi le immagini dalla galleria
-    images.forEach(image => {
-      parsedContent.push(image);
-    });
+    // Separa le immagini in contenuto e galleria
+    const contentImages = images.filter(img => img.contentImage);
+    const galleryImages = images.filter(img => !img.contentImage);
     
-    setPageContentSections(parsedContent);
+    // Incorpora le immagini di contenuto
+    if (contentImages.length > 0) {
+      // Dividi il contenuto in paragrafi
+      const contentSectionsTemp: (string | ImageItem)[] = [];
+      
+      // Aggiungi i paragrafi e le immagini di contenuto alternati
+      let currentContentIndex = 0;
+      let paragraphCount = 0;
+      
+      parsedContent.forEach(section => {
+        if (typeof section === 'string') {
+          // Aggiungi paragrafi singolarmente per inserire immagini tra loro
+          const paragraphs = section.split('\n').filter(p => p.trim());
+          
+          paragraphs.forEach(paragraph => {
+            contentSectionsTemp.push(paragraph);
+            paragraphCount++;
+            
+            // Controlla se dovrebbe esserci un'immagine dopo questo paragrafo
+            // Nota: questo è un algoritmo semplificato e può essere migliorato
+            while (
+              currentContentIndex < contentImages.length && 
+              paragraphCount > currentContentIndex
+            ) {
+              contentSectionsTemp.push(contentImages[currentContentIndex]);
+              currentContentIndex++;
+            }
+          });
+        } else {
+          // Immagine markdown nel contenuto originale
+          contentSectionsTemp.push(section);
+        }
+      });
+      
+      // Aggiungi le immagini di contenuto rimanenti
+      while (currentContentIndex < contentImages.length) {
+        contentSectionsTemp.push(contentImages[currentContentIndex]);
+        currentContentIndex++;
+      }
+      
+      // Aggiungi le immagini della galleria alla fine
+      if (galleryImages.length > 0) {
+        galleryImages.forEach(image => {
+          contentSectionsTemp.push(image);
+        });
+      }
+      
+      setPageContentSections(contentSectionsTemp);
+    } else {
+      // Nessuna immagine nel contenuto, aggiungi solo le immagini della galleria alla fine
+      const contentSectionsTemp = [...parsedContent];
+      
+      galleryImages.forEach(image => {
+        contentSectionsTemp.push(image);
+      });
+      
+      setPageContentSections(contentSectionsTemp);
+    }
   };
   
   // Funzione per elaborare le immagini in formato markdown nel contenuto
@@ -324,13 +400,11 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
               {pageContentSections.map((section, index) => {
                 if (typeof section === 'string') {
                   // Sezione di testo
-                  return section.split('\n').map((paragraph, pIndex) => (
-                    paragraph ? 
-                      <p key={`p-${index}-${pIndex}`} className="mb-4">
-                        <TranslatedText text={paragraph} />
-                      </p> 
-                      : <br key={`br-${index}-${pIndex}`} />
-                  ));
+                  return (
+                    <p key={`p-${index}`} className="mb-4">
+                      <TranslatedText text={section} />
+                    </p>
+                  );
                 } else {
                   // Sezione immagine
                   return renderImage(section, index);

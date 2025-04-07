@@ -62,21 +62,100 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
   const formatPageContent = (content: string, images: ImageItem[]) => {
     if (images.length === 0) return content;
     
-    let enhancedContent = content;
-    enhancedContent += "\n\n<!-- IMAGES -->\n";
+    // Filtra immagini da inserire nel contenuto
+    const contentImages = images
+      .filter(img => img.insertInContent)
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+      
+    // Immagini per la galleria (non inserite nel contenuto)
+    const galleryImages = images.filter(img => !img.insertInContent);
     
-    images.forEach((image) => {
-      const imageMarkup = JSON.stringify({
-        type: "image",
-        url: image.url,
-        position: image.position,
-        caption: image.caption || ""
+    if (contentImages.length === 0) {
+      // Solo galleria, nessuna immagine nel contenuto
+      let enhancedContent = content;
+      enhancedContent += "\n\n<!-- IMAGES -->\n";
+      
+      galleryImages.forEach((image) => {
+        const imageMarkup = JSON.stringify({
+          type: "image",
+          url: image.url,
+          position: image.position,
+          caption: image.caption || ""
+        });
+        
+        enhancedContent += `\n${imageMarkup}\n`;
       });
       
-      enhancedContent += `\n${imageMarkup}\n`;
-    });
-    
-    return enhancedContent;
+      return enhancedContent;
+    } else {
+      // Dividi il contenuto in paragrafi
+      const paragraphs = content.split('\n').filter(p => p.trim() !== '');
+      
+      // Prepara il nuovo contenuto con le immagini inserite
+      let newContent = '';
+      let currentImageIndex = 0;
+      let lastInsertedIndex = -1;
+      
+      // Inserisci le immagini nel testo in base al loro ordine
+      paragraphs.forEach((paragraph, index) => {
+        newContent += paragraph + '\n\n';
+        
+        // Controlla se dobbiamo inserire un'immagine qui
+        while (
+          currentImageIndex < contentImages.length && 
+          (contentImages[currentImageIndex].order || 0) <= index && 
+          (contentImages[currentImageIndex].order || 0) > lastInsertedIndex
+        ) {
+          const img = contentImages[currentImageIndex];
+          const imgMarkdown = `<!-- IMAGE-CONTENT-${currentImageIndex} -->\n${JSON.stringify({
+            type: "image",
+            url: img.url,
+            position: img.position,
+            caption: img.caption || "",
+            contentImage: true
+          })}\n\n`;
+          
+          newContent += imgMarkdown;
+          lastInsertedIndex = index;
+          currentImageIndex++;
+        }
+      });
+      
+      // Aggiungi le immagini rimanenti non inserite
+      if (currentImageIndex < contentImages.length) {
+        while (currentImageIndex < contentImages.length) {
+          const img = contentImages[currentImageIndex];
+          const imgMarkdown = `<!-- IMAGE-CONTENT-${currentImageIndex} -->\n${JSON.stringify({
+            type: "image",
+            url: img.url,
+            position: img.position,
+            caption: img.caption || "",
+            contentImage: true
+          })}\n\n`;
+          
+          newContent += imgMarkdown;
+          currentImageIndex++;
+        }
+      }
+      
+      // Aggiungi le immagini della galleria in fondo
+      if (galleryImages.length > 0) {
+        newContent += "\n\n<!-- IMAGES -->\n";
+        
+        galleryImages.forEach((image) => {
+          const imageMarkup = JSON.stringify({
+            type: "image",
+            url: image.url,
+            position: image.position,
+            caption: image.caption || ""
+          });
+          
+          newContent += `\n${imageMarkup}\n`;
+        });
+      }
+      
+      return newContent;
+    }
   };
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
