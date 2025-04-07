@@ -73,7 +73,10 @@ const Menu: React.FC = () => {
         .from('menu_icons')
         .select('*', { count: 'exact', head: true });
         
-      if (error) throw error;
+      if (error) {
+        console.error("Errore nel conteggio delle icone:", error);
+        throw error;
+      }
       
       console.log("Numero totale di icone nel database:", count);
       return count;
@@ -84,11 +87,11 @@ const Menu: React.FC = () => {
   }, []);
   
   useEffect(() => {
-    fetchHeaderSettings();
-    console.log("Menu - Forzando l'aggiornamento del menu all'avvio");
-    
-    // Controlla se ci sono pagine e forza l'aggiornamento a intervalli regolari
-    const checkAndRefresh = async () => {
+    const loadData = async () => {
+      await fetchHeaderSettings();
+      console.log("Menu - Forzando l'aggiornamento del menu all'avvio");
+      
+      // Controlla se ci sono pagine e forza l'aggiornamento a intervalli regolari
       const count = await checkForPages();
       console.log(`Trovate ${count} icone nel database`);
       
@@ -113,7 +116,7 @@ const Menu: React.FC = () => {
       }
     };
     
-    checkAndRefresh();
+    loadData();
   }, [fetchHeaderSettings, checkForPages]);
   
   const handleRefresh = () => {

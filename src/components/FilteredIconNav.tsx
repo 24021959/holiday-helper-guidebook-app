@@ -31,15 +31,22 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
   const removeDuplicates = useCallback(async () => {
     try {
       setIsLoading(true);
+      setError(null);
+      
+      console.log("Checking for duplicate menu items with parent_path:", parentPath);
       
       const { data, error } = await supabase
         .from('menu_icons')
         .select('*')
         .eq('parent_path', parentPath);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching menu items:", error);
+        throw error;
+      }
       
       if (!data || data.length === 0) {
+        console.log("No menu items found for parent_path:", parentPath);
         setIsLoading(false);
         return;
       }
@@ -75,6 +82,8 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
       });
       
       if (idsToDelete.length > 0) {
+        console.log("Found duplicate menu items to delete:", idsToDelete.length);
+        
         for (const id of idsToDelete) {
           const { error: deleteError } = await supabase
             .from('menu_icons')
@@ -102,6 +111,8 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
         }
         
         toast.success(`Rimossi ${idsToDelete.length} elementi duplicati dal menu`);
+      } else {
+        console.log("No duplicate menu items found");
       }
     } catch (error) {
       console.error("Error removing duplicates:", error);
