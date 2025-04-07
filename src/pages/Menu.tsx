@@ -33,6 +33,7 @@ const Menu: React.FC = () => {
         try {
           localSettings = JSON.parse(savedHeaderSettings);
           setHeaderSettings(localSettings);
+          console.log("Using cached header settings:", localSettings);
         } catch (err) {
           console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
         }
@@ -69,8 +70,6 @@ const Menu: React.FC = () => {
       }
     } catch (error) {
       console.error("Errore nel caricamento delle impostazioni header:", error);
-      
-      // Fallback a localStorage (già gestito sopra)
     } finally {
       setLoading(false);
     }
@@ -119,6 +118,7 @@ const Menu: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
+        setLoading(true);
         await fetchHeaderSettings();
         console.log("Menu - Forzando l'aggiornamento del menu all'avvio");
         
@@ -152,7 +152,7 @@ const Menu: React.FC = () => {
       } catch (error) {
         console.error("Errore nel caricamento dei dati:", error);
       } finally {
-        // Ensure loading is set to false regardless of success or failure
+        // Always set loading to false
         setLoading(false);
       }
     };
