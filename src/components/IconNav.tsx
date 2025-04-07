@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -5,7 +6,7 @@ import {
   Loader2, Book, Home, FileText, Image, MessageCircle, Info, Map, 
   Utensils, Landmark, Hotel, Wifi, Bus, ShoppingBag, Calendar, 
   Phone, Coffee, Bike, Camera, Globe, Mountain, MapPin, Newspaper,
-  Music, Heart, Trees, Users, ShoppingCart
+  Music, Heart, Trees, Users, ShoppingCart, Eye
 } from "lucide-react";
 import TranslatedText from "@/components/TranslatedText";
 
@@ -155,24 +156,26 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath }) => {
             <TranslatedText text="Menu vuoto" />
           </p>
           <p className="text-gray-500 mb-3">
-            <TranslatedText text="Non ci sono pagine disponibili in questa sezione del menu" />
+            <TranslatedText text="Non ci sono pagine pubblicate disponibili in questa sezione del menu" />
           </p>
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
             <p className="text-amber-700 mb-2 font-medium">
-              <TranslatedText text="Come risolvere:" />
+              <TranslatedText text="Come pubblicare le pagine:" />
             </p>
             <ul className="text-sm text-amber-600 list-disc pl-5 space-y-2">
               <li>
                 <TranslatedText text="Vai all'area amministrativa (/admin)" />
               </li>
               <li>
-                <TranslatedText text="Verifica che le pagine desiderate esistano nella sezione 'Gestisci Pagine'" />
+                <TranslatedText text="Nella sezione 'Gestisci Pagine', trova le pagine che vuoi pubblicare" />
               </li>
               <li>
-                <TranslatedText text="Assicurati che ogni pagina sia contrassegnata come 'Pubblicata'" />
+                <TranslatedText text="Clicca sul pulsante con l'icona dell'occhio" />
+                <Eye className="inline-block ml-1 h-4 w-4" />
+                <TranslatedText text=" per pubblicare la pagina" />
               </li>
               <li>
-                <TranslatedText text="Se la pagina non è pubblicata, fai clic sul pulsante a forma di occhio per pubblicarla" />
+                <TranslatedText text="Le pagine pubblicate appariranno automaticamente nel menu" />
               </li>
             </ul>
           </div>
