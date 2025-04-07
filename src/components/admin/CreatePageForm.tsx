@@ -27,7 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 // Form schema validation
 const formSchema = z.object({
   title: z.string().min(1, "Il titolo è obbligatorio"),
-  content: z.string().min(1, "Il contenuto è obbligatorio"),
+  content: z.string().min(1, "Il contenuto è obbligatorio").or(z.literal('')),
   icon: z.string().optional(),
 });
 
@@ -42,7 +42,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
   onPageCreated,
   keywordToIconMap 
 }) => {
-  const [isSubmenu, setIsSubmenu] = useState(false);
+  const [pageType, setPageType] = useState<"normal" | "submenu" | "parent">("normal");
   const [parentPath, setParentPath] = useState("");
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [listType, setListType] = useState<"locations" | "activities" | "restaurants" | undefined>();
@@ -60,6 +60,16 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
       icon: "FileText",
     },
   });
+
+  // When page type changes to parent, reset content-related state and disable content tab
+  React.useEffect(() => {
+    if (pageType === "parent") {
+      form.setValue("content", "");
+      setUploadedImage(null);
+      setPageImages([]);
+      setCurrentTab("content");
+    }
+  }, [pageType, form]);
 
   const formatPageContent = (content: string, images: ImageItem[]) => {
     if (images.length === 0) return content;
@@ -92,11 +102,13 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         .replace(/[^\w\s]/gi, '')  // Remove special chars
         .replace(/\s+/g, '-');     // Replace spaces with hyphens
       
-      const finalPath = isSubmenu 
+      const finalPath = pageType === "submenu" 
         ? `${parentPath}/${pathValue}` 
         : `/${pathValue}`;
       
-      const formattedContent = formatPageContent(values.content, pageImages);
+      const formattedContent = pageType !== "parent" 
+        ? formatPageContent(values.content, pageImages)
+        : "";
       
       // Dati pagina
       const pageData = {
@@ -104,10 +116,10 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         title: values.title,
         content: formattedContent,
         path: finalPath,
-        image_url: uploadedImage,
+        image_url: pageType !== "parent" ? uploadedImage : null,
         icon: values.icon || selectedIcon,
-        is_submenu: isSubmenu,
-        parent_path: isSubmenu ? parentPath : null,
+        is_submenu: pageType === "submenu",
+        parent_path: pageType === "submenu" ? parentPath : null,
         list_type: listType,
         list_items: listType && locationItems.length > 0 ? locationItems : null,
         published: true // Sempre pubblicato automaticamente
@@ -188,7 +200,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
       // Reset form
       form.reset();
       setUploadedImage(null);
-      setIsSubmenu(false);
+      setPageType("normal");
       setParentPath("");
       setLocationItems([]);
       setListType(undefined);
@@ -202,6 +214,9 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
       setIsCreating(false);
     }
   };
+
+  // Function to check if content tab should be disabled
+  const isContentTabDisabled = pageType === "parent";
 
   return (
     <>
@@ -240,55 +255,65 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
             )}
           />
           
-          <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-            <TabsList className="grid grid-cols-3 mb-4">
-              <TabsTrigger value="content">Contenuto</TabsTrigger>
-              <TabsTrigger value="images">Galleria Immagini</TabsTrigger>
-              <TabsTrigger value="thumbnail">Immagine Principale</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="content">
-              <FormField
-                control={form.control}
-                name="content"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contenuto della pagina</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Inserisci qui il contenuto della pagina..."
-                        className="min-h-[200px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </TabsContent>
-            
-            <TabsContent value="images">
-              <PageMultiImageSection 
-                images={pageImages}
-                onImagesChange={setPageImages}
-              />
-            </TabsContent>
-            
-            <TabsContent value="thumbnail">
-              <PageImageSection 
-                imageUrl={uploadedImage}
-                onImageUploaded={setUploadedImage}
-              />
-            </TabsContent>
-          </Tabs>
-          
           <PageTypeSection 
-            isSubmenu={isSubmenu}
-            setIsSubmenu={setIsSubmenu}
+            pageType={pageType}
+            setPageType={setPageType}
             parentPath={parentPath}
             setParentPath={setParentPath}
             parentPages={parentPages}
           />
+          
+          {!isContentTabDisabled && (
+            <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
+              <TabsList className="grid grid-cols-3 mb-4">
+                <TabsTrigger value="content">Contenuto</TabsTrigger>
+                <TabsTrigger value="images">Galleria Immagini</TabsTrigger>
+                <TabsTrigger value="thumbnail">Immagine Principale</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="content">
+                <FormField
+                  control={form.control}
+                  name="content"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contenuto della pagina</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Inserisci qui il contenuto della pagina..."
+                          className="min-h-[200px]"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </TabsContent>
+              
+              <TabsContent value="images">
+                <PageMultiImageSection 
+                  images={pageImages}
+                  onImagesChange={setPageImages}
+                />
+              </TabsContent>
+              
+              <TabsContent value="thumbnail">
+                <PageImageSection 
+                  imageUrl={uploadedImage}
+                  onImageUploaded={setUploadedImage}
+                />
+              </TabsContent>
+            </Tabs>
+          )}
+          
+          {isContentTabDisabled && (
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded-md">
+              <p className="text-amber-800 font-medium">
+                Le pagine genitore non hanno contenuto proprio. Servono solo come contenitore per le sottopagine.
+              </p>
+            </div>
+          )}
           
           <Button type="submit" className="w-full" disabled={isCreating}>
             {isCreating ? "Creazione in corso..." : "Crea pagina"}
