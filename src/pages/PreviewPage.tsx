@@ -8,6 +8,8 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BackToMenu from "@/components/BackToMenu";
 import TranslatedText from "@/components/TranslatedText";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface ImageItem {
   url: string;
@@ -34,6 +36,7 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
   const params = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [pageData, setPageData] = useState<PageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -189,19 +192,33 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
 
   // Funzione per renderizzare un'immagine con posizionamento
   const renderImage = (image: ImageItem, index: number) => {
-    const positionClass = 
-      image.position === "left" ? "float-left mr-4 mb-4 w-1/3" :
-      image.position === "right" ? "float-right ml-4 mb-4 w-1/3" : 
-      image.position === "center" ? "mx-auto mb-4 w-2/3" :
-      "w-full mb-4"; // full width
+    // Calcola le classi di dimensione in base alla posizione
+    const positionClass = image.position === "left" 
+      ? "float-left mr-4 mb-4" 
+      : image.position === "right" 
+        ? "float-right ml-4 mb-4" 
+        : image.position === "center" 
+          ? "mx-auto mb-4" 
+          : "w-full mb-4"; // full width
     
+    // Calcola la larghezza massima in base alla posizione
+    const widthClass = image.position === "left" || image.position === "right"
+      ? "w-full sm:w-1/3 md:w-1/3 lg:w-1/3" 
+      : image.position === "center"
+        ? "w-full sm:w-2/3 md:w-2/3 lg:w-2/3" 
+        : "w-full"; // full width
+        
     return (
-      <figure key={`img-${index}`} className={`${positionClass} my-4`}>
-        <img 
-          src={image.url} 
-          alt={image.caption || `Immagine ${index + 1}`} 
-          className="rounded-lg shadow-md w-full"
-        />
+      <figure key={`img-${index}`} className={`${positionClass} ${widthClass} my-4`}>
+        <div className="rounded-lg overflow-hidden shadow-md">
+          <AspectRatio ratio={16/9} className="bg-gray-100">
+            <img 
+              src={image.url} 
+              alt={image.caption || `Immagine ${index + 1}`}
+              className="object-cover w-full h-full"
+            />
+          </AspectRatio>
+        </div>
         {image.caption && image.caption !== "[Immagine]" && (
           <figcaption className="text-sm text-gray-600 text-center mt-2">
             <TranslatedText text={image.caption} />
@@ -291,11 +308,13 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
           
           {pageData?.imageUrl && (
             <div className="mb-6">
-              <img 
-                src={pageData.imageUrl} 
-                alt={pageData.title} 
-                className="w-full h-auto max-h-96 object-cover rounded-lg shadow-md"
-              />
+              <AspectRatio ratio={16/9} className="bg-gray-100 rounded-lg overflow-hidden shadow-md">
+                <img 
+                  src={pageData.imageUrl} 
+                  alt={pageData.title} 
+                  className="w-full h-full object-cover"
+                />
+              </AspectRatio>
             </div>
           )}
           
@@ -336,7 +355,13 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
                 {pageData.listItems.map((item, index) => (
                   <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
                     {item.imageUrl && (
-                      <img src={item.imageUrl} alt={item.name} className="w-full h-48 object-cover" />
+                      <AspectRatio ratio={16/9} className="bg-gray-100">
+                        <img 
+                          src={item.imageUrl} 
+                          alt={item.name} 
+                          className="w-full h-full object-cover" 
+                        />
+                      </AspectRatio>
                     )}
                     <div className="p-4">
                       <h3 className="font-bold text-lg mb-2">
