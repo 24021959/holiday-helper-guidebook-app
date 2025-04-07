@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
@@ -23,6 +22,7 @@ import { PageImageSection } from "./form/PageImageSection";
 import { PageIconSection } from "./form/PageIconSection";
 import { PageMultiImageSection, ImageItem } from "./form/PageMultiImageSection";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageContentSection } from "./form/PageContentSection";
 
 // Form schema validation
 const formSchema = z.object({
@@ -89,6 +89,22 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
     });
     
     return enhancedContent;
+  };
+
+  const handleImageInsertion = (imageId: number) => {
+    if (imageId >= 0 && imageId < pageImages.length) {
+      const updatedImages = [...pageImages];
+      updatedImages[imageId] = {
+        ...updatedImages[imageId],
+        insertInContent: true,
+        order: updatedImages.filter(img => img.insertInContent).length
+      };
+      setPageImages(updatedImages);
+      
+      setCurrentTab("images");
+      
+      toast.success("Immagine impostata per l'inserimento nel contenuto");
+    }
   };
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -272,22 +288,11 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
               </TabsList>
               
               <TabsContent value="content">
-                <FormField
-                  control={form.control}
-                  name="content"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Contenuto della pagina</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Inserisci qui il contenuto della pagina..."
-                          className="min-h-[200px]"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                <PageContentSection 
+                  name="content" 
+                  label="Contenuto della pagina" 
+                  pageImages={pageImages}
+                  onInsertImage={handleImageInsertion}
                 />
               </TabsContent>
               

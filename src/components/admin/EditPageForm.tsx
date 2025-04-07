@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
@@ -158,6 +157,24 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
     }
   };
 
+  const handleImageInsertion = (imageId: number) => {
+    if (imageId >= 0 && imageId < pageImages.length) {
+      // Aggiorna l'immagine come "inserita nel contenuto" con un ordine
+      const updatedImages = [...pageImages];
+      updatedImages[imageId] = {
+        ...updatedImages[imageId],
+        insertInContent: true,
+        order: updatedImages.filter(img => img.insertInContent).length
+      };
+      setPageImages(updatedImages);
+      
+      // Passa alla scheda delle immagini
+      setCurrentTab("images");
+      
+      toast.success("Immagine impostata per l'inserimento nel contenuto");
+    }
+  };
+
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setIsUpdating(true);
@@ -280,7 +297,12 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
             </TabsList>
             
             <TabsContent value="content">
-              <PageContentSection name="content" label="Contenuto della pagina" />
+              <PageContentSection 
+                name="content" 
+                label="Contenuto della pagina" 
+                pageImages={pageImages}
+                onInsertImage={handleImageInsertion}
+              />
             </TabsContent>
             
             <TabsContent value="images">
