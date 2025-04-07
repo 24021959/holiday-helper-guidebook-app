@@ -71,11 +71,9 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
                 : []
             : [];
 
-          // Estrai le immagini dal contenuto
           const pageImages: ImageItem[] = [];
           let processedContent = pageData.content;
           
-          // Estrai immagini inserite nel contenuto
           const contentImageRegex = /<!-- IMAGE-CONTENT-\d+ -->\n({.*?})\n\n/gs;
           let contentMatch;
           while ((contentMatch = contentImageRegex.exec(processedContent)) !== null) {
@@ -91,13 +89,11 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
             }
           }
           
-          // Rimuovi i marcatori delle immagini dal contenuto
           processedContent = processedContent.replace(/<!-- IMAGE-CONTENT-\d+ -->\n({.*?})\n\n/gs, '');
           
-          // Estrai le immagini della galleria
           if (processedContent.includes("<!-- IMAGES -->")) {
             const parts = processedContent.split("<!-- IMAGES -->");
-            processedContent = parts[0]; // Contenuto testuale
+            processedContent = parts[0];
             
             if (parts[1]) {
               const imageLines = parts[1].split("\n").filter(line => line.trim());
@@ -129,7 +125,6 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
           
           setPageData(formattedPageData);
           
-          // Prepara le sezioni di contenuto
           parseContentSections(processedContent, pageImages);
         } else {
           throw new Error(`Pagina non trovata: ${effectivePath}`);
@@ -158,35 +153,26 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
     fetchData();
   }, [effectivePath]);
 
-  // Funzione per analizzare il contenuto della pagina e preparare le sezioni
   const parseContentSections = (content: string, images: ImageItem[]) => {
-    // Prima, separa il contenuto per gestire le immagini markdown
     const parsedContent = parseMarkdownImages(content);
     
-    // Separa le immagini in contenuto e galleria
     const contentImages = images.filter(img => img.contentImage);
     const galleryImages = images.filter(img => !img.contentImage);
     
-    // Incorpora le immagini di contenuto
     if (contentImages.length > 0) {
-      // Dividi il contenuto in paragrafi
       const contentSectionsTemp: (string | ImageItem)[] = [];
       
-      // Aggiungi i paragrafi e le immagini di contenuto alternati
       let currentContentIndex = 0;
       let paragraphCount = 0;
       
       parsedContent.forEach(section => {
         if (typeof section === 'string') {
-          // Aggiungi paragrafi singolarmente per inserire immagini tra loro
           const paragraphs = section.split('\n').filter(p => p.trim());
           
           paragraphs.forEach(paragraph => {
             contentSectionsTemp.push(paragraph);
             paragraphCount++;
             
-            // Controlla se dovrebbe esserci un'immagine dopo questo paragrafo
-            // Nota: questo è un algoritmo semplificato e può essere migliorato
             while (
               currentContentIndex < contentImages.length && 
               paragraphCount > currentContentIndex
@@ -196,18 +182,15 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
             }
           });
         } else {
-          // Immagine markdown nel contenuto originale
           contentSectionsTemp.push(section);
         }
       });
       
-      // Aggiungi le immagini di contenuto rimanenti
       while (currentContentIndex < contentImages.length) {
         contentSectionsTemp.push(contentImages[currentContentIndex]);
         currentContentIndex++;
       }
       
-      // Aggiungi le immagini della galleria alla fine
       if (galleryImages.length > 0) {
         galleryImages.forEach(image => {
           contentSectionsTemp.push(image);
@@ -216,7 +199,6 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
       
       setPageContentSections(contentSectionsTemp);
     } else {
-      // Nessuna immagine nel contenuto, aggiungi solo le immagini della galleria alla fine
       const contentSectionsTemp = [...parsedContent];
       
       galleryImages.forEach(image => {
@@ -226,8 +208,7 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
       setPageContentSections(contentSectionsTemp);
     }
   };
-  
-  // Funzione per elaborare le immagini in formato markdown nel contenuto
+
   const parseMarkdownImages = (content: string): (string | ImageItem)[] => {
     const sections: (string | ImageItem)[] = [];
     const imgRegex = /!\[(.*?)\]\((.*?)\)/g;
@@ -236,19 +217,16 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
     let match;
     
     while ((match = imgRegex.exec(content)) !== null) {
-      // Aggiungi il testo prima dell'immagine
       if (match.index > lastIndex) {
         sections.push(content.substring(lastIndex, match.index));
       }
       
-      // Aggiungi l'immagine come oggetto
       const altText = match[1];
       const imageUrl = match[2];
       
-      // Crea un oggetto ImageItem per l'immagine markdown
       const imageItem: ImageItem = {
         url: imageUrl,
-        position: "center", // Posizione predefinita per le immagini inline
+        position: "center",
         caption: altText !== "[Immagine]" ? altText : undefined,
         type: "image"
       };
@@ -258,7 +236,6 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
       lastIndex = match.index + match[0].length;
     }
     
-    // Aggiungi il testo rimanente dopo l'ultima immagine
     if (lastIndex < content.length) {
       sections.push(content.substring(lastIndex));
     }
@@ -266,26 +243,23 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
     return sections;
   };
 
-  // Funzione per renderizzare un'immagine con posizionamento
   const renderImage = (image: ImageItem, index: number) => {
-    // Calcola le classi di dimensione in base alla posizione
     const positionClass = image.position === "left" 
-      ? "float-left mr-4 mb-4" 
+      ? "float-left mr-6 mb-6" 
       : image.position === "right" 
-        ? "float-right ml-4 mb-4" 
+        ? "float-right ml-6 mb-6" 
         : image.position === "center" 
-          ? "mx-auto mb-4" 
-          : "w-full mb-4"; // full width
+          ? "mx-auto mb-6" 
+          : "w-full mb-6";
     
-    // Calcola la larghezza massima in base alla posizione
     const widthClass = image.position === "left" || image.position === "right"
       ? "w-full sm:w-1/3 md:w-1/3 lg:w-1/3" 
       : image.position === "center"
         ? "w-full sm:w-2/3 md:w-2/3 lg:w-2/3" 
-        : "w-full"; // full width
+        : "w-full";
         
     return (
-      <figure key={`img-${index}`} className={`${positionClass} ${widthClass} my-4`}>
+      <figure key={`img-${index}`} className={`${positionClass} ${widthClass} my-6 max-w-full`}>
         <div className="rounded-lg overflow-hidden shadow-md">
           <AspectRatio ratio={16/9} className="bg-gray-100">
             <img 
@@ -296,7 +270,7 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
           </AspectRatio>
         </div>
         {image.caption && image.caption !== "[Immagine]" && (
-          <figcaption className="text-sm text-gray-600 text-center mt-2">
+          <figcaption className="text-sm text-gray-600 text-center mt-2 italic">
             <TranslatedText text={image.caption} />
           </figcaption>
         )}
@@ -375,15 +349,15 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
       />
       
       <div className="flex-1 p-4 md:p-6 lg:p-8 bg-gray-50">
-        <div className="container mx-auto">
+        <div className="container mx-auto max-w-4xl">
           <BackToMenu />
           
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mt-4 mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mt-6 mb-8">
             <TranslatedText text={pageData?.title || ""} />
           </h1>
           
           {pageData?.imageUrl && (
-            <div className="mb-6">
+            <div className="mb-8">
               <AspectRatio ratio={16/9} className="bg-gray-100 rounded-lg overflow-hidden shadow-md">
                 <img 
                   src={pageData.imageUrl} 
@@ -394,19 +368,16 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
             </div>
           )}
           
-          <div className="bg-white p-5 rounded-lg shadow-md mb-6">
-            <div className="prose max-w-none clearfix">
-              {/* Renderizza le sezioni di contenuto */}
+          <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+            <div className="prose max-w-none clearfix text-base md:text-lg leading-relaxed text-gray-700">
               {pageContentSections.map((section, index) => {
                 if (typeof section === 'string') {
-                  // Sezione di testo
                   return (
-                    <p key={`p-${index}`} className="mb-4">
+                    <p key={`p-${index}`} className="mb-6">
                       <TranslatedText text={section} />
                     </p>
                   );
                 } else {
-                  // Sezione immagine
                   return renderImage(section, index);
                 }
               })}
@@ -415,7 +386,7 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
           
           {pageData?.listItems && pageData.listItems.length > 0 && (
             <div className="mt-8">
-              <h2 className="text-xl font-semibold text-emerald-700 mb-4">
+              <h2 className="text-xl font-semibold text-emerald-700 mb-6">
                 <TranslatedText 
                   text={
                     pageData.listType === "restaurants" ? "Ristoranti Consigliati" :
@@ -442,7 +413,7 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
                         <TranslatedText text={item.name} />
                       </h3>
                       {item.description && (
-                        <p className="text-gray-600 mb-3">
+                        <p className="text-gray-600 mb-3 leading-relaxed">
                           <TranslatedText text={item.description} />
                         </p>
                       )}

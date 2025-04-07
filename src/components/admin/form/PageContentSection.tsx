@@ -5,8 +5,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useFormContext } from "react-hook-form";
 import ImageInsertionDialog from "./ImageInsertionDialog";
 import { Button } from "@/components/ui/button";
-import { ImageIcon } from "lucide-react";
+import { ImageIcon, Info } from "lucide-react";
 import { ImageItem } from "./PageMultiImageSection";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface PageContentSectionProps {
   name: string;
@@ -82,13 +83,34 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
         name={name}
         render={({ field }) => (
           <FormItem>
-            <FormLabel>{label}</FormLabel>
+            <div className="flex items-center justify-between">
+              <FormLabel>{label}</FormLabel>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Info className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-sm p-4 text-sm">
+                    <p>Suggerimenti per la leggibilità:</p>
+                    <ul className="list-disc ml-4 mt-2 space-y-1">
+                      <li>Utilizza paragrafi brevi (2-3 frasi)</li>
+                      <li>Inserisci uno spazio vuoto tra i paragrafi</li>
+                      <li>Usa elenchi puntati per informazioni importanti</li>
+                      <li>Evidenzia le parole chiave in grassetto</li>
+                    </ul>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <div className="space-y-2">
               <FormControl>
                 <Textarea
                   {...field}
                   ref={textareaRef}
-                  className="min-h-[200px]"
+                  className="min-h-[250px] font-medium leading-relaxed p-4"
+                  style={{ lineHeight: "1.6" }}
                 />
               </FormControl>
               <div className="flex flex-wrap gap-2">
@@ -138,11 +160,18 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
                   className="relative border rounded cursor-pointer hover:border-emerald-500 transition-colors"
                   onClick={() => handleInsertGalleryImage(idx)}
                 >
-                  <img 
-                    src={image.url} 
-                    alt={`Immagine ${idx + 1}`}
-                    className="w-full h-32 object-cover rounded"
-                  />
+                  <div className="aspect-w-16 aspect-h-9">
+                    <img 
+                      src={image.url} 
+                      alt={`Immagine ${idx + 1}`}
+                      className="w-full h-32 object-cover rounded"
+                    />
+                  </div>
+                  <div className="absolute top-0 right-0 bg-emerald-600 text-white text-xs px-2 py-1 rounded-bl">
+                    {image.position === "left" ? "SX" : 
+                     image.position === "right" ? "DX" : 
+                     image.position === "center" ? "Centro" : "Intera"}
+                  </div>
                   {image.caption && (
                     <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 truncate">
                       {image.caption}
