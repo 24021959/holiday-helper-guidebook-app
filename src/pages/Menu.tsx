@@ -79,7 +79,7 @@ const Menu: React.FC = () => {
   const checkForPages = useCallback(async () => {
     try {
       // First try localStorage for cached icons
-      const cachedIcons = localStorage.getItem("menuIcons");
+      const cachedIcons = localStorage.getItem("icons_root");
       if (cachedIcons) {
         try {
           const icons = JSON.parse(cachedIcons);
@@ -118,38 +118,43 @@ const Menu: React.FC = () => {
   
   useEffect(() => {
     const loadData = async () => {
-      await fetchHeaderSettings();
-      console.log("Menu - Forzando l'aggiornamento del menu all'avvio");
-      
-      // Controlla se ci sono pagine e forza l'aggiornamento a intervalli regolari
-      const count = await checkForPages();
-      console.log(`Trovate ${count} icone nel database`);
-      
-      // Forza l'aggiornamento del menu
-      setRefreshTrigger(prev => prev + 1);
-      
-      // Se non ci sono icone o c'è un errore di connessione
-      if (count === 0) {
-        // Prova a ricaricare i dati più volte con backoff esponenziale
-        const retryIntervals = [3000, 5000, 10000]; // 3s, 5s, 10s
+      try {
+        await fetchHeaderSettings();
+        console.log("Menu - Forzando l'aggiornamento del menu all'avvio");
         
-        for (let i = 0; i < retryIntervals.length; i++) {
-          // Aspetta il tempo specificato
-          await new Promise(resolve => setTimeout(resolve, retryIntervals[i]));
+        // Controlla se ci sono pagine e forza l'aggiornamento a intervalli regolari
+        const count = await checkForPages();
+        console.log(`Trovate ${count} icone nel database`);
+        
+        // Forza l'aggiornamento del menu
+        setRefreshTrigger(prev => prev + 1);
+        
+        // Se non ci sono icone o c'è un errore di connessione
+        if (count === 0) {
+          // Prova a ricaricare i dati più volte con backoff esponenziale
+          const retryIntervals = [3000, 5000, 10000]; // 3s, 5s, 10s
           
-          console.log(`Tentativo di riconnessione ${i + 1}...`);
-          const newCount = await checkForPages();
-          
-          if (newCount > 0) {
-            console.log("Connessione riuscita, aggiornamento menu");
-            setRefreshTrigger(prev => prev + 1);
-            setError(null);
-            break;
+          for (let i = 0; i < retryIntervals.length; i++) {
+            // Aspetta il tempo specificato
+            await new Promise(resolve => setTimeout(resolve, retryIntervals[i]));
+            
+            console.log(`Tentativo di riconnessione ${i + 1}...`);
+            const newCount = await checkForPages();
+            
+            if (newCount > 0) {
+              console.log("Connessione riuscita, aggiornamento menu");
+              setRefreshTrigger(prev => prev + 1);
+              setError(null);
+              break;
+            }
           }
         }
+      } catch (error) {
+        console.error("Errore nel caricamento dei dati:", error);
+      } finally {
+        // Ensure loading is set to false regardless of success or failure
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
     
     loadData();

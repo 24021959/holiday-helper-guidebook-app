@@ -103,8 +103,10 @@ function App() {
     <TranslationProvider>
       <Router>
         <Routes>
+          {/* Redirect the root path to menu */}
+          <Route path="/" element={<Navigate to="/menu" replace />} />
+          
           {/* Public routes */}
-          <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           <Route path="/menu" element={<Menu />} />
           
