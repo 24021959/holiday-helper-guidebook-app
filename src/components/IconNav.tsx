@@ -40,7 +40,7 @@ const IconNav: React.FC<IconNavProps> = ({ parentPath, onRefresh, refreshTrigger
       
       console.log("Caricamento icone con parent_path:", parentPath);
       
-      // Rimuoviamo filtri inutili, mostriamo tutte le icone
+      // Importante! Non filtrare per published perché vogliamo mostrare tutte le icone
       const { data, error } = await supabase
         .from('menu_icons')
         .select('*')

@@ -128,6 +128,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
       
       console.log("Pagina inserita con successo:", insertedPage);
       
+      // Importante: creiamo anche l'icona del menu
       const iconData = {
         label: pageData.title,
         path: pageData.path,
@@ -181,6 +182,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         onPageCreated(formattedPages);
         
         console.log("Lista pagine aggiornata:", formattedPages);
+        toast.success("Pagina creata e aggiunta al menu con successo");
       }
       
       form.reset();
@@ -191,8 +193,6 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
       setListType(undefined);
       setSelectedIcon("FileText");
       setPageImages([]);
-      
-      toast.success("Pagina creata e aggiunta al menu con successo");
       
     } catch (error) {
       console.error("Errore nella creazione della pagina:", error);
