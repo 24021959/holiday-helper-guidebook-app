@@ -16,6 +16,9 @@ const MenuIcon: React.FC<MenuIconProps> = ({ icon, index, onClick }) => {
   const colorIndex = index % pastelColors.length;
   const colorScheme = pastelColors[colorIndex];
   
+  // Debug information
+  console.log(`MenuIcon rendering - Icon:`, icon);
+  
   return (
     <div 
       key={icon.id}

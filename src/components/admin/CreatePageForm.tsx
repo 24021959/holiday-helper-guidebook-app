@@ -133,7 +133,8 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         is_submenu: pageType === "submenu",
         parent_path: pageType === "submenu" ? parentPath : null,
         list_type: listType,
-        list_items: listType && locationItems.length > 0 ? locationItems : null
+        list_items: listType && locationItems.length > 0 ? locationItems : null,
+        published: true
       };
       
       console.log("Dati pagina per inserimento:", pageData);
@@ -151,7 +152,27 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
       
       console.log("Pagina inserita con successo:", insertedPage);
       
-      // Recupera tutte le pagine dopo l'inserimento
+      if (pageType === "normal" || pageType === "parent") {
+        const menuIconData = {
+          id: uuidv4(),
+          path: finalPath,
+          label: values.title,
+          icon: values.icon || selectedIcon,
+          bg_color: "bg-blue-200",
+          published: true
+        };
+        
+        const { error: menuIconError } = await supabase
+          .from('menu_icons')
+          .insert(menuIconData);
+        
+        if (menuIconError) {
+          console.error("Errore nell'inserimento dell'icona del menu:", menuIconError);
+        } else {
+          console.log("Icona del menu inserita con successo");
+        }
+      }
+      
       const { data: pagesData, error: fetchError } = await supabase
         .from('custom_pages')
         .select('*');
@@ -173,7 +194,9 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
           listItems: page.list_items as { name: string; description?: string; phoneNumber?: string; mapsUrl?: string; }[] | undefined,
           isSubmenu: page.is_submenu || false,
           parentPath: page.parent_path || undefined,
-          pageImages: []
+          pageImages: [],
+          published: page.published || false,
+          is_parent: pageType === "parent"
         }));
         
         onPageCreated(formattedPages);
@@ -181,11 +204,9 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         console.log("Lista pagine aggiornata:", formattedPages);
         toast.success("Pagina creata con successo");
         
-        // Messaggio per istruire l'utente
         toast.info("Vai alla pagina menu per vedere le nuove pagine");
       }
       
-      // Reset form
       form.reset();
       setUploadedImage(null);
       setPageType("normal");

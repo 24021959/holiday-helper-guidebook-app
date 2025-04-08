@@ -23,7 +23,7 @@ const IconNav: React.FC<IconNavProps> = ({
   useEffect(() => {
     console.log("IconNav - Ricevute", icons.length, "icone con parentPath:", parentPath);
     if (icons.length > 0) {
-      console.log("IconNav - Prima icona:", icons[0]);
+      console.log("IconNav - Prima icona:", JSON.stringify(icons[0]));
     }
   }, [icons, parentPath]);
 

@@ -21,6 +21,8 @@ import { PageIconSection } from "./form/PageIconSection";
 import { PageImageSection } from "./form/PageImageSection";
 import { PageContentSection } from "./form/PageContentSection";
 import { PageMultiImageSection, ImageItem } from "./form/PageMultiImageSection";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface EditPageFormProps {
   selectedPage: PageData;
@@ -29,7 +31,6 @@ interface EditPageFormProps {
   keywordToIconMap: Record<string, string>;
 }
 
-// Form schema validation
 const formSchema = z.object({
   title: z.string().min(1, "Il titolo è obbligatorio"),
   content: z.string().min(1, "Il contenuto è obbligatorio"),
@@ -48,7 +49,6 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
   const [pageImages, setPageImages] = useState<ImageItem[]>(selectedPage.pageImages || []);
   const [currentTab, setCurrentTab] = useState<string>("content");
   
-  // Create form with react-hook-form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -61,16 +61,13 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
   const formatPageContent = (content: string, images: ImageItem[]) => {
     if (images.length === 0) return content;
     
-    // Filtra immagini da inserire nel contenuto
     const contentImages = images
       .filter(img => img.insertInContent)
       .sort((a, b) => (a.order || 0) - (b.order || 0));
       
-    // Immagini per la galleria (non inserite nel contenuto)
     const galleryImages = images.filter(img => !img.insertInContent);
     
     if (contentImages.length === 0) {
-      // Solo galleria, nessuna immagine nel contenuto
       let enhancedContent = content;
       enhancedContent += "\n\n<!-- IMAGES -->\n";
       
@@ -87,19 +84,15 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
       
       return enhancedContent;
     } else {
-      // Dividi il contenuto in paragrafi
       const paragraphs = content.split('\n').filter(p => p.trim() !== '');
       
-      // Prepara il nuovo contenuto con le immagini inserite
       let newContent = '';
       let currentImageIndex = 0;
       let lastInsertedIndex = -1;
       
-      // Inserisci le immagini nel testo in base al loro ordine
       paragraphs.forEach((paragraph, index) => {
         newContent += paragraph + '\n\n';
         
-        // Controlla se dobbiamo inserire un'immagine qui
         while (
           currentImageIndex < contentImages.length && 
           (contentImages[currentImageIndex].order || 0) <= index && 
@@ -120,7 +113,6 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
         }
       });
       
-      // Aggiungi le immagini rimanenti non inserite
       if (currentImageIndex < contentImages.length) {
         while (currentImageIndex < contentImages.length) {
           const img = contentImages[currentImageIndex];
@@ -137,7 +129,6 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
         }
       }
       
-      // Aggiungi le immagini della galleria in fondo
       if (galleryImages.length > 0) {
         newContent += "\n\n<!-- IMAGES -->\n";
         
@@ -159,7 +150,6 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
 
   const handleImageInsertion = (imageId: number) => {
     if (imageId >= 0 && imageId < pageImages.length) {
-      // Aggiorna l'immagine come "inserita nel contenuto" con un ordine
       const updatedImages = [...pageImages];
       updatedImages[imageId] = {
         ...updatedImages[imageId],
@@ -168,7 +158,6 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
       };
       setPageImages(updatedImages);
       
-      // Passa alla scheda delle immagini
       setCurrentTab("images");
       
       toast.success("Immagine impostata per l'inserimento nel contenuto");
@@ -181,7 +170,6 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
       
       const formattedContent = formatPageContent(values.content, pageImages);
       
-      // Aggiorna i dati della pagina
       const updateData = {
         title: values.title,
         content: formattedContent,
@@ -198,11 +186,10 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
         throw pageError;
       }
       
-      // Aggiorna anche l'icona nel menu
       const iconData = {
         label: values.title,
         icon: selectedIcon,
-        bg_color: "bg-blue-200" // Colore di sfondo predefinito
+        bg_color: "bg-blue-200"
       };
       
       const { error: iconError } = await supabase
@@ -212,10 +199,8 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
       
       if (iconError) {
         console.error("Errore nell'aggiornamento dell'icona:", iconError);
-        // Non blocca l'aggiornamento della pagina
       }
       
-      // Ricarica tutte le pagine per aggiornare l'elenco
       const { data: pagesData, error: fetchError } = await supabase
         .from('custom_pages')
         .select('*');

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +31,7 @@ export interface PageData {
   listType?: 'restaurants' | 'activities' | 'locations';
   pageImages?: ImageItem[];
   published?: boolean;
+  is_parent?: boolean;
 }
 
 export interface UserData {
@@ -108,7 +108,6 @@ const Admin: React.FC = () => {
       setLoadError(null);
       console.log("Admin - Fetching pages from database");
       
-      // First try to use cached pages as temp data while loading
       const cachedPagesString = localStorage.getItem('cached_pages');
       if (cachedPagesString) {
         try {
@@ -165,14 +164,24 @@ const Admin: React.FC = () => {
             listItems: Array.isArray(page.list_items) ? page.list_items : [],
             listType: page.list_type as 'restaurants' | 'activities' | 'locations',
             pageImages: pageImages,
-            published: page.published || false
+            published: page.published || false,
+            is_parent: false
           };
         });
+        
+        for (let i = 0; i < formattedPages.length; i++) {
+          const page = formattedPages[i];
+          const hasChildren = formattedPages.some(p => p.parentPath === page.path);
+          
+          if (hasChildren) {
+            formattedPages[i] = { ...page, is_parent: true };
+            console.log(`Admin - Pagina ${page.path} ha figli, contrassegnata come parent`);
+          }
+        }
         
         console.log("Admin - Pages loaded from database:", formattedPages.length);
         setPages(formattedPages);
         
-        // Cache pages for faster loading next time
         localStorage.setItem('cached_pages', JSON.stringify(formattedPages));
       } else {
         console.log("Admin - No pages data returned from database");
@@ -183,7 +192,6 @@ const Admin: React.FC = () => {
       setLoadError("Errore nel recupero delle pagine. Prova ad aggiornare la pagina.");
       toast.error("Errore nel recupero delle pagine");
       
-      // Try to use cached pages as fallback
       const cachedPagesString = localStorage.getItem('cached_pages');
       if (cachedPagesString) {
         try {
@@ -228,14 +236,12 @@ const Admin: React.FC = () => {
   const handlePageCreated = (newPages: PageData[]) => {
     console.log("Admin - Page created, new pages count:", newPages.length);
     setPages(newPages);
-    // Cache pages for faster loading next time
     localStorage.setItem('cached_pages', JSON.stringify(newPages));
   };
   
   const handlePagesUpdate = (updatedPages: PageData[]) => {
     console.log("Admin - Pages updated, count:", updatedPages.length);
     setPages(updatedPages);
-    // Cache pages for faster loading next time
     localStorage.setItem('cached_pages', JSON.stringify(updatedPages));
   };
   

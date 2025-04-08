@@ -7,12 +7,12 @@ export interface IconData {
   id: string;
   path: string;
   label: string;
+  title?: string;
   icon: string;
   parent_path: string | null;
-  title?: string;
-  is_parent?: boolean;
-  bg_color?: string;
   published?: boolean;
+  is_parent?: boolean; // Aggiungiamo questa proprietà all'interfaccia
+  bg_color?: string;
 }
 
 interface UseMenuIconsProps {

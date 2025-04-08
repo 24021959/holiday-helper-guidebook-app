@@ -24,6 +24,7 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
 
   useEffect(() => {
     console.log("FilteredIconNav - Render con icons:", icons.length, "parentPath:", parentPath);
+    console.log("FilteredIconNav - Icons data:", JSON.stringify(icons));
   }, [icons, parentPath]);
 
   const handleRefresh = () => {
