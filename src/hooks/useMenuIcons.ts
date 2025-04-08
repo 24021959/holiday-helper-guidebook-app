@@ -11,7 +11,7 @@ export interface IconData {
   icon: string;
   parent_path: string | null;
   published?: boolean;
-  is_parent?: boolean; // Aggiungiamo questa proprietà all'interfaccia
+  is_parent?: boolean;  // Keep this property for parent icon identification
   bg_color?: string;
 }
 
@@ -27,10 +27,10 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
   const [hasConnectionError, setHasConnectionError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
-  // Funzione per caricare le pagine pubblicate come icone
+  // Function to load published pages as icons
   const loadPublishedPagesAsIcons = useCallback(async () => {
     try {
-      console.log("Caricamento pagine pubblicate per parent_path:", parentPath);
+      console.log("Loading published pages for parent_path:", parentPath);
       
       const { data, error } = await supabase
         .from('custom_pages')
@@ -39,16 +39,16 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
         .eq('published', true);
         
       if (error) {
-        console.error("Errore caricamento pagine pubblicate:", error);
+        console.error("Error loading published pages:", error);
         throw error;
       }
       
       if (!data || data.length === 0) {
-        console.log("Nessuna pagina pubblicata trovata per parent_path:", parentPath);
+        console.log("No published pages found for parent_path:", parentPath);
         return [];
       }
       
-      // Converti pagine in formato icone
+      // Convert pages to icon format
       const iconData = data.map(page => ({
         id: page.id,
         path: page.path,
@@ -59,37 +59,37 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
         published: page.published
       }));
       
-      console.log(`Trovate ${iconData.length} pagine pubblicate da mostrare come elementi del menu`);
+      console.log(`Found ${iconData.length} published pages to show as menu items`);
       
-      // Salva in cache per caricamento rapido la prossima volta
+      // Save to cache for quick loading next time
       const cacheKey = `icons_${parentPath || 'root'}`;
       localStorage.setItem(cacheKey, JSON.stringify(iconData));
       
       return iconData;
     } catch (err) {
-      console.error("Errore in loadPublishedPagesAsIcons:", err);
+      console.error("Error in loadPublishedPagesAsIcons:", err);
       return [];
     }
   }, [parentPath]);
   
-  // Funzione principale per caricare le icone
+  // Main function to load icons
   const loadIcons = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
       setHasConnectionError(false);
       
-      // Carica icone dalle pagine pubblicate
+      // Load icons from published pages
       const pageIcons = await loadPublishedPagesAsIcons();
       
-      // Verificare elementi con figli (pagine parent)
+      // Check for elements with children (parent pages)
       if (pageIcons.length > 0) {
         const updatedIcons = [...pageIcons];
         
         for (let i = 0; i < updatedIcons.length; i++) {
           const icon = updatedIcons[i];
           if (icon.path) {
-            // Controlla se ci sono pagine figlie per identificare le pagine parent
+            // Check if there are child pages to identify parent pages
             const { count, error: countError } = await supabase
               .from('custom_pages')
               .select('id', { count: 'exact', head: true })
@@ -97,43 +97,86 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
               .eq('published', true);
             
             if (!countError && count !== null && count > 0) {
-              console.log(`Pagina ${icon.path} ha ${count} figli, contrassegnata come parent`);
+              console.log(`Page ${icon.path} has ${count} children, marked as parent`);
               updatedIcons[i] = { ...icon, is_parent: true };
             }
           }
         }
         
-        // Elimina eventuali duplicati basati sul percorso
+        // Remove any duplicates based on path
         const uniqueIcons = Array.from(
           new Map(updatedIcons.map(icon => [icon.path, icon])).values()
         );
         
-        console.log(`Caricate ${uniqueIcons.length} icone uniche`);
+        console.log(`Loaded ${uniqueIcons.length} unique icons`);
         setIcons(uniqueIcons);
         
-        // Salva in cache
+        // Save to cache
         const cacheKey = `icons_${parentPath || 'root'}`;
         localStorage.setItem(cacheKey, JSON.stringify(uniqueIcons));
       } else {
-        setIcons([]);
+        // Check if there are any direct menu_icons for this parent
+        const { data: menuIconsData, error: menuIconsError } = await supabase
+          .from('menu_icons')
+          .select('*')
+          .eq('parent_path', parentPath)
+          .eq('published', true);
+        
+        if (!menuIconsError && menuIconsData && menuIconsData.length > 0) {
+          console.log(`Found ${menuIconsData.length} menu icons for parent_path:`, parentPath);
+          
+          const iconData = menuIconsData.map(icon => ({
+            id: icon.id,
+            path: icon.path,
+            label: icon.label,
+            title: icon.label,
+            icon: icon.icon,
+            parent_path: icon.parent_path,
+            bg_color: icon.bg_color,
+            published: icon.published,
+            is_parent: false // Default to false, we'll check below
+          }));
+          
+          // Check which ones are parents
+          for (let i = 0; i < iconData.length; i++) {
+            const icon = iconData[i];
+            if (icon.path) {
+              const { count, error: countError } = await supabase
+                .from('custom_pages')
+                .select('id', { count: 'exact', head: true })
+                .eq('parent_path', icon.path)
+                .eq('published', true);
+              
+              if (!countError && count !== null && count > 0) {
+                console.log(`Icon ${icon.path} has ${count} children, marked as parent`);
+                iconData[i] = { ...icon, is_parent: true };
+              }
+            }
+          }
+          
+          setIcons(iconData);
+        } else {
+          console.log("No menu icons found for parent_path:", parentPath);
+          setIcons([]);
+        }
       }
     } catch (error) {
-      console.error("Errore in loadIcons:", error);
+      console.error("Error in loadIcons:", error);
       setHasConnectionError(true);
-      setError("Errore nel caricamento del menu. Riprova più tardi.");
+      setError("Error loading menu. Try again later.");
       
-      // Prova a usare icone in cache come ultima risorsa
+      // Try to use cached icons as a last resort
       const cacheKey = `icons_${parentPath || 'root'}`;
       const cachedIconsStr = localStorage.getItem(cacheKey);
       if (cachedIconsStr) {
         try {
           const cachedIcons = JSON.parse(cachedIconsStr);
           if (cachedIcons && cachedIcons.length > 0) {
-            console.log(`Utilizzo ${cachedIcons.length} icone in cache come fallback dopo errore`);
+            console.log(`Using ${cachedIcons.length} cached icons as fallback after error`);
             setIcons(cachedIcons);
           }
         } catch (err) {
-          console.error("Errore parsing icone in cache per fallback:", err);
+          console.error("Error parsing cached icons for fallback:", err);
         }
       }
     } finally {
@@ -141,17 +184,17 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
     }
   }, [parentPath, loadPublishedPagesAsIcons]);
 
-  // Carica icone quando il componente viene montato o refreshTrigger cambia
+  // Load icons when component mounts or refreshTrigger changes
   useEffect(() => {
-    console.log(`useMenuIcons - Caricamento icone con refreshTrigger: ${refreshTrigger}`);
+    console.log(`useMenuIcons - Loading icons with refreshTrigger: ${refreshTrigger}`);
     loadIcons();
   }, [loadIcons, refreshTrigger]);
   
-  // Prova a riconnettersi se c'è un errore di connessione
+  // Try to reconnect if there's a connection error
   useEffect(() => {
     if (hasConnectionError && retryCount < 3) {
       const retryTime = 3000 * (retryCount + 1); // 3s, 6s, 9s
-      console.log(`Riproverà connessione in ${retryTime/1000}s (tentativo ${retryCount + 1})`);
+      console.log(`Will retry connection in ${retryTime/1000}s (attempt ${retryCount + 1})`);
       
       const timer = setTimeout(() => {
         setRetryCount(prev => prev + 1);
@@ -162,7 +205,7 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
     }
   }, [hasConnectionError, retryCount, loadIcons]);
 
-  // Funzione per aggiornare manualmente i dati
+  // Function to manually refresh the data
   const refreshIcons = () => {
     setError(null);
     setRetryCount(0);
