@@ -127,8 +127,11 @@ function App() {
           {/* Preview route for admin */}
           <Route path="/preview/*" element={<PreviewPage />} />
           
-          {/* IMPORTANTE: Aggiungere route dirette per tutte le pagine dinamiche creando
-              un pattern di rotta che carica le pagine dinamiche direttamente dall'URL */}
+          {/* IMPORTANTE: Rotta per le sottopagine dinamiche, incluse quelle con percorsi nested */}
+          <Route path="/:category/:subcategory" element={<PreviewPage />} />
+          <Route path="/:category/:subcategory/:item" element={<PreviewPage />} />
+          
+          {/* Rotta per le pagine top level */}
           <Route path="/:pageSlug" element={<PreviewPage />} />
           
           {/* Manteniamo anche il vecchio pattern per retrocompatibilità */}

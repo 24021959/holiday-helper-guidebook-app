@@ -20,15 +20,33 @@ const NavigateBack: React.FC<NavigateBackProps> = ({ parentPath }) => {
   // Check if we're in a content page inside a submenu path
   const isInSubmenuContentPage = !isInSubmenu && location.state?.parentPath;
   
+  // For debugging - log information about our current navigation state
   useEffect(() => {
     console.log("NavigateBack - Current path:", location.pathname);
     console.log("NavigateBack - Parent path from props:", parentPath);
     console.log("NavigateBack - Parent path from URL:", urlParentPath);
     console.log("NavigateBack - Location state:", location.state);
+    
+    // Check if this is a nested path like /servizi-hotel/reception
+    const pathSegments = location.pathname.split('/').filter(Boolean);
+    if (pathSegments.length >= 2) {
+      console.log("NavigateBack - Detected nested path with segments:", pathSegments);
+    }
   }, [location, parentPath, urlParentPath]);
   
   const handleBack = () => {
     try {
+      // Detect nested paths like /servizi-hotel/reception
+      const pathSegments = location.pathname.split('/').filter(Boolean);
+      
+      if (pathSegments.length >= 2) {
+        // We're in a nested path, go back to the parent submenu
+        const parentSegment = pathSegments[0];
+        console.log("Navigating back to parent submenu:", parentSegment);
+        navigate(`/submenu/${parentSegment}`);
+        return;
+      }
+      
       if (isInSubmenuContentPage && location.state?.parentPath) {
         // If we're in a content page that was accessed from a submenu, go back to that submenu
         console.log("Navigating back to submenu:", location.state.parentPath);

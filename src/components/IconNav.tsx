@@ -74,8 +74,8 @@ const IconNav: React.FC<IconNavProps> = ({
         return;
       }
       
-      // CORREZIONE: Per le pagine di contenuto, naviga direttamente al percorso della pagina
-      // anziché aggiungere "/page" prima del percorso
+      // For content pages, navigate directly to the path of the page
+      // and pass the parent path in the state for proper "back" navigation
       console.log("Navigation to content page:", icon.path);
       navigate(icon.path, { 
         state: { 

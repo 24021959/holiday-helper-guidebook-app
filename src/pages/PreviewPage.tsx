@@ -47,7 +47,7 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
   const effectivePath = path.startsWith('/preview') ? path.substring(8) : path;
 
   useEffect(() => {
-    console.log("Caricamento pagina con percorso:", effectivePath);
+    console.log("PreviewPage - Caricamento pagina con percorso:", effectivePath);
     
     const fetchData = async () => {
       try {
