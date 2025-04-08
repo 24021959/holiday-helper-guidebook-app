@@ -1,11 +1,10 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 type Language = 'it' | 'en' | 'fr' | 'es' | 'de';
 
-// Map delle lingue per l'API di OpenAI
+// Language map for OpenAI API
 const languageMap: Record<Language, string> = {
   it: 'Italian',
   en: 'English',
@@ -24,7 +23,7 @@ interface TranslationContextType {
 
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
 
-// Cache globale per le traduzioni
+// Global translation cache
 const globalTranslationCache: Record<string, Record<string, string>> = {
   en: {},
   fr: {},
@@ -36,21 +35,25 @@ const globalTranslationCache: Record<string, Record<string, string>> = {
 export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguage] = useState<Language>('it');
   
+  // Load the saved language preference on initial load
   useEffect(() => {
     const savedLanguage = localStorage.getItem('selectedLanguage');
     if (savedLanguage && ['it', 'en', 'fr', 'es', 'de'].includes(savedLanguage)) {
+      console.log(`Loading saved language: ${savedLanguage}`);
       setLanguage(savedLanguage as Language);
     }
   }, []);
 
   // Save language to localStorage whenever it changes
   useEffect(() => {
+    console.log(`Setting language to: ${language}`);
     localStorage.setItem('selectedLanguage', language);
   }, [language]);
 
   const translate = async (text: string): Promise<string> => {
     // If the language is Italian (default), return the original text
     if (language === 'it') return text;
+    if (!text || text.trim() === '') return text;
     
     // Check global cache first
     if (globalTranslationCache[language][text]) {
@@ -68,15 +71,7 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
 
       if (error) {
         console.error('Translation error from Edge Function:', error);
-        
-        // Try using the fallback translation service
-        try {
-          const fallbackTranslation = await translateWithFallback(text, 'it', language);
-          return fallbackTranslation;
-        } catch (fallbackError) {
-          console.error('Fallback translation also failed:', fallbackError);
-          return text; // Return original text as last resort
-        }
+        throw error;
       }
       
       if (data && data.translatedText) {

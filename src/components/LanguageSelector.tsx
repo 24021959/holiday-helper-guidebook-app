@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/context/TranslationContext";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 type Language = {
   code: string;
@@ -39,6 +40,10 @@ export const LanguageSelector = ({ onSelectLanguage }: LanguageSelectorProps) =>
     
     // Save to localStorage
     localStorage.setItem("selectedLanguage", code);
+    console.log(`Language selected: ${code}`);
+    
+    // Show a toast notification
+    toast.success(`Language changed to ${languages.find(lang => lang.code === code)?.name}`);
     
     // Call the original onSelectLanguage prop if provided
     if (onSelectLanguage) {

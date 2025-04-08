@@ -96,11 +96,11 @@ const SubMenu: React.FC = () => {
   const handleRefresh = () => {
     setError(null);
     setRefreshTrigger(prev => prev + 1);
-    toast.info("Refreshing menu...");
+    toast.info(<TranslatedText text="Refreshing menu..." />);
   };
 
   if (loading || headerLoading) {
-    return <LoadingView message="Loading submenu..." fullScreen={true} />;
+    return <LoadingView message={<TranslatedText text="Loading submenu..." />} fullScreen={true} />;
   }
 
   return (
@@ -129,10 +129,10 @@ const SubMenu: React.FC = () => {
       <div className="flex-1 flex flex-col overflow-auto">
         {error ? (
           <ErrorView 
-            message={error || "Error loading submenu"}
+            message={<TranslatedText text={error || "Error loading submenu"} />}
             onRefresh={handleRefresh}
             onAlternativeAction={() => navigate('/menu')}
-            alternativeActionText="Back to menu"
+            alternativeActionText={<TranslatedText text="Back to menu" />}
           />
         ) : (
           <FilteredIconNav 
@@ -150,4 +150,3 @@ const SubMenu: React.FC = () => {
 };
 
 export default SubMenu;
-

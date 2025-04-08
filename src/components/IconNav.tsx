@@ -5,6 +5,7 @@ import MenuIconGrid from "./MenuIconGrid";
 import { identifyIconFromTitle } from "@/utils/iconUtils";
 import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";
 import { IconData } from "@/hooks/useMenuIcons";
+import TranslatedText from "./TranslatedText";
 
 interface IconNavProps {
   parentPath: string | null;
@@ -22,7 +23,6 @@ const IconNav: React.FC<IconNavProps> = ({
 
   useEffect(() => {
     console.log("IconNav - Received", icons.length, "icons with parentPath:", parentPath);
-    console.log("IconNav - Icon paths:", icons.map(icon => icon.path).join(", "));
     
     if (icons.length > 0) {
       console.log("IconNav - First icon details:", JSON.stringify(icons[0]));
@@ -30,9 +30,6 @@ const IconNav: React.FC<IconNavProps> = ({
     
     if (parentPath) {
       console.log("IconNav - All subpages under parent:", parentPath);
-      icons.forEach((icon, index) => {
-        console.log(`Subpage ${index+1}: ${icon.title} (${icon.path}) - parent path: ${icon.parent_path}`);
-      });
     }
   }, [icons, parentPath]);
 

@@ -130,11 +130,11 @@ function App() {
           {/* Preview route for admin */}
           <Route path="/preview/*" element={<PreviewPage />} />
           
-          {/* IMPORTANTE: Rotta per le sottopagine dinamiche, incluse quelle con percorsi nested */}
+          {/* IMPORTANT: Route for dynamic pages, including nested paths */}
           <Route path="/:category/:subcategory" element={<PreviewPage />} />
           <Route path="/:category/:subcategory/:item" element={<PreviewPage />} />
           
-          {/* Rotta per le pagine top level */}
+          {/* Route for top level pages */}
           <Route path="/:pageSlug" element={<PreviewPage />} />
           
           {/* Manteniamo anche il vecchio pattern per retrocompatibilità */}

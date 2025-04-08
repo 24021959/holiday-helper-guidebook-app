@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import TranslatedText from "@/components/TranslatedText";
+import { useTranslation } from "@/context/TranslationContext";
 
 interface HeaderSettings {
   logoUrl?: string | null;
@@ -19,6 +20,7 @@ const Index: React.FC = () => {
   const navigate = useNavigate();
   const [headerSettings, setHeaderSettings] = useState<HeaderSettings>({});
   const [loading, setLoading] = useState(true);
+  const { language, setLanguage } = useTranslation();
   
   useEffect(() => {
     const fetchHeaderSettings = async () => {
@@ -39,7 +41,7 @@ const Index: React.FC = () => {
           });
         }
       } catch (error) {
-        console.error("Errore nel caricamento delle impostazioni header:", error);
+        console.error("Error loading header settings:", error);
         
         // Fallback to localStorage if Supabase fails
         const savedHeaderSettings = localStorage.getItem("headerSettings");
@@ -47,7 +49,7 @@ const Index: React.FC = () => {
           try {
             setHeaderSettings(JSON.parse(savedHeaderSettings));
           } catch (err) {
-            console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
+            console.error("Error parsing settings from localStorage:", err);
           }
         }
       } finally {
@@ -56,7 +58,10 @@ const Index: React.FC = () => {
     };
     
     fetchHeaderSettings();
-  }, []);
+    
+    // Reset language to default to ensure proper selection
+    setLanguage('it');
+  }, [setLanguage]);
   
   if (loading) {
     return (
@@ -80,11 +85,14 @@ const Index: React.FC = () => {
       />
       
       <div className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-        {/* Elementi decorativi di sfondo */}
+        {/* Decorative background elements */}
         <div className="absolute top-10 left-10 w-40 h-40 rounded-full bg-teal-100 opacity-50 blur-xl"></div>
         <div className="absolute bottom-10 right-10 w-40 h-40 rounded-full bg-emerald-100 opacity-50 blur-xl"></div>
         
         <div className="max-w-md w-full mb-4">
+          <h1 className="text-center text-2xl font-bold text-emerald-800 mb-6">
+            <TranslatedText text="Seleziona la tua lingua" />
+          </h1>
           <Card className="bg-white/90 backdrop-blur-sm shadow-xl border-0 rounded-2xl overflow-hidden">
             <CardContent className="p-6">
               <LanguageSelector />
@@ -93,7 +101,7 @@ const Index: React.FC = () => {
         </div>
       </div>
       
-      {/* Footer con credenziali */}
+      {/* Footer */}
       <Footer />
     </div>
   );

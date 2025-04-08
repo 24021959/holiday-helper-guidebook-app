@@ -7,6 +7,7 @@ import ErrorView from "@/components/ErrorView";
 import { useHeaderSettings } from "@/hooks/useHeaderSettings";
 import { toast } from "sonner";
 import FilteredIconNav from "@/components/FilteredIconNav";
+import TranslatedText from "@/components/TranslatedText";
 
 const Menu: React.FC = () => {
   const { headerSettings, loading: headerLoading, error: headerError, refreshHeaderSettings } = useHeaderSettings();
@@ -15,12 +16,12 @@ const Menu: React.FC = () => {
   const handleRefresh = () => {
     console.log("Menu - Manual refresh");
     setRefreshTrigger(prev => prev + 1);
-    toast.info("Refreshing menu...");
+    toast.info(<TranslatedText text="Refreshing menu..." />);
     refreshHeaderSettings();
   };
   
   if (headerLoading) {
-    return <LoadingView message="Loading menu..." fullScreen={true} />;
+    return <LoadingView message={<TranslatedText text="Loading menu..." />} fullScreen={true} />;
   }
 
   return (
@@ -37,10 +38,10 @@ const Menu: React.FC = () => {
       <div className="flex-1 flex flex-col overflow-auto">
         {headerError ? (
           <ErrorView 
-            message={headerError || "Loading error"}
+            message={headerError || <TranslatedText text="Loading error" />}
             onRefresh={handleRefresh}
             onAlternativeAction={() => window.location.reload()}
-            alternativeActionText="Reload page"
+            alternativeActionText={<TranslatedText text="Reload page" />}
           />
         ) : (
           <FilteredIconNav 
