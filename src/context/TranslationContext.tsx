@@ -1,7 +1,18 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 type Language = 'it' | 'en' | 'fr' | 'es' | 'de';
+
+// Map delle lingue per l'API di OpenAI
+const languageMap: Record<Language, string> = {
+  it: 'Italian',
+  en: 'English',
+  fr: 'French',
+  es: 'Spanish',
+  de: 'German'
+};
 
 interface TranslationContextType {
   language: Language;
@@ -31,12 +42,46 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
     if (language === 'it') return text;
     
     try {
-      // Get the translation from our translation function
-      const translated = await translateText(text, 'it', language);
-      return translated;
+      // Use our custom Supabase Edge Function
+      const { data, error } = await supabase.functions.invoke('translate', {
+        body: { 
+          text, 
+          targetLang: languageMap[language]
+        }
+      });
+
+      if (error) {
+        console.error('Translation error from Edge Function:', error);
+        
+        // Try using the fallback translation service
+        try {
+          const fallbackTranslation = await translateWithFallback(text, 'it', language);
+          return fallbackTranslation;
+        } catch (fallbackError) {
+          console.error('Fallback translation also failed:', fallbackError);
+          return text; // Return original text as last resort
+        }
+      }
+      
+      if (data && data.translatedText) {
+        return data.translatedText;
+      } else {
+        throw new Error('No translation returned');
+      }
     } catch (error) {
       console.error('Translation error:', error);
-      return text; // Return original text on error
+      
+      // Try using the fallback translation service
+      try {
+        const fallbackTranslation = await translateWithFallback(text, 'it', language);
+        return fallbackTranslation;
+      } catch (fallbackError) {
+        console.error('Fallback translation also failed:', fallbackError);
+        toast.error('Errore di traduzione', { 
+          description: 'Impossibile tradurre il testo al momento.' 
+        });
+        return text; // Return original text on error
+      }
     }
   };
 
@@ -57,9 +102,8 @@ export const useTranslation = (): TranslationContextType => {
   return context;
 };
 
-// Translation function using browser's fetch API
-async function translateText(text: string, sourceLang: string, targetLang: string): Promise<string> {
-  // Use a public translation API
+// Fallback translation function using the free MyMemory API
+async function translateWithFallback(text: string, sourceLang: string, targetLang: string): Promise<string> {
   try {
     const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`);
     const data = await response.json();

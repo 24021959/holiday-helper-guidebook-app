@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "@/context/TranslationContext";
+import { Loader2 } from "lucide-react";
 
 interface TranslatedTextProps {
   text: string;
@@ -54,7 +55,10 @@ const TranslatedText: React.FC<TranslatedTextProps> = ({
   return (
     <Component className={className}>
       {isLoading ? (
-        <span className="opacity-70">{text}</span>
+        <span className="inline-flex items-center gap-1 opacity-70">
+          <Loader2 size={14} className="animate-spin" />
+          <span>{text}</span>
+        </span>
       ) : (
         translatedText
       )}
