@@ -1,11 +1,9 @@
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { RefreshCw } from "lucide-react";
-import TranslatedText from "@/components/TranslatedText";
 import FilteredIconNav from "@/components/FilteredIconNav";
 import LoadingView from "@/components/LoadingView";
 import ErrorView from "@/components/ErrorView";
@@ -17,238 +15,161 @@ const Menu: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [connectionAttempts, setConnectionAttempts] = useState(0);
-  const navigate = useNavigate();
   
-  // Funzione migliorata per sincronizzare le pagine con le icone del menu
-  const syncPagesToMenuIcons = useCallback(async () => {
+  // Funzione semplificata per sincronizzare le pagine con le icone del menu
+  const syncPagesWithMenu = async () => {
     try {
-      console.log("Sincronizzazione pagine con icone del menu...");
+      console.log("Menu - Sincronizzazione pagine con menu...");
       
-      // Ottieni tutte le pagine pubblicate
+      // 1. Carica tutte le pagine pubblicate
       const { data: pages, error: pagesError } = await supabase
         .from('custom_pages')
         .select('id, title, path, icon, parent_path')
         .eq('published', true);
         
       if (pagesError) {
-        console.error("Errore nel recupero delle pagine:", pagesError);
+        console.error("Errore nel caricamento delle pagine:", pagesError);
         return;
       }
       
       if (!pages || pages.length === 0) {
-        console.log("Nessuna pagina da sincronizzare");
+        console.log("Nessuna pagina pubblicata da sincronizzare");
         return;
       }
       
-      // Ottieni tutte le icone del menu
-      const { data: menuIcons, error: iconsError } = await supabase
+      console.log(`Trovate ${pages.length} pagine pubblicate`);
+      
+      // 2. Carica tutte le icone menu
+      const { data: menuIcons, error: menuError } = await supabase
         .from('menu_icons')
         .select('path');
         
-      if (iconsError) {
-        console.error("Errore nel recupero delle icone del menu:", iconsError);
+      if (menuError) {
+        console.error("Errore nel caricamento delle icone menu:", menuError);
         return;
       }
       
-      // Crea un set con i percorsi delle icone per una ricerca veloce
-      const iconPaths = new Set(menuIcons?.map(icon => icon.path) || []);
-      
-      // Trova le pagine che non hanno un'icona corrispondente
-      const pagesToSync = pages.filter(page => !iconPaths.has(page.path));
+      // 3. Identifica pagine senza icone
+      const existingPaths = new Set(menuIcons?.map(icon => icon.path) || []);
+      const pagesToSync = pages.filter(page => !existingPaths.has(page.path));
       
       if (pagesToSync.length === 0) {
         console.log("Tutte le pagine sono già sincronizzate");
         return;
       }
       
-      console.log(`Trovate ${pagesToSync.length} pagine da sincronizzare con le icone del menu`);
+      console.log(`Da sincronizzare: ${pagesToSync.length} pagine`);
       
-      // Crea le nuove icone del menu
-      const newIcons = pagesToSync.map(page => ({
-        label: page.title,
-        path: page.path,
-        icon: page.icon || 'FileText',
-        bg_color: "bg-blue-200",
-        is_submenu: page.parent_path !== null,
-        parent_path: page.parent_path,
-        published: true
-      }));
-      
-      // Inserisci le nuove icone in batch di 20 per evitare errori di dimensione
-      let processed = 0;
-      while (processed < newIcons.length) {
-        const batch = newIcons.slice(processed, processed + 20);
-        const { error: insertError } = await supabase
-          .from('menu_icons')
-          .insert(batch);
-          
-        if (insertError) {
-          console.error(`Errore nell'inserimento del batch ${processed}-${processed+batch.length}:`, insertError);
-        } else {
-          console.log(`Batch ${processed}-${processed+batch.length} inserito con successo`);
-        }
+      // 4. Per ogni pagina, crea una nuova icona menu
+      for (const page of pagesToSync) {
+        const iconData = {
+          label: page.title,
+          path: page.path,
+          icon: page.icon || 'FileText',
+          bg_color: "bg-blue-200",
+          is_submenu: page.parent_path !== null,
+          parent_path: page.parent_path,
+          published: true  // Imposta a true di default
+        };
         
-        processed += batch.length;
-      }
-      
-      console.log(`Sincronizzate con successo ${newIcons.length} pagine`);
-      
-      if (newIcons.length > 0) {
-        toast.success(`${newIcons.length} pagine aggiunte al menu`);
-      }
-      
-    } catch (error) {
-      console.error("Errore nella sincronizzazione delle pagine:", error);
-    }
-  }, []);
-  
-  const checkForPagesOrIcons = useCallback(async () => {
-    try {
-      // Prima prova localStorage per icone in cache
-      const cachedIcons = localStorage.getItem("icons_root");
-      if (cachedIcons) {
+        // Prima inserisci l'icona
         try {
-          const icons = JSON.parse(cachedIcons);
-          console.log("Utilizzando icone in cache:", icons.length);
-          
-          if (icons.length > 0) {
-            return icons.length;
+          const { error: insertError } = await supabase
+            .from('menu_icons')
+            .insert(iconData);
+            
+          if (insertError) {
+            console.error(`Errore nell'inserimento dell'icona per ${page.path}:`, insertError);
+            
+            // Attendi un po' e riprova
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            const { error: retryError } = await supabase
+              .from('menu_icons')
+              .insert(iconData);
+              
+            if (retryError) {
+              console.error(`Anche il secondo tentativo per ${page.path} è fallito:`, retryError);
+            } else {
+              console.log(`Icona per ${page.path} inserita con successo al secondo tentativo`);
+            }
+          } else {
+            console.log(`Icona per ${page.path} inserita con successo`);
           }
-        } catch (err) {
-          console.error("Errore nel parsing delle icone dalla cache:", err);
+        } catch (e) {
+          console.error(`Errore non gestito per ${page.path}:`, e);
         }
+        
+        // Pausa breve tra gli inserimenti per evitare problemi di concorrenza
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
       
-      // Prova a verificare la presenza di pagine pubblicate direttamente
-      console.log("Verifica pagine pubblicate");
-      const { count: pagesCount, error: pagesError } = await supabase
-        .from('custom_pages')
-        .select('*', { count: 'exact', head: true })
-        .eq('published', true)
-        .eq('parent_path', null);
-        
-      if (pagesError) {
-        console.error("Errore nel conteggio delle pagine pubblicate:", pagesError);
-        throw pagesError;
-      }
+      console.log("Sincronizzazione completata");
       
-      if (pagesCount && pagesCount > 0) {
-        console.log("Numero di pagine pubblicate nel menu principale:", pagesCount);
-        
-        // Sincronizza le pagine con le icone del menu
-        await syncPagesToMenuIcons();
-        
-        return pagesCount;
+      if (pagesToSync.length > 0) {
+        toast.success(`${pagesToSync.length} pagine sincronizzate con il menu`);
       }
-      
-      // Se non ci sono pagine pubblicate, prova la tabella menu_icons
-      const { count: iconsCount, error: iconsError } = await supabase
-        .from('menu_icons')
-        .select('*', { count: 'exact', head: true })
-        .eq('parent_path', null);
-        
-      if (iconsError) {
-        console.error("Errore nel conteggio delle icone del menu:", iconsError);
-        throw iconsError;
-      }
-      
-      console.log("Numero di icone nel menu principale:", iconsCount);
-      return iconsCount || 0;
     } catch (error) {
-      console.error("Errore nel conteggio delle icone o pagine:", error);
-      
-      // Incrementa i tentativi di connessione
-      setConnectionAttempts(prev => prev + 1);
-      
-      // Dopo 3 tentativi, mostra un errore più utile
-      if (connectionAttempts >= 3) {
-        setError("Sembra che ci siano problemi di connessione al database. Riprova più tardi o contatta l'amministratore.");
-      }
-      
-      return 0;
+      console.error("Errore nella sincronizzazione:", error);
     }
-  }, [connectionAttempts, syncPagesToMenuIcons]);
+  };
   
   useEffect(() => {
-    const loadData = async () => {
+    const initializeMenu = async () => {
       try {
         setLoading(true);
-        console.log("Menu - Forzando l'aggiornamento del menu all'avvio");
+        console.log("Menu - Inizializzazione...");
         
-        // Prima sincronizza forzatamente tutte le pagine con le icone del menu
-        await syncPagesToMenuIcons();
+        // Sincronizza prima tutte le pagine con il menu
+        await syncPagesWithMenu();
         
-        // Attendi un po' per dare tempo al database di aggiornare i dati
+        // Attendi un po' per dare tempo all'inserimento
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Controlla se ci sono pagine o icone e forza l'aggiornamento
-        const count = await checkForPagesOrIcons();
-        console.log(`Trovate ${count} icone o pagine nel menu principale`);
-        
-        // Forza l'aggiornamento del menu
-        setRefreshTrigger(prev => prev + 1);
-        
-        // Se non ci sono icone o pagine o c'è un errore di connessione
-        if (count === 0) {
-          // Prova a ricaricare i dati più volte con backoff esponenziale
-          const retryIntervals = [3000, 5000, 10000]; // 3s, 5s, 10s
+        // Verifica se abbiamo pagine disponibili
+        const { count: pagesCount, error: countError } = await supabase
+          .from('custom_pages')
+          .select('*', { count: 'exact', head: true })
+          .eq('published', true);
           
-          for (let i = 0; i < retryIntervals.length; i++) {
-            // Aspetta il tempo specificato
-            await new Promise(resolve => setTimeout(resolve, retryIntervals[i]));
-            
-            console.log(`Tentativo di riconnessione ${i + 1}...`);
-            
-            // Riprova la sincronizzazione
-            await syncPagesToMenuIcons();
-            
-            // Attendi per dare tempo all'aggiornamento
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            const newCount = await checkForPagesOrIcons();
-            
-            if (newCount > 0) {
-              console.log("Connessione riuscita, aggiornamento menu");
-              setRefreshTrigger(prev => prev + 1);
-              setError(null);
-              break;
-            }
-          }
+        if (countError) {
+          console.error("Errore nel conteggio delle pagine:", countError);
+          throw countError;
+        }
+        
+        console.log(`Numero di pagine pubblicate: ${pagesCount || 0}`);
+        
+        if (pagesCount && pagesCount > 0) {
+          // Abbiamo pagine, dovremmo essere a posto
+          setError(null);
+        } else {
+          // Nessuna pagina pubblicata
+          console.warn("Non ci sono pagine pubblicate");
         }
       } catch (error) {
-        console.error("Errore nel caricamento dei dati:", error);
+        console.error("Errore nell'inizializzazione del menu:", error);
+        setError("Errore nel caricamento del menu. Riprova più tardi.");
       } finally {
-        // Always set loading to false
         setLoading(false);
       }
     };
     
-    loadData();
-  }, [refreshHeaderSettings, checkForPagesOrIcons, syncPagesToMenuIcons]);
+    initializeMenu();
+  }, []);
   
   const handleRefresh = () => {
-    console.log("Menu - Refresh manuale attivato");
+    console.log("Menu - Aggiornamento manuale");
     setLoading(true);
     setRefreshTrigger(prev => prev + 1);
     setError(null);
     toast.info("Aggiornamento menu in corso...");
     
-    // Sincronizza le pagine e ricarica il menu
-    syncPagesToMenuIcons().then(() => {
-      // Attendi un po' per dare tempo al database di aggiornare
+    // Sincronizza e poi ricarica
+    syncPagesWithMenu().then(() => {
       setTimeout(() => {
-        // Ritenta la connessione
-        refreshHeaderSettings().then(() => {
-          checkForPagesOrIcons().then((count) => {
-            if (count > 0) {
-              toast.success("Menu aggiornato con successo");
-            } else {
-              toast.error("Impossibile aggiornare il menu. Riprova più tardi.");
-            }
-            setLoading(false);
-          });
-        });
+        refreshHeaderSettings();
+        setLoading(false);
+        toast.success("Menu aggiornato");
       }, 1500);
     });
   };
