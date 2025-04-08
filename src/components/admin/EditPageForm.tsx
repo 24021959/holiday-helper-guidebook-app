@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
@@ -23,6 +24,7 @@ import { PageContentSection } from "./form/PageContentSection";
 import { PageMultiImageSection, ImageItem } from "./form/PageMultiImageSection";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { PageTypeSection } from "./form/PageTypeSection";
 
 interface EditPageFormProps {
   selectedPage: PageData;
@@ -48,6 +50,11 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
   const [uploadedImage, setUploadedImage] = useState<string | null>(selectedPage.imageUrl || null);
   const [pageImages, setPageImages] = useState<ImageItem[]>(selectedPage.pageImages || []);
   const [currentTab, setCurrentTab] = useState<string>("content");
+  
+  // Page type state
+  const initialPageType = selectedPage.is_parent ? "parent" : selectedPage.isSubmenu ? "submenu" : "normal";
+  const [pageType, setPageType] = useState<"normal" | "submenu" | "parent">(initialPageType);
+  const [parentPath, setParentPath] = useState<string>(selectedPage.parentPath || "");
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -170,11 +177,16 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
       
       const formattedContent = formatPageContent(values.content, pageImages);
       
+      const isSubmenu = pageType === "submenu";
+      const isParent = pageType === "parent";
+      
       const updateData = {
         title: values.title,
         content: formattedContent,
         image_url: uploadedImage,
         icon: selectedIcon,
+        is_submenu: isSubmenu,
+        parent_path: isSubmenu ? parentPath : null
       };
       
       const { error: pageError } = await supabase
@@ -189,7 +201,9 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
       const iconData = {
         label: values.title,
         icon: selectedIcon,
-        bg_color: "bg-blue-200"
+        bg_color: "bg-blue-200",
+        parent_path: isSubmenu ? parentPath : null,
+        is_submenu: isSubmenu
       };
       
       const { error: iconError } = await supabase
@@ -222,8 +236,19 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
           isSubmenu: page.is_submenu || false,
           parentPath: page.parent_path || undefined,
           pageImages: [],
-          published: page.published
+          published: page.published,
+          is_parent: false
         }));
+        
+        // Mark parent pages
+        for (let i = 0; i < formattedPages.length; i++) {
+          const page = formattedPages[i];
+          const hasChildren = formattedPages.some(p => p.parentPath === page.path);
+          
+          if (hasChildren || page.id === selectedPage.id && isParent) {
+            formattedPages[i] = { ...page, is_parent: true };
+          }
+        }
         
         onPageUpdated(formattedPages);
         toast.success("Pagina aggiornata con successo");
@@ -255,6 +280,14 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
                 <FormMessage />
               </FormItem>
             )}
+          />
+          
+          <PageTypeSection 
+            pageType={pageType}
+            setPageType={setPageType}
+            parentPath={parentPath}
+            setParentPath={setParentPath}
+            parentPages={parentPages.filter(p => p.id !== selectedPage.id)}
           />
           
           <FormField

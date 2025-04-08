@@ -30,6 +30,7 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [localPages, setLocalPages] = useState<PageData[]>(pages);
+  const [activeTab, setActiveTab] = useState<string>("list");
 
   useEffect(() => {
     console.log("ManagePagesView - pages received from props:", pages.length);
@@ -65,7 +66,8 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
           isSubmenu: page.is_submenu || false,
           parentPath: page.parent_path || undefined,
           pageImages: [],
-          published: page.published
+          published: page.published,
+          is_parent: false
         }));
         
         console.log("ManagePagesView - Pages loaded from database:", formattedPages.length);
@@ -109,6 +111,7 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     setIsCreateMode(false);
     setSelectedPage(null);
     setRefreshTrigger(prev => prev + 1);
+    setActiveTab("list");
   };
 
   const handlePageUpdated = (updatedPages: PageData[]) => {
@@ -117,6 +120,7 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     setLocalPages(updatedPages);
     setSelectedPage(null);
     setRefreshTrigger(prev => prev + 1);
+    setActiveTab("list");
   };
 
   const handlePageDelete = async (pageId: string) => {
@@ -168,6 +172,13 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     toast.info("Aggiornamento pagine in corso...");
   };
 
+  const handleEditPage = (page: PageData) => {
+    console.log("Editing page:", page.title);
+    setSelectedPage(page);
+    setIsCreateMode(false);
+    setActiveTab("edit");
+  };
+
   if (error) {
     return (
       <div className="container mx-auto py-6">
@@ -204,6 +215,7 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
             onClick={() => {
               setIsCreateMode(true);
               setSelectedPage(null);
+              setActiveTab("create");
             }}
             disabled={isLoading}
           >
@@ -213,7 +225,7 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
         </div>
       </div>
 
-      <Tabs defaultValue={selectedPage ? "edit" : isCreateMode ? "create" : "list"} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="list">Lista Pagine</TabsTrigger>
           {selectedPage && (
@@ -239,6 +251,7 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
                     onClick={() => {
                       setIsCreateMode(true);
                       setSelectedPage(null);
+                      setActiveTab("create");
                     }}
                     className="bg-emerald-600 hover:bg-emerald-700"
                   >
@@ -251,10 +264,7 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
                   <PageListItem
                     key={page.id}
                     page={page}
-                    onEdit={() => {
-                      setSelectedPage(page);
-                      setIsCreateMode(false);
-                    }}
+                    onEdit={handleEditPage}
                     onDelete={handlePageDelete}
                     onPreview={handlePagePreview}
                   />

@@ -27,7 +27,7 @@ export const PageListItem: React.FC<PageListItemProps> = ({
             <div className="flex-1">
               <h3 className="text-lg font-medium">{page.title}</h3>
               <p className="text-sm text-gray-500">
-                {page.isSubmenu ? 'Sottomenu' : 'Pagina principale'} - {page.path}
+                {page.isSubmenu ? 'Sottomenu' : page.is_parent ? 'Pagina genitore' : 'Pagina normale'} - {page.path}
               </p>
             </div>
           </div>
