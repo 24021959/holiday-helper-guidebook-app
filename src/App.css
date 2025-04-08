@@ -6,6 +6,41 @@
   text-align: center;
 }
 
+/* Ensure chatbot widgets are visible on all devices */
+#chat-widget-container,
+.chat-widget,
+.chatbot-container,
+.tiledesk-chat,
+.crisp-client,
+.intercom-lightweight-app,
+.tidio-chat-container,
+#tidio-chat,
+#jvlabelWrap,
+#userlike-container,
+.botpress-webchat,
+.drift-widget,
+.freshchat-container,
+.zalo-chat-widget,
+.fb_dialog,
+.fb-customerchat,
+.tawk-min-container,
+.supportfast-widget,
+.supportfast-container,
+.supportfast-chat-button,
+.supportfast-chat,
+.supportfast-bubble,
+.ev-ai-widget,
+.ev-ai-bubble,
+.ev-ai-chat {
+  z-index: 9999 !important;
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
 @media (max-width: 768px) {
   #root {
     max-width: 100%;
