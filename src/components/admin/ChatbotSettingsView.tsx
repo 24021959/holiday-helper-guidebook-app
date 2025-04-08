@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, AlertCircle, Info } from "lucide-react";
+import { Check, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useTranslation } from "@/context/TranslationContext";
 
@@ -66,25 +66,6 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
           </Alert>
         )}
         
-        <Alert className="mb-4 bg-blue-50 border-blue-200">
-          <Info className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-blue-700">
-            <p>Il sistema è compatibile con molti provider di chatbot come:</p>
-            <ul className="list-disc pl-5 mt-2">
-              <li>Tiledesk</li>
-              <li>Tidio</li>
-              <li>Botpress</li>
-              <li>ChatBot</li>
-              <li>Userlike</li>
-              <li>Jivochat</li>
-              <li>Crisp</li>
-              <li>Intercom</li>
-              <li>Altri servizi basati su script</li>
-            </ul>
-            <p className="mt-2">Attenzione: il sistema cercherà di impostare la lingua del chatbot in base alla selezione dell'utente quando possibile.</p>
-          </AlertDescription>
-        </Alert>
-        
         <Textarea
           value={chatbotCode}
           onChange={(e) => setChatbotCode(e.target.value)}
@@ -97,18 +78,6 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
             {isSaving ? "Salvataggio..." : "Salva Impostazioni"}
           </Button>
         </div>
-      </div>
-      
-      <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-        <h3 className="text-md font-medium text-blue-700 mb-2">Nota:</h3>
-        <p className="text-sm text-blue-600">
-          Il chatbot potrebbe non essere visibile in modalità anteprima a causa di restrizioni di dominio. 
-          Sarà visibile quando il sito verrà pubblicato sull'URL finale.
-        </p>
-        <p className="text-sm text-blue-600 mt-2">
-          Lingua corrente dell'applicazione: <strong>{language.toUpperCase()}</strong>. 
-          Il sistema cercherà di impostare questa lingua nel chatbot quando viene caricato.
-        </p>
       </div>
     </div>
   );

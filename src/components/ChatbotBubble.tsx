@@ -9,7 +9,6 @@ const ChatbotBubble: React.FC = () => {
   const { language } = useTranslation();
   const [isLoaded, setIsLoaded] = useState(false);
   const [scriptError, setScriptError] = useState(false);
-  const [isRendered, setIsRendered] = useState(false);
   
   // Skip rendering on admin pages
   const isAdminPage = location.pathname.includes('/admin') || 
@@ -53,75 +52,26 @@ const ChatbotBubble: React.FC = () => {
           return;
         }
 
-        // Extract <script> tag and attributes from the code
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(chatbotCode, 'text/html');
-        const scriptTag = doc.querySelector('script');
-        
-        if (!scriptTag) {
-          console.warn("Invalid chatbot code (no script tag found)");
-          return;
-        }
-        
-        // Create and append the script element
-        const script = document.createElement('script');
-        
-        // Copy all attributes from the provided script
-        Array.from(scriptTag.attributes).forEach(attr => {
-          script.setAttribute(attr.name, attr.value);
-        });
-        
-        // If there's a data-lang attribute, try to update it based on current language
-        if (language && language !== 'it') {
-          // Some chatbot providers use data-lang for language setting
-          if (scriptTag.hasAttribute('data-lang')) {
-            script.setAttribute('data-lang', language);
+        // Update the chatbot script container in the head
+        const scriptContainer = document.getElementById('chatbot-script-container');
+        if (scriptContainer) {
+          // If there's a data-lang attribute, try to update it based on current language
+          let modifiedCode = chatbotCode;
+          
+          if (language && language !== 'it') {
+            // Try to modify language settings if it's present in the string
+            modifiedCode = modifiedCode.replace(/data-lang="[^"]*"/, `data-lang="${language}"`);
+            modifiedCode = modifiedCode.replace(/data-language="[^"]*"/, `data-language="${language}"`);
           }
           
-          // Some use data-language
-          if (scriptTag.hasAttribute('data-language')) {
-            script.setAttribute('data-language', language);
-          }
-        }
-        
-        // Set source if present
-        if (scriptTag.src) {
-          script.src = scriptTag.src;
-        }
-        
-        // Set inner content if present
-        if (scriptTag.textContent) {
-          script.textContent = scriptTag.textContent;
-        }
-        
-        // Add error handling
-        script.onerror = () => {
-          console.error("Error loading chatbot script");
-          setScriptError(true);
-        };
-        
-        // Add load handler
-        script.onload = () => {
-          console.log("Chatbot script loaded successfully");
+          // Set the innerHTML directly to execute the script
+          scriptContainer.innerHTML = modifiedCode;
+          console.log("Chatbot script injected into document head");
           setIsLoaded(true);
-          
-          // Give the chatbot time to render its UI
-          setTimeout(() => {
-            setIsRendered(true);
-          }, 2000);
-        };
-        
-        // Remove any previous chatbot scripts to avoid duplicates
-        const existingScripts = document.querySelectorAll('script[data-chatbot]');
-        existingScripts.forEach(s => s.remove());
-        
-        // Mark this script as a chatbot script
-        script.setAttribute('data-chatbot', 'true');
-        
-        // Add the script to the document
-        document.head.appendChild(script);
-        console.log("Chatbot script appended to document head");
-        
+        } else {
+          console.error("Chatbot script container not found in the document head");
+          setScriptError(true);
+        }
       } catch (error) {
         console.error("Error loading chatbot:", error);
         setScriptError(true);
@@ -130,33 +80,15 @@ const ChatbotBubble: React.FC = () => {
     
     loadChatbot();
     
-    // Attempt to reload chatbot after 2 seconds if not loaded initially
-    // This helps with some chatbot providers that have timing issues
-    const retryTimer = setTimeout(() => {
-      if (!isLoaded && !scriptError) {
-        console.log("Retrying chatbot script load...");
-        loadChatbot();
-      }
-    }, 2000);
-    
+    // Reload chatbot when language changes
     return () => {
-      clearTimeout(retryTimer);
+      if (isLoaded) {
+        setIsLoaded(false);
+      }
     };
-  }, [isAdminPage, isLoaded, scriptError, language]);
+  }, [isAdminPage, language, isLoaded]);
 
-  // This component doesn't render anything visible by default
-  // but we can add a small indicator for debugging if needed
-  if (isAdminPage || (!isLoaded && !scriptError)) {
-    return null;
-  }
-
-  // For debugging purposes, we could render a small indicator
-  // return scriptError ? (
-  //   <div className="fixed bottom-4 right-4 bg-red-100 p-2 rounded-md text-xs text-red-700 z-50">
-  //     Chatbot error
-  //   </div>
-  // ) : null;
-
+  // This component doesn't render anything visible
   return null;
 };
 

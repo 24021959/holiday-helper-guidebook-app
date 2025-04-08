@@ -29,9 +29,19 @@
   /* Ensure chatbot is accessible on mobile */
   #chat-widget-container,
   .chat-widget,
-  .chatbot-container {
+  .chatbot-container,
+  .tiledesk-chat,
+  .crisp-client,
+  .intercom-lightweight-app,
+  .tidio-chat-container,
+  #tidio-chat,
+  #jvlabelWrap,
+  #userlike-container,
+  .botpress-webchat {
     z-index: 9999 !important;
     max-width: 90vw !important;
+    right: 0 !important;
+    bottom: 0 !important;
   }
 }
 
