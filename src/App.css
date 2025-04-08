@@ -1,3 +1,4 @@
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -42,7 +43,15 @@
   .zalo-chat-widget,
   .fb_dialog,
   .fb-customerchat,
-  .tawk-min-container {
+  .tawk-min-container,
+  .supportfast-widget,
+  .supportfast-container,
+  .supportfast-chat-button,
+  .supportfast-chat,
+  .supportfast-bubble,
+  .ev-ai-widget,
+  .ev-ai-bubble,
+  .ev-ai-chat {
     z-index: 9999 !important;
     max-width: 90vw !important;
     right: 0 !important;
