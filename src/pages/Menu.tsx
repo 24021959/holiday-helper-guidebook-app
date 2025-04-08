@@ -1,18 +1,16 @@
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LoadingView from "@/components/LoadingView";
 import ErrorView from "@/components/ErrorView";
 import { useHeaderSettings } from "@/hooks/useHeaderSettings";
 import { toast } from "sonner";
-import { useMenuIcons } from "@/hooks/useMenuIcons";
-import IconNav from "@/components/IconNav";
+import FilteredIconNav from "@/components/FilteredIconNav";
 
 const Menu: React.FC = () => {
   const { headerSettings, loading: headerLoading, error: headerError, refreshHeaderSettings } = useHeaderSettings();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const { icons, isLoading, error, refreshIcons } = useMenuIcons({ parentPath: null, refreshTrigger });
   
   const handleRefresh = () => {
     console.log("Menu - Manual refresh");
@@ -21,7 +19,7 @@ const Menu: React.FC = () => {
     refreshHeaderSettings();
   };
   
-  if (headerLoading || isLoading) {
+  if (headerLoading) {
     return <LoadingView message="Loading menu..." fullScreen={true} />;
   }
 
@@ -37,18 +35,18 @@ const Menu: React.FC = () => {
       
       {/* Main container with icons that takes all available space */}
       <div className="flex-1 flex flex-col overflow-auto">
-        {error || headerError ? (
+        {headerError ? (
           <ErrorView 
-            message={error || headerError || "Loading error"}
+            message={headerError || "Loading error"}
             onRefresh={handleRefresh}
             onAlternativeAction={() => window.location.reload()}
             alternativeActionText="Reload page"
           />
         ) : (
-          <IconNav 
-            icons={icons} 
+          <FilteredIconNav 
             parentPath={null} 
             onRefresh={handleRefresh} 
+            refreshTrigger={refreshTrigger} 
           />
         )}
       </div>

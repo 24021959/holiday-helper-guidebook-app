@@ -8,9 +8,8 @@ import TranslatedText from "@/components/TranslatedText";
 import { useHeaderSettings } from "@/hooks/useHeaderSettings";
 import LoadingView from "@/components/LoadingView";
 import ErrorView from "@/components/ErrorView";
-import IconNav from "@/components/IconNav";
 import BackToMenu from "@/components/BackToMenu";
-import { useMenuIcons } from "@/hooks/useMenuIcons";
+import FilteredIconNav from "@/components/FilteredIconNav";
 import { toast } from "sonner";
 
 interface PageDetails {
@@ -28,10 +27,6 @@ const SubMenu: React.FC = () => {
   const navigate = useNavigate();
   
   const realPath = parentPath ? `/${parentPath}` : null;
-  const { icons, isLoading, error: iconsError, refreshIcons } = useMenuIcons({ 
-    parentPath: realPath, 
-    refreshTrigger 
-  });
   
   // Carica i dettagli della pagina principale (parent)
   const fetchPageDetails = useCallback(async () => {
@@ -77,11 +72,10 @@ const SubMenu: React.FC = () => {
   const handleRefresh = () => {
     setError(null);
     setRefreshTrigger(prev => prev + 1);
-    refreshIcons();
     toast.info("Aggiornamento menu in corso...");
   };
 
-  if (loading || headerLoading || isLoading) {
+  if (loading || headerLoading) {
     return <LoadingView message="Loading submenu..." fullScreen={true} />;
   }
 
@@ -109,18 +103,18 @@ const SubMenu: React.FC = () => {
       
       {/* Main container with icons that takes all available space */}
       <div className="flex-1 flex flex-col overflow-auto">
-        {error || iconsError ? (
+        {error ? (
           <ErrorView 
-            message={error || iconsError || "Error loading submenu"}
+            message={error || "Error loading submenu"}
             onRefresh={handleRefresh}
             onAlternativeAction={() => navigate('/menu')}
             alternativeActionText="Back to menu"
           />
         ) : (
-          <IconNav 
-            icons={icons} 
-            parentPath={`/${parentPath}`} 
+          <FilteredIconNav 
+            parentPath={realPath} 
             onRefresh={handleRefresh}
+            refreshTrigger={refreshTrigger}
           />
         )}
       </div>
