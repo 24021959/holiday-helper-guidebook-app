@@ -2,7 +2,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import MenuIconGrid from "./MenuIconGrid";
-import ErrorView from "./ErrorView";
 import { IconData } from "@/hooks/useMenuIcons";
 import { identifyIconFromTitle } from "@/utils/iconUtils";
 import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";

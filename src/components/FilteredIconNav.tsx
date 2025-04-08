@@ -21,8 +21,6 @@ interface IconData {
   parent_path: string | null;
   title?: string;
   is_parent?: boolean;
-  bg_color?: string;
-  published?: boolean;
 }
 
 const FilteredIconNav: React.FC<FilteredIconNavProps> = ({ 
@@ -34,20 +32,19 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [icons, setIcons] = useState<IconData[]>([]);
 
-  // Approccio semplificato: carica direttamente le pagine pubblicate
+  // Carica direttamente tutte le pagine dalla tabella custom_pages
   useEffect(() => {
     const loadIcons = async () => {
       try {
         setIsLoading(true);
         setError(null);
         
-        console.log("FilteredIconNav - Caricamento pagine pubblicate per parent_path:", parentPath);
+        console.log("FilteredIconNav - Caricamento pagine per parent_path:", parentPath);
         
-        // Carica direttamente dalle pagine pubblicate
+        // Carica tutte le pagine dalla tabella custom_pages per il percorso padre corrente
         const { data: pages, error: pagesError } = await supabase
           .from('custom_pages')
           .select('id, title, path, icon, parent_path')
-          .eq('published', true)
           .eq('parent_path', parentPath);
           
         if (pagesError) {
@@ -56,12 +53,12 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
         }
         
         if (!pages || pages.length === 0) {
-          console.log("Nessuna pagina pubblicata trovata per questo percorso padre");
+          console.log("Nessuna pagina trovata per questo percorso padre");
           setIcons([]);
         } else {
-          console.log(`Trovate ${pages.length} pagine pubblicate`);
+          console.log(`Trovate ${pages.length} pagine`);
           
-          // Converti le pagine in icone
+          // Converti le pagine in icone per il menu
           const iconData = pages.map(page => ({
             id: page.id,
             path: page.path,
@@ -73,10 +70,29 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
           }));
           
           setIcons(iconData);
+          
+          // Salva in cache per caricamento rapido in futuro
+          const cacheKey = `icons_${parentPath || 'root'}`;
+          localStorage.setItem(cacheKey, JSON.stringify(iconData));
         }
       } catch (error) {
         console.error("Errore nel caricamento delle icone:", error);
         setError("Errore nel caricamento del menu. Riprova più tardi.");
+        
+        // Prova a usare cache come fallback
+        const cacheKey = `icons_${parentPath || 'root'}`;
+        const cachedIconsStr = localStorage.getItem(cacheKey);
+        if (cachedIconsStr) {
+          try {
+            const cachedIcons = JSON.parse(cachedIconsStr);
+            if (cachedIcons && cachedIcons.length > 0) {
+              console.log(`Utilizzo ${cachedIcons.length} icone in cache come fallback`);
+              setIcons(cachedIcons);
+            }
+          } catch (err) {
+            console.error("Errore parsing icone in cache:", err);
+          }
+        }
       } finally {
         setIsLoading(false);
       }
