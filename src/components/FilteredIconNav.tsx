@@ -23,7 +23,7 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
   });
 
   useEffect(() => {
-    console.log("FilteredIconNav - Render con icons:", icons.length, "parentPath:", parentPath);
+    console.log("FilteredIconNav - Render with icons:", icons.length, "parentPath:", parentPath);
     console.log("FilteredIconNav - Icons data:", JSON.stringify(icons));
   }, [icons, parentPath]);
 
@@ -32,12 +32,12 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
       onRefresh();
     } else {
       refreshIcons();
-      toast.info("Aggiornamento menu in corso...");
+      toast.info("Refreshing menu...");
     }
   };
 
   if (isLoading) {
-    return <LoadingView message="Caricamento menu..." />;
+    return <LoadingView message="Loading menu..." />;
   }
 
   if (error) {
@@ -53,27 +53,27 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-4">
         <div className="text-center max-w-md bg-amber-50 border border-amber-200 rounded-lg p-6 shadow">
-          <h2 className="text-xl text-amber-700 font-medium mb-3">Menu vuoto</h2>
+          <h2 className="text-xl text-amber-700 font-medium mb-3">Empty Menu</h2>
           <p className="text-amber-600 mb-4">
-            Non sono state trovate pagine pubblicate per questo menu. Segui le istruzioni sotto per aggiungere pagine.
+            No published pages found for this menu. Follow the instructions below to add pages.
           </p>
           
           <div className="bg-white border border-amber-200 rounded-lg p-4 text-left">
             <p className="text-amber-700 mb-2 font-medium">
-              Per aggiungere pagine al menu:
+              To add pages to this menu:
             </p>
             <ol className="text-sm text-amber-600 list-decimal pl-5 space-y-2">
               <li>
-                Vai all'area amministrativa (/admin)
+                Go to the admin area (/admin)
               </li>
               <li>
-                Usa la funzione 'Crea Nuova Pagina'
+                Use the 'Create New Page' function
               </li>
               <li>
-                Imposta 'Pubblicato' su ON per la pagina creata
+                Set 'Published' to ON for the created page
               </li>
               <li>
-                Assicurati che il campo 'parent_path' sia corretto: vuoto per pagine principali, o il percorso del genitore per sottopagine
+                Make sure the 'parent_path' field is correctly set to: <span className="font-mono bg-amber-100 px-1 rounded">{parentPath || "empty (for main pages)"}</span>
               </li>
             </ol>
           </div>
@@ -82,7 +82,7 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
             onClick={handleRefresh}
             className="mt-4 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-md"
           >
-            Controlla di nuovo
+            Check Again
           </button>
         </div>
       </div>

@@ -26,9 +26,15 @@ const SubMenu: React.FC = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const navigate = useNavigate();
   
-  const realPath = parentPath ? `/${parentPath}` : null;
+  // Handle path with special characters (like accented letters)
+  const decodedPath = parentPath ? decodeURIComponent(parentPath) : null;
+  const realPath = decodedPath ? `/${decodedPath}` : null;
   
-  // Carica i dettagli della pagina principale (parent)
+  console.log("SubMenu - Rendering with parentPath:", parentPath);
+  console.log("SubMenu - Decoded path:", decodedPath);
+  console.log("SubMenu - Real path for database lookup:", realPath);
+  
+  // Load parent page details
   const fetchPageDetails = useCallback(async () => {
     if (!parentPath) return;
     
@@ -36,7 +42,9 @@ const SubMenu: React.FC = () => {
       setLoading(true);
       const realPath = `/${parentPath}`;
       
-      // Carica dettagli pagina parent
+      console.log("SubMenu - Fetching page details for path:", realPath);
+      
+      // Load parent page details
       const { data: pageData, error: pageError } = await supabase
         .from('custom_pages')
         .select('id, title')
@@ -72,7 +80,7 @@ const SubMenu: React.FC = () => {
   const handleRefresh = () => {
     setError(null);
     setRefreshTrigger(prev => prev + 1);
-    toast.info("Aggiornamento menu in corso...");
+    toast.info("Refreshing menu...");
   };
 
   if (loading || headerLoading) {

@@ -32,8 +32,8 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
     try {
       console.log("Loading published pages for parent_path:", parentPath);
       
-      // Stiamo caricando le pagine che hanno come parent_path quello richiesto
-      // e sono pubblicati (published = true)
+      // We're loading pages that have the requested parent_path
+      // and are published (published = true)
       const { data, error } = await supabase
         .from('custom_pages')
         .select('id, title, path, icon, parent_path, published')
@@ -101,13 +101,13 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
         }
       }
 
-      // PRIMARIO PROBLEMA - CARICA TUTTE LE PAGINE TOP LEVEL
-      // Se siamo nella root del menu (parentPath === null), carica anche tutte le pagine
-      // principali direttamente (quelle con parent_path === null)
+      // PRIMARY ISSUE - LOAD ALL TOP LEVEL PAGES
+      // If we're in the root of the menu (parentPath === null), also load all
+      // main pages directly (those with parent_path === null)
       let pageIcons: IconData[] = [];
       
       if (parentPath === null) {
-        // Carica pagine principali (parent_path === null)
+        // Load main pages (parent_path === null)
         const { data: rootPages, error: rootError } = await supabase
           .from('custom_pages')
           .select('id, title, path, icon, parent_path, published')
@@ -131,9 +131,13 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
           }));
         }
       } else {
-        // Carica sottopagine per il percorso genitore specificato
+        // Load subpages for the specified parent path
         pageIcons = await loadPublishedPagesAsIcons();
       }
+      
+      // Clear local storage cache to ensure fresh data is loaded
+      // This is important for subpages that might have been added but are cached
+      localStorage.removeItem(cacheKey);
       
       // Check for elements with children (parent pages)
       if (pageIcons.length > 0) {
@@ -217,7 +221,7 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
     } catch (error) {
       console.error("Error in loadIcons:", error);
       setHasConnectionError(true);
-      setError("Errore nel caricamento del menu. Riprova più tardi.");
+      setError("Error loading menu. Try again later.");
       
       // Try to use cached icons as a last resort
       const cacheKey = `icons_${parentPath || 'root'}`;
@@ -264,6 +268,11 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
     setError(null);
     setRetryCount(0);
     setIsLoading(true);
+    
+    // Clear cache to force fresh data
+    const cacheKey = `icons_${parentPath || 'root'}`;
+    localStorage.removeItem(cacheKey);
+    
     loadIcons();
   };
 

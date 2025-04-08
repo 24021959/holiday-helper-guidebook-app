@@ -21,9 +21,11 @@ const IconNav: React.FC<IconNavProps> = ({
   const keywordToIconMap = useKeywordToIconMap();
 
   useEffect(() => {
-    console.log("IconNav - Ricevute", icons.length, "icone con parentPath:", parentPath);
+    console.log("IconNav - Received", icons.length, "icons with parentPath:", parentPath);
+    console.log("IconNav - Icon paths:", icons.map(icon => icon.path).join(", "));
+    
     if (icons.length > 0) {
-      console.log("IconNav - Prima icona:", JSON.stringify(icons[0]));
+      console.log("IconNav - First icon details:", JSON.stringify(icons[0]));
     }
   }, [icons, parentPath]);
 
@@ -44,13 +46,17 @@ const IconNav: React.FC<IconNavProps> = ({
       path: icon.path,
       parent_path: icon.parent_path,
       is_parent: icon.is_parent,
-      label: icon.label || title
+      label: icon.label || title,
+      published: icon.published
     };
   });
 
-  // Remove any duplicate icons based on path
+  // Remove any duplicate icons based on path and ensure only published icons
   const uniqueIcons = Array.from(
-    new Map(formattedIcons.map(icon => [icon.path, icon])).values()
+    new Map(formattedIcons
+      .filter(icon => icon.published !== false) // Keep only published icons
+      .map(icon => [icon.path, icon])
+    ).values()
   );
 
   const handleIconClick = (icon: IconData) => {
