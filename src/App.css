@@ -1,3 +1,4 @@
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -32,13 +33,37 @@
 .ev-ai-bubble,
 .ev-ai-chat,
 .ev-ai-container,
-/* Generic selectors to catch others */
+/* ChatBot.com specifics */
+#chatbot-container,
+.chatbot-bubble,
+.chatbot_bubble,
+.chatbot-icon,
+.chatbot-button,
+#botxo-chat,
+.botxo-chat,
+.botxo-bubble,
+/* WhatsApp style integrations */
+.whatsapp-widget,
+.wa-widget,
+.wa-chat,
+.whatsapp-chat,
+/* Landbot style */
+.landbot-container,
+.landbot-bubble,
+/* Botsonic */
+.botsonic-container,
+.botsonic-bubble,
+/* Catch-all classes for various chatbot implementations */
 [class*="chat-widget"],
 [class*="chatbot"],
 [id*="chat-widget"],
 [id*="chatbot"],
 [class*="chat-bubble"],
-[id*="chat-bubble"] {
+[id*="chat-bubble"],
+[class*="messenger"],
+[id*="messenger"],
+[class*="support-chat"],
+[id*="support-chat"] {
   z-index: 9999 !important;
   position: fixed !important;
   bottom: 20px !important;
@@ -47,6 +72,26 @@
   visibility: visible !important;
   opacity: 1 !important;
   pointer-events: auto !important;
+  transform: none !important;
+  transition: none !important;
+  max-width: 90% !important;
+  max-height: 90% !important;
+  overflow: visible !important;
+}
+
+/* All IFRAMEs that might be used by chatbots */
+iframe[id*="chat"],
+iframe[class*="chat"],
+iframe[id*="bot"],
+iframe[class*="bot"],
+iframe[id*="support"],
+iframe[class*="support"],
+iframe[id*="widget"],
+iframe[class*="widget"] {
+  z-index: 9998 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
 }
 
 @media (max-width: 768px) {
@@ -96,13 +141,37 @@
   .ev-ai-bubble,
   .ev-ai-chat,
   .ev-ai-container,
+  /* ChatBot.com specifics */
+  #chatbot-container,
+  .chatbot-bubble,
+  .chatbot_bubble,
+  .chatbot-icon,
+  .chatbot-button,
+  #botxo-chat,
+  .botxo-chat,
+  .botxo-bubble,
+  /* WhatsApp style integrations */
+  .whatsapp-widget,
+  .wa-widget,
+  .wa-chat,
+  .whatsapp-chat,
+  /* Landbot style */
+  .landbot-container,
+  .landbot-bubble,
+  /* Botsonic */
+  .botsonic-container,
+  .botsonic-bubble,
   /* Generic selectors to catch others */
   [class*="chat-widget"],
   [class*="chatbot"],
   [id*="chat-widget"],
   [id*="chatbot"],
   [class*="chat-bubble"],
-  [id*="chat-bubble"] {
+  [id*="chat-bubble"],
+  [class*="messenger"],
+  [id*="messenger"],
+  [class*="support-chat"],
+  [id*="support-chat"] {
     z-index: 9999 !important;
     max-width: 90% !important;
     right: 10px !important;
@@ -111,41 +180,11 @@
     visibility: visible !important;
     opacity: 1 !important;
     pointer-events: auto !important;
+    transform: none !important;
+    transition: none !important;
+    overflow: visible !important;
   }
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
+/* ... keep existing code (logo styles, animations, card styles, etc.) */
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
-}

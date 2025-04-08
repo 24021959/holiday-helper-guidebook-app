@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "@/context/TranslationContext";
-import { Toast } from "@/components/ui/use-toast";
 import { useToast } from "@/hooks/use-toast";
 
 const ChatbotBubble: React.FC = () => {
@@ -61,54 +60,82 @@ const ChatbotBubble: React.FC = () => {
         const existingScripts = document.querySelectorAll('[data-chatbot-script="true"]');
         existingScripts.forEach(script => script.remove());
         
-        // Process the chatbot code properly
-        if (chatbotCode.includes('<script')) {
-          // Extract the script content
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = chatbotCode;
-          const scriptTags = tempDiv.querySelectorAll('script');
-          
-          scriptTags.forEach(scriptTag => {
+        // Also try targeting the script container
+        const scriptContainer = document.getElementById('chatbot-script-container');
+        if (scriptContainer) {
+          // Use the script container approach - this often works better for third-party chatbots
+          scriptContainer.innerHTML = chatbotCode;
+          const addedScripts = scriptContainer.querySelectorAll('script');
+          addedScripts.forEach(script => {
+            script.setAttribute('data-chatbot-script', 'true');
+          });
+          console.log("Chatbot script added to designated container");
+        } else {
+          // Fallback: Process the chatbot code directly
+          if (chatbotCode.includes('<script')) {
+            // Extract the script content
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = chatbotCode;
+            const scriptTags = tempDiv.querySelectorAll('script');
+            
+            scriptTags.forEach(scriptTag => {
+              const scriptElement = document.createElement('script');
+              scriptElement.setAttribute('data-chatbot-script', 'true');
+              
+              // Copy all attributes
+              Array.from(scriptTag.attributes).forEach(attr => {
+                scriptElement.setAttribute(attr.name, attr.value);
+              });
+              
+              // If language is specified and different from default, try to update
+              if (language && language !== 'it') {
+                if (scriptElement.getAttribute('data-lang')) {
+                  scriptElement.setAttribute('data-lang', language);
+                }
+                if (scriptElement.getAttribute('data-language')) {
+                  scriptElement.setAttribute('data-language', language);
+                }
+              }
+              
+              // Set content or src
+              if (scriptTag.src) {
+                scriptElement.src = scriptTag.src;
+              } else {
+                scriptElement.textContent = scriptTag.textContent;
+              }
+              
+              // Add to document head
+              document.head.appendChild(scriptElement);
+              console.log("Chatbot script injected with attributes:", 
+                Array.from(scriptElement.attributes).map(a => `${a.name}="${a.value}"`).join(' '));
+            });
+          } else {
+            // Direct script content
             const scriptElement = document.createElement('script');
             scriptElement.setAttribute('data-chatbot-script', 'true');
-            
-            // Copy all attributes
-            Array.from(scriptTag.attributes).forEach(attr => {
-              scriptElement.setAttribute(attr.name, attr.value);
-            });
-            
-            // If language is specified and different from default, try to update
-            if (language && language !== 'it') {
-              if (scriptElement.getAttribute('data-lang')) {
-                scriptElement.setAttribute('data-lang', language);
-              }
-              if (scriptElement.getAttribute('data-language')) {
-                scriptElement.setAttribute('data-language', language);
-              }
-            }
-            
-            // Set content or src
-            if (scriptTag.src) {
-              scriptElement.src = scriptTag.src;
-            } else {
-              scriptElement.textContent = scriptTag.textContent;
-            }
-            
-            // Add to document head
+            scriptElement.textContent = chatbotCode;
             document.head.appendChild(scriptElement);
-            console.log("Chatbot script injected with attributes:", 
-              Array.from(scriptElement.attributes).map(a => `${a.name}="${a.value}"`).join(' '));
-          });
-        } else {
-          // Direct script content
-          const scriptElement = document.createElement('script');
-          scriptElement.setAttribute('data-chatbot-script', 'true');
-          scriptElement.textContent = chatbotCode;
-          document.head.appendChild(scriptElement);
+          }
         }
         
-        console.log("Chatbot script injected successfully");
+        console.log("Chatbot script injection complete");
         setIsLoaded(true);
+        
+        // Add a visible debug element on the page
+        if (process.env.NODE_ENV === 'development') {
+          const debugDiv = document.createElement('div');
+          debugDiv.id = 'chatbot-debug-info';
+          debugDiv.style.position = 'fixed';
+          debugDiv.style.bottom = '10px';
+          debugDiv.style.left = '10px';
+          debugDiv.style.backgroundColor = 'rgba(0,0,0,0.7)';
+          debugDiv.style.color = 'white';
+          debugDiv.style.padding = '5px';
+          debugDiv.style.zIndex = '9999';
+          debugDiv.style.fontSize = '10px';
+          debugDiv.textContent = 'Chatbot loaded: ' + new Date().toISOString();
+          document.body.appendChild(debugDiv);
+        }
       } catch (error) {
         console.error("Error loading chatbot:", error);
       }
@@ -117,19 +144,19 @@ const ChatbotBubble: React.FC = () => {
     // Small delay to ensure DOM is ready
     const timer = setTimeout(() => {
       loadChatbot();
-    }, 500);
+    }, 1000); // Increased timeout to ensure page is fully loaded
     
     return () => {
       clearTimeout(timer);
     };
   }, [isAdminPage, language, location.pathname]);
 
-  // We're adding a small debug element that's only visible in dev mode
-  return process.env.NODE_ENV === 'development' ? (
-    <div style={{ display: 'none' }} id="chatbot-debug">
+  // Just a placeholder element to ensure the component is mounted
+  return (
+    <div id="chatbot-container" style={{ display: 'none' }}>
       {isLoaded ? 'Chatbot loaded' : 'Chatbot not loaded'}
     </div>
-  ) : null;
+  );
 };
 
 export default ChatbotBubble;
