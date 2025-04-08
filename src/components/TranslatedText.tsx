@@ -7,13 +7,15 @@ interface TranslatedTextProps {
   text: string;
   as?: keyof JSX.IntrinsicElements;
   className?: string;
+  showLoadingState?: boolean;
 }
 
 // Utilizziamo memo per evitare rendering inutili
 const TranslatedText: React.FC<TranslatedTextProps> = memo(({ 
   text, 
   as: Component = "span", 
-  className = "" 
+  className = "",
+  showLoadingState = true
 }) => {
   const { language, translate } = useTranslation();
   const [translatedText, setTranslatedText] = useState(text);
@@ -84,7 +86,7 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
 
   return (
     <Component className={className}>
-      {isLoading ? (
+      {isLoading && showLoadingState ? (
         <span className="inline-flex items-center gap-1 opacity-70">
           <Loader2 size={14} className="animate-spin" />
           <span>{text}</span>

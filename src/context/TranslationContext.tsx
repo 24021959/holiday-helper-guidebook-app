@@ -18,9 +18,20 @@ interface TranslationContextType {
   language: Language;
   setLanguage: (language: Language) => void;
   translate: (text: string) => Promise<string>;
+  translateBulk: (texts: string[]) => Promise<string[]>;
+  translatePage: (pageContent: string, pageTitle: string) => Promise<{title: string, content: string}>;
 }
 
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
+
+// Cache globale per le traduzioni
+const globalTranslationCache: Record<string, Record<string, string>> = {
+  en: {},
+  fr: {},
+  es: {},
+  de: {},
+  it: {}
+};
 
 export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguage] = useState<Language>('it');
@@ -40,6 +51,11 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
   const translate = async (text: string): Promise<string> => {
     // If the language is Italian (default), return the original text
     if (language === 'it') return text;
+    
+    // Check global cache first
+    if (globalTranslationCache[language][text]) {
+      return globalTranslationCache[language][text];
+    }
     
     try {
       // Use our custom Supabase Edge Function
@@ -64,6 +80,8 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
       }
       
       if (data && data.translatedText) {
+        // Save to global cache
+        globalTranslationCache[language][text] = data.translatedText;
         return data.translatedText;
       } else {
         throw new Error('No translation returned');
@@ -84,8 +102,137 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
       }
     }
   };
+  
+  const translateBulk = async (texts: string[]): Promise<string[]> => {
+    // If the language is Italian or empty array, return the original texts
+    if (language === 'it' || texts.length === 0) return texts;
+    
+    // Filter texts that need translation (not in cache)
+    const textsToTranslate: string[] = [];
+    const cachedResults: (string | null)[] = [];
+    
+    texts.forEach((text, index) => {
+      if (globalTranslationCache[language][text]) {
+        cachedResults[index] = globalTranslationCache[language][text];
+      } else {
+        textsToTranslate.push(text);
+        cachedResults[index] = null;
+      }
+    });
+    
+    // If all texts are cached, return cached results
+    if (textsToTranslate.length === 0) {
+      return cachedResults.map(text => text as string);
+    }
+    
+    try {
+      console.log(`Translating ${textsToTranslate.length} texts to ${language}`);
+      
+      // Use our custom Supabase Edge Function for bulk translation
+      const { data, error } = await supabase.functions.invoke('translate', {
+        body: { 
+          bulkTranslation: textsToTranslate, 
+          targetLang: languageMap[language]
+        }
+      });
 
-  const value = { language, setLanguage, translate };
+      if (error) {
+        console.error('Bulk translation error from Edge Function:', error);
+        throw error;
+      }
+      
+      if (data && data.translatedTexts && Array.isArray(data.translatedTexts)) {
+        // Map translated texts back to original array positions
+        let translatedIndex = 0;
+        
+        const results = texts.map((text, index) => {
+          if (cachedResults[index] !== null) {
+            // Use cached translation
+            return cachedResults[index] as string;
+          } else {
+            // Use new translation
+            const translatedText = data.translatedTexts[translatedIndex++] || text;
+            // Save to global cache
+            globalTranslationCache[language][text] = translatedText;
+            return translatedText;
+          }
+        });
+        
+        return results;
+      } else {
+        throw new Error('Invalid translation response');
+      }
+    } catch (error) {
+      console.error('Bulk translation error:', error);
+      // Fallback to individual translations
+      const results = await Promise.all(
+        texts.map(async (text, index) => {
+          if (cachedResults[index] !== null) {
+            return cachedResults[index] as string;
+          } else {
+            try {
+              return await translate(text);
+            } catch (e) {
+              return text; // Return original on error
+            }
+          }
+        })
+      );
+      
+      return results;
+    }
+  };
+  
+  // Specialized function to translate an entire page
+  const translatePage = async (pageContent: string, pageTitle: string): Promise<{title: string, content: string}> => {
+    if (language === 'it') {
+      return { title: pageTitle, content: pageContent };
+    }
+    
+    try {
+      // Translate title first
+      const translatedTitle = await translate(pageTitle);
+      
+      // For the content, we'll use a specialized approach based on content size
+      let translatedContent: string;
+      
+      // If content is very large, we might need to break it into chunks
+      if (pageContent.length > 8000) {
+        // Break into paragraphs or sections
+        const sections = pageContent.split(/\n\n+/).filter(s => s.trim() !== '');
+        
+        // Translate sections in batches
+        const translatedSections = await translateBulk(sections);
+        
+        // Rejoin with proper spacing
+        translatedContent = translatedSections.join('\n\n');
+      } else {
+        // Content is small enough for a direct translation
+        translatedContent = await translate(pageContent);
+      }
+      
+      return {
+        title: translatedTitle,
+        content: translatedContent
+      };
+    } catch (error) {
+      console.error('Error translating page:', error);
+      toast.error('Errore nella traduzione della pagina', {
+        description: 'Non è stato possibile tradurre questa pagina completamente.'
+      });
+      
+      // Return original content as fallback
+      return { title: pageTitle, content: pageContent };
+    }
+  };
+
+  const value = { 
+    language, 
+    setLanguage, 
+    translate,
+    translateBulk,
+    translatePage
+  };
 
   return (
     <TranslationContext.Provider value={value}>

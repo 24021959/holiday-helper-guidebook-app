@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
@@ -6,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PageData } from "@/pages/Admin";
+import { useTranslation } from "@/context/TranslationContext";
 import { 
   Form, 
   FormControl, 
@@ -49,6 +51,8 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
   const [pageImages, setPageImages] = useState<ImageItem[]>([]);
   const [currentTab, setCurrentTab] = useState<string>("content");
   const [isCreating, setIsCreating] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const { translatePage } = useTranslation();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -123,6 +127,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         ? formatPageContent(values.content, pageImages)
         : "";
       
+      // Prima creiamo la pagina in italiano
       const pageData = {
         id: pageId,
         title: values.title,
@@ -134,7 +139,8 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         parent_path: pageType === "submenu" ? parentPath : null,
         list_type: listType,
         list_items: listType && locationItems.length > 0 ? locationItems : null,
-        published: true
+        published: true,
+        language: "it" // Contrassegniamo la pagina come italiana
       };
       
       console.log("Dati pagina per inserimento:", pageData);
@@ -173,6 +179,51 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         }
       }
       
+      // Ora traduciamo automaticamente la pagina nelle altre lingue
+      if (pageType !== "parent" && formattedContent) {
+        setIsTranslating(true);
+        toast.info("Traduzione automatica della pagina nelle altre lingue...");
+        
+        // Array di lingue supportate (escluso italiano)
+        const languages = ["en", "fr", "es", "de"];
+        
+        // Per ogni lingua, traduciamo titolo e contenuto
+        for (const lang of languages) {
+          try {
+            console.log(`Traduzione in ${lang} iniziata...`);
+            
+            // Traduciamo titolo e contenuto
+            const { title: translatedTitle, content: translatedContent } = 
+              await translatePage(formattedContent, values.title);
+            
+            // Creiamo una pagina tradotta
+            const translatedPageData = {
+              ...pageData,
+              id: uuidv4(), // Nuovo ID per la pagina tradotta
+              title: translatedTitle,
+              content: translatedContent,
+              language: lang
+            };
+            
+            // Salviamo la pagina tradotta nel database
+            const { error: translationError } = await supabase
+              .from('custom_pages')
+              .insert(translatedPageData);
+            
+            if (translationError) {
+              console.error(`Errore nella traduzione in ${lang}:`, translationError);
+            } else {
+              console.log(`Pagina tradotta in ${lang} salvata con successo`);
+            }
+          } catch (error) {
+            console.error(`Errore durante la traduzione in ${lang}:`, error);
+          }
+        }
+        
+        setIsTranslating(false);
+        toast.success("Traduzioni automatiche completate");
+      }
+      
       const { data: pagesData, error: fetchError } = await supabase
         .from('custom_pages')
         .select('*');
@@ -196,7 +247,8 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
           parentPath: page.parent_path || undefined,
           pageImages: [],
           published: page.published || false,
-          is_parent: pageType === "parent"
+          is_parent: pageType === "parent",
+          language: page.language
         }));
         
         onPageCreated(formattedPages);
@@ -221,6 +273,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
       toast.error("Errore nel salvare la pagina");
     } finally {
       setIsCreating(false);
+      setIsTranslating(false);
     }
   };
 
@@ -312,8 +365,14 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
             </div>
           )}
           
-          <Button type="submit" className="w-full" disabled={isCreating}>
-            {isCreating ? "Creazione in corso..." : "Crea pagina"}
+          <div className="bg-blue-50 border border-blue-200 p-4 rounded-md">
+            <p className="text-blue-800">
+              Questa pagina verrà automaticamente tradotta in inglese, francese, spagnolo e tedesco dopo la creazione.
+            </p>
+          </div>
+          
+          <Button type="submit" className="w-full" disabled={isCreating || isTranslating}>
+            {isCreating ? "Creazione in corso..." : isTranslating ? "Traduzione in corso..." : "Crea pagina"}
           </Button>
         </form>
       </Form>
