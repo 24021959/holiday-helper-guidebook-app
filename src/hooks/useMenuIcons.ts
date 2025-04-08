@@ -36,9 +36,13 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
       setError(null);
       setHasConnectionError(false);
       
-      // Force fresh data by clearing cache first
-      const cacheKey = `icons_${parentPath || 'root'}_${refreshTrigger}`;
-      localStorage.removeItem(cacheKey);
+      // Be careful with localStorage and handle quota errors
+      try {
+        const cacheKey = `icons_${parentPath || 'root'}_${refreshTrigger}`;
+        localStorage.removeItem(cacheKey);
+      } catch (e) {
+        console.warn("Could not access localStorage, continuing without cache:", e);
+      }
       
       console.log(`Loading icons for parentPath: ${parentPath}, refreshTrigger: ${refreshTrigger}`);
 
@@ -132,8 +136,20 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
         console.log(`Loaded ${uniqueIcons.length} unique icons`);
         setIcons(uniqueIcons);
         
-        // Save to cache
-        localStorage.setItem(cacheKey, JSON.stringify(uniqueIcons));
+        // Carefully handle localStorage to avoid quota errors
+        try {
+          const cacheKey = `icons_${parentPath || 'root'}_${refreshTrigger}`;
+          const iconString = JSON.stringify(uniqueIcons);
+          
+          // Only store if small enough to avoid quota issues
+          if (iconString.length < 500000) { // ~500KB limit to be safe
+            localStorage.setItem(cacheKey, iconString);
+          } else {
+            console.warn("Icons data too large for localStorage, skipping cache");
+          }
+        } catch (e) {
+          console.warn("Could not save to localStorage:", e);
+        }
       } else {
         console.log("No page icons found, checking for direct menu_icons");
         // Check if there are any direct menu_icons for this parent
@@ -176,7 +192,18 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
           }
           
           setIcons(iconData);
-          localStorage.setItem(cacheKey, JSON.stringify(iconData));
+          
+          // Safely store in localStorage
+          try {
+            const cacheKey = `icons_${parentPath || 'root'}_${refreshTrigger}`;
+            const iconString = JSON.stringify(iconData);
+            
+            if (iconString.length < 500000) {
+              localStorage.setItem(cacheKey, iconString);
+            }
+          } catch (e) {
+            console.warn("Could not save icons to localStorage:", e);
+          }
         } else {
           console.log("No menu icons found either, the menu will be empty.");
           setIcons([]);
@@ -187,19 +214,23 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
       setHasConnectionError(true);
       setError("Error loading menu. Try again later.");
       
-      // Try to use cached icons as a last resort
-      const cacheKey = `icons_${parentPath || 'root'}_${refreshTrigger-1}`;
-      const cachedIconsStr = localStorage.getItem(cacheKey);
-      if (cachedIconsStr) {
-        try {
-          const cachedIcons = JSON.parse(cachedIconsStr);
-          if (cachedIcons && cachedIcons.length > 0) {
-            console.log(`Using ${cachedIcons.length} cached icons as fallback after error`);
-            setIcons(cachedIcons);
+      // Try to use cached icons as a last resort, but handle localStorage errors
+      try {
+        const cacheKey = `icons_${parentPath || 'root'}_${refreshTrigger-1}`;
+        const cachedIconsStr = localStorage.getItem(cacheKey);
+        if (cachedIconsStr) {
+          try {
+            const cachedIcons = JSON.parse(cachedIconsStr);
+            if (cachedIcons && cachedIcons.length > 0) {
+              console.log(`Using ${cachedIcons.length} cached icons as fallback after error`);
+              setIcons(cachedIcons);
+            }
+          } catch (err) {
+            console.error("Error parsing cached icons for fallback:", err);
           }
-        } catch (err) {
-          console.error("Error parsing cached icons for fallback:", err);
         }
+      } catch (e) {
+        console.warn("Could not access localStorage for fallback:", e);
       }
     } finally {
       setIsLoading(false);
@@ -234,8 +265,12 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
     setIsLoading(true);
     
     // Clear cache to force fresh data
-    const cacheKey = `icons_${parentPath || 'root'}_${refreshTrigger}`;
-    localStorage.removeItem(cacheKey);
+    try {
+      const cacheKey = `icons_${parentPath || 'root'}_${refreshTrigger}`;
+      localStorage.removeItem(cacheKey);
+    } catch (e) {
+      console.warn("Could not clear localStorage cache:", e);
+    }
     
     loadIcons();
   };

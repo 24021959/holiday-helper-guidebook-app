@@ -101,7 +101,7 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
     try {
       const content = getValues(name) as string;
       if (clickPosition !== null) {
-        // Extract image name from data URL or use a shorter representation
+        // Extract image name from URL for better display
         let imageName = "Immagine";
         if (imageUrl.startsWith('data:image')) {
           imageName = "Immagine caricata";
@@ -111,12 +111,14 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
           if (urlParts.length > 0) {
             const lastPart = urlParts[urlParts.length - 1];
             if (lastPart && lastPart.length > 0) {
+              // Only show the filename, not the full URL
               imageName = lastPart.length > 20 ? lastPart.substring(0, 20) + "..." : lastPart;
             }
           }
         }
         
         // Hide actual image URL in a comment to preserve it for processing
+        // Only show a simple placeholder to the user
         const imageMarkup = `\n<!-- IMAGE: ${imageUrl} -->\n[Immagine: ${imageName}]\n`;
         const newContent = content.substring(0, clickPosition) + imageMarkup + content.substring(clickPosition);
         setValue(name, newContent, { shouldDirty: true });

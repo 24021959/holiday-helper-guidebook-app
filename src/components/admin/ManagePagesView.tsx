@@ -30,13 +30,14 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [localPages, setLocalPages] = useState<PageData[]>(pages);
   const [activeTab, setActiveTab] = useState<string>("list");
-  const [shouldRefresh, setShouldRefresh] = useState(false);
 
+  // Use pages from props directly and avoid extra fetching
   useEffect(() => {
     console.log("ManagePagesView - pages received from props:", pages.length);
     setLocalPages(pages);
   }, [pages]);
 
+  // Simplified fetch function that doesn't cause loops
   const fetchPages = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -84,7 +85,6 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
         setLocalPages(formattedPages);
         onPagesUpdate(formattedPages);
         toast.success("Pagine aggiornate con successo");
-        setShouldRefresh(false);
       } else {
         console.log("ManagePagesView - No pages data returned from database");
         setLocalPages([]);
@@ -105,16 +105,13 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     }
   }, [onPagesUpdate, pages]);
 
+  // Only fetch when there's an explicit refresh request or no pages available
   useEffect(() => {
-    // Only fetch on initial load or explicit refresh request
-    if (shouldRefresh) {
-      fetchPages();
-    } else if (localPages.length === 0 && pages.length === 0) {
-      // Initial load if both local and props pages are empty
+    if (localPages.length === 0 && pages.length === 0) {
       console.log("ManagePagesView - Initial fetch because no pages are available");
       fetchPages();
     }
-  }, [fetchPages, shouldRefresh, localPages.length, pages.length]);
+  }, [fetchPages, localPages.length, pages.length]);
 
   const handlePageCreated = (newPages: PageData[]) => {
     console.log("ManagePagesView - Page created, new pages count:", newPages.length);
@@ -160,8 +157,10 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
         }
       }
       
-      // Set flag to refresh pages after deletion
-      setShouldRefresh(true);
+      // Update local state after successful deletion
+      const updatedPages = localPages.filter(p => p.id !== pageId);
+      setLocalPages(updatedPages);
+      onPagesUpdate(updatedPages);
       toast.success("Pagina eliminata con successo");
       
     } catch (error) {
@@ -177,6 +176,7 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     window.open(`/preview${path}`, '_blank');
   };
 
+  // Direct edit handling without intermediate step
   const handleEditPage = (page: PageData) => {
     console.log("Editing page:", page.title);
     setSelectedPage(page);
@@ -192,7 +192,7 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
           <h3 className="text-xl font-medium text-red-700 mb-2">Errore di connessione</h3>
           <p className="text-red-600 mb-4">{error}</p>
           <Button 
-            onClick={() => setShouldRefresh(true)}
+            onClick={fetchPages}
             className="bg-red-600 hover:bg-red-700"
           >
             Riprova
