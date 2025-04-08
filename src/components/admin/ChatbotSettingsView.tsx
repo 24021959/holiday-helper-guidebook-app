@@ -2,9 +2,10 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, AlertCircle } from "lucide-react";
+import { Check, AlertCircle, RefreshCw, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useTranslation } from "@/context/TranslationContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface ChatbotSettingsViewProps {
   chatbotCode: string;
@@ -21,6 +22,7 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState(false);
   const { language } = useTranslation();
+  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -30,10 +32,27 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
     try {
       await onSave();
       setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000); // Hide success message after 3 seconds
+      toast({
+        title: "Chatbot impostato correttamente",
+        description: "Le modifiche saranno visibili su tutte le pagine del sito.",
+      });
+      
+      // Clear any existing chatbot scripts to force reload
+      const existingScripts = document.querySelectorAll('[data-chatbot-script="true"]');
+      existingScripts.forEach(script => script.remove());
+      
+      // Force reload to apply new chatbot
+      setTimeout(() => {
+        setSaveSuccess(false);
+      }, 3000);
     } catch (error) {
       console.error("Error saving chatbot settings:", error);
       setSaveError(true);
+      toast({
+        variant: "destructive",
+        title: "Errore nel salvataggio",
+        description: "Si è verificato un errore durante il salvataggio delle impostazioni del chatbot.",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -45,13 +64,21 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
         <h2 className="text-xl font-medium text-emerald-600 mb-4">Impostazioni Chatbot</h2>
         <p className="text-sm text-gray-500 mb-4">
           Inserisci il codice JavaScript del chatbot per integrarlo nel tuo sito web.
+          Assicurati di includere il tag <code>&lt;script&gt;</code> completo fornito dal servizio di chatbot.
         </p>
+        
+        <Alert className="mb-4 bg-blue-50 border-blue-200">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-700">
+            Il chatbot sarà visibile in tutte le pagine pubbliche del sito, ma non nelle pagine di amministrazione.
+          </AlertDescription>
+        </Alert>
         
         {saveSuccess && (
           <Alert className="mb-4 bg-green-50 border-green-200">
             <Check className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-700">
-              Impostazioni chatbot salvate con successo!
+              Impostazioni chatbot salvate con successo! Il chatbot sarà visibile in tutte le pagine.
             </AlertDescription>
           </Alert>
         )}
@@ -72,9 +99,30 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
           className="font-mono min-h-[200px]"
         />
         
-        <div className="mt-4">
+        <div className="mt-4 flex gap-3">
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "Salvataggio..." : "Salva Impostazioni"}
+            {isSaving ? (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                Salvataggio...
+              </>
+            ) : (
+              "Salva Impostazioni"
+            )}
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              const existingScripts = document.querySelectorAll('[data-chatbot-script="true"]');
+              existingScripts.forEach(script => script.remove());
+              toast({
+                title: "Chatbot ricaricato",
+                description: "Il chatbot è stato ricaricato con le impostazioni attuali.",
+              });
+            }}
+          >
+            Ricarica Chatbot
           </Button>
         </div>
       </div>

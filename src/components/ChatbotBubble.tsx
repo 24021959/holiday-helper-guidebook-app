@@ -3,22 +3,28 @@ import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "@/context/TranslationContext";
+import { Toast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 const ChatbotBubble: React.FC = () => {
   const location = useLocation();
   const { language } = useTranslation();
   const [isLoaded, setIsLoaded] = useState(false);
+  const { toast } = useToast();
   
   // Skip rendering on admin pages
   const isAdminPage = location.pathname.includes('/admin') || 
                        location.pathname.includes('/login');
 
   useEffect(() => {
-    if (isAdminPage || isLoaded) return;
+    if (isAdminPage) return;
+    
+    // Reset loaded state when route changes
+    setIsLoaded(false);
     
     const loadChatbot = async () => {
       try {
-        console.log("Attempting to load chatbot script...");
+        console.log("Loading chatbot for path:", location.pathname);
         
         // Try to load from localStorage first (faster and more reliable)
         const localCode = localStorage.getItem("chatbotCode");
@@ -51,80 +57,79 @@ const ChatbotBubble: React.FC = () => {
           return;
         }
 
-        // Get the script container in the head
-        const scriptContainer = document.getElementById('chatbot-script-container');
-        if (!scriptContainer) {
-          console.error("Chatbot script container not found in the document head");
-          return;
-        }
+        // Remove any existing chatbot scripts to prevent duplicates
+        const existingScripts = document.querySelectorAll('[data-chatbot-script="true"]');
+        existingScripts.forEach(script => script.remove());
         
-        // Clear the container first
-        scriptContainer.innerHTML = '';
-        
-        // Create a script element directly - THIS IS KEY
-        const scriptElement = document.createElement('script');
-        scriptElement.type = 'text/javascript';
-        
-        // If there's a language attribute, try to update it based on current language
-        let modifiedCode = chatbotCode;
-        if (language && language !== 'it') {
-          // Try to modify language settings if it's present in the string
-          modifiedCode = modifiedCode.replace(/data-lang="[^"]*"/, `data-lang="${language}"`);
-          modifiedCode = modifiedCode.replace(/data-language="[^"]*"/, `data-language="${language}"`);
-        }
-        
-        // For direct script tag, we need to extract attributes from the script tag
-        // and apply them to our created script element
-        if (modifiedCode.includes('<script')) {
+        // Process the chatbot code properly
+        if (chatbotCode.includes('<script')) {
+          // Extract the script content
           const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = modifiedCode;
-          const scriptTag = tempDiv.querySelector('script');
+          tempDiv.innerHTML = chatbotCode;
+          const scriptTags = tempDiv.querySelectorAll('script');
           
-          if (scriptTag) {
-            // Copy all attributes from the parsed script
+          scriptTags.forEach(scriptTag => {
+            const scriptElement = document.createElement('script');
+            scriptElement.setAttribute('data-chatbot-script', 'true');
+            
+            // Copy all attributes
             Array.from(scriptTag.attributes).forEach(attr => {
               scriptElement.setAttribute(attr.name, attr.value);
             });
             
-            // Execute script by setting its src (preferred) or content
+            // If language is specified and different from default, try to update
+            if (language && language !== 'it') {
+              if (scriptElement.getAttribute('data-lang')) {
+                scriptElement.setAttribute('data-lang', language);
+              }
+              if (scriptElement.getAttribute('data-language')) {
+                scriptElement.setAttribute('data-language', language);
+              }
+            }
+            
+            // Set content or src
             if (scriptTag.src) {
               scriptElement.src = scriptTag.src;
-            } else if (scriptTag.textContent) {
+            } else {
               scriptElement.textContent = scriptTag.textContent;
             }
             
-            // Append to document head to execute
-            scriptContainer.appendChild(scriptElement);
-            console.log("Chatbot script injected with proper attributes");
-            setIsLoaded(true);
-          } else {
-            // Fallback: just use the string directly if no script tag found
-            scriptContainer.innerHTML = modifiedCode;
-            console.log("Chatbot script injected as raw HTML");
-            setIsLoaded(true);
-          }
+            // Add to document head
+            document.head.appendChild(scriptElement);
+            console.log("Chatbot script injected with attributes:", 
+              Array.from(scriptElement.attributes).map(a => `${a.name}="${a.value}"`).join(' '));
+          });
         } else {
-          // If it's not wrapped in a script tag, assume it's raw script content
-          scriptElement.textContent = modifiedCode;
-          scriptContainer.appendChild(scriptElement);
-          console.log("Chatbot script injected as raw script content");
-          setIsLoaded(true);
+          // Direct script content
+          const scriptElement = document.createElement('script');
+          scriptElement.setAttribute('data-chatbot-script', 'true');
+          scriptElement.textContent = chatbotCode;
+          document.head.appendChild(scriptElement);
         }
+        
+        console.log("Chatbot script injected successfully");
+        setIsLoaded(true);
       } catch (error) {
         console.error("Error loading chatbot:", error);
       }
     };
     
-    loadChatbot();
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      loadChatbot();
+    }, 500);
     
-    // Reload chatbot when language changes or when page route changes
     return () => {
-      setIsLoaded(false);
+      clearTimeout(timer);
     };
   }, [isAdminPage, language, location.pathname]);
 
-  // This component doesn't render anything visible
-  return null;
+  // We're adding a small debug element that's only visible in dev mode
+  return process.env.NODE_ENV === 'development' ? (
+    <div style={{ display: 'none' }} id="chatbot-debug">
+      {isLoaded ? 'Chatbot loaded' : 'Chatbot not loaded'}
+    </div>
+  ) : null;
 };
 
 export default ChatbotBubble;

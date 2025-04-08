@@ -1,4 +1,3 @@
-
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -6,7 +5,7 @@
   text-align: center;
 }
 
-/* Ensure chatbot widgets are visible on all devices */
+/* Enhanced chatbot visibility for ALL types of chatbot widgets */
 #chat-widget-container,
 .chat-widget,
 .chatbot-container,
@@ -31,7 +30,15 @@
 .supportfast-bubble,
 .ev-ai-widget,
 .ev-ai-bubble,
-.ev-ai-chat {
+.ev-ai-chat,
+.ev-ai-container,
+/* Generic selectors to catch others */
+[class*="chat-widget"],
+[class*="chatbot"],
+[id*="chat-widget"],
+[id*="chatbot"],
+[class*="chat-bubble"],
+[id*="chat-bubble"] {
   z-index: 9999 !important;
   position: fixed !important;
   bottom: 20px !important;
@@ -39,6 +46,7 @@
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 @media (max-width: 768px) {
@@ -61,7 +69,7 @@
     padding-right: 12px;
   }
   
-  /* Ensure chatbot is accessible on mobile */
+  /* Enhanced chatbot visibility on mobile */
   #chat-widget-container,
   .chat-widget,
   .chatbot-container,
@@ -86,14 +94,23 @@
   .supportfast-bubble,
   .ev-ai-widget,
   .ev-ai-bubble,
-  .ev-ai-chat {
+  .ev-ai-chat,
+  .ev-ai-container,
+  /* Generic selectors to catch others */
+  [class*="chat-widget"],
+  [class*="chatbot"],
+  [id*="chat-widget"],
+  [id*="chatbot"],
+  [class*="chat-bubble"],
+  [id*="chat-bubble"] {
     z-index: 9999 !important;
-    max-width: 90vw !important;
-    right: 0 !important;
-    bottom: 0 !important;
+    max-width: 90% !important;
+    right: 10px !important;
+    bottom: 10px !important;
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;
+    pointer-events: auto !important;
   }
 }
 
