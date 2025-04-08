@@ -97,9 +97,9 @@ const SubMenu: React.FC = () => {
         showAdminButton={false}
       />
       
-      {/* Submenu title with back button */}
+      {/* Submenu title with home button only (no back button) */}
       <div className="bg-gradient-to-r from-emerald-100 to-teal-100 py-3 px-4 shadow-sm flex items-center">
-        <BackToMenu />
+        <BackToMenu showBackButton={false} />
         <h1 className="text-xl font-medium text-emerald-800 flex-1 text-center pr-6">
           {pageDetails ? (
             <TranslatedText text={pageDetails.title} />

@@ -5,7 +5,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Home } from "lucide-react";
 
-const BackToMenu: React.FC = () => {
+interface BackToMenuProps {
+  showBackButton?: boolean;
+}
+
+const BackToMenu: React.FC<BackToMenuProps> = ({ showBackButton = true }) => {
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -14,9 +18,14 @@ const BackToMenu: React.FC = () => {
     navigate('/menu');
   };
   
+  // Determine if we're in a submenu view
+  const isInSubmenu = location.pathname.startsWith('/submenu/');
+  
   return (
     <div className="flex items-center gap-2">
-      <NavigateBack />
+      {/* Only show the back button if not in submenu or if specifically requested */}
+      {(showBackButton && !isInSubmenu) && <NavigateBack />}
+      
       <Button 
         variant="ghost" 
         size="icon" 

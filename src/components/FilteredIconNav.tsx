@@ -28,6 +28,14 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     
     if (icons.length === 0) {
       console.log("FilteredIconNav - No icons found for parentPath:", parentPath);
+    } else {
+      console.log("FilteredIconNav - First icon:", JSON.stringify(icons[0]));
+      if (parentPath) {
+        console.log("FilteredIconNav - Showing subpages for:", parentPath);
+        icons.forEach(icon => {
+          console.log(`- Subpage: ${icon.title} (${icon.path}), parent: ${icon.parent_path}`);
+        });
+      }
     }
   }, [icons, parentPath]);
 

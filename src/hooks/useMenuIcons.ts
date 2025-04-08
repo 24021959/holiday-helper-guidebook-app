@@ -29,59 +29,6 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
   
   console.log(`useMenuIcons initialized with parentPath: ${parentPath}`);
 
-  // Function to load published pages as icons
-  const loadPublishedPagesAsIcons = useCallback(async () => {
-    try {
-      console.log("Loading published pages for parent_path:", parentPath);
-      
-      // Clear localStorage cache to ensure fresh data
-      const cacheKey = `icons_${parentPath || 'root'}`;
-      localStorage.removeItem(cacheKey);
-      
-      // We're loading pages that have the requested parent_path
-      // and are published (published = true)
-      const { data, error } = await supabase
-        .from('custom_pages')
-        .select('id, title, path, icon, parent_path, published')
-        .eq('parent_path', parentPath)
-        .eq('published', true);
-        
-      if (error) {
-        console.error("Error loading published pages:", error);
-        throw error;
-      }
-      
-      console.log("Received data from custom_pages:", data);
-      
-      if (!data || data.length === 0) {
-        console.log("No published pages found for parent_path:", parentPath);
-        return [];
-      }
-      
-      // Convert pages to icon format
-      const iconData = data.map(page => ({
-        id: page.id,
-        path: page.path,
-        label: page.title,
-        title: page.title,
-        icon: page.icon || 'FileText',
-        parent_path: page.parent_path,
-        published: page.published,
-        is_parent: false // Default value, will be updated later if it's a parent
-      }));
-      
-      console.log(`Found ${iconData.length} published pages to show as menu items`);
-      
-      // Save to cache for quick loading next time
-      localStorage.setItem(cacheKey, JSON.stringify(iconData));
-      
-      return iconData;
-    } catch (err) {
-      console.error("Error in loadPublishedPagesAsIcons:", err);
-      return [];
-    }
-  }, [parentPath]);
-  
   // Main function to load icons
   const loadIcons = useCallback(async () => {
     try {
@@ -90,18 +37,17 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
       setHasConnectionError(false);
       
       // Force fresh data by clearing cache first
-      const cacheKey = `icons_${parentPath || 'root'}`;
+      const cacheKey = `icons_${parentPath || 'root'}_${refreshTrigger}`;
       localStorage.removeItem(cacheKey);
       
       console.log(`Loading icons for parentPath: ${parentPath}, refreshTrigger: ${refreshTrigger}`);
 
-      // PRIMARY ISSUE - LOAD ALL TOP LEVEL PAGES
-      // If we're in the root of the menu (parentPath === null), also load all
-      // main pages directly (those with parent_path === null)
+      // LOAD TOP LEVEL PAGES OR SUBPAGES
       let pageIcons: IconData[] = [];
       
       if (parentPath === null) {
-        // Load main pages (parent_path === null)
+        // We're in the root menu - load main pages (parent_path === null)
+        console.log("Loading root level pages");
         const { data: rootPages, error: rootError } = await supabase
           .from('custom_pages')
           .select('id, title, path, icon, parent_path, published')
@@ -110,6 +56,7 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
           
         if (rootError) {
           console.error("Error loading root pages:", rootError);
+          throw rootError;
         } else if (rootPages && rootPages.length > 0) {
           console.log(`Found ${rootPages.length} published root pages:`, rootPages);
           
@@ -123,9 +70,12 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
             published: page.published,
             is_parent: false // Default value, will be updated later
           }));
+        } else {
+          console.log("No root pages found");
         }
       } else {
-        // Load subpages for the specified parent path
+        // We're in a submenu - load subpages for the specific parent path
+        console.log(`Loading subpages for parent path: ${parentPath}`);
         const { data: subPages, error: subPagesError } = await supabase
           .from('custom_pages')
           .select('id, title, path, icon, parent_path, published')
@@ -134,6 +84,7 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
           
         if (subPagesError) {
           console.error("Error loading subpages:", subPagesError);
+          throw subPagesError;
         } else if (subPages && subPages.length > 0) {
           console.log(`Found ${subPages.length} published subpages for ${parentPath}:`, subPages);
           
@@ -237,7 +188,7 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
       setError("Error loading menu. Try again later.");
       
       // Try to use cached icons as a last resort
-      const cacheKey = `icons_${parentPath || 'root'}`;
+      const cacheKey = `icons_${parentPath || 'root'}_${refreshTrigger-1}`;
       const cachedIconsStr = localStorage.getItem(cacheKey);
       if (cachedIconsStr) {
         try {
@@ -283,7 +234,7 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
     setIsLoading(true);
     
     // Clear cache to force fresh data
-    const cacheKey = `icons_${parentPath || 'root'}`;
+    const cacheKey = `icons_${parentPath || 'root'}_${refreshTrigger}`;
     localStorage.removeItem(cacheKey);
     
     loadIcons();

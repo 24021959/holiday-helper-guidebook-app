@@ -27,6 +27,13 @@ const IconNav: React.FC<IconNavProps> = ({
     if (icons.length > 0) {
       console.log("IconNav - First icon details:", JSON.stringify(icons[0]));
     }
+    
+    if (parentPath) {
+      console.log("IconNav - All subpages under parent:", parentPath);
+      icons.forEach((icon, index) => {
+        console.log(`Subpage ${index+1}: ${icon.title} (${icon.path}) - parent path: ${icon.parent_path}`);
+      });
+    }
   }, [icons, parentPath]);
 
   // Format icons for component use
