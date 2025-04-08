@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
@@ -165,6 +166,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
 
       console.log("Dati icona per inserimento:", iconData);
 
+      // Primo tentativo di inserimento dell'icona menu
       const { data: insertedIcon, error: iconError } = await supabase
         .from('menu_icons')
         .insert(iconData)
@@ -174,6 +176,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
       if (iconError) {
         console.error("Errore nell'inserimento dell'icona:", iconError);
         
+        // Secondo tentativo dopo un breve ritardo
         setTimeout(async () => {
           try {
             const { error: retryError } = await supabase
@@ -182,6 +185,22 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
               
             if (retryError) {
               console.error("Anche il secondo tentativo di inserimento dell'icona è fallito:", retryError);
+              // Terzo tentativo con maggiore ritardo
+              setTimeout(async () => {
+                try {
+                  const { error: lastRetryError } = await supabase
+                    .from('menu_icons')
+                    .insert(iconData);
+                  
+                  if (lastRetryError) {
+                    console.error("Tutti i tentativi di inserimento dell'icona sono falliti:", lastRetryError);
+                  } else {
+                    console.log("Icona inserita con successo al terzo tentativo");
+                  }
+                } catch (e) {
+                  console.error("Errore nel terzo tentativo di inserimento dell'icona:", e);
+                }
+              }, 2000);
             } else {
               console.log("Icona inserita con successo al secondo tentativo");
             }
@@ -192,6 +211,9 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
       } else {
         console.log("Icona inserita con successo:", insertedIcon);
       }
+      
+      // Sincronizzazione forzata menu
+      await syncMenuWithPages();
       
       const { data: pagesData, error: fetchError } = await supabase
         .from('custom_pages')
@@ -238,6 +260,77 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
       toast.error("Errore nel salvare la pagina");
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  // Funzione ausiliaria per sincronizzare tutte le pagine con il menu
+  const syncMenuWithPages = async () => {
+    try {
+      console.log("Sincronizzazione di tutte le pagine con il menu...");
+      
+      // Recupera tutte le pagine
+      const { data: pages, error: pagesError } = await supabase
+        .from('custom_pages')
+        .select('id, title, path, icon, parent_path, is_submenu')
+        .eq('published', true);
+        
+      if (pagesError) {
+        console.error("Errore nel recupero delle pagine:", pagesError);
+        return;
+      }
+      
+      if (!pages || pages.length === 0) {
+        console.log("Nessuna pagina da sincronizzare");
+        return;
+      }
+      
+      // Recupera tutti i percorsi delle icone menu esistenti
+      const { data: menuIcons, error: iconsError } = await supabase
+        .from('menu_icons')
+        .select('path');
+        
+      if (iconsError) {
+        console.error("Errore nel recupero delle icone menu:", iconsError);
+        return;
+      }
+      
+      // Set dei percorsi esistenti
+      const existingIconPaths = new Set(menuIcons?.map(icon => icon.path) || []);
+      
+      // Filtra solo le pagine senza icone menu
+      const pagesWithoutIcons = pages.filter(page => !existingIconPaths.has(page.path));
+      
+      if (pagesWithoutIcons.length === 0) {
+        console.log("Tutte le pagine hanno già un'icona nel menu");
+        return;
+      }
+      
+      console.log(`Trovate ${pagesWithoutIcons.length} pagine senza icone nel menu`);
+      
+      // Prepara i dati per le nuove icone
+      const newIcons = pagesWithoutIcons.map(page => ({
+        label: page.title,
+        path: page.path,
+        icon: page.icon || 'FileText',
+        bg_color: "bg-blue-200",
+        is_submenu: page.is_submenu,
+        parent_path: page.parent_path,
+        published: true
+      }));
+      
+      // Inserisci le nuove icone
+      const { error: insertError } = await supabase
+        .from('menu_icons')
+        .insert(newIcons);
+        
+      if (insertError) {
+        console.error("Errore nell'inserimento delle nuove icone menu:", insertError);
+        return;
+      }
+      
+      console.log(`Sincronizzate ${newIcons.length} pagine con il menu`);
+    } catch (error) {
+      console.error("Errore nella sincronizzazione menu-pagine:", error);
     }
   };
 

@@ -31,6 +31,95 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
   const [hasConnectionError, setHasConnectionError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
+  // Funzione per forzare la sincronizzazione tra pagine e menu
+  const syncPagesWithMenu = useCallback(async () => {
+    try {
+      console.log("Sincronizzazione forzata tra pagine e menu...");
+      
+      // Step 1: Ottieni tutte le pagine pubblicate
+      const { data: pages, error: pagesError } = await supabase
+        .from('custom_pages')
+        .select('id, title, path, icon, parent_path')
+        .eq('published', true)
+        .eq('parent_path', parentPath);
+        
+      if (pagesError) {
+        console.error("Errore nel recupero delle pagine:", pagesError);
+        throw pagesError;
+      }
+      
+      if (!pages || pages.length === 0) {
+        console.log("Nessuna pagina pubblicata trovata per il percorso:", parentPath);
+        return [];
+      }
+      
+      // Step 2: Ottieni tutte le icone del menu esistenti
+      const { data: menuIcons, error: iconsError } = await supabase
+        .from('menu_icons')
+        .select('path')
+        .eq('parent_path', parentPath);
+        
+      if (iconsError) {
+        console.error("Errore nel recupero delle icone del menu:", iconsError);
+        throw iconsError;
+      }
+      
+      // Crea un set con i percorsi delle icone esistenti
+      const existingPaths = new Set(menuIcons?.map(icon => icon.path) || []);
+      
+      // Step 3: Trova le pagine che non hanno un'icona nel menu
+      const pagesToSync = pages.filter(page => !existingPaths.has(page.path));
+      
+      if (pagesToSync.length > 0) {
+        console.log(`Trovate ${pagesToSync.length} pagine da sincronizzare con il menu`);
+        
+        // Step 4: Crea nuove icone nel menu per le pagine mancanti
+        const newMenuIcons = pagesToSync.map(page => ({
+          label: page.title,
+          path: page.path,
+          icon: page.icon || 'FileText',
+          bg_color: "bg-blue-200",
+          is_submenu: page.parent_path !== null,
+          parent_path: page.parent_path,
+          published: true
+        }));
+        
+        // Inserisci le nuove icone nel menu
+        const { error: insertError } = await supabase
+          .from('menu_icons')
+          .insert(newMenuIcons);
+          
+        if (insertError) {
+          console.error("Errore nell'inserimento delle nuove icone:", insertError);
+          throw insertError;
+        }
+        
+        console.log(`Sincronizzate con successo ${newMenuIcons.length} pagine nel menu`);
+        toast.success(`${newMenuIcons.length} pagine aggiunte al menu`);
+      }
+      
+      // Step 5: Converti tutte le pagine in formato icona per il rendering
+      const iconData = pages.map(page => ({
+        id: page.id,
+        path: page.path,
+        label: page.title,
+        icon: page.icon || 'FileText',
+        parent_path: page.parent_path
+      }));
+      
+      console.log(`Preparate ${iconData.length} icone dalle pagine pubblicate`);
+      
+      // Salva in cache
+      const cacheKey = `icons_${parentPath || 'root'}`;
+      localStorage.setItem(cacheKey, JSON.stringify(iconData));
+      
+      return iconData;
+    } catch (err) {
+      console.error("Errore nella sincronizzazione pagine-menu:", err);
+      return [];
+    }
+  }, [parentPath]);
+
   // Function to fetch published pages and convert them to icons format
   const loadPublishedPagesAsIcons = useCallback(async () => {
     try {
@@ -110,6 +199,9 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
       setError(null);
       setHasConnectionError(false);
       
+      // Prima forza la sincronizzazione tra pagine e menu
+      await syncPagesWithMenu();
+      
       // Try to use cache first for immediate display
       const cacheKey = `icons_${parentPath || 'root'}`;
       const cachedIconsStr = localStorage.getItem(cacheKey);
@@ -188,7 +280,7 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [parentPath, loadMenuIcons, loadPublishedPagesAsIcons]);
+  }, [parentPath, loadMenuIcons, loadPublishedPagesAsIcons, syncPagesWithMenu]);
 
   // Function to sync custom_pages to menu_icons
   const syncPagesToMenuIcons = async (pageIcons: IconData[]) => {

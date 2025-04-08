@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -75,7 +74,7 @@ const Menu: React.FC = () => {
     }
   }, []);
   
-  // Funzione per sincronizzare le pagine con le icone del menu
+  // Funzione migliorata per sincronizzare le pagine con le icone del menu
   const syncPagesToMenuIcons = useCallback(async () => {
     try {
       console.log("Sincronizzazione pagine con icone del menu...");
@@ -130,18 +129,28 @@ const Menu: React.FC = () => {
         published: true
       }));
       
-      // Inserisci le nuove icone
-      const { error: insertError } = await supabase
-        .from('menu_icons')
-        .insert(newIcons);
+      // Inserisci le nuove icone in batch di 20 per evitare errori di dimensione
+      let processed = 0;
+      while (processed < newIcons.length) {
+        const batch = newIcons.slice(processed, processed + 20);
+        const { error: insertError } = await supabase
+          .from('menu_icons')
+          .insert(batch);
+          
+        if (insertError) {
+          console.error(`Errore nell'inserimento del batch ${processed}-${processed+batch.length}:`, insertError);
+        } else {
+          console.log(`Batch ${processed}-${processed+batch.length} inserito con successo`);
+        }
         
-      if (insertError) {
-        console.error("Errore nell'inserimento delle nuove icone:", insertError);
-        return;
+        processed += batch.length;
       }
       
       console.log(`Sincronizzate con successo ${newIcons.length} pagine`);
-      toast.success(`${newIcons.length} pagine aggiunte al menu`);
+      
+      if (newIcons.length > 0) {
+        toast.success(`${newIcons.length} pagine aggiunte al menu`);
+      }
       
       // Forza l'aggiornamento della vista del menu
       setRefreshTrigger(prev => prev + 1);
@@ -225,8 +234,11 @@ const Menu: React.FC = () => {
         await fetchHeaderSettings();
         console.log("Menu - Forzando l'aggiornamento del menu all'avvio");
         
-        // Prima sincronizza le pagine con le icone del menu
+        // Prima sincronizza forzatamente tutte le pagine con le icone del menu
         await syncPagesToMenuIcons();
+        
+        // Attendi un po' per dare tempo al database di aggiornare i dati
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Controlla se ci sono pagine o icone e forza l'aggiornamento
         const count = await checkForPagesOrIcons();
@@ -245,6 +257,13 @@ const Menu: React.FC = () => {
             await new Promise(resolve => setTimeout(resolve, retryIntervals[i]));
             
             console.log(`Tentativo di riconnessione ${i + 1}...`);
+            
+            // Riprova la sincronizzazione
+            await syncPagesToMenuIcons();
+            
+            // Attendi per dare tempo all'aggiornamento
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
             const newCount = await checkForPagesOrIcons();
             
             if (newCount > 0) {
@@ -275,17 +294,20 @@ const Menu: React.FC = () => {
     
     // Sincronizza le pagine e ricarica il menu
     syncPagesToMenuIcons().then(() => {
-      // Ritenta la connessione
-      fetchHeaderSettings().then(() => {
-        checkForPagesOrIcons().then((count) => {
-          if (count > 0) {
-            toast.success("Menu aggiornato con successo");
-          } else {
-            toast.error("Impossibile aggiornare il menu. Riprova più tardi.");
-          }
-          setLoading(false);
+      // Attendi un po' per dare tempo al database di aggiornare
+      setTimeout(() => {
+        // Ritenta la connessione
+        fetchHeaderSettings().then(() => {
+          checkForPagesOrIcons().then((count) => {
+            if (count > 0) {
+              toast.success("Menu aggiornato con successo");
+            } else {
+              toast.error("Impossibile aggiornare il menu. Riprova più tardi.");
+            }
+            setLoading(false);
+          });
         });
-      });
+      }, 1500);
     });
   };
   
