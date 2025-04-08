@@ -51,77 +51,44 @@ const ChatbotBubble: React.FC = () => {
           }
         }
         
+        // If no saved code, use the default SupportFast code
         if (!chatbotCode) {
-          console.log("No chatbot code found, skipping...");
-          return;
+          chatbotCode = '<script defer id="supportfast-script" src="https://cdn.supportfast.ai/chatbot.js" data-chatbot-id="bot-ufqmgj3gyj"></script>';
+          localStorage.setItem("chatbotCode", chatbotCode);
+          console.log("Using default SupportFast chatbot code");
         }
 
         // Remove any existing chatbot scripts to prevent duplicates
         const existingScripts = document.querySelectorAll('[data-chatbot-script="true"]');
         existingScripts.forEach(script => script.remove());
         
-        // Also try targeting the script container
-        const scriptContainer = document.getElementById('chatbot-script-container');
-        if (scriptContainer) {
-          // Use the script container approach - this often works better for third-party chatbots
-          scriptContainer.innerHTML = chatbotCode;
-          const addedScripts = scriptContainer.querySelectorAll('script');
-          addedScripts.forEach(script => {
-            script.setAttribute('data-chatbot-script', 'true');
-          });
-          console.log("Chatbot script added to designated container");
+        // Also clean any existing SupportFast elements
+        const existingSupportFastElements = document.querySelectorAll('.supportfast-container, .supportfast-bubble, .supportfast-widget');
+        existingSupportFastElements.forEach(el => el.remove());
+        
+        // Insert the script directly into the body
+        if (chatbotCode.includes('<script')) {
+          console.log("Adding script tag directly");
+          const scriptElement = document.createElement('script');
+          scriptElement.setAttribute('data-chatbot-script', 'true');
+          scriptElement.defer = true;
+          scriptElement.id = "supportfast-script";
+          scriptElement.src = "https://cdn.supportfast.ai/chatbot.js";
+          scriptElement.setAttribute('data-chatbot-id', 'bot-ufqmgj3gyj');
+          document.body.appendChild(scriptElement);
         } else {
-          // Fallback: Process the chatbot code directly
-          if (chatbotCode.includes('<script')) {
-            // Extract the script content
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = chatbotCode;
-            const scriptTags = tempDiv.querySelectorAll('script');
-            
-            scriptTags.forEach(scriptTag => {
-              const scriptElement = document.createElement('script');
-              scriptElement.setAttribute('data-chatbot-script', 'true');
-              
-              // Copy all attributes
-              Array.from(scriptTag.attributes).forEach(attr => {
-                scriptElement.setAttribute(attr.name, attr.value);
-              });
-              
-              // If language is specified and different from default, try to update
-              if (language && language !== 'it') {
-                if (scriptElement.getAttribute('data-lang')) {
-                  scriptElement.setAttribute('data-lang', language);
-                }
-                if (scriptElement.getAttribute('data-language')) {
-                  scriptElement.setAttribute('data-language', language);
-                }
-              }
-              
-              // Set content or src
-              if (scriptTag.src) {
-                scriptElement.src = scriptTag.src;
-              } else {
-                scriptElement.textContent = scriptTag.textContent;
-              }
-              
-              // Add to document head
-              document.head.appendChild(scriptElement);
-              console.log("Chatbot script injected with attributes:", 
-                Array.from(scriptElement.attributes).map(a => `${a.name}="${a.value}"`).join(' '));
-            });
-          } else {
-            // Direct script content
-            const scriptElement = document.createElement('script');
-            scriptElement.setAttribute('data-chatbot-script', 'true');
-            scriptElement.textContent = chatbotCode;
-            document.head.appendChild(scriptElement);
-          }
+          console.log("Adding raw code:", chatbotCode);
+          const scriptElement = document.createElement('script');
+          scriptElement.setAttribute('data-chatbot-script', 'true');
+          scriptElement.textContent = chatbotCode;
+          document.body.appendChild(scriptElement);
         }
         
+        // Add debugging info
         console.log("Chatbot script injection complete");
         setIsLoaded(true);
         
-        // Add a visible debug element on the page
+        // Add a visible debug element on the page in development
         if (process.env.NODE_ENV === 'development') {
           const debugDiv = document.createElement('div');
           debugDiv.id = 'chatbot-debug-info';
@@ -141,15 +108,48 @@ const ChatbotBubble: React.FC = () => {
       }
     };
     
-    // Small delay to ensure DOM is ready
+    // Add a small delay to ensure DOM is ready
     const timer = setTimeout(() => {
       loadChatbot();
-    }, 1000); // Increased timeout to ensure page is fully loaded
+    }, 500);
     
     return () => {
       clearTimeout(timer);
     };
   }, [isAdminPage, language, location.pathname]);
+
+  // Check for the chat bubble every second and ensure it's visible
+  useEffect(() => {
+    if (isAdminPage) return;
+    
+    const ensureChatbotVisible = () => {
+      try {
+        // Target SupportFast elements specifically
+        const chatElements = document.querySelectorAll('.supportfast-container, .supportfast-bubble, .supportfast-widget, .supportfast-chat');
+        
+        if (chatElements.length > 0) {
+          console.log("Found chatbot elements, ensuring visibility");
+          chatElements.forEach(el => {
+            if (el instanceof HTMLElement) {
+              el.style.zIndex = '9999';
+              el.style.display = 'block';
+              el.style.visibility = 'visible';
+              el.style.opacity = '1';
+              el.style.pointerEvents = 'auto';
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Error in visibility check:", error);
+      }
+    };
+    
+    const visibilityInterval = setInterval(ensureChatbotVisible, 1000);
+    
+    return () => {
+      clearInterval(visibilityInterval);
+    };
+  }, [isAdminPage]);
 
   // Just a placeholder element to ensure the component is mounted
   return (

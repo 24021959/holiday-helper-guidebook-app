@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Check, AlertCircle, RefreshCw, Info } from "lucide-react";
@@ -23,6 +23,13 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
   const [saveError, setSaveError] = useState(false);
   const { language } = useTranslation();
   const { toast } = useToast();
+  
+  // Set default chatbot code if empty
+  useEffect(() => {
+    if (!chatbotCode) {
+      setChatbotCode('<script defer id="supportfast-script" src="https://cdn.supportfast.ai/chatbot.js" data-chatbot-id="bot-ufqmgj3gyj"></script>');
+    }
+  }, [chatbotCode, setChatbotCode]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -41,10 +48,11 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
       const existingScripts = document.querySelectorAll('[data-chatbot-script="true"]');
       existingScripts.forEach(script => script.remove());
       
+      // Update localStorage to ensure immediate effect
+      localStorage.setItem("chatbotCode", chatbotCode);
+      
       // Force reload to apply new chatbot
-      setTimeout(() => {
-        setSaveSuccess(false);
-      }, 3000);
+      window.location.reload();
     } catch (error) {
       console.error("Error saving chatbot settings:", error);
       setSaveError(true);
@@ -114,12 +122,9 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
           <Button 
             variant="outline" 
             onClick={() => {
-              const existingScripts = document.querySelectorAll('[data-chatbot-script="true"]');
-              existingScripts.forEach(script => script.remove());
-              toast({
-                title: "Chatbot ricaricato",
-                description: "Il chatbot è stato ricaricato con le impostazioni attuali.",
-              });
+              // Force a complete reload to ensure chatbot is correctly loaded
+              localStorage.setItem("chatbotCode", chatbotCode);
+              window.location.reload();
             }}
           >
             Ricarica Chatbot

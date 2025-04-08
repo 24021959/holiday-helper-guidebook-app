@@ -53,6 +53,11 @@
 /* Botsonic */
 .botsonic-container,
 .botsonic-bubble,
+/* SupportFast specific selectors */
+[id*="supportfast"],
+[class*="supportfast"],
+iframe[id*="supportfast"],
+iframe[class*="supportfast"],
 /* Catch-all classes for various chatbot implementations */
 [class*="chat-widget"],
 [class*="chatbot"],
@@ -87,7 +92,9 @@ iframe[class*="bot"],
 iframe[id*="support"],
 iframe[class*="support"],
 iframe[id*="widget"],
-iframe[class*="widget"] {
+iframe[class*="widget"],
+iframe[id*="supportfast"],
+iframe[class*="supportfast"] {
   z-index: 9998 !important;
   visibility: visible !important;
   opacity: 1 !important;
@@ -161,6 +168,11 @@ iframe[class*="widget"] {
   /* Botsonic */
   .botsonic-container,
   .botsonic-bubble,
+  /* SupportFast specific selectors */
+  [id*="supportfast"],
+  [class*="supportfast"],
+  iframe[id*="supportfast"],
+  iframe[class*="supportfast"],
   /* Generic selectors to catch others */
   [class*="chat-widget"],
   [class*="chatbot"],
@@ -187,4 +199,3 @@ iframe[class*="widget"] {
 }
 
 /* ... keep existing code (logo styles, animations, card styles, etc.) */
-
