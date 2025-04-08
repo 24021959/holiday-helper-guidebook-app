@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
@@ -100,16 +101,27 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
     try {
       const content = getValues(name) as string;
       if (clickPosition !== null) {
-        let displayUrl = imageUrl;
+        // Extract image name from data URL or use a shorter representation
+        let imageName = "Immagine";
         if (imageUrl.startsWith('data:image')) {
-          displayUrl = '[Immagine]';
+          imageName = "Immagine caricata";
+        } else {
+          // Try to extract filename from URL
+          const urlParts = imageUrl.split('/');
+          if (urlParts.length > 0) {
+            const lastPart = urlParts[urlParts.length - 1];
+            if (lastPart && lastPart.length > 0) {
+              imageName = lastPart.length > 20 ? lastPart.substring(0, 20) + "..." : lastPart;
+            }
+          }
         }
         
-        const imageMarkup = `\n![${displayUrl}](${imageUrl})\n`;
+        // Hide actual image URL in a comment to preserve it for processing
+        const imageMarkup = `\n<!-- IMAGE: ${imageUrl} -->\n[Immagine: ${imageName}]\n`;
         const newContent = content.substring(0, clickPosition) + imageMarkup + content.substring(clickPosition);
         setValue(name, newContent, { shouldDirty: true });
         
-        console.log("Immagine inserita correttamente come markdown:", displayUrl);
+        console.log("Immagine inserita correttamente:", imageName);
       }
     } catch (error) {
       console.error("Errore durante l'inserimento dell'immagine:", error);
@@ -132,7 +144,8 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
     try {
       const content = getValues(name) as string;
       if (clickPosition !== null) {
-        const mapMarkup = `\n[📍 ${placeName}](${mapUrl})\n`;
+        // Hide the actual URL in a comment
+        const mapMarkup = `\n<!-- MAP: ${mapUrl} -->\n[📍 ${placeName}]\n`;
         const newContent = content.substring(0, clickPosition) + mapMarkup + content.substring(clickPosition);
         setValue(name, newContent, { shouldDirty: true });
         
@@ -149,7 +162,8 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
       const content = getValues(name) as string;
       if (clickPosition !== null) {
         const formattedNumber = phoneNumber.replace(/\s+/g, '');
-        const phoneMarkup = `\n[📞 ${label || phoneNumber}](tel:${formattedNumber})\n`;
+        // Hide the actual phone number in a comment
+        const phoneMarkup = `\n<!-- PHONE: ${formattedNumber} -->\n[📞 ${label || phoneNumber}]\n`;
         const newContent = content.substring(0, clickPosition) + phoneMarkup + content.substring(clickPosition);
         setValue(name, newContent, { shouldDirty: true });
         

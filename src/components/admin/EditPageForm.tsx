@@ -66,7 +66,26 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
   });
 
   const formatPageContent = (content: string, images: ImageItem[]) => {
-    if (images.length === 0) return content;
+    // Process the content to preserve hidden image URLs in comments
+    let processedContent = content;
+    
+    // Preserve existing image, map, and phone URLs from comments
+    const imageRegex = /<!-- IMAGE: (.*?) -->\n\[Immagine: .*?\]\n/g;
+    processedContent = processedContent.replace(imageRegex, (match, url) => {
+      return `\n![Image](${url})\n`;
+    });
+    
+    const mapRegex = /<!-- MAP: (.*?) -->\n\[📍 (.*?)\]\n/g;
+    processedContent = processedContent.replace(mapRegex, (match, url, name) => {
+      return `\n[📍 ${name}](${url})\n`;
+    });
+    
+    const phoneRegex = /<!-- PHONE: (.*?) -->\n\[📞 (.*?)\]\n/g;
+    processedContent = processedContent.replace(phoneRegex, (match, number, label) => {
+      return `\n[📞 ${label}](tel:${number})\n`;
+    });
+    
+    if (images.length === 0) return processedContent;
     
     const contentImages = images
       .filter(img => img.insertInContent)
@@ -75,7 +94,7 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
     const galleryImages = images.filter(img => !img.insertInContent);
     
     if (contentImages.length === 0) {
-      let enhancedContent = content;
+      let enhancedContent = processedContent;
       enhancedContent += "\n\n<!-- IMAGES -->\n";
       
       galleryImages.forEach((image) => {
@@ -91,7 +110,7 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
       
       return enhancedContent;
     } else {
-      const paragraphs = content.split('\n').filter(p => p.trim() !== '');
+      const paragraphs = processedContent.split('\n').filter(p => p.trim() !== '');
       
       let newContent = '';
       let currentImageIndex = 0;

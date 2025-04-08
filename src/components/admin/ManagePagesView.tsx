@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageListItem } from "./PageListItem";
 import { CreatePageForm } from "./CreatePageForm";
 import EditPageForm from "./EditPageForm";
-import { PlusCircle, RefreshCw, AlertTriangle } from "lucide-react";
+import { PlusCircle, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";
@@ -26,11 +26,11 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
 }) => {
   const [selectedPage, setSelectedPage] = useState<PageData | null>(null);
   const [isCreateMode, setIsCreateMode] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [localPages, setLocalPages] = useState<PageData[]>(pages);
   const [activeTab, setActiveTab] = useState<string>("list");
+  const [shouldRefresh, setShouldRefresh] = useState(false);
 
   useEffect(() => {
     console.log("ManagePagesView - pages received from props:", pages.length);
@@ -70,10 +70,21 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
           is_parent: false
         }));
         
+        // Mark parent pages
+        for (let i = 0; i < formattedPages.length; i++) {
+          const page = formattedPages[i];
+          const hasChildren = formattedPages.some(p => p.parentPath === page.path);
+          
+          if (hasChildren) {
+            formattedPages[i] = { ...page, is_parent: true };
+          }
+        }
+        
         console.log("ManagePagesView - Pages loaded from database:", formattedPages.length);
         setLocalPages(formattedPages);
         onPagesUpdate(formattedPages);
         toast.success("Pagine aggiornate con successo");
+        setShouldRefresh(false);
       } else {
         console.log("ManagePagesView - No pages data returned from database");
         setLocalPages([]);
@@ -95,14 +106,15 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
   }, [onPagesUpdate, pages]);
 
   useEffect(() => {
-    if (refreshTrigger > 0) {
+    // Only fetch on initial load or explicit refresh request
+    if (shouldRefresh) {
       fetchPages();
     } else if (localPages.length === 0 && pages.length === 0) {
       // Initial load if both local and props pages are empty
       console.log("ManagePagesView - Initial fetch because no pages are available");
       fetchPages();
     }
-  }, [refreshTrigger, fetchPages, localPages.length, pages.length]);
+  }, [fetchPages, shouldRefresh, localPages.length, pages.length]);
 
   const handlePageCreated = (newPages: PageData[]) => {
     console.log("ManagePagesView - Page created, new pages count:", newPages.length);
@@ -110,7 +122,6 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     setLocalPages(newPages);
     setIsCreateMode(false);
     setSelectedPage(null);
-    setRefreshTrigger(prev => prev + 1);
     setActiveTab("list");
   };
 
@@ -119,7 +130,6 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     onPagesUpdate(updatedPages);
     setLocalPages(updatedPages);
     setSelectedPage(null);
-    setRefreshTrigger(prev => prev + 1);
     setActiveTab("list");
   };
 
@@ -150,8 +160,8 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
         }
       }
       
-      // Refresh pages list
-      await fetchPages();
+      // Set flag to refresh pages after deletion
+      setShouldRefresh(true);
       toast.success("Pagina eliminata con successo");
       
     } catch (error) {
@@ -165,11 +175,6 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
   // Preview handler
   const handlePagePreview = (path: string) => {
     window.open(`/preview${path}`, '_blank');
-  };
-
-  const handleRefresh = () => {
-    setRefreshTrigger(prev => prev + 1);
-    toast.info("Aggiornamento pagine in corso...");
   };
 
   const handleEditPage = (page: PageData) => {
@@ -187,10 +192,9 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
           <h3 className="text-xl font-medium text-red-700 mb-2">Errore di connessione</h3>
           <p className="text-red-600 mb-4">{error}</p>
           <Button 
-            onClick={handleRefresh}
+            onClick={() => setShouldRefresh(true)}
             className="bg-red-600 hover:bg-red-700"
           >
-            <RefreshCw className="mr-2 h-4 w-4" />
             Riprova
           </Button>
         </div>
@@ -202,27 +206,17 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     <div className="container mx-auto py-6">
       <div className="mb-6 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-emerald-700">Gestisci Pagine</h1>
-        <div className="space-x-2">
-          <Button 
-            onClick={handleRefresh}
-            variant="outline"
-            disabled={isLoading}
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Aggiorna
-          </Button>
-          <Button 
-            onClick={() => {
-              setIsCreateMode(true);
-              setSelectedPage(null);
-              setActiveTab("create");
-            }}
-            disabled={isLoading}
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Crea Nuova Pagina
-          </Button>
-        </div>
+        <Button 
+          onClick={() => {
+            setIsCreateMode(true);
+            setSelectedPage(null);
+            setActiveTab("create");
+          }}
+          disabled={isLoading}
+        >
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Crea Nuova Pagina
+        </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -239,7 +233,7 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
         <TabsContent value="list">
           {isLoading ? (
             <div className="flex justify-center items-center py-12">
-              <RefreshCw className="h-8 w-8 text-emerald-600 animate-spin" />
+              <div className="h-8 w-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
               <span className="ml-3 text-emerald-700">Caricamento pagine...</span>
             </div>
           ) : (
