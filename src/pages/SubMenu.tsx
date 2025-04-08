@@ -28,6 +28,7 @@ const SubMenu: React.FC = () => {
   
   // Handle path with special characters (like accented letters)
   const decodedPath = parentPath ? decodeURIComponent(parentPath) : null;
+  // Always prepend / to the path for database lookups
   const realPath = decodedPath ? `/${decodedPath}` : null;
   
   console.log("SubMenu - Rendering with parentPath:", parentPath);
@@ -40,17 +41,32 @@ const SubMenu: React.FC = () => {
     
     try {
       setLoading(true);
-      const realPath = `/${parentPath}`;
       
       console.log("SubMenu - Fetching page details for path:", realPath);
       
-      // Load parent page details
-      const { data: pageData, error: pageError } = await supabase
+      // Try with exact match first
+      let { data: pageData, error: pageError } = await supabase
         .from('custom_pages')
         .select('id, title')
         .eq('path', realPath)
         .eq('published', true)
         .maybeSingle();
+
+      // If no exact match, try case-insensitive match
+      if (!pageData && !pageError) {
+        console.log("No exact path match, trying case-insensitive match");
+        const { data: fuzzyPageData, error: fuzzyError } = await supabase
+          .from('custom_pages')
+          .select('id, title')
+          .ilike('path', realPath)
+          .eq('published', true)
+          .maybeSingle();
+
+        if (!fuzzyError && fuzzyPageData) {
+          pageData = fuzzyPageData;
+          console.log("Found page with case-insensitive match:", fuzzyPageData);
+        }
+      }
         
       if (pageError) {
         console.error("Error loading parent page details:", pageError);
@@ -71,7 +87,7 @@ const SubMenu: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [parentPath]);
+  }, [parentPath, realPath]);
 
   useEffect(() => {
     fetchPageDetails();
@@ -134,3 +150,4 @@ const SubMenu: React.FC = () => {
 };
 
 export default SubMenu;
+

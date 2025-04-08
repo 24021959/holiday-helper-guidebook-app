@@ -80,10 +80,13 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
       } else {
         // We're in a submenu - load subpages for the specific parent path
         console.log(`Loading subpages for parent path: ${parentPath}`);
+        
+        // FIXED QUERY - Compare with ILIKE for case-insensitive matching 
+        // to ensure we catch all subpages regardless of case
         const { data: subPages, error: subPagesError } = await supabase
           .from('custom_pages')
           .select('id, title, path, icon, parent_path, published')
-          .eq('parent_path', parentPath)
+          .ilike('parent_path', parentPath)
           .eq('published', true);
           
         if (subPagesError) {
@@ -91,6 +94,7 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
           throw subPagesError;
         } else if (subPages && subPages.length > 0) {
           console.log(`Found ${subPages.length} published subpages for ${parentPath}:`, subPages);
+          console.log("Subpages detail:", JSON.stringify(subPages));
           
           pageIcons = subPages.map(page => ({
             id: page.id,
@@ -104,6 +108,31 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
           }));
         } else {
           console.log(`No subpages found for parent path: ${parentPath}`);
+          
+          // Try with case-insensitive search as fallback
+          const normalizedPath = parentPath.toLowerCase();
+          console.log(`Trying fallback search with normalized path: ${normalizedPath}`);
+          
+          const { data: fallbackPages, error: fallbackError } = await supabase
+            .from('custom_pages')
+            .select('id, title, path, icon, parent_path, published')
+            .filter('parent_path', 'ilike', `%${normalizedPath}%`)
+            .eq('published', true);
+            
+          if (!fallbackError && fallbackPages && fallbackPages.length > 0) {
+            console.log(`Found ${fallbackPages.length} pages with fallback search:`, fallbackPages);
+            
+            pageIcons = fallbackPages.map(page => ({
+              id: page.id,
+              path: page.path,
+              label: page.title,
+              title: page.title,
+              icon: page.icon || 'FileText',
+              parent_path: page.parent_path,
+              published: page.published,
+              is_parent: false
+            }));
+          }
         }
       }
       
@@ -142,7 +171,7 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
           const iconString = JSON.stringify(uniqueIcons);
           
           // Only store if small enough to avoid quota issues
-          if (iconString.length < 500000) { // ~500KB limit to be safe
+          if (iconString.length < 100000) { // ~100KB limit to be safer
             localStorage.setItem(cacheKey, iconString);
           } else {
             console.warn("Icons data too large for localStorage, skipping cache");
@@ -198,7 +227,7 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
             const cacheKey = `icons_${parentPath || 'root'}_${refreshTrigger}`;
             const iconString = JSON.stringify(iconData);
             
-            if (iconString.length < 500000) {
+            if (iconString.length < 100000) {
               localStorage.setItem(cacheKey, iconString);
             }
           } catch (e) {
@@ -282,3 +311,4 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
     refreshIcons
   };
 };
+
