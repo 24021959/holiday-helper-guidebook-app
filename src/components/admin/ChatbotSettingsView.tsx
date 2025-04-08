@@ -24,7 +24,7 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
   const { language } = useTranslation();
   const { toast } = useToast();
   
-  // Set default chatbot code if empty
+  // Set default SupportFast chatbot code if empty
   useEffect(() => {
     if (!chatbotCode) {
       setChatbotCode('<script defer id="supportfast-script" src="https://cdn.supportfast.ai/chatbot.js" data-chatbot-id="bot-ufqmgj3gyj"></script>');
@@ -41,18 +41,16 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
       setSaveSuccess(true);
       toast({
         title: "Chatbot impostato correttamente",
-        description: "Le modifiche saranno visibili su tutte le pagine del sito.",
+        description: "Le modifiche saranno visibili su tutte le pagine del sito dopo il riavvio.",
       });
       
-      // Clear any existing chatbot scripts to force reload
-      const existingScripts = document.querySelectorAll('[data-chatbot-script="true"]');
-      existingScripts.forEach(script => script.remove());
-      
-      // Update localStorage to ensure immediate effect
+      // Salviamo in localStorage per un effetto immediato
       localStorage.setItem("chatbotCode", chatbotCode);
       
-      // Force reload to apply new chatbot
-      window.location.reload();
+      // Forziamo il ricaricamento della pagina per applicare le modifiche
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (error) {
       console.error("Error saving chatbot settings:", error);
       setSaveError(true);
@@ -78,7 +76,7 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
         <Alert className="mb-4 bg-blue-50 border-blue-200">
           <Info className="h-4 w-4 text-blue-600" />
           <AlertDescription className="text-blue-700">
-            Il chatbot sarà visibile in tutte le pagine pubbliche del sito, ma non nelle pagine di amministrazione.
+            Il chatbot sarà visibile in tutte le pagine pubbliche del sito. Per una corretta visualizzazione, il codice verrà inserito nell'HEAD del documento HTML.
           </AlertDescription>
         </Alert>
         
@@ -86,7 +84,7 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
           <Alert className="mb-4 bg-green-50 border-green-200">
             <Check className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-700">
-              Impostazioni chatbot salvate con successo! Il chatbot sarà visibile in tutte le pagine.
+              Impostazioni chatbot salvate con successo! Il chatbot sarà visibile dopo il riavvio.
             </AlertDescription>
           </Alert>
         )}
@@ -95,7 +93,7 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
           <Alert className="mb-4 bg-red-50 border-red-200">
             <AlertCircle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-700">
-              Si è verificato un errore durante il salvataggio. Le impostazioni sono state salvate localmente, ma potrebbero non essere persistenti.
+              Si è verificato un errore durante il salvataggio.
             </AlertDescription>
           </Alert>
         )}
@@ -103,8 +101,8 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
         <Textarea
           value={chatbotCode}
           onChange={(e) => setChatbotCode(e.target.value)}
-          placeholder="Inserisci qui il codice JavaScript del chatbot..."
-          className="font-mono min-h-[200px]"
+          placeholder='<script defer id="supportfast-script" src="https://cdn.supportfast.ai/chatbot.js" data-chatbot-id="bot-ufqmgj3gyj"></script>'
+          className="font-mono min-h-[150px]"
         />
         
         <div className="mt-4 flex gap-3">
@@ -122,12 +120,10 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
           <Button 
             variant="outline" 
             onClick={() => {
-              // Force a complete reload to ensure chatbot is correctly loaded
-              localStorage.setItem("chatbotCode", chatbotCode);
               window.location.reload();
             }}
           >
-            Ricarica Chatbot
+            Ricarica Pagina
           </Button>
         </div>
       </div>

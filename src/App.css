@@ -1,4 +1,3 @@
-
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -82,6 +81,28 @@ iframe[class*="supportfast"],
   max-width: 90% !important;
   max-height: 90% !important;
   overflow: visible !important;
+}
+
+/* Aggiungiamo specifici selettori per SupportFast */
+#supportfast-widget,
+#supportfast-root,
+.supportfast-root,
+.supportfast-widget,
+.supportfast-bubble,
+.supportfast-button,
+#supportfast-button,
+#supportfast-chat,
+.supportfast-chat,
+#supportfast-container,
+.supportfast-container {
+  z-index: 9999 !important;
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 /* All IFRAMEs that might be used by chatbots */
@@ -198,4 +219,42 @@ iframe[class*="supportfast"] {
   }
 }
 
-/* ... keep existing code (logo styles, animations, card styles, etc.) */
+/* Animations */
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 1em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+.content-container {
+  padding-left: 24px;
+  padding-right: 24px;
+  width: 100%;
+  max-width: 768px;
+}
+
+.prose {
+  max-width: none;
+}
+
+.prose p {
+  padding-left: 24px;
+  padding-right: 24px;
+}
