@@ -26,46 +26,46 @@ const Menu: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [rootPages, setRootPages] = useState<IconData[]>([]);
   
-  // Carica tutte le pagine principali (senza parent_path)
+  // Load all main pages (without parent_path)
   useEffect(() => {
     const loadRootPages = async () => {
       try {
         setIsLoading(true);
         setError(null);
         
-        console.log("Menu - Caricamento pagine principali");
+        console.log("Menu - Loading main pages");
         
         const { data: pages, error: pagesError } = await supabase
           .from('custom_pages')
-          .select('id, title, path, icon, parent_path')
+          .select('id, title, path, icon, parent_path, published')
           .is('parent_path', null);
           
         if (pagesError) {
-          console.error("Errore nel caricamento delle pagine:", pagesError);
+          console.error("Error loading pages:", pagesError);
           throw pagesError;
         }
         
         if (!pages || pages.length === 0) {
-          console.log("Nessuna pagina principale trovata");
+          console.log("No main pages found");
           setRootPages([]);
         } else {
-          console.log(`Trovate ${pages.length} pagine principali`);
+          console.log(`Found ${pages.length} main pages`);
           
-          // Converti le pagine in icone per il menu
+          // Convert pages to menu icons
           const iconData = pages.map(page => ({
             id: page.id,
             path: page.path,
             label: page.title,
             icon: page.icon || 'FileText',
             parent_path: page.parent_path,
-            is_parent: true // Considera tutte le pagine principali come potenziali genitori
+            is_parent: true // Consider all main pages as potential parents
           }));
           
           setRootPages(iconData);
         }
       } catch (error) {
-        console.error("Errore nel caricamento delle pagine principali:", error);
-        setError("Errore nel caricamento del menu. Riprova più tardi.");
+        console.error("Error loading main pages:", error);
+        setError("Error loading menu. Try again later.");
       } finally {
         setIsLoading(false);
       }
@@ -75,14 +75,14 @@ const Menu: React.FC = () => {
   }, [refreshTrigger]);
   
   const handleRefresh = () => {
-    console.log("Menu - Aggiornamento manuale");
+    console.log("Menu - Manual refresh");
     setRefreshTrigger(prev => prev + 1);
-    toast.info("Aggiornamento menu in corso...");
+    toast.info("Refreshing menu...");
     refreshHeaderSettings();
   };
   
   if (headerLoading || isLoading) {
-    return <LoadingView message="Caricamento menu..." fullScreen={true} />;
+    return <LoadingView message="Loading menu..." fullScreen={true} />;
   }
 
   return (
@@ -99,10 +99,10 @@ const Menu: React.FC = () => {
       <div className="flex-1 flex flex-col overflow-auto">
         {error || headerError ? (
           <ErrorView 
-            message={error || headerError || "Errore di caricamento"}
+            message={error || headerError || "Loading error"}
             onRefresh={handleRefresh}
             onAlternativeAction={() => window.location.reload()}
-            alternativeActionText="Ricarica pagina"
+            alternativeActionText="Reload page"
           />
         ) : (
           <IconNav 

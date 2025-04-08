@@ -28,11 +28,23 @@ const NavigateBack: React.FC<NavigateBackProps> = ({ parentPath }) => {
       if (isInSubmenuContentPage && location.state?.parentPath) {
         // If we're in a content page that was accessed from a submenu, go back to that submenu
         console.log("Navigating back to submenu:", location.state.parentPath);
-        navigate(`/submenu${location.state.parentPath}`);
+        
+        // Extract the path part after /submenu/
+        const submenuPath = location.state.parentPath.startsWith('/') 
+          ? location.state.parentPath.substring(1) 
+          : location.state.parentPath;
+        
+        navigate(`/submenu/${submenuPath}`);
       } else if (parentPath) {
         // If we have a parent path, navigate to its submenu
         console.log("Navigating to parent path submenu:", parentPath);
-        navigate(`/submenu${parentPath}`);
+        
+        // Extract the path part after /submenu/
+        const submenuPath = parentPath.startsWith('/') 
+          ? parentPath.substring(1) 
+          : parentPath;
+        
+        navigate(`/submenu/${submenuPath}`);
       } else if (isInSubmenu) {
         // If we're in a submenu but don't have parent info, go to menu
         console.log("Navigating back to main menu from submenu");
@@ -57,12 +69,12 @@ const NavigateBack: React.FC<NavigateBackProps> = ({ parentPath }) => {
     >
       <ArrowLeft className="mr-2 h-4 w-4" />
       {isInSubmenuContentPage ? (
-        <TranslatedText text="Indietro" />
+        <TranslatedText text="Back" />
       ) : (
         isInSubmenu || parentPath ? (
-          <TranslatedText text="Indietro" />
+          <TranslatedText text="Back" />
         ) : (
-          <TranslatedText text="Torna al Menu" />
+          <TranslatedText text="Back to Menu" />
         )
       )}
     </Button>

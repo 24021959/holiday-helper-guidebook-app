@@ -45,7 +45,7 @@ const SubMenu: React.FC = () => {
           const realPath = `/${parentPath}`;
           console.log("Fetching page details for path:", realPath);
           
-          // Carica dettagli della pagina genitore
+          // Load parent page details
           const { data: pageData, error: pageError } = await supabase
             .from('custom_pages')
             .select('id, title')
@@ -54,7 +54,7 @@ const SubMenu: React.FC = () => {
             
           if (pageError) {
             console.error("Error loading page details:", pageError);
-            setError("Errore nel caricamento dei dettagli della pagina");
+            setError("Error loading page details");
           } else if (pageData) {
             const details = {
               id: pageData.id,
@@ -67,7 +67,7 @@ const SubMenu: React.FC = () => {
             console.log("No page details found for path:", realPath);
           }
           
-          // Carica sottopagine per questo genitore
+          // Load subpages for this parent
           const { data: subpages, error: subpagesError } = await supabase
             .from('custom_pages')
             .select('id, title, path, icon, parent_path')
@@ -75,18 +75,18 @@ const SubMenu: React.FC = () => {
             
           if (subpagesError) {
             console.error("Error loading subpages:", subpagesError);
-            setError("Errore nel caricamento delle sottopagine");
+            setError("Error loading subpages");
           } else if (subpages && subpages.length > 0) {
             console.log(`Found ${subpages.length} subpages for parent ${realPath}`);
             
-            // Converti le pagine in icone per il menu
+            // Convert pages to icons for the menu
             const iconData = subpages.map(page => ({
               id: page.id,
               path: page.path,
               label: page.title,
               icon: page.icon || 'FileText',
               parent_path: page.parent_path,
-              is_parent: false
+              is_parent: false // Subpages are not parents
             }));
             
             setSubPages(iconData);
@@ -97,7 +97,7 @@ const SubMenu: React.FC = () => {
         }
       } catch (error) {
         console.error("Error loading data:", error);
-        setError("Errore nel caricamento dei dati");
+        setError("Error loading data");
       } finally {
         setLoading(false);
       }
@@ -112,7 +112,7 @@ const SubMenu: React.FC = () => {
   };
 
   if (loading || headerLoading) {
-    return <LoadingView message="Caricamento sottomenu..." fullScreen={true} />;
+    return <LoadingView message="Loading submenu..." fullScreen={true} />;
   }
 
   return (
@@ -132,7 +132,7 @@ const SubMenu: React.FC = () => {
           {pageDetails ? (
             <TranslatedText text={pageDetails.title} />
           ) : (
-            <TranslatedText text="Sottomenu" />
+            <TranslatedText text="Submenu" />
           )}
         </h1>
       </div>
@@ -144,7 +144,7 @@ const SubMenu: React.FC = () => {
             message={error}
             onRefresh={handleRefresh}
             onAlternativeAction={() => navigate('/menu')}
-            alternativeActionText="Torna al menu"
+            alternativeActionText="Back to menu"
           />
         ) : (
           <IconNav 

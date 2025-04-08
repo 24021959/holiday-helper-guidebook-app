@@ -29,12 +29,12 @@ const IconNav: React.FC<IconNavProps> = ({
   const navigate = useNavigate();
   const keywordToIconMap = useKeywordToIconMap();
 
-  // Formatta le icone fornite per l'uso nel componente
+  // Format icons for component use
   const formattedIcons = icons.map(icon => {
     let iconName = icon.icon;
     const title = icon.title || icon.label || "";
     
-    // Rileva automaticamente icona più adatta se quella attuale è generica
+    // Auto-detect appropriate icon if current one is generic
     if (iconName === "FileText" || !iconName) {
       iconName = identifyIconFromTitle(title, keywordToIconMap);
     }
@@ -51,34 +51,20 @@ const IconNav: React.FC<IconNavProps> = ({
   });
 
   const handleIconClick = (icon: IconData) => {
-    // Determina se questa icona ha sottopagine
-    if (icon.path && icon.path.startsWith('/')) {
-      // Estrai la parte del percorso senza lo slash iniziale
-      const pathWithoutSlash = icon.path.substring(1);
-      console.log("Navigating to:", pathWithoutSlash);
-      
-      // Se è un genitore, naviga al sottomenu
-      if (icon.is_parent) {
-        console.log("Navigating to submenu:", pathWithoutSlash);
-        navigate(`/submenu/${pathWithoutSlash}`);
-      } else {
-        // Altrimenti, naviga alla pagina
-        console.log("Navigating to page:", icon.path);
-        navigate(icon.path, { 
-          state: { 
-            parentPath: parentPath 
-          } 
-        });
-      }
+    // Check if this is a parent page (has subpages)
+    if (icon.is_parent) {
+      console.log("Navigation to submenu for parent:", icon.path);
+      // Extract path without initial slash for the URL parameter
+      const pathParam = icon.path.startsWith('/') ? icon.path.substring(1) : icon.path;
+      navigate(`/submenu/${pathParam}`);
     } else {
-      console.log("Invalid path:", icon.path);
-    }
-  };
-
-  const handleRefresh = () => {
-    if (onRefresh) {
-      console.log("IconNav - Refresh requested, calling parent refresh handler");
-      onRefresh();
+      // For regular pages, navigate directly to their content
+      console.log("Navigation to content page:", icon.path);
+      navigate(icon.path, { 
+        state: { 
+          parentPath: parentPath 
+        } 
+      });
     }
   };
 
