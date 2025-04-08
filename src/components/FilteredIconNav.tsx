@@ -66,7 +66,7 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
             icon: page.icon || 'FileText',
             parent_path: page.parent_path,
             // Controlla se questa pagina è un genitore (ha sottopagine)
-            is_parent: pages.some(p => p.parent_path === page.path)
+            is_parent: true
           }));
           
           setIcons(iconData);

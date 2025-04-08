@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
@@ -17,7 +16,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { PageTypeSection } from "./form/PageTypeSection";
 import { PageImageSection } from "./form/PageImageSection";
 import { PageIconSection } from "./form/PageIconSection";

@@ -1,20 +1,29 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import TranslatedText from "@/components/TranslatedText";
-import FilteredIconNav from "@/components/FilteredIconNav";
 import NavigateBack from "@/components/NavigateBack";
 import { useHeaderSettings } from "@/hooks/useHeaderSettings";
 import LoadingView from "@/components/LoadingView";
 import ErrorView from "@/components/ErrorView";
-import { useEffect } from "react";
+import IconNav from "@/components/IconNav";
 
 interface PageDetails {
   id: string;
   title: string;
+}
+
+interface IconData {
+  id: string;
+  path: string;
+  label: string;
+  icon: string;
+  parent_path: string | null;
+  title?: string;
+  is_parent?: boolean;
 }
 
 const SubMenu: React.FC = () => {
@@ -24,6 +33,7 @@ const SubMenu: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [subPages, setSubPages] = useState<IconData[]>([]);
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -35,17 +45,7 @@ const SubMenu: React.FC = () => {
           const realPath = `/${parentPath}`;
           console.log("Fetching page details for path:", realPath);
           
-          const cachedDetails = localStorage.getItem(`pageDetails_${parentPath}`);
-          if (cachedDetails) {
-            try {
-              const parsedDetails = JSON.parse(cachedDetails);
-              console.log("Using cached page details:", parsedDetails);
-              setPageDetails(parsedDetails);
-            } catch (err) {
-              console.error("Error parsing page details from cache:", err);
-            }
-          }
-          
+          // Carica dettagli della pagina genitore
           const { data: pageData, error: pageError } = await supabase
             .from('custom_pages')
             .select('id, title')
@@ -63,11 +63,36 @@ const SubMenu: React.FC = () => {
             
             setPageDetails(details);
             console.log("Loaded page details from database:", details);
-            
-            // Store in localStorage for future quick access
-            localStorage.setItem(`pageDetails_${parentPath}`, JSON.stringify(details));
           } else {
             console.log("No page details found for path:", realPath);
+          }
+          
+          // Carica sottopagine per questo genitore
+          const { data: subpages, error: subpagesError } = await supabase
+            .from('custom_pages')
+            .select('id, title, path, icon, parent_path')
+            .eq('parent_path', realPath);
+            
+          if (subpagesError) {
+            console.error("Error loading subpages:", subpagesError);
+            setError("Errore nel caricamento delle sottopagine");
+          } else if (subpages && subpages.length > 0) {
+            console.log(`Found ${subpages.length} subpages for parent ${realPath}`);
+            
+            // Converti le pagine in icone per il menu
+            const iconData = subpages.map(page => ({
+              id: page.id,
+              path: page.path,
+              label: page.title,
+              icon: page.icon || 'FileText',
+              parent_path: page.parent_path,
+              is_parent: false
+            }));
+            
+            setSubPages(iconData);
+          } else {
+            console.log("No subpages found for parent:", realPath);
+            setSubPages([]);
           }
         }
       } catch (error) {
@@ -79,7 +104,7 @@ const SubMenu: React.FC = () => {
     };
     
     fetchPageDetails();
-  }, [parentPath]);
+  }, [parentPath, refreshTrigger]);
 
   const handleRefresh = () => {
     setError(null);
@@ -122,9 +147,9 @@ const SubMenu: React.FC = () => {
             alternativeActionText="Torna al menu"
           />
         ) : (
-          <FilteredIconNav 
+          <IconNav 
+            icons={subPages} 
             parentPath={`/${parentPath}`} 
-            refreshTrigger={refreshTrigger}
             onRefresh={handleRefresh}
           />
         )}

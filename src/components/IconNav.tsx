@@ -2,9 +2,18 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import MenuIconGrid from "./MenuIconGrid";
-import { IconData } from "@/hooks/useMenuIcons";
 import { identifyIconFromTitle } from "@/utils/iconUtils";
 import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";
+
+interface IconData {
+  id: string;
+  path: string;
+  label: string;
+  icon: string;
+  parent_path: string | null;
+  title?: string;
+  is_parent?: boolean;
+}
 
 interface IconNavProps {
   parentPath: string | null;
@@ -42,16 +51,27 @@ const IconNav: React.FC<IconNavProps> = ({
   });
 
   const handleIconClick = (icon: IconData) => {
-    if (icon.is_parent) {
-      console.log("Navigating to submenu:", icon.path);
-      navigate(`/submenu${icon.path}`);
+    // Determina se questa icona ha sottopagine
+    if (icon.path && icon.path.startsWith('/')) {
+      // Estrai la parte del percorso senza lo slash iniziale
+      const pathWithoutSlash = icon.path.substring(1);
+      console.log("Navigating to:", pathWithoutSlash);
+      
+      // Se è un genitore, naviga al sottomenu
+      if (icon.is_parent) {
+        console.log("Navigating to submenu:", pathWithoutSlash);
+        navigate(`/submenu/${pathWithoutSlash}`);
+      } else {
+        // Altrimenti, naviga alla pagina
+        console.log("Navigating to page:", icon.path);
+        navigate(icon.path, { 
+          state: { 
+            parentPath: parentPath 
+          } 
+        });
+      }
     } else {
-      console.log("Navigating to page:", icon.path);
-      navigate(icon.path, { 
-        state: { 
-          parentPath: parentPath 
-        } 
-      });
+      console.log("Invalid path:", icon.path);
     }
   };
 
