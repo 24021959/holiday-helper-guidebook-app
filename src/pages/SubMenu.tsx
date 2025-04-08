@@ -50,6 +50,7 @@ const SubMenu: React.FC = () => {
             .from('custom_pages')
             .select('id, title')
             .eq('path', realPath)
+            .eq('published', true)
             .maybeSingle();
             
           if (pageError) {
@@ -65,19 +66,21 @@ const SubMenu: React.FC = () => {
             console.log("Loaded page details from database:", details);
           } else {
             console.log("No page details found for path:", realPath);
+            setError("Page not found");
           }
           
           // Load subpages for this parent
           const { data: subpages, error: subpagesError } = await supabase
             .from('custom_pages')
             .select('id, title, path, icon, parent_path')
-            .eq('parent_path', realPath);
+            .eq('parent_path', realPath)
+            .eq('published', true);
             
           if (subpagesError) {
             console.error("Error loading subpages:", subpagesError);
             setError("Error loading subpages");
           } else if (subpages && subpages.length > 0) {
-            console.log(`Found ${subpages.length} subpages for parent ${realPath}`);
+            console.log(`Found ${subpages.length} subpages for parent ${realPath}:`, subpages);
             
             // Convert pages to icons for the menu
             const iconData = subpages.map(page => ({

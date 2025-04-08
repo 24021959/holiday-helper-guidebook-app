@@ -51,20 +51,26 @@ const IconNav: React.FC<IconNavProps> = ({
   });
 
   const handleIconClick = (icon: IconData) => {
-    // Check if this is a parent page (has subpages)
-    if (icon.is_parent) {
-      console.log("Navigation to submenu for parent:", icon.path);
-      // Extract path without initial slash for the URL parameter
-      const pathParam = icon.path.startsWith('/') ? icon.path.substring(1) : icon.path;
-      navigate(`/submenu/${pathParam}`);
-    } else {
-      // For regular pages, navigate directly to their content
-      console.log("Navigation to content page:", icon.path);
-      navigate(icon.path, { 
-        state: { 
-          parentPath: parentPath 
-        } 
-      });
+    console.log("Clicked on icon:", icon);
+    
+    try {
+      // Check if this is a parent page (has subpages)
+      if (icon.is_parent) {
+        console.log("Navigation to submenu for parent:", icon.path);
+        // Extract path without initial slash for the URL parameter
+        const pathParam = icon.path.startsWith('/') ? icon.path.substring(1) : icon.path;
+        navigate(`/submenu/${pathParam}`);
+      } else {
+        // For regular pages, navigate directly to their content
+        console.log("Navigation to content page:", icon.path);
+        navigate(icon.path, { 
+          state: { 
+            parentPath: parentPath 
+          } 
+        });
+      }
+    } catch (error) {
+      console.error("Navigation error:", error);
     }
   };
 

@@ -35,10 +35,12 @@ const Menu: React.FC = () => {
         
         console.log("Menu - Loading main pages");
         
+        // Get all parent pages and regular pages without a parent
         const { data: pages, error: pagesError } = await supabase
           .from('custom_pages')
           .select('id, title, path, icon, parent_path, published')
-          .is('parent_path', null);
+          .is('parent_path', null)
+          .eq('published', true);
           
         if (pagesError) {
           console.error("Error loading pages:", pagesError);
@@ -49,19 +51,51 @@ const Menu: React.FC = () => {
           console.log("No main pages found");
           setRootPages([]);
         } else {
-          console.log(`Found ${pages.length} main pages`);
+          console.log(`Found ${pages.length} main pages:`, pages);
           
           // Convert pages to menu icons
-          const iconData = pages.map(page => ({
-            id: page.id,
-            path: page.path,
-            label: page.title,
-            icon: page.icon || 'FileText',
-            parent_path: page.parent_path,
-            is_parent: true // Consider all main pages as potential parents
-          }));
+          const iconData = pages.map(page => {
+            // Check if this page has any children (is a parent)
+            const hasChildren = page.path && page.path.trim() !== '';
+            
+            return {
+              id: page.id,
+              path: page.path,
+              label: page.title,
+              icon: page.icon || 'FileText',
+              parent_path: page.parent_path,
+              // Consider it a parent if it is marked as such based on path structure
+              is_parent: hasChildren
+            };
+          });
           
           setRootPages(iconData);
+          
+          // For each possible parent page, check if it actually has children
+          if (iconData.length > 0) {
+            // Check each page to see if it has subpages
+            for (const icon of iconData) {
+              // Only check pages with paths
+              if (icon.path) {
+                const { count, error: countError } = await supabase
+                  .from('custom_pages')
+                  .select('id', { count: 'exact', head: true })
+                  .eq('parent_path', icon.path)
+                  .eq('published', true);
+                
+                if (!countError && count !== null) {
+                  if (count > 0) {
+                    // This page has children, mark it as a parent
+                    console.log(`Page ${icon.path} has ${count} children, marking as parent`);
+                    icon.is_parent = true;
+                  }
+                }
+              }
+            }
+            
+            // Update state with parent information
+            setRootPages([...iconData]);
+          }
         }
       } catch (error) {
         console.error("Error loading main pages:", error);
