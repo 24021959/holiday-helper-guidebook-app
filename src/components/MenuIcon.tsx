@@ -36,14 +36,7 @@ const MenuIcon: React.FC<MenuIconProps> = ({ icon, index, onClick }) => {
       <span className="text-center text-gray-700 font-medium text-lg">
         <TranslatedText text={icon.title || icon.label || ""} />
       </span>
-      {icon.is_parent && (
-        <span className="mt-2 text-xs text-emerald-600 font-medium flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-          </svg>
-          <TranslatedText text="Contiene sottopagine" />
-        </span>
-      )}
+      {/* Removed the "Contiene sottopagine" text indicator */}
     </div>
   );
 };
