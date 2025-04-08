@@ -87,15 +87,15 @@ const Menu: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen">
-      {/* Header con impostazioni personalizzate */}
+      {/* Header with custom settings but NO admin button */}
       <Header 
         logoUrl={headerSettings.logoUrl || undefined}
         backgroundColor={headerSettings.headerColor}
         establishmentName={headerSettings.establishmentName || undefined}
-        showAdminButton={true}
+        showAdminButton={false}
       />
       
-      {/* Contenitore principale con icone che occupa tutto lo spazio disponibile */}
+      {/* Main container with icons that takes all available space */}
       <div className="flex-1 flex flex-col overflow-auto">
         {error || headerError ? (
           <ErrorView 
@@ -113,7 +113,7 @@ const Menu: React.FC = () => {
         )}
       </div>
       
-      {/* Footer con logo */}
+      {/* Footer with logo */}
       <Footer />
     </div>
   );
