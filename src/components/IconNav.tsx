@@ -1,19 +1,10 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MenuIconGrid from "./MenuIconGrid";
 import { identifyIconFromTitle } from "@/utils/iconUtils";
 import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";
-
-interface IconData {
-  id: string;
-  path: string;
-  label: string;
-  icon: string;
-  parent_path: string | null;
-  title?: string;
-  is_parent?: boolean;
-}
+import { IconData } from "@/hooks/useMenuIcons";
 
 interface IconNavProps {
   parentPath: string | null;
@@ -28,6 +19,13 @@ const IconNav: React.FC<IconNavProps> = ({
 }) => {
   const navigate = useNavigate();
   const keywordToIconMap = useKeywordToIconMap();
+
+  useEffect(() => {
+    console.log("IconNav - Ricevute", icons.length, "icone con parentPath:", parentPath);
+    if (icons.length > 0) {
+      console.log("IconNav - Prima icona:", icons[0]);
+    }
+  }, [icons, parentPath]);
 
   // Format icons for component use
   const formattedIcons = icons.map(icon => {

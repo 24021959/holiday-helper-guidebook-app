@@ -98,7 +98,6 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
             
             if (!countError && count !== null && count > 0) {
               console.log(`Pagina ${icon.path} ha ${count} figli, contrassegnata come parent`);
-              // Utilizziamo l'operatore di spread per mantenere tutte le proprietà esistenti e aggiungere is_parent
               updatedIcons[i] = { ...icon, is_parent: true };
             }
           }

@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import MenuIcon from "./MenuIcon";
 import { IconData } from "@/hooks/useMenuIcons";
 import TranslatedText from "./TranslatedText";
@@ -10,6 +10,10 @@ interface MenuIconGridProps {
 }
 
 const MenuIconGrid: React.FC<MenuIconGridProps> = ({ icons, onIconClick }) => {
+  useEffect(() => {
+    console.log("MenuIconGrid - Ricevute", icons.length, "icone");
+  }, [icons]);
+
   if (icons.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center">

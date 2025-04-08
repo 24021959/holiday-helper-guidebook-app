@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import IconNav from "./IconNav";
 import LoadingView from "./LoadingView";
 import ErrorView from "./ErrorView";
@@ -21,6 +21,10 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     parentPath, 
     refreshTrigger 
   });
+
+  useEffect(() => {
+    console.log("FilteredIconNav - Render con icons:", icons.length, "parentPath:", parentPath);
+  }, [icons, parentPath]);
 
   const handleRefresh = () => {
     if (onRefresh) {

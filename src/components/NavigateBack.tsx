@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
@@ -20,10 +20,12 @@ const NavigateBack: React.FC<NavigateBackProps> = ({ parentPath }) => {
   // Check if we're in a content page inside a submenu path
   const isInSubmenuContentPage = !isInSubmenu && location.state?.parentPath;
   
-  console.log("NavigateBack - Current path:", location.pathname);
-  console.log("NavigateBack - Parent path from props:", parentPath);
-  console.log("NavigateBack - Parent path from URL:", urlParentPath);
-  console.log("NavigateBack - Location state:", location.state);
+  useEffect(() => {
+    console.log("NavigateBack - Current path:", location.pathname);
+    console.log("NavigateBack - Parent path from props:", parentPath);
+    console.log("NavigateBack - Parent path from URL:", urlParentPath);
+    console.log("NavigateBack - Location state:", location.state);
+  }, [location, parentPath, urlParentPath]);
   
   const handleBack = () => {
     try {
