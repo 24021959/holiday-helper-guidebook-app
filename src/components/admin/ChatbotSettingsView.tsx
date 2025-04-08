@@ -2,8 +2,9 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, AlertCircle } from "lucide-react";
+import { Check, AlertCircle, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useTranslation } from "@/context/TranslationContext";
 
 interface ChatbotSettingsViewProps {
   chatbotCode: string;
@@ -19,6 +20,7 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState(false);
+  const { language } = useTranslation();
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -43,7 +45,7 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
         <h2 className="text-xl font-medium text-emerald-600 mb-4">Impostazioni Chatbot</h2>
         <p className="text-sm text-gray-500 mb-4">
           Inserisci il codice JavaScript del chatbot per integrarlo nel tuo sito web. 
-          Il codice sarà aggiunto all'header del sito.
+          Il codice sarà aggiunto all'header del sito e rispetterà la lingua selezionata dall'utente quando possibile.
         </p>
         
         {saveSuccess && (
@@ -64,6 +66,25 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
           </Alert>
         )}
         
+        <Alert className="mb-4 bg-blue-50 border-blue-200">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-700">
+            <p>Il sistema è compatibile con molti provider di chatbot come:</p>
+            <ul className="list-disc pl-5 mt-2">
+              <li>Tiledesk</li>
+              <li>Tidio</li>
+              <li>Botpress</li>
+              <li>ChatBot</li>
+              <li>Userlike</li>
+              <li>Jivochat</li>
+              <li>Crisp</li>
+              <li>Intercom</li>
+              <li>Altri servizi basati su script</li>
+            </ul>
+            <p className="mt-2">Attenzione: il sistema cercherà di impostare la lingua del chatbot in base alla selezione dell'utente quando possibile.</p>
+          </AlertDescription>
+        </Alert>
+        
         <Textarea
           value={chatbotCode}
           onChange={(e) => setChatbotCode(e.target.value)}
@@ -83,6 +104,10 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
         <p className="text-sm text-blue-600">
           Il chatbot potrebbe non essere visibile in modalità anteprima a causa di restrizioni di dominio. 
           Sarà visibile quando il sito verrà pubblicato sull'URL finale.
+        </p>
+        <p className="text-sm text-blue-600 mt-2">
+          Lingua corrente dell'applicazione: <strong>{language.toUpperCase()}</strong>. 
+          Il sistema cercherà di impostare questa lingua nel chatbot quando viene caricato.
         </p>
       </div>
     </div>

@@ -2,11 +2,14 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "@/context/TranslationContext";
 
 const ChatbotBubble: React.FC = () => {
   const location = useLocation();
+  const { language } = useTranslation();
   const [isLoaded, setIsLoaded] = useState(false);
   const [scriptError, setScriptError] = useState(false);
+  const [isRendered, setIsRendered] = useState(false);
   
   // Skip rendering on admin pages
   const isAdminPage = location.pathname.includes('/admin') || 
@@ -68,6 +71,19 @@ const ChatbotBubble: React.FC = () => {
           script.setAttribute(attr.name, attr.value);
         });
         
+        // If there's a data-lang attribute, try to update it based on current language
+        if (language && language !== 'it') {
+          // Some chatbot providers use data-lang for language setting
+          if (scriptTag.hasAttribute('data-lang')) {
+            script.setAttribute('data-lang', language);
+          }
+          
+          // Some use data-language
+          if (scriptTag.hasAttribute('data-language')) {
+            script.setAttribute('data-language', language);
+          }
+        }
+        
         // Set source if present
         if (scriptTag.src) {
           script.src = scriptTag.src;
@@ -88,7 +104,19 @@ const ChatbotBubble: React.FC = () => {
         script.onload = () => {
           console.log("Chatbot script loaded successfully");
           setIsLoaded(true);
+          
+          // Give the chatbot time to render its UI
+          setTimeout(() => {
+            setIsRendered(true);
+          }, 2000);
         };
+        
+        // Remove any previous chatbot scripts to avoid duplicates
+        const existingScripts = document.querySelectorAll('script[data-chatbot]');
+        existingScripts.forEach(s => s.remove());
+        
+        // Mark this script as a chatbot script
+        script.setAttribute('data-chatbot', 'true');
         
         // Add the script to the document
         document.head.appendChild(script);
@@ -114,9 +142,21 @@ const ChatbotBubble: React.FC = () => {
     return () => {
       clearTimeout(retryTimer);
     };
-  }, [isAdminPage, isLoaded, scriptError]);
+  }, [isAdminPage, isLoaded, scriptError, language]);
 
-  // This component doesn't render anything visible
+  // This component doesn't render anything visible by default
+  // but we can add a small indicator for debugging if needed
+  if (isAdminPage || (!isLoaded && !scriptError)) {
+    return null;
+  }
+
+  // For debugging purposes, we could render a small indicator
+  // return scriptError ? (
+  //   <div className="fixed bottom-4 right-4 bg-red-100 p-2 rounded-md text-xs text-red-700 z-50">
+  //     Chatbot error
+  //   </div>
+  // ) : null;
+
   return null;
 };
 

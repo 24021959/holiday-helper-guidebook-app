@@ -7,7 +7,6 @@ import ErrorView from "@/components/ErrorView";
 import { useHeaderSettings } from "@/hooks/useHeaderSettings";
 import { toast } from "sonner";
 import FilteredIconNav from "@/components/FilteredIconNav";
-import TranslatedText from "@/components/TranslatedText";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const Menu: React.FC = () => {
