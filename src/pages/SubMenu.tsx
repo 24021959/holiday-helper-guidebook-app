@@ -89,7 +89,7 @@ const SubMenu: React.FC = () => {
               label: page.title,
               icon: page.icon || 'FileText',
               parent_path: page.parent_path,
-              is_parent: false // Subpages are not parents
+              is_parent: false // Assume subpages are not parents themselves
             }));
             
             setSubPages(iconData);
