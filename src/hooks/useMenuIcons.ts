@@ -11,7 +11,7 @@ export interface IconData {
   icon: string;
   parent_path: string | null;
   published?: boolean;
-  is_parent?: boolean;  // Keep this property for parent icon identification
+  is_parent?: boolean;  // Property for parent icon identification
   bg_color?: string;
 }
 
@@ -56,7 +56,8 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
         title: page.title,
         icon: page.icon || 'FileText',
         parent_path: page.parent_path,
-        published: page.published
+        published: page.published,
+        is_parent: false // Default value, will be updated later if it's a parent
       }));
       
       console.log(`Found ${iconData.length} published pages to show as menu items`);
