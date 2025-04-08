@@ -41,10 +41,13 @@ const MenuIconGrid: React.FC<MenuIconGridProps> = ({ icons, onIconClick }) => {
                 <TranslatedText text="Use the 'Create New Page' function" />
               </li>
               <li>
-                <TranslatedText text="Make sure the 'Published' field is ON" />
+                <TranslatedText text="When creating a subpage, select 'Sottopagina' type" />
               </li>
               <li>
-                <TranslatedText text="Pages created will automatically appear in the menu" />
+                <TranslatedText text="In the parent dropdown, select the correct parent page" />
+              </li>
+              <li>
+                <TranslatedText text="Make sure the 'Published' field is ON" />
               </li>
             </ul>
           </div>
