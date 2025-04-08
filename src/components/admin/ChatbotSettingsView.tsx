@@ -44,8 +44,7 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
       <div>
         <h2 className="text-xl font-medium text-emerald-600 mb-4">Impostazioni Chatbot</h2>
         <p className="text-sm text-gray-500 mb-4">
-          Inserisci il codice JavaScript del chatbot per integrarlo nel tuo sito web. 
-          Il codice sarà aggiunto all'header del sito e rispetterà la lingua selezionata dall'utente quando possibile.
+          Inserisci il codice JavaScript del chatbot per integrarlo nel tuo sito web.
         </p>
         
         {saveSuccess && (

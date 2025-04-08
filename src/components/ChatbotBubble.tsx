@@ -8,7 +8,6 @@ const ChatbotBubble: React.FC = () => {
   const location = useLocation();
   const { language } = useTranslation();
   const [isLoaded, setIsLoaded] = useState(false);
-  const [scriptError, setScriptError] = useState(false);
   
   // Skip rendering on admin pages
   const isAdminPage = location.pathname.includes('/admin') || 
@@ -52,10 +51,19 @@ const ChatbotBubble: React.FC = () => {
           return;
         }
 
-        // Update the chatbot script container in the head
+        // Create and append a new script element instead of using innerHTML
+        // This is safer and avoids syntax errors with script content
         const scriptContainer = document.getElementById('chatbot-script-container');
         if (scriptContainer) {
-          // If there's a data-lang attribute, try to update it based on current language
+          // Clean any previous scripts
+          while (scriptContainer.firstChild) {
+            scriptContainer.removeChild(scriptContainer.firstChild);
+          }
+          
+          // Create a new script element
+          const scriptElement = document.createElement('script');
+          
+          // If there's a language attribute, try to update it based on current language
           let modifiedCode = chatbotCode;
           
           if (language && language !== 'it') {
@@ -64,17 +72,20 @@ const ChatbotBubble: React.FC = () => {
             modifiedCode = modifiedCode.replace(/data-language="[^"]*"/, `data-language="${language}"`);
           }
           
-          // Set the innerHTML directly to execute the script
-          scriptContainer.innerHTML = modifiedCode;
+          // Set the script content
+          scriptElement.innerHTML = modifiedCode;
+          scriptElement.type = 'text/javascript';
+          
+          // Append to the container
+          scriptContainer.appendChild(scriptElement);
+          
           console.log("Chatbot script injected into document head");
           setIsLoaded(true);
         } else {
           console.error("Chatbot script container not found in the document head");
-          setScriptError(true);
         }
       } catch (error) {
         console.error("Error loading chatbot:", error);
-        setScriptError(true);
       }
     };
     
