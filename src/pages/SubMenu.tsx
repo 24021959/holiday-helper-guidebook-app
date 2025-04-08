@@ -10,6 +10,7 @@ import { useHeaderSettings } from "@/hooks/useHeaderSettings";
 import LoadingView from "@/components/LoadingView";
 import ErrorView from "@/components/ErrorView";
 import IconNav from "@/components/IconNav";
+import BackToMenu from "@/components/BackToMenu";
 
 interface PageDetails {
   id: string;
@@ -85,6 +86,7 @@ const SubMenu: React.FC = () => {
           label: page.title,
           icon: page.icon || 'FileText',
           parent_path: page.parent_path,
+          title: page.title,
           is_parent: false // Initially assume none are parents
         }));
         
@@ -149,7 +151,7 @@ const SubMenu: React.FC = () => {
       
       {/* Submenu title with back button */}
       <div className="bg-gradient-to-r from-emerald-100 to-teal-100 py-3 px-4 shadow-sm flex items-center">
-        <NavigateBack />
+        <BackToMenu />
         <h1 className="text-xl font-medium text-emerald-800 flex-1 text-center pr-6">
           {pageDetails ? (
             <TranslatedText text={pageDetails.title} />

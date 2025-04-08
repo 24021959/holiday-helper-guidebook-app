@@ -62,7 +62,8 @@ const Menu: React.FC = () => {
         label: page.title,
         icon: page.icon || 'FileText',
         parent_path: page.parent_path,
-        is_parent: false // Will check for children later
+        is_parent: false, // Will check for children later
+        title: page.title
       }));
       
       // Force set initial state

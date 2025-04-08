@@ -50,6 +50,11 @@ const IconNav: React.FC<IconNavProps> = ({
     };
   });
 
+  // Remove any duplicate icons based on path
+  const uniqueIcons = Array.from(
+    new Map(formattedIcons.map(icon => [icon.path, icon])).values()
+  );
+
   const handleIconClick = (icon: IconData) => {
     console.log("Clicked on icon:", icon);
     
@@ -85,7 +90,7 @@ const IconNav: React.FC<IconNavProps> = ({
 
   return (
     <div className="flex-1 flex flex-col p-3">
-      <MenuIconGrid icons={formattedIcons} onIconClick={handleIconClick} />
+      <MenuIconGrid icons={uniqueIcons} onIconClick={handleIconClick} />
     </div>
   );
 };
