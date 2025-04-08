@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import TranslatedText from "@/components/TranslatedText";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface HeaderSettings {
   logoUrl?: string | null;
@@ -16,6 +17,7 @@ interface HeaderSettings {
 const Welcome: React.FC = () => {
   const [headerSettings, setHeaderSettings] = useState<HeaderSettings>({});
   const [loading, setLoading] = useState(true);
+  const isMobile = useIsMobile();
   
   useEffect(() => {
     const fetchHeaderSettings = async () => {
@@ -66,7 +68,7 @@ const Welcome: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 p-4 md:p-6">
+    <div className={`min-h-screen bg-gradient-to-br from-teal-50 to-emerald-100 ${isMobile ? 'p-0' : 'p-4 md:p-6'}`}>
       <Header 
         backgroundColor={headerSettings.headerColor}
         logoUrl={headerSettings.logoUrl || undefined}
@@ -74,9 +76,9 @@ const Welcome: React.FC = () => {
         showAdminButton={false}
       />
       
-      <div className="pt-2">
+      <div className={`${isMobile ? 'pt-2 px-0' : 'pt-2 px-4'}`}>
         <BackToMenu />
-        <div className="max-w-4xl mx-auto">
+        <div className={`${isMobile ? 'w-full max-w-none px-2' : 'max-w-4xl mx-auto'}`}>
           <div className="relative w-full h-64 md:h-80 mb-6 overflow-hidden rounded-xl">
             <img 
               src="/lovable-uploads/47eda6f0-892f-48ac-a78f-d40b2f7a41df.png" 
@@ -86,7 +88,7 @@ const Welcome: React.FC = () => {
           </div>
           
           <Card className="bg-white/95 backdrop-blur-sm shadow-lg border-0 rounded-xl overflow-hidden">
-            <div className="p-6 md:p-8">
+            <div className={`${isMobile ? 'p-4' : 'p-6 md:p-8'}`}>
               <h1 className="text-2xl md:text-3xl font-bold text-emerald-800 mb-6 text-center">
                 <TranslatedText text="Benvenuto alla Locanda dell'Angelo" />
               </h1>

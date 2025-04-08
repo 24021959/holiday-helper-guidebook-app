@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -390,12 +391,12 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
         showAdminButton={true}
       />
       
-      <div className="flex-1 p-4 md:p-6 lg:p-8 bg-gray-50">
-        <div className="container mx-auto max-w-4xl content-container">
+      <div className="flex-1 p-2 md:p-6 lg:p-8 bg-gray-50">
+        <div className={`mx-auto ${isMobile ? 'w-full p-0 max-w-none' : 'container max-w-4xl'} content-container`}>
           <BackToMenu />
           
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mt-6 mb-8">
-            <TranslatedText text={pageData?.title || ""} />
+            {pageData?.title ? <TranslatedText text={pageData.title} /> : null}
           </h1>
           
           {pageData?.imageUrl && (
@@ -410,7 +411,7 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
             </div>
           )}
           
-          <div className="bg-white p-6 md:p-8 rounded-lg shadow-md mb-8">
+          <div className={`bg-white ${isMobile ? 'p-4' : 'p-6 md:p-8'} rounded-lg shadow-md mb-8 w-full`}>
             <div className="prose max-w-none clearfix readable-text">
               {pageContentSections.map((section, index) => {
                 if (typeof section === 'string') {

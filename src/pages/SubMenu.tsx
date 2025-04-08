@@ -98,11 +98,11 @@ const SubMenu: React.FC = () => {
   const handleRefresh = () => {
     setError(null);
     setRefreshTrigger(prev => prev + 1);
-    toast.info(<TranslatedText text="Refreshing menu..." />);
+    toast.info("Refreshing menu...");
   };
 
   if (loading || headerLoading) {
-    return <LoadingView message={<TranslatedText text="Loading submenu..." />} fullScreen={true} />;
+    return <LoadingView message="Loading submenu..." fullScreen={true} />;
   }
 
   return (
@@ -119,11 +119,7 @@ const SubMenu: React.FC = () => {
       <div className="bg-gradient-to-r from-emerald-100 to-teal-100 py-3 px-4 shadow-sm flex items-center">
         <BackToMenu showBackButton={false} />
         <h1 className="text-xl font-medium text-emerald-800 flex-1 text-center pr-6">
-          {pageDetails ? (
-            <TranslatedText text={pageDetails.title} />
-          ) : (
-            <TranslatedText text="Submenu" />
-          )}
+          {pageDetails ? pageDetails.title : "Submenu"}
         </h1>
       </div>
       
@@ -131,10 +127,10 @@ const SubMenu: React.FC = () => {
       <div className="flex-1 flex flex-col overflow-auto">
         {error ? (
           <ErrorView 
-            message={<TranslatedText text={error || "Error loading submenu"} />}
+            message={error || "Error loading submenu"}
             onRefresh={handleRefresh}
             onAlternativeAction={() => navigate('/menu')}
-            alternativeActionText={<TranslatedText text="Back to menu" />}
+            alternativeActionText="Back to menu"
           />
         ) : (
           <FilteredIconNav 
