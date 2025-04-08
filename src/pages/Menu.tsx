@@ -8,10 +8,12 @@ import { useHeaderSettings } from "@/hooks/useHeaderSettings";
 import { toast } from "sonner";
 import FilteredIconNav from "@/components/FilteredIconNav";
 import TranslatedText from "@/components/TranslatedText";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Menu: React.FC = () => {
   const { headerSettings, loading: headerLoading, error: headerError, refreshHeaderSettings } = useHeaderSettings();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const isMobile = useIsMobile();
   
   const handleRefresh = () => {
     console.log("Menu - Manual refresh");
@@ -25,7 +27,7 @@ const Menu: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className={`flex flex-col h-screen ${isMobile ? 'w-full p-0 m-0 max-w-none' : ''}`}>
       {/* Header with custom settings but NO admin button */}
       <Header 
         logoUrl={headerSettings.logoUrl || undefined}

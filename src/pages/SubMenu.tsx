@@ -11,6 +11,7 @@ import ErrorView from "@/components/ErrorView";
 import BackToMenu from "@/components/BackToMenu";
 import FilteredIconNav from "@/components/FilteredIconNav";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface PageDetails {
   id: string;
@@ -25,6 +26,7 @@ const SubMenu: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   
   // Handle path with special characters (like accented letters)
   const decodedPath = parentPath ? decodeURIComponent(parentPath) : null;
@@ -104,7 +106,7 @@ const SubMenu: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className={`flex flex-col h-screen ${isMobile ? 'w-full p-0 m-0 max-w-none' : ''}`}>
       {/* Header with customized settings */}
       <Header 
         logoUrl={headerSettings.logoUrl || undefined}

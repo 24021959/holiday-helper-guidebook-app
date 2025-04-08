@@ -6,6 +6,7 @@ import { identifyIconFromTitle } from "@/utils/iconUtils";
 import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";
 import { IconData } from "@/hooks/useMenuIcons";
 import TranslatedText from "./TranslatedText";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface IconNavProps {
   parentPath: string | null;
@@ -20,6 +21,7 @@ const IconNav: React.FC<IconNavProps> = ({
 }) => {
   const navigate = useNavigate();
   const keywordToIconMap = useKeywordToIconMap();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     console.log("IconNav - Received", icons.length, "icons with parentPath:", parentPath);
@@ -98,7 +100,7 @@ const IconNav: React.FC<IconNavProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col p-3">
+    <div className={`flex-1 flex flex-col ${isMobile ? 'p-1' : 'p-3'}`}>
       <MenuIconGrid icons={uniqueIcons} onIconClick={handleIconClick} />
     </div>
   );
