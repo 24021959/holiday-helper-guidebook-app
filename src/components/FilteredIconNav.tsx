@@ -31,116 +31,20 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
   const [hasConnectionError, setHasConnectionError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
-  const fetchIcons = useCallback(async () => {
-    try {
-      console.log("Loading icons for parent_path:", parentPath);
-      
-      // First try to load from localStorage cache
-      const cacheKey = `icons_${parentPath || 'root'}`;
-      const cachedIconsStr = localStorage.getItem(cacheKey);
-      
-      if (cachedIconsStr) {
-        try {
-          const parsedIcons = JSON.parse(cachedIconsStr);
-          console.log("Using cached icons temporarily:", parsedIcons.length);
-          setIcons(parsedIcons);
-        } catch (err) {
-          console.error("Error parsing icons from cache:", err);
-        }
-      }
-      
-      // Always attempt to get fresh data from server
-      const { data, error } = await supabase
-        .from('menu_icons')
-        .select('*')
-        .eq('parent_path', parentPath);
-      
-      if (error) {
-        console.error("Error loading icons:", error);
-        setHasConnectionError(true);
-        throw error;
-      }
-      
-      setHasConnectionError(false);
-      
-      if (!data || data.length === 0) {
-        console.log("No icons found for parent_path:", parentPath);
-        
-        // Check if we should try to load all published pages as icons
-        if (parentPath === null) {
-          console.log("Trying to load published pages as root menu items");
-          const { data: pagesData, error: pagesError } = await supabase
-            .from('custom_pages')
-            .select('id, title, path, icon, parent_path, is_submenu')
-            .eq('published', true)
-            .eq('parent_path', parentPath);
-            
-          if (!pagesError && pagesData && pagesData.length > 0) {
-            console.log("Found published pages to use as menu items:", pagesData.length);
-            
-            // Convert pages to menu icons
-            const newIcons = pagesData.map(page => ({
-              id: page.id,
-              path: page.path,
-              label: page.title,
-              icon: page.icon || 'FileText',
-              parent_path: page.parent_path
-            }));
-            
-            // Save to cache
-            localStorage.setItem(cacheKey, JSON.stringify(newIcons));
-            setIcons(newIcons);
-            return newIcons;
-          }
-        }
-        
-        setIcons([]);
-        return [];
-      }
-      
-      console.log("Icons loaded from server:", data.length);
-      
-      // Update the cache with fresh data
-      localStorage.setItem(cacheKey, JSON.stringify(data));
-      setIcons(data);
-      
-      return data;
-    } catch (error) {
-      console.error("Error loading icons:", error);
-      
-      // If we don't have any icons loaded yet, try to use cached icons as fallback
-      if (icons.length === 0) {
-        const cacheKey = `icons_${parentPath || 'root'}`;
-        const cachedIconsStr = localStorage.getItem(cacheKey);
-        
-        if (cachedIconsStr) {
-          try {
-            const parsedIcons = JSON.parse(cachedIconsStr);
-            setIcons(parsedIcons);
-            console.log("Using cached icons as fallback after fetch error:", parsedIcons.length);
-          } catch (err) {
-            console.error("Error parsing icons from cache as fallback:", err);
-          }
-        }
-      }
-      
-      return [];
-    }
-  }, [parentPath, icons.length]);
-
+  // Function to fetch published pages and convert them to icons format
   const loadPublishedPagesAsIcons = useCallback(async () => {
     try {
-      console.log("Trying to load all published pages for parent_path:", parentPath);
+      console.log("Loading published pages for parent_path:", parentPath);
       
       const { data, error } = await supabase
         .from('custom_pages')
-        .select('id, title, path, icon, parent_path, is_submenu')
+        .select('id, title, path, icon, parent_path')
         .eq('published', true)
-        .eq('parent_path', parentPath || null);
+        .eq('parent_path', parentPath);
         
       if (error) {
         console.error("Error loading published pages:", error);
-        return [];
+        throw error;
       }
       
       if (!data || data.length === 0) {
@@ -148,9 +52,7 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
         return [];
       }
       
-      console.log("Found published pages:", data.length);
-      
-      // Convert pages to menu icons format
+      // Convert pages to icons format
       const iconData = data.map(page => ({
         id: page.id,
         path: page.path,
@@ -159,153 +61,125 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
         parent_path: page.parent_path
       }));
       
-      // Cache these icons
+      console.log(`Found ${iconData.length} published pages to display as menu items`);
+      
+      // Save to cache for quick loading next time
       const cacheKey = `icons_${parentPath || 'root'}`;
       localStorage.setItem(cacheKey, JSON.stringify(iconData));
       
-      // Update state
-      setIcons(iconData);
       return iconData;
     } catch (err) {
-      console.error("Error loading published pages as icons:", err);
+      console.error("Error in loadPublishedPagesAsIcons:", err);
       return [];
     }
   }, [parentPath]);
-
-  const removeDuplicates = useCallback(async () => {
+  
+  // Main function to load icons from either menu_icons or published pages
+  const loadIcons = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
+      setHasConnectionError(false);
       
-      console.log("Checking for duplicate menu items with parent_path:", parentPath);
+      // Try to use cache first for immediate display
+      const cacheKey = `icons_${parentPath || 'root'}`;
+      const cachedIconsStr = localStorage.getItem(cacheKey);
       
-      // First, try to get icons from menu_icons table
-      let data = await fetchIcons();
-      
-      // If no icons found in menu_icons table, try to load published pages as icons
-      if (!data || data.length === 0) {
-        console.log("No menu items found in menu_icons table, trying published pages");
-        data = await loadPublishedPagesAsIcons();
+      if (cachedIconsStr) {
+        try {
+          const cachedIcons = JSON.parse(cachedIconsStr);
+          if (cachedIcons && cachedIcons.length > 0) {
+            console.log(`Using ${cachedIcons.length} cached icons temporarily`);
+            setIcons(cachedIcons);
+          }
+        } catch (err) {
+          console.error("Error parsing cached icons:", err);
+        }
       }
       
-      if (!data || data.length === 0) {
-        console.log("No menu items found for parent_path:", parentPath);
-        
-        if (hasConnectionError && icons.length > 0) {
-          console.log("Using cached icons due to connection error");
-          setIsLoading(false);
-          return;
-        }
-        
-        if (hasConnectionError) {
-          setError("Impossibile connettersi al database. Controlla la tua connessione e riprova.");
-          setIsLoading(false);
-          return;
-        }
-        
+      // First try to get icons from menu_icons table
+      console.log("Trying to load icons from menu_icons table");
+      const { data: iconData, error: iconError } = await supabase
+        .from('menu_icons')
+        .select('*')
+        .eq('parent_path', parentPath);
+      
+      if (iconError) {
+        console.error("Error loading menu icons:", iconError);
+        setHasConnectionError(true);
+        // Continue to try published pages as fallback
+      } else if (iconData && iconData.length > 0) {
+        console.log(`Loaded ${iconData.length} icons from menu_icons table`);
+        setIcons(iconData);
+        localStorage.setItem(cacheKey, JSON.stringify(iconData));
+        setIsLoading(false);
+        return;
+      } else {
+        console.log("No icons found in menu_icons table, trying published pages");
+      }
+      
+      // If no icons or error, try to load published pages as icons
+      const pageIcons = await loadPublishedPagesAsIcons();
+      
+      if (pageIcons.length > 0) {
+        console.log(`Using ${pageIcons.length} published pages as menu items`);
+        setIcons(pageIcons);
         setIsLoading(false);
         return;
       }
       
-      // If we reached this point, we have loaded icons successfully
-      setIcons(data);
+      // If we got here, we have no icons or pages to display
+      console.log("No icons or published pages found for this menu");
+      setIcons([]);
       
-      // Check for and remove duplicates
-      const pathsMap = new Map<string, IconData[]>();
-      
-      data.forEach((icon) => {
-        const iconData = {
-          id: icon.id,
-          path: icon.path,
-          label: icon.label,
-          icon: icon.icon,
-          parent_path: icon.parent_path
-        };
-        
-        if (!pathsMap.has(icon.path)) {
-          pathsMap.set(icon.path, [iconData]);
-        } else {
-          pathsMap.get(icon.path)?.push(iconData);
-        }
-      });
-      
-      const duplicatePaths: string[] = [];
-      const idsToDelete: string[] = [];
-      
-      pathsMap.forEach((items, path) => {
-        if (items.length > 1) {
-          duplicatePaths.push(path);
-          
-          const itemsToDelete = items.slice(1);
-          itemsToDelete.forEach(item => idsToDelete.push(item.id));
-        }
-      });
-      
-      if (idsToDelete.length > 0) {
-        console.log("Found duplicate menu items to delete:", idsToDelete.length);
-        
-        for (const id of idsToDelete) {
-          const { error: deleteError } = await supabase
-            .from('menu_icons')
-            .delete()
-            .eq('id', id);
-          
-          if (deleteError) {
-            console.error("Error deleting duplicate:", deleteError);
-          }
-        }
-        
-        const storiaIconIds = data
-          .filter(icon => icon.path === "/storia-della-locanda" || icon.label.toLowerCase().includes("storia della locanda"))
-          .map(icon => icon.id);
-        
-        if (storiaIconIds.length > 1) {
-          for (let i = 1; i < storiaIconIds.length; i++) {
-            await supabase
-              .from('menu_icons')
-              .delete()
-              .eq('id', storiaIconIds[i]);
-          }
-          
-          toast.success(`Rimossa pagina "Storia della locanda" duplicata`);
-        }
-        
-        toast.success(`Rimossi ${idsToDelete.length} elementi duplicati dal menu`);
-        
-        // Reload icons after removing duplicates
-        await fetchIcons();
-      } else {
-        console.log("No duplicate menu items found");
+      if (hasConnectionError) {
+        setError("Impossibile connettersi al database. Controlla la tua connessione e riprova.");
       }
+      
     } catch (error) {
-      console.error("Error removing duplicates:", error);
-      if (icons.length === 0) {
-        setError("Errore nel caricamento delle icone. Riprova più tardi.");
+      console.error("Error in loadIcons:", error);
+      setHasConnectionError(true);
+      setError("Errore nel caricamento del menu. Riprova più tardi.");
+      
+      // Try to use cached icons as last resort
+      const cacheKey = `icons_${parentPath || 'root'}`;
+      const cachedIconsStr = localStorage.getItem(cacheKey);
+      if (cachedIconsStr) {
+        try {
+          const cachedIcons = JSON.parse(cachedIconsStr);
+          if (cachedIcons && cachedIcons.length > 0) {
+            console.log(`Using ${cachedIcons.length} cached icons as fallback after error`);
+            setIcons(cachedIcons);
+          }
+        } catch (err) {
+          console.error("Error parsing cached icons for fallback:", err);
+        }
       }
     } finally {
       setIsLoading(false);
     }
-  }, [parentPath, fetchIcons, icons, hasConnectionError, loadPublishedPagesAsIcons]);
+  }, [parentPath, hasConnectionError, loadPublishedPagesAsIcons]);
 
+  // Load icons when component mounts or refreshTrigger changes
+  useEffect(() => {
+    console.log(`FilteredIconNav - Loading icons with refreshTrigger: ${refreshTrigger}`);
+    loadIcons();
+  }, [loadIcons, refreshTrigger]);
+  
   // Try to reconnect if there's a connection error
   useEffect(() => {
     if (hasConnectionError && retryCount < 3) {
+      const retryTime = 3000 * (retryCount + 1); // 3s, 6s, 9s
+      console.log(`Will retry connection in ${retryTime/1000}s (attempt ${retryCount + 1})`);
+      
       const timer = setTimeout(() => {
-        console.log(`Retry attempt ${retryCount + 1} for loading icons...`);
         setRetryCount(prev => prev + 1);
-        removeDuplicates();
-      }, 3000 * (retryCount + 1)); // Exponential backoff: 3s, 6s, 9s
+        loadIcons();
+      }, retryTime);
       
       return () => clearTimeout(timer);
     }
-  }, [hasConnectionError, retryCount, removeDuplicates]);
-
-  // Load icons when component mounts or when refreshTrigger changes
-  useEffect(() => {
-    console.log("FilteredIconNav - loading icons, refreshTrigger:", refreshTrigger);
-    setRetryCount(0);
-    removeDuplicates();
-  }, [removeDuplicates, refreshTrigger]);
+  }, [hasConnectionError, retryCount, loadIcons]);
 
   const handleRefresh = () => {
     setError(null);
@@ -314,7 +188,7 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     if (onRefresh) {
       onRefresh();
     } else {
-      removeDuplicates();
+      loadIcons();
     }
   };
 
@@ -349,7 +223,7 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     <IconNav 
       icons={icons}
       parentPath={parentPath} 
-      onRefresh={onRefresh || handleRefresh} 
+      onRefresh={handleRefresh} 
       refreshTrigger={refreshTrigger} 
     />
   );

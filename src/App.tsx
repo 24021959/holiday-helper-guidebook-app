@@ -125,7 +125,7 @@ function App() {
           <Route path="/submenu/:parentPath" element={<SubMenu />} />
           
           {/* Preview route for admin */}
-          <Route path="/preview/:pageRoute" element={<PreviewPage />} />
+          <Route path="/preview/*" element={<PreviewPage />} />
           
           {/* Special route for all other pages - captures dynamic pages */}
           <Route path="/:pageRoute/*" element={<DynamicPage />} />

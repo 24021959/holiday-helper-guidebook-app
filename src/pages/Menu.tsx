@@ -92,19 +92,8 @@ const Menu: React.FC = () => {
         }
       }
       
-      // Try menu_icons table first
-      const { count: iconsCount, error: iconsError } = await supabase
-        .from('menu_icons')
-        .select('*', { count: 'exact', head: true })
-        .eq('parent_path', null);
-        
-      if (!iconsError && iconsCount && iconsCount > 0) {
-        console.log("Numero di icone nel menu principale:", iconsCount);
-        return iconsCount;
-      }
-      
-      // If no icons in menu_icons, check for published pages
-      console.log("Checking for published pages as fallback");
+      // Try to check for published pages directly
+      console.log("Checking for published pages");
       const { count: pagesCount, error: pagesError } = await supabase
         .from('custom_pages')
         .select('*', { count: 'exact', head: true })
@@ -116,8 +105,24 @@ const Menu: React.FC = () => {
         throw pagesError;
       }
       
-      console.log("Numero di pagine pubblicate nel menu principale:", pagesCount);
-      return pagesCount || 0;
+      if (pagesCount && pagesCount > 0) {
+        console.log("Numero di pagine pubblicate nel menu principale:", pagesCount);
+        return pagesCount;
+      }
+      
+      // If no published pages, try menu_icons table
+      const { count: iconsCount, error: iconsError } = await supabase
+        .from('menu_icons')
+        .select('*', { count: 'exact', head: true })
+        .eq('parent_path', null);
+        
+      if (iconsError) {
+        console.error("Errore nel conteggio delle icone del menu:", iconsError);
+        throw iconsError;
+      }
+      
+      console.log("Numero di icone nel menu principale:", iconsCount);
+      return iconsCount || 0;
     } catch (error) {
       console.error("Errore nel conteggio delle icone o pagine:", error);
       
@@ -180,12 +185,10 @@ const Menu: React.FC = () => {
   
   const handleRefresh = () => {
     console.log("Menu - Refresh manuale attivato");
-    setRefreshTrigger(prev => prev + 1);
-    toast.info("Aggiornamento menu in corso...");
-    
-    // Reset error state on manual refresh
-    setError(null);
     setLoading(true);
+    setRefreshTrigger(prev => prev + 1);
+    setError(null);
+    toast.info("Aggiornamento menu in corso...");
     
     // Ritenta la connessione
     fetchHeaderSettings().then(() => {
