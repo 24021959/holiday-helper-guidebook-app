@@ -74,9 +74,10 @@ const IconNav: React.FC<IconNavProps> = ({
         return;
       }
       
-      // For content pages, navigate to dynamic page route with state
+      // CORREZIONE: Per le pagine di contenuto, naviga direttamente al percorso della pagina
+      // anziché aggiungere "/page" prima del percorso
       console.log("Navigation to content page:", icon.path);
-      navigate(`/page${icon.path}`, { 
+      navigate(icon.path, { 
         state: { 
           parentPath: parentPath 
         } 

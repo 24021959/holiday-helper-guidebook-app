@@ -127,7 +127,11 @@ function App() {
           {/* Preview route for admin */}
           <Route path="/preview/*" element={<PreviewPage />} />
           
-          {/* Dynamic page routes */}
+          {/* IMPORTANTE: Aggiungere route dirette per tutte le pagine dinamiche creando
+              un pattern di rotta che carica le pagine dinamiche direttamente dall'URL */}
+          <Route path="/:pageSlug" element={<PreviewPage />} />
+          
+          {/* Manteniamo anche il vecchio pattern per retrocompatibilità */}
           <Route path="/page/*" element={<DynamicPage />} />
           
           {/* Route for 404 Not Found - must be the last one */}
