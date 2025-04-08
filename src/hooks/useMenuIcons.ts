@@ -27,95 +27,6 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
   const [hasConnectionError, setHasConnectionError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
-  // Funzione per sincronizzare forzatamente tra pagine e menu
-  const syncPagesWithMenu = useCallback(async () => {
-    try {
-      console.log("Sincronizzazione forzata tra pagine e menu...");
-      
-      // Step 1: Ottieni tutte le pagine pubblicate
-      const { data: pages, error: pagesError } = await supabase
-        .from('custom_pages')
-        .select('id, title, path, icon, parent_path')
-        .eq('published', true)
-        .eq('parent_path', parentPath);
-        
-      if (pagesError) {
-        console.error("Errore nel recupero delle pagine:", pagesError);
-        throw pagesError;
-      }
-      
-      if (!pages || pages.length === 0) {
-        console.log("Nessuna pagina pubblicata trovata per il percorso:", parentPath);
-        return [];
-      }
-      
-      // Step 2: Ottieni tutte le icone del menu esistenti
-      const { data: menuIcons, error: iconsError } = await supabase
-        .from('menu_icons')
-        .select('path')
-        .eq('parent_path', parentPath);
-        
-      if (iconsError) {
-        console.error("Errore nel recupero delle icone del menu:", iconsError);
-        throw iconsError;
-      }
-      
-      // Crea un set con i percorsi delle icone esistenti
-      const existingPaths = new Set(menuIcons?.map(icon => icon.path) || []);
-      
-      // Step 3: Trova le pagine che non hanno un'icona nel menu
-      const pagesToSync = pages.filter(page => !existingPaths.has(page.path));
-      
-      if (pagesToSync.length > 0) {
-        console.log(`Trovate ${pagesToSync.length} pagine da sincronizzare con il menu`);
-        
-        // Step 4: Crea nuove icone nel menu per le pagine mancanti
-        const newMenuIcons = pagesToSync.map(page => ({
-          label: page.title,
-          path: page.path,
-          icon: page.icon || 'FileText',
-          bg_color: "bg-blue-200",
-          is_submenu: page.parent_path !== null,
-          parent_path: page.parent_path,
-          published: true
-        }));
-        
-        // Inserisci le nuove icone nel menu
-        const { error: insertError } = await supabase
-          .from('menu_icons')
-          .insert(newMenuIcons);
-          
-        if (insertError) {
-          console.error("Errore nell'inserimento delle nuove icone:", insertError);
-          throw insertError;
-        }
-        
-        console.log(`Sincronizzate con successo ${newMenuIcons.length} pagine nel menu`);
-        toast.success(`${newMenuIcons.length} pagine aggiunte al menu`);
-      }
-      
-      // Step 5: Converti tutte le pagine in formato icona per il rendering
-      const iconData = pages.map(page => ({
-        id: page.id,
-        path: page.path,
-        label: page.title,
-        icon: page.icon || 'FileText',
-        parent_path: page.parent_path
-      }));
-      
-      console.log(`Preparate ${iconData.length} icone dalle pagine pubblicate`);
-      
-      // Salva in cache
-      const cacheKey = `icons_${parentPath || 'root'}`;
-      localStorage.setItem(cacheKey, JSON.stringify(iconData));
-      
-      return iconData;
-    } catch (err) {
-      console.error("Errore nella sincronizzazione pagine-menu:", err);
-      return [];
-    }
-  }, [parentPath]);
-
   // Funzione per caricare le pagine pubblicate come icone
   const loadPublishedPagesAsIcons = useCallback(async () => {
     try {
@@ -123,9 +34,9 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
       
       const { data, error } = await supabase
         .from('custom_pages')
-        .select('id, title, path, icon, parent_path')
-        .eq('published', true)
-        .eq('parent_path', parentPath);
+        .select('id, title, path, icon, parent_path, published')
+        .eq('parent_path', parentPath)
+        .eq('published', true);
         
       if (error) {
         console.error("Errore caricamento pagine pubblicate:", error);
@@ -142,8 +53,10 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
         id: page.id,
         path: page.path,
         label: page.title,
+        title: page.title,
         icon: page.icon || 'FileText',
-        parent_path: page.parent_path
+        parent_path: page.parent_path,
+        published: page.published
       }));
       
       console.log(`Trovate ${iconData.length} pagine pubblicate da mostrare come elementi del menu`);
@@ -159,91 +72,6 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
     }
   }, [parentPath]);
   
-  // Funzione per caricare le icone del menu dalla tabella menu_icons
-  const loadMenuIcons = useCallback(async () => {
-    try {
-      console.log("Caricamento icone menu per parent_path:", parentPath);
-      
-      const { data, error } = await supabase
-        .from('menu_icons')
-        .select('*')
-        .eq('parent_path', parentPath)
-        .eq('published', true);
-        
-      if (error) {
-        console.error("Errore caricamento icone menu:", error);
-        throw error;
-      }
-      
-      if (!data || data.length === 0) {
-        console.log("Nessuna icona menu trovata per parent_path:", parentPath);
-        return [];
-      }
-      
-      console.log(`Trovate ${data.length} icone menu da mostrare`);
-      return data;
-    } catch (err) {
-      console.error("Errore in loadMenuIcons:", err);
-      return [];
-    }
-  }, [parentPath]);
-
-  // Sincronizza custom_pages con menu_icons
-  const syncPagesToMenuIcons = async (pageIcons: IconData[]) => {
-    try {
-      console.log("Sincronizzazione pagine con menu_icons...");
-      
-      // Ottieni icone menu esistenti per evitare duplicati
-      const { data: existingIcons, error: fetchError } = await supabase
-        .from('menu_icons')
-        .select('path');
-        
-      if (fetchError) {
-        console.error("Errore recupero icone menu esistenti:", fetchError);
-        return;
-      }
-      
-      // Crea un set di percorsi esistenti per ricerca rapida
-      const existingPaths = new Set(existingIcons?.map(icon => icon.path) || []);
-      
-      // Trova icone pagina che non hanno corrispondenti icone menu
-      const iconsToCreate = pageIcons.filter(icon => !existingPaths.has(icon.path));
-      
-      if (iconsToCreate.length === 0) {
-        console.log("Nessuna nuova icona da sincronizzare");
-        return;
-      }
-      
-      console.log(`Trovate ${iconsToCreate.length} pagine senza icone menu, creazione in corso...`);
-      
-      // Formatta le icone per inserimento in menu_icons
-      const newMenuIcons = iconsToCreate.map(icon => ({
-        label: icon.label,
-        path: icon.path,
-        icon: icon.icon,
-        bg_color: "bg-blue-200",
-        is_submenu: icon.parent_path !== null,
-        parent_path: icon.parent_path,
-        published: true
-      }));
-      
-      // Inserisci le nuove icone menu
-      const { error: insertError } = await supabase
-        .from('menu_icons')
-        .insert(newMenuIcons);
-        
-      if (insertError) {
-        console.error("Errore inserimento nuove icone menu:", insertError);
-        return;
-      }
-      
-      console.log(`Sincronizzate con successo ${newMenuIcons.length} pagine con menu_icons`);
-      
-    } catch (error) {
-      console.error("Errore in syncPagesToMenuIcons:", error);
-    }
-  };
-
   // Funzione principale per caricare le icone
   const loadIcons = useCallback(async () => {
     try {
@@ -251,65 +79,44 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
       setError(null);
       setHasConnectionError(false);
       
-      // Prima forza la sincronizzazione tra pagine e menu
-      await syncPagesWithMenu();
+      // Carica icone dalle pagine pubblicate
+      const pageIcons = await loadPublishedPagesAsIcons();
       
-      // Prova a usare cache per visualizzazione immediata
-      const cacheKey = `icons_${parentPath || 'root'}`;
-      const cachedIconsStr = localStorage.getItem(cacheKey);
-      
-      if (cachedIconsStr) {
-        try {
-          const cachedIcons = JSON.parse(cachedIconsStr);
-          if (cachedIcons && cachedIcons.length > 0) {
-            console.log(`Utilizzo ${cachedIcons.length} icone in cache temporaneamente`);
-            setIcons(cachedIcons);
+      // Verificare elementi con figli (pagine parent)
+      if (pageIcons.length > 0) {
+        const updatedIcons = [...pageIcons];
+        
+        for (let i = 0; i < updatedIcons.length; i++) {
+          const icon = updatedIcons[i];
+          if (icon.path) {
+            // Controlla se ci sono pagine figlie per identificare le pagine parent
+            const { count, error: countError } = await supabase
+              .from('custom_pages')
+              .select('id', { count: 'exact', head: true })
+              .eq('parent_path', icon.path)
+              .eq('published', true);
+            
+            if (!countError && count !== null && count > 0) {
+              console.log(`Pagina ${icon.path} ha ${count} figli, contrassegnata come parent`);
+              updatedIcons[i] = { ...icon, is_parent: true };
+            }
           }
-        } catch (err) {
-          console.error("Errore parsing icone in cache:", err);
         }
+        
+        // Elimina eventuali duplicati basati sul percorso
+        const uniqueIcons = Array.from(
+          new Map(updatedIcons.map(icon => [icon.path, icon])).values()
+        );
+        
+        console.log(`Caricate ${uniqueIcons.length} icone uniche`);
+        setIcons(uniqueIcons);
+        
+        // Salva in cache
+        const cacheKey = `icons_${parentPath || 'root'}`;
+        localStorage.setItem(cacheKey, JSON.stringify(uniqueIcons));
+      } else {
+        setIcons([]);
       }
-      
-      // Carica da entrambe le fonti
-      const [menuIcons, pageIcons] = await Promise.all([
-        loadMenuIcons(),
-        loadPublishedPagesAsIcons()
-      ]);
-      
-      // Combina icone da entrambe le fonti, usando Set per evitare duplicati per percorso
-      const combinedIconsMap = new Map();
-      
-      // Aggiungi icone menu alla mappa
-      menuIcons.forEach(icon => {
-        combinedIconsMap.set(icon.path, icon);
-      });
-      
-      // Aggiungi icone pagina alla mappa (sovrascriverà icone menu con stesso percorso)
-      pageIcons.forEach(icon => {
-        combinedIconsMap.set(icon.path, icon);
-      });
-      
-      // Converti mappa in array
-      const combinedIcons = Array.from(combinedIconsMap.values());
-      
-      console.log(`Icone combinate da entrambe le fonti: ${combinedIcons.length} totali`);
-      
-      // Ordina le icone per etichetta per visualizzazione coerente
-      combinedIcons.sort((a, b) => {
-        return (a.label || '').localeCompare(b.label || '');
-      });
-      
-      setIcons(combinedIcons);
-      
-      // Salva icone combinate in cache
-      localStorage.setItem(cacheKey, JSON.stringify(combinedIcons));
-      
-      // Fix: ricostruisci tabella menu_icons per assicurare che tutte le pagine abbiano icone
-      if (combinedIcons.length > 0 && pageIcons.length > 0 && menuIcons.length !== pageIcons.length) {
-        console.log("Rilevata discrepanza tra menu_icons e pagine, sincronizzazione...");
-        syncPagesToMenuIcons(pageIcons);
-      }
-      
     } catch (error) {
       console.error("Errore in loadIcons:", error);
       setHasConnectionError(true);
@@ -332,7 +139,7 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
     } finally {
       setIsLoading(false);
     }
-  }, [parentPath, loadMenuIcons, loadPublishedPagesAsIcons, syncPagesWithMenu]);
+  }, [parentPath, loadPublishedPagesAsIcons]);
 
   // Carica icone quando il componente viene montato o refreshTrigger cambia
   useEffect(() => {
@@ -367,7 +174,6 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
     icons,
     isLoading,
     error,
-    refreshIcons,
-    syncPagesWithMenu
+    refreshIcons
   };
 };

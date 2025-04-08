@@ -8,7 +8,6 @@ import { Home } from "lucide-react";
 const BackToMenu: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const parentPath = location.state?.parentPath || null;
   
   // Handler for home button
   const handleHomeClick = () => {
@@ -17,7 +16,7 @@ const BackToMenu: React.FC = () => {
   
   return (
     <div className="flex items-center gap-2">
-      <NavigateBack parentPath={parentPath} />
+      <NavigateBack />
       <Button 
         variant="ghost" 
         size="icon" 

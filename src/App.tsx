@@ -17,7 +17,7 @@ import ChatbotBubble from '@/components/ChatbotBubble'
 
 // Component to handle dynamic pages created by the administrator
 const DynamicPage = () => {
-  const { pageRoute } = useParams<{ pageRoute: string }>();
+  const { '*': pageRoute } = useParams<{ '*': string }>();
   const location = useLocation();
   
   // If there's no path, return to the homepage
@@ -25,9 +25,9 @@ const DynamicPage = () => {
     return <Navigate to="/menu" replace />;
   }
   
-  // Build the actual path based on the current URL
+  // Build the actual path from the URL pathname
   const actualPath = location.pathname;
-  console.log("DynamicPage - Actual path:", actualPath);
+  console.log("DynamicPage - Loaded path:", actualPath);
   
   return <PreviewPage pageRoute={actualPath} />;
 };
@@ -127,8 +127,8 @@ function App() {
           {/* Preview route for admin */}
           <Route path="/preview/*" element={<PreviewPage />} />
           
-          {/* Special route for all other pages - captures dynamic pages */}
-          <Route path="/:pageRoute/*" element={<DynamicPage />} />
+          {/* Dynamic page routes */}
+          <Route path="/page/*" element={<DynamicPage />} />
           
           {/* Route for 404 Not Found - must be the last one */}
           <Route path="*" element={<NotFound />} />

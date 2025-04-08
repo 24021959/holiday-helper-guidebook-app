@@ -2,7 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import TranslatedText from "./TranslatedText";
 
 interface NavigateBackProps {
@@ -12,6 +12,7 @@ interface NavigateBackProps {
 const NavigateBack: React.FC<NavigateBackProps> = ({ parentPath }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { parentPath: urlParentPath } = useParams<{ parentPath: string }>();
   
   // Check if we're in a path that starts with /submenu/
   const isInSubmenu = location.pathname.startsWith('/submenu/');
@@ -20,7 +21,8 @@ const NavigateBack: React.FC<NavigateBackProps> = ({ parentPath }) => {
   const isInSubmenuContentPage = !isInSubmenu && location.state?.parentPath;
   
   console.log("NavigateBack - Current path:", location.pathname);
-  console.log("NavigateBack - Parent path:", parentPath);
+  console.log("NavigateBack - Parent path from props:", parentPath);
+  console.log("NavigateBack - Parent path from URL:", urlParentPath);
   console.log("NavigateBack - Location state:", location.state);
   
   const handleBack = () => {
@@ -35,18 +37,8 @@ const NavigateBack: React.FC<NavigateBackProps> = ({ parentPath }) => {
           : location.state.parentPath;
         
         navigate(`/submenu/${submenuPath}`);
-      } else if (parentPath) {
-        // If we have a parent path, navigate to its submenu
-        console.log("Navigating to parent path submenu:", parentPath);
-        
-        // Extract the path part after /submenu/
-        const submenuPath = parentPath.startsWith('/') 
-          ? parentPath.substring(1) 
-          : parentPath;
-        
-        navigate(`/submenu/${submenuPath}`);
       } else if (isInSubmenu) {
-        // If we're in a submenu but don't have parent info, go to menu
+        // If we're in a submenu, go back to menu
         console.log("Navigating back to main menu from submenu");
         navigate("/menu");
       } else {
@@ -68,15 +60,7 @@ const NavigateBack: React.FC<NavigateBackProps> = ({ parentPath }) => {
       onClick={handleBack}
     >
       <ArrowLeft className="mr-2 h-4 w-4" />
-      {isInSubmenuContentPage ? (
-        <TranslatedText text="Back" />
-      ) : (
-        isInSubmenu || parentPath ? (
-          <TranslatedText text="Back" />
-        ) : (
-          <TranslatedText text="Back to Menu" />
-        )
-      )}
+      <TranslatedText text="Back" />
     </Button>
   );
 };

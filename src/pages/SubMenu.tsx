@@ -5,26 +5,17 @@ import Footer from "@/components/Footer";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import TranslatedText from "@/components/TranslatedText";
-import NavigateBack from "@/components/NavigateBack";
 import { useHeaderSettings } from "@/hooks/useHeaderSettings";
 import LoadingView from "@/components/LoadingView";
 import ErrorView from "@/components/ErrorView";
 import IconNav from "@/components/IconNav";
 import BackToMenu from "@/components/BackToMenu";
+import { useMenuIcons } from "@/hooks/useMenuIcons";
+import { toast } from "sonner";
 
 interface PageDetails {
   id: string;
   title: string;
-}
-
-interface IconData {
-  id: string;
-  path: string;
-  label: string;
-  icon: string;
-  parent_path: string | null;
-  title?: string;
-  is_parent?: boolean;
 }
 
 const SubMenu: React.FC = () => {
@@ -34,17 +25,23 @@ const SubMenu: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [subPages, setSubPages] = useState<IconData[]>([]);
   const navigate = useNavigate();
   
-  const fetchData = useCallback(async () => {
+  const realPath = parentPath ? `/${parentPath}` : null;
+  const { icons, isLoading, error: iconsError, refreshIcons } = useMenuIcons({ 
+    parentPath: realPath, 
+    refreshTrigger 
+  });
+  
+  // Carica i dettagli della pagina principale (parent)
+  const fetchPageDetails = useCallback(async () => {
     if (!parentPath) return;
     
     try {
       setLoading(true);
       const realPath = `/${parentPath}`;
       
-      // 1. Load parent page details
+      // Carica dettagli pagina parent
       const { data: pageData, error: pageError } = await supabase
         .from('custom_pages')
         .select('id, title')
@@ -65,59 +62,6 @@ const SubMenu: React.FC = () => {
         console.log("No parent page found for path:", realPath);
         setError("Parent page not found");
       }
-      
-      // 2. Load all subpages for this parent
-      const { data: subpages, error: subpagesError } = await supabase
-        .from('custom_pages')
-        .select('id, title, path, icon, parent_path')
-        .eq('parent_path', realPath)
-        .eq('published', true);
-        
-      if (subpagesError) {
-        console.error("Error loading subpages:", subpagesError);
-        setError("Error loading subpages");
-      } else if (subpages && subpages.length > 0) {
-        console.log(`Found ${subpages.length} subpages for parent ${realPath}:`, subpages);
-        
-        // First set the initial subpages
-        const iconData = subpages.map(page => ({
-          id: page.id,
-          path: page.path,
-          label: page.title,
-          icon: page.icon || 'FileText',
-          parent_path: page.parent_path,
-          title: page.title,
-          is_parent: false // Initially assume none are parents
-        }));
-        
-        setSubPages(iconData);
-        
-        // Then check if any of these subpages are themselves parents
-        const updatedIcons = [...iconData];
-        
-        for (let i = 0; i < updatedIcons.length; i++) {
-          const icon = updatedIcons[i];
-          if (icon.path) {
-            const { count, error: countError } = await supabase
-              .from('custom_pages')
-              .select('id', { count: 'exact', head: true })
-              .eq('parent_path', icon.path)
-              .eq('published', true);
-            
-            if (!countError && count !== null && count > 0) {
-              console.log(`Subpage ${icon.path} has ${count} children, marking as parent`);
-              updatedIcons[i] = { ...icon, is_parent: true };
-            }
-          }
-        }
-        
-        // Update with parent information
-        setSubPages(updatedIcons);
-        
-      } else {
-        console.log("No subpages found for parent:", realPath);
-        setSubPages([]);
-      }
     } catch (error) {
       console.error("Error loading data:", error);
       setError("Error loading data");
@@ -127,15 +71,17 @@ const SubMenu: React.FC = () => {
   }, [parentPath]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData, refreshTrigger]);
+    fetchPageDetails();
+  }, [fetchPageDetails, refreshTrigger]);
 
   const handleRefresh = () => {
     setError(null);
     setRefreshTrigger(prev => prev + 1);
+    refreshIcons();
+    toast.info("Aggiornamento menu in corso...");
   };
 
-  if (loading || headerLoading) {
+  if (loading || headerLoading || isLoading) {
     return <LoadingView message="Loading submenu..." fullScreen={true} />;
   }
 
@@ -163,16 +109,16 @@ const SubMenu: React.FC = () => {
       
       {/* Main container with icons that takes all available space */}
       <div className="flex-1 flex flex-col overflow-auto">
-        {error ? (
+        {error || iconsError ? (
           <ErrorView 
-            message={error}
+            message={error || iconsError || "Error loading submenu"}
             onRefresh={handleRefresh}
             onAlternativeAction={() => navigate('/menu')}
             alternativeActionText="Back to menu"
           />
         ) : (
           <IconNav 
-            icons={subPages} 
+            icons={icons} 
             parentPath={`/${parentPath}`} 
             onRefresh={handleRefresh}
           />
