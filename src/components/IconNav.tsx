@@ -1,9 +1,8 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import MenuIconGrid from "./MenuIconGrid";
 import ErrorView from "./ErrorView";
-import LoadingView from "./LoadingView";
 import { IconData } from "@/hooks/useMenuIcons";
 import { identifyIconFromTitle } from "@/utils/iconUtils";
 import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";
@@ -11,23 +10,19 @@ import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";
 interface IconNavProps {
   parentPath: string | null;
   onRefresh?: () => void;
-  refreshTrigger?: number;
-  icons?: IconData[];
+  icons: IconData[];
 }
 
 const IconNav: React.FC<IconNavProps> = ({ 
   parentPath, 
   onRefresh, 
-  icons: providedIcons = []
+  icons = []
 }) => {
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const keywordToIconMap = useKeywordToIconMap();
 
   // Formatta le icone fornite per l'uso nel componente
-  const formattedIcons = providedIcons.map(icon => {
-    // Controlla se l'icona è un genitore
-    const isParent = providedIcons.some(item => item.parent_path === icon.path);
+  const formattedIcons = icons.map(icon => {
     let iconName = icon.icon;
     const title = icon.title || icon.label || "";
     
@@ -42,7 +37,7 @@ const IconNav: React.FC<IconNavProps> = ({
       icon: iconName,
       path: icon.path,
       parent_path: icon.parent_path,
-      is_parent: isParent,
+      is_parent: icon.is_parent,
       label: icon.label || title
     };
   });
@@ -68,16 +63,6 @@ const IconNav: React.FC<IconNavProps> = ({
     }
   };
 
-  if (error) {
-    return (
-      <ErrorView 
-        message={error}
-        onRefresh={handleRefresh}
-      />
-    );
-  }
-
-  // Semplificato - non controlla più se isLoading, usa direttamente le icone fornite
   return (
     <div className="flex-1 flex flex-col p-3">
       <MenuIconGrid icons={formattedIcons} onIconClick={handleIconClick} />
