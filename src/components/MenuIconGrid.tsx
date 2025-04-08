@@ -40,6 +40,9 @@ const MenuIconGrid: React.FC<MenuIconGridProps> = ({ icons, onIconClick }) => {
                 <TranslatedText text="Usa la funzione 'Crea Nuova Pagina'" />
               </li>
               <li>
+                <TranslatedText text="Assicurati che il campo 'Pubblicato' sia ON" />
+              </li>
+              <li>
                 <TranslatedText text="Le pagine create appariranno automaticamente nel menu" />
               </li>
             </ul>

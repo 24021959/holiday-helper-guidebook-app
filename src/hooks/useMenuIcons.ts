@@ -32,6 +32,8 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
     try {
       console.log("Loading published pages for parent_path:", parentPath);
       
+      // Stiamo caricando le pagine che hanno come parent_path quello richiesto
+      // e sono pubblicati (published = true)
       const { data, error } = await supabase
         .from('custom_pages')
         .select('id, title, path, icon, parent_path, published')
@@ -98,9 +100,40 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
           console.error("Error parsing cached icons:", err);
         }
       }
+
+      // PRIMARIO PROBLEMA - CARICA TUTTE LE PAGINE TOP LEVEL
+      // Se siamo nella root del menu (parentPath === null), carica anche tutte le pagine
+      // principali direttamente (quelle con parent_path === null)
+      let pageIcons: IconData[] = [];
       
-      // Load icons from published pages
-      const pageIcons = await loadPublishedPagesAsIcons();
+      if (parentPath === null) {
+        // Carica pagine principali (parent_path === null)
+        const { data: rootPages, error: rootError } = await supabase
+          .from('custom_pages')
+          .select('id, title, path, icon, parent_path, published')
+          .is('parent_path', null)
+          .eq('published', true);
+          
+        if (rootError) {
+          console.error("Error loading root pages:", rootError);
+        } else if (rootPages && rootPages.length > 0) {
+          console.log(`Found ${rootPages.length} published root pages:`, rootPages);
+          
+          pageIcons = rootPages.map(page => ({
+            id: page.id,
+            path: page.path,
+            label: page.title,
+            title: page.title,
+            icon: page.icon || 'FileText',
+            parent_path: page.parent_path,
+            published: page.published,
+            is_parent: false // Default value, will be updated later
+          }));
+        }
+      } else {
+        // Carica sottopagine per il percorso genitore specificato
+        pageIcons = await loadPublishedPagesAsIcons();
+      }
       
       // Check for elements with children (parent pages)
       if (pageIcons.length > 0) {
@@ -178,18 +211,6 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
           localStorage.setItem(cacheKey, JSON.stringify(iconData));
         } else {
           console.log("No menu icons found either, the menu will be empty.");
-          
-          // Debugging code to check for any published pages
-          const { data: allPages, error: allPagesError } = await supabase
-            .from('custom_pages')
-            .select('id, title, path, parent_path, published');
-          
-          if (!allPagesError && allPages) {
-            console.log("All pages in database:", allPages);
-            console.log("Published pages:", allPages.filter(p => p.published));
-            console.log("Pages with current parent_path:", allPages.filter(p => p.parent_path === parentPath));
-          }
-          
           setIcons([]);
         }
       }
