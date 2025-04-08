@@ -10,6 +10,7 @@ import { PlusCircle, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";
+import ErrorView from "../ErrorView";
 
 interface ManagePagesViewProps {
   pages: PageData[];
@@ -36,82 +37,6 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     console.log("ManagePagesView - pages received from props:", pages.length);
     setLocalPages(pages);
   }, [pages]);
-
-  // Simplified fetch function that doesn't cause loops
-  const fetchPages = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      console.log("ManagePagesView - Fetching pages from database");
-      
-      const { data: pagesData, error: fetchError } = await supabase
-        .from('custom_pages')
-        .select('*');
-      
-      if (fetchError) {
-        console.error("Errore nel recupero delle pagine:", fetchError);
-        throw fetchError;
-      }
-      
-      if (pagesData) {
-        const formattedPages = pagesData.map(page => ({
-          id: page.id,
-          title: page.title,
-          content: page.content,
-          path: page.path,
-          imageUrl: page.image_url,
-          icon: page.icon,
-          listType: page.list_type as "locations" | "activities" | "restaurants" | undefined,
-          listItems: page.list_items as { name: string; description?: string; phoneNumber?: string; mapsUrl?: string; }[] | undefined,
-          isSubmenu: page.is_submenu || false,
-          parentPath: page.parent_path || undefined,
-          pageImages: [],
-          published: page.published,
-          is_parent: false
-        }));
-        
-        // Mark parent pages
-        for (let i = 0; i < formattedPages.length; i++) {
-          const page = formattedPages[i];
-          const hasChildren = formattedPages.some(p => p.parentPath === page.path);
-          
-          if (hasChildren) {
-            formattedPages[i] = { ...page, is_parent: true };
-          }
-        }
-        
-        console.log("ManagePagesView - Pages loaded from database:", formattedPages.length);
-        setLocalPages(formattedPages);
-        onPagesUpdate(formattedPages);
-        toast.success("Pagine aggiornate con successo");
-      } else {
-        console.log("ManagePagesView - No pages data returned from database");
-        setLocalPages([]);
-        onPagesUpdate([]);
-      }
-    } catch (error) {
-      console.error("Errore nel recupero delle pagine:", error);
-      setError("Impossibile recuperare le pagine. Riprova più tardi.");
-      toast.error("Errore nel recupero delle pagine");
-      
-      // Try to use pages from props as fallback
-      if (pages.length > 0) {
-        console.log("Using pages from props as fallback:", pages.length);
-        setLocalPages(pages);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [onPagesUpdate, pages]);
-
-  // Only fetch when there's an explicit refresh request or no pages available
-  useEffect(() => {
-    if (localPages.length === 0 && pages.length === 0) {
-      console.log("ManagePagesView - Initial fetch because no pages are available");
-      fetchPages();
-    }
-  }, [fetchPages, localPages.length, pages.length]);
 
   const handlePageCreated = (newPages: PageData[]) => {
     console.log("ManagePagesView - Page created, new pages count:", newPages.length);
@@ -186,19 +111,13 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
 
   if (error) {
     return (
-      <div className="container mx-auto py-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-xl font-medium text-red-700 mb-2">Errore di connessione</h3>
-          <p className="text-red-600 mb-4">{error}</p>
-          <Button 
-            onClick={fetchPages}
-            className="bg-red-600 hover:bg-red-700"
-          >
-            Riprova
-          </Button>
-        </div>
-      </div>
+      <ErrorView
+        message={error}
+        onRefresh={() => {
+          setError(null);
+          setIsLoading(false);
+        }}
+      />
     );
   }
 
