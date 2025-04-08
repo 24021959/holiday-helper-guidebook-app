@@ -75,6 +75,82 @@ const Menu: React.FC = () => {
     }
   }, []);
   
+  // Funzione per sincronizzare le pagine con le icone del menu
+  const syncPagesToMenuIcons = useCallback(async () => {
+    try {
+      console.log("Sincronizzazione pagine con icone del menu...");
+      
+      // Ottieni tutte le pagine pubblicate
+      const { data: pages, error: pagesError } = await supabase
+        .from('custom_pages')
+        .select('id, title, path, icon, parent_path')
+        .eq('published', true);
+        
+      if (pagesError) {
+        console.error("Errore nel recupero delle pagine:", pagesError);
+        return;
+      }
+      
+      if (!pages || pages.length === 0) {
+        console.log("Nessuna pagina da sincronizzare");
+        return;
+      }
+      
+      // Ottieni tutte le icone del menu
+      const { data: menuIcons, error: iconsError } = await supabase
+        .from('menu_icons')
+        .select('path');
+        
+      if (iconsError) {
+        console.error("Errore nel recupero delle icone del menu:", iconsError);
+        return;
+      }
+      
+      // Crea un set con i percorsi delle icone per una ricerca veloce
+      const iconPaths = new Set(menuIcons?.map(icon => icon.path) || []);
+      
+      // Trova le pagine che non hanno un'icona corrispondente
+      const pagesToSync = pages.filter(page => !iconPaths.has(page.path));
+      
+      if (pagesToSync.length === 0) {
+        console.log("Tutte le pagine sono già sincronizzate");
+        return;
+      }
+      
+      console.log(`Trovate ${pagesToSync.length} pagine da sincronizzare con le icone del menu`);
+      
+      // Crea le nuove icone del menu
+      const newIcons = pagesToSync.map(page => ({
+        label: page.title,
+        path: page.path,
+        icon: page.icon || 'FileText',
+        bg_color: "bg-blue-200",
+        is_submenu: page.parent_path !== null,
+        parent_path: page.parent_path,
+        published: true
+      }));
+      
+      // Inserisci le nuove icone
+      const { error: insertError } = await supabase
+        .from('menu_icons')
+        .insert(newIcons);
+        
+      if (insertError) {
+        console.error("Errore nell'inserimento delle nuove icone:", insertError);
+        return;
+      }
+      
+      console.log(`Sincronizzate con successo ${newIcons.length} pagine`);
+      toast.success(`${newIcons.length} pagine aggiunte al menu`);
+      
+      // Forza l'aggiornamento della vista del menu
+      setRefreshTrigger(prev => prev + 1);
+      
+    } catch (error) {
+      console.error("Errore nella sincronizzazione delle pagine:", error);
+    }
+  }, []);
+  
   const checkForPagesOrIcons = useCallback(async () => {
     try {
       // First try localStorage for cached icons
@@ -107,6 +183,10 @@ const Menu: React.FC = () => {
       
       if (pagesCount && pagesCount > 0) {
         console.log("Numero di pagine pubblicate nel menu principale:", pagesCount);
+        
+        // Sincronizza le pagine con le icone del menu
+        await syncPagesToMenuIcons();
+        
         return pagesCount;
       }
       
@@ -136,7 +216,7 @@ const Menu: React.FC = () => {
       
       return 0;
     }
-  }, [connectionAttempts]);
+  }, [connectionAttempts, syncPagesToMenuIcons]);
   
   useEffect(() => {
     const loadData = async () => {
@@ -145,7 +225,10 @@ const Menu: React.FC = () => {
         await fetchHeaderSettings();
         console.log("Menu - Forzando l'aggiornamento del menu all'avvio");
         
-        // Controlla se ci sono pagine o icone e forza l'aggiornamento a intervalli regolari
+        // Prima sincronizza le pagine con le icone del menu
+        await syncPagesToMenuIcons();
+        
+        // Controlla se ci sono pagine o icone e forza l'aggiornamento
         const count = await checkForPagesOrIcons();
         console.log(`Trovate ${count} icone o pagine nel menu principale`);
         
@@ -181,7 +264,7 @@ const Menu: React.FC = () => {
     };
     
     loadData();
-  }, [fetchHeaderSettings, checkForPagesOrIcons]);
+  }, [fetchHeaderSettings, checkForPagesOrIcons, syncPagesToMenuIcons]);
   
   const handleRefresh = () => {
     console.log("Menu - Refresh manuale attivato");
@@ -190,15 +273,18 @@ const Menu: React.FC = () => {
     setError(null);
     toast.info("Aggiornamento menu in corso...");
     
-    // Ritenta la connessione
-    fetchHeaderSettings().then(() => {
-      checkForPagesOrIcons().then((count) => {
-        if (count > 0) {
-          toast.success("Menu aggiornato con successo");
-        } else {
-          toast.error("Impossibile aggiornare il menu. Riprova più tardi.");
-        }
-        setLoading(false);
+    // Sincronizza le pagine e ricarica il menu
+    syncPagesToMenuIcons().then(() => {
+      // Ritenta la connessione
+      fetchHeaderSettings().then(() => {
+        checkForPagesOrIcons().then((count) => {
+          if (count > 0) {
+            toast.success("Menu aggiornato con successo");
+          } else {
+            toast.error("Impossibile aggiornare il menu. Riprova più tardi.");
+          }
+          setLoading(false);
+        });
       });
     });
   };

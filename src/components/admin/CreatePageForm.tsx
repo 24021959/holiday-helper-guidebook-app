@@ -24,7 +24,6 @@ import { PageMultiImageSection, ImageItem } from "./form/PageMultiImageSection";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageContentSection } from "./form/PageContentSection";
 
-// Form schema validation
 const formSchema = z.object({
   title: z.string().min(1, "Il titolo è obbligatorio"),
   content: z.string().min(1, "Il contenuto è obbligatorio").or(z.literal('')),
@@ -61,7 +60,6 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
     },
   });
 
-  // When page type changes to parent, reset content-related state and disable content tab
   React.useEffect(() => {
     if (pageType === "parent") {
       form.setValue("content", "");
@@ -126,7 +124,6 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         ? formatPageContent(values.content, pageImages)
         : "";
       
-      // Dati pagina
       const pageData = {
         id: pageId,
         title: values.title,
@@ -156,7 +153,6 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
       
       console.log("Pagina inserita con successo:", insertedPage);
       
-      // IMPORTANTE: Creiamo l'icona del menu in modo separato 
       const iconData = {
         label: pageData.title,
         path: pageData.path,
@@ -177,10 +173,25 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
       
       if (iconError) {
         console.error("Errore nell'inserimento dell'icona:", iconError);
-        throw iconError;
+        
+        setTimeout(async () => {
+          try {
+            const { error: retryError } = await supabase
+              .from('menu_icons')
+              .insert(iconData);
+              
+            if (retryError) {
+              console.error("Anche il secondo tentativo di inserimento dell'icona è fallito:", retryError);
+            } else {
+              console.log("Icona inserita con successo al secondo tentativo");
+            }
+          } catch (e) {
+            console.error("Errore nel secondo tentativo di inserimento dell'icona:", e);
+          }
+        }, 1000);
+      } else {
+        console.log("Icona inserita con successo:", insertedIcon);
       }
-      
-      console.log("Icona inserita con successo:", insertedIcon);
       
       const { data: pagesData, error: fetchError } = await supabase
         .from('custom_pages')
@@ -213,7 +224,6 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         toast.success("Pagina creata e aggiunta al menu con successo");
       }
       
-      // Reset form
       form.reset();
       setUploadedImage(null);
       setPageType("normal");
@@ -231,7 +241,6 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
     }
   };
 
-  // Function to check if content tab should be disabled
   const isContentTabDisabled = pageType === "parent";
 
   return (

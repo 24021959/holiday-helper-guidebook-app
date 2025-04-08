@@ -74,7 +74,36 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     }
   }, [parentPath]);
   
-  // Main function to load icons from either menu_icons or published pages
+  // Function to fetch menu icons from menu_icons table
+  const loadMenuIcons = useCallback(async () => {
+    try {
+      console.log("Loading menu icons for parent_path:", parentPath);
+      
+      const { data, error } = await supabase
+        .from('menu_icons')
+        .select('*')
+        .eq('parent_path', parentPath)
+        .eq('published', true);
+        
+      if (error) {
+        console.error("Error loading menu icons:", error);
+        throw error;
+      }
+      
+      if (!data || data.length === 0) {
+        console.log("No menu icons found for parent_path:", parentPath);
+        return [];
+      }
+      
+      console.log(`Found ${data.length} menu icons to display`);
+      return data;
+    } catch (err) {
+      console.error("Error in loadMenuIcons:", err);
+      return [];
+    }
+  }, [parentPath]);
+  
+  // Main function to load icons from both menu_icons and published pages
   const loadIcons = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -97,43 +126,44 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
         }
       }
       
-      // First try to get icons from menu_icons table
-      console.log("Trying to load icons from menu_icons table");
-      const { data: iconData, error: iconError } = await supabase
-        .from('menu_icons')
-        .select('*')
-        .eq('parent_path', parentPath);
+      // Load from both sources
+      const [menuIcons, pageIcons] = await Promise.all([
+        loadMenuIcons(),
+        loadPublishedPagesAsIcons()
+      ]);
       
-      if (iconError) {
-        console.error("Error loading menu icons:", iconError);
-        setHasConnectionError(true);
-        // Continue to try published pages as fallback
-      } else if (iconData && iconData.length > 0) {
-        console.log(`Loaded ${iconData.length} icons from menu_icons table`);
-        setIcons(iconData);
-        localStorage.setItem(cacheKey, JSON.stringify(iconData));
-        setIsLoading(false);
-        return;
-      } else {
-        console.log("No icons found in menu_icons table, trying published pages");
-      }
+      // Combine icons from both sources, using Set to avoid duplicates by path
+      const combinedIconsMap = new Map();
       
-      // If no icons or error, try to load published pages as icons
-      const pageIcons = await loadPublishedPagesAsIcons();
+      // Add menu icons to the map
+      menuIcons.forEach(icon => {
+        combinedIconsMap.set(icon.path, icon);
+      });
       
-      if (pageIcons.length > 0) {
-        console.log(`Using ${pageIcons.length} published pages as menu items`);
-        setIcons(pageIcons);
-        setIsLoading(false);
-        return;
-      }
+      // Add page icons to the map (will overwrite menu icons with same path)
+      pageIcons.forEach(icon => {
+        combinedIconsMap.set(icon.path, icon);
+      });
       
-      // If we got here, we have no icons or pages to display
-      console.log("No icons or published pages found for this menu");
-      setIcons([]);
+      // Convert map back to array
+      const combinedIcons = Array.from(combinedIconsMap.values());
       
-      if (hasConnectionError) {
-        setError("Impossibile connettersi al database. Controlla la tua connessione e riprova.");
+      console.log(`Combined icons from both sources: ${combinedIcons.length} total`);
+      
+      // Sort the icons by label for consistent display
+      combinedIcons.sort((a, b) => {
+        return (a.label || '').localeCompare(b.label || '');
+      });
+      
+      setIcons(combinedIcons);
+      
+      // Save combined icons to cache
+      localStorage.setItem(cacheKey, JSON.stringify(combinedIcons));
+      
+      // Fix: rebuild menu_icons table to ensure all pages have icons
+      if (combinedIcons.length > 0 && pageIcons.length > 0 && menuIcons.length !== pageIcons.length) {
+        console.log("Detected mismatch between menu_icons and pages, syncing...");
+        syncPagesToMenuIcons(pageIcons);
       }
       
     } catch (error) {
@@ -158,7 +188,63 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [parentPath, hasConnectionError, loadPublishedPagesAsIcons]);
+  }, [parentPath, loadMenuIcons, loadPublishedPagesAsIcons]);
+
+  // Function to sync custom_pages to menu_icons
+  const syncPagesToMenuIcons = async (pageIcons: IconData[]) => {
+    try {
+      console.log("Syncing pages to menu_icons...");
+      
+      // Get existing menu icons to avoid duplicates
+      const { data: existingIcons, error: fetchError } = await supabase
+        .from('menu_icons')
+        .select('path');
+        
+      if (fetchError) {
+        console.error("Error fetching existing menu icons:", fetchError);
+        return;
+      }
+      
+      // Create a set of existing paths for quick lookup
+      const existingPaths = new Set(existingIcons?.map(icon => icon.path) || []);
+      
+      // Find page icons that don't have corresponding menu icons
+      const iconsToCreate = pageIcons.filter(icon => !existingPaths.has(icon.path));
+      
+      if (iconsToCreate.length === 0) {
+        console.log("No new icons to sync");
+        return;
+      }
+      
+      console.log(`Found ${iconsToCreate.length} pages without menu icons, creating...`);
+      
+      // Format the icons for insertion into menu_icons
+      const newMenuIcons = iconsToCreate.map(icon => ({
+        label: icon.label,
+        path: icon.path,
+        icon: icon.icon,
+        bg_color: "bg-blue-200",
+        is_submenu: icon.parent_path !== null,
+        parent_path: icon.parent_path,
+        published: true
+      }));
+      
+      // Insert the new menu icons
+      const { error: insertError } = await supabase
+        .from('menu_icons')
+        .insert(newMenuIcons);
+        
+      if (insertError) {
+        console.error("Error inserting new menu icons:", insertError);
+        return;
+      }
+      
+      console.log(`Successfully synced ${newMenuIcons.length} pages to menu_icons`);
+      
+    } catch (error) {
+      console.error("Error in syncPagesToMenuIcons:", error);
+    }
+  };
 
   // Load icons when component mounts or refreshTrigger changes
   useEffect(() => {
