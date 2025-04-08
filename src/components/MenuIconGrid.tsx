@@ -12,6 +12,9 @@ interface MenuIconGridProps {
 const MenuIconGrid: React.FC<MenuIconGridProps> = ({ icons, onIconClick }) => {
   useEffect(() => {
     console.log("MenuIconGrid - Ricevute", icons.length, "icone");
+    if (icons.length > 0) {
+      console.log("MenuIconGrid - Prima icona:", JSON.stringify(icons[0]));
+    }
   }, [icons]);
 
   if (icons.length === 0) {

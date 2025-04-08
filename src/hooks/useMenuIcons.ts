@@ -43,6 +43,8 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
         throw error;
       }
       
+      console.log("Received data from custom_pages:", data);
+      
       if (!data || data.length === 0) {
         console.log("No published pages found for parent_path:", parentPath);
         return [];
@@ -80,6 +82,23 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
       setError(null);
       setHasConnectionError(false);
       
+      // Try to get from cache first for immediate display
+      const cacheKey = `icons_${parentPath || 'root'}`;
+      const cachedIconsStr = localStorage.getItem(cacheKey);
+      let cachedIcons: IconData[] = [];
+      
+      if (cachedIconsStr) {
+        try {
+          cachedIcons = JSON.parse(cachedIconsStr);
+          if (cachedIcons && cachedIcons.length > 0) {
+            console.log(`Using ${cachedIcons.length} cached icons temporarily while loading fresh data`);
+            setIcons(cachedIcons); // Set cached icons immediately for better UX
+          }
+        } catch (err) {
+          console.error("Error parsing cached icons:", err);
+        }
+      }
+      
       // Load icons from published pages
       const pageIcons = await loadPublishedPagesAsIcons();
       
@@ -113,9 +132,9 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
         setIcons(uniqueIcons);
         
         // Save to cache
-        const cacheKey = `icons_${parentPath || 'root'}`;
         localStorage.setItem(cacheKey, JSON.stringify(uniqueIcons));
       } else {
+        console.log("No page icons found, checking for direct menu_icons");
         // Check if there are any direct menu_icons for this parent
         const { data: menuIconsData, error: menuIconsError } = await supabase
           .from('menu_icons')
@@ -156,15 +175,28 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
           }
           
           setIcons(iconData);
+          localStorage.setItem(cacheKey, JSON.stringify(iconData));
         } else {
-          console.log("No menu icons found for parent_path:", parentPath);
+          console.log("No menu icons found either, the menu will be empty.");
+          
+          // Debugging code to check for any published pages
+          const { data: allPages, error: allPagesError } = await supabase
+            .from('custom_pages')
+            .select('id, title, path, parent_path, published');
+          
+          if (!allPagesError && allPages) {
+            console.log("All pages in database:", allPages);
+            console.log("Published pages:", allPages.filter(p => p.published));
+            console.log("Pages with current parent_path:", allPages.filter(p => p.parent_path === parentPath));
+          }
+          
           setIcons([]);
         }
       }
     } catch (error) {
       console.error("Error in loadIcons:", error);
       setHasConnectionError(true);
-      setError("Error loading menu. Try again later.");
+      setError("Errore nel caricamento del menu. Riprova più tardi.");
       
       // Try to use cached icons as a last resort
       const cacheKey = `icons_${parentPath || 'root'}`;
