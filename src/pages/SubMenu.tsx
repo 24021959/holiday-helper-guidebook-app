@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useParams, useNavigate } from "react-router-dom";
@@ -36,78 +36,97 @@ const SubMenu: React.FC = () => {
   const [subPages, setSubPages] = useState<IconData[]>([]);
   const navigate = useNavigate();
   
-  useEffect(() => {
-    const fetchPageDetails = async () => {
-      try {
-        setLoading(true);
+  const fetchData = useCallback(async () => {
+    if (!parentPath) return;
+    
+    try {
+      setLoading(true);
+      const realPath = `/${parentPath}`;
+      
+      // 1. Load parent page details
+      const { data: pageData, error: pageError } = await supabase
+        .from('custom_pages')
+        .select('id, title')
+        .eq('path', realPath)
+        .eq('published', true)
+        .maybeSingle();
         
-        if (parentPath) {
-          const realPath = `/${parentPath}`;
-          console.log("Fetching page details for path:", realPath);
-          
-          // Load parent page details
-          const { data: pageData, error: pageError } = await supabase
-            .from('custom_pages')
-            .select('id, title')
-            .eq('path', realPath)
-            .eq('published', true)
-            .maybeSingle();
+      if (pageError) {
+        console.error("Error loading parent page details:", pageError);
+        setError("Error loading page details");
+      } else if (pageData) {
+        setPageDetails({
+          id: pageData.id,
+          title: pageData.title
+        });
+        console.log("Loaded parent page details:", pageData);
+      } else {
+        console.log("No parent page found for path:", realPath);
+        setError("Parent page not found");
+      }
+      
+      // 2. Load all subpages for this parent
+      const { data: subpages, error: subpagesError } = await supabase
+        .from('custom_pages')
+        .select('id, title, path, icon, parent_path')
+        .eq('parent_path', realPath)
+        .eq('published', true);
+        
+      if (subpagesError) {
+        console.error("Error loading subpages:", subpagesError);
+        setError("Error loading subpages");
+      } else if (subpages && subpages.length > 0) {
+        console.log(`Found ${subpages.length} subpages for parent ${realPath}:`, subpages);
+        
+        // First set the initial subpages
+        const iconData = subpages.map(page => ({
+          id: page.id,
+          path: page.path,
+          label: page.title,
+          icon: page.icon || 'FileText',
+          parent_path: page.parent_path,
+          is_parent: false // Initially assume none are parents
+        }));
+        
+        setSubPages(iconData);
+        
+        // Then check if any of these subpages are themselves parents
+        const updatedIcons = [...iconData];
+        
+        for (let i = 0; i < updatedIcons.length; i++) {
+          const icon = updatedIcons[i];
+          if (icon.path) {
+            const { count, error: countError } = await supabase
+              .from('custom_pages')
+              .select('id', { count: 'exact', head: true })
+              .eq('parent_path', icon.path)
+              .eq('published', true);
             
-          if (pageError) {
-            console.error("Error loading page details:", pageError);
-            setError("Error loading page details");
-          } else if (pageData) {
-            const details = {
-              id: pageData.id,
-              title: pageData.title
-            };
-            
-            setPageDetails(details);
-            console.log("Loaded page details from database:", details);
-          } else {
-            console.log("No page details found for path:", realPath);
-            setError("Page not found");
-          }
-          
-          // Load subpages for this parent
-          const { data: subpages, error: subpagesError } = await supabase
-            .from('custom_pages')
-            .select('id, title, path, icon, parent_path')
-            .eq('parent_path', realPath)
-            .eq('published', true);
-            
-          if (subpagesError) {
-            console.error("Error loading subpages:", subpagesError);
-            setError("Error loading subpages");
-          } else if (subpages && subpages.length > 0) {
-            console.log(`Found ${subpages.length} subpages for parent ${realPath}:`, subpages);
-            
-            // Convert pages to icons for the menu
-            const iconData = subpages.map(page => ({
-              id: page.id,
-              path: page.path,
-              label: page.title,
-              icon: page.icon || 'FileText',
-              parent_path: page.parent_path,
-              is_parent: false // Assume subpages are not parents themselves
-            }));
-            
-            setSubPages(iconData);
-          } else {
-            console.log("No subpages found for parent:", realPath);
-            setSubPages([]);
+            if (!countError && count !== null && count > 0) {
+              console.log(`Subpage ${icon.path} has ${count} children, marking as parent`);
+              updatedIcons[i] = { ...icon, is_parent: true };
+            }
           }
         }
-      } catch (error) {
-        console.error("Error loading data:", error);
-        setError("Error loading data");
-      } finally {
-        setLoading(false);
+        
+        // Update with parent information
+        setSubPages(updatedIcons);
+        
+      } else {
+        console.log("No subpages found for parent:", realPath);
+        setSubPages([]);
       }
-    };
-    
-    fetchPageDetails();
-  }, [parentPath, refreshTrigger]);
+    } catch (error) {
+      console.error("Error loading data:", error);
+      setError("Error loading data");
+    } finally {
+      setLoading(false);
+    }
+  }, [parentPath]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData, refreshTrigger]);
 
   const handleRefresh = () => {
     setError(null);

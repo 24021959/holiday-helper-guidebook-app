@@ -60,24 +60,24 @@ const IconNav: React.FC<IconNavProps> = ({
         // Extract path without initial slash for the URL parameter
         const pathParam = icon.path.startsWith('/') ? icon.path.substring(1) : icon.path;
         navigate(`/submenu/${pathParam}`);
-      } else {
-        // For regular pages without submenu, check if it's a regular page or dynamic page
-        const isReservedPath = ['/menu', '/admin', '/home', '/login'].includes(icon.path);
-        
-        if (isReservedPath) {
-          // For reserved system pages, navigate directly to those routes
-          console.log("Navigation to system page:", icon.path);
-          navigate(icon.path);
-        } else {
-          // For dynamic pages, navigate to the direct path with parent path in state
-          console.log("Navigation to dynamic content page:", icon.path);
-          navigate(icon.path, { 
-            state: { 
-              parentPath: parentPath 
-            } 
-          });
-        }
+        return;
       }
+      
+      // For system routes, navigate directly
+      const systemRoutes = ['/menu', '/admin', '/home', '/login', '/welcome'];
+      if (systemRoutes.includes(icon.path)) {
+        console.log("Navigation to system route:", icon.path);
+        navigate(icon.path);
+        return;
+      }
+      
+      // For content pages, navigate to dynamic page route with state
+      console.log("Navigation to content page:", icon.path);
+      navigate(`/page${icon.path}`, { 
+        state: { 
+          parentPath: parentPath 
+        } 
+      });
     } catch (error) {
       console.error("Navigation error:", error);
     }
