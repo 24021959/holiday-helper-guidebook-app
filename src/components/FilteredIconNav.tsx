@@ -34,7 +34,7 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
 
   // Carica direttamente tutte le pagine dalla tabella custom_pages
   useEffect(() => {
-    const loadIcons = async () => {
+    const loadPages = async () => {
       try {
         setIsLoading(true);
         setError(null);
@@ -70,35 +70,16 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
           }));
           
           setIcons(iconData);
-          
-          // Salva in cache per caricamento rapido in futuro
-          const cacheKey = `icons_${parentPath || 'root'}`;
-          localStorage.setItem(cacheKey, JSON.stringify(iconData));
         }
       } catch (error) {
         console.error("Errore nel caricamento delle icone:", error);
         setError("Errore nel caricamento del menu. Riprova più tardi.");
-        
-        // Prova a usare cache come fallback
-        const cacheKey = `icons_${parentPath || 'root'}`;
-        const cachedIconsStr = localStorage.getItem(cacheKey);
-        if (cachedIconsStr) {
-          try {
-            const cachedIcons = JSON.parse(cachedIconsStr);
-            if (cachedIcons && cachedIcons.length > 0) {
-              console.log(`Utilizzo ${cachedIcons.length} icone in cache come fallback`);
-              setIcons(cachedIcons);
-            }
-          } catch (err) {
-            console.error("Errore parsing icone in cache:", err);
-          }
-        }
       } finally {
         setIsLoading(false);
       }
     };
     
-    loadIcons();
+    loadPages();
   }, [parentPath, refreshTrigger]);
 
   const handleRefresh = () => {

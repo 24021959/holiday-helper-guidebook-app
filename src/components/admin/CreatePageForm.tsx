@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
@@ -134,8 +135,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         is_submenu: pageType === "submenu",
         parent_path: pageType === "submenu" ? parentPath : null,
         list_type: listType,
-        list_items: listType && locationItems.length > 0 ? locationItems : null,
-        published: true // Tutte le pagine sono automaticamente pubblicate
+        list_items: listType && locationItems.length > 0 ? locationItems : null
       };
       
       console.log("Dati pagina per inserimento:", pageData);
@@ -175,14 +175,16 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
           listItems: page.list_items as { name: string; description?: string; phoneNumber?: string; mapsUrl?: string; }[] | undefined,
           isSubmenu: page.is_submenu || false,
           parentPath: page.parent_path || undefined,
-          pageImages: [],
-          published: true // Tutte le pagine sono pubblicate per impostazione predefinita
+          pageImages: []
         }));
         
         onPageCreated(formattedPages);
         
         console.log("Lista pagine aggiornata:", formattedPages);
         toast.success("Pagina creata con successo");
+        
+        // Messaggio per istruire l'utente
+        toast.info("Vai alla pagina menu per vedere le nuove pagine");
       }
       
       // Reset form
