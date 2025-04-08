@@ -1,78 +1,24 @@
+
 import React, { useEffect, useState, useCallback } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import TranslatedText from "@/components/TranslatedText";
-import { toast } from "sonner";
 import FilteredIconNav from "@/components/FilteredIconNav";
-
-interface HeaderSettings {
-  logoUrl?: string | null;
-  headerColor?: string;
-  establishmentName?: string | null;
-}
+import LoadingView from "@/components/LoadingView";
+import ErrorView from "@/components/ErrorView";
+import { useHeaderSettings } from "@/hooks/useHeaderSettings";
+import { toast } from "sonner";
 
 const Menu: React.FC = () => {
-  const [headerSettings, setHeaderSettings] = useState<HeaderSettings>({});
+  const { headerSettings, loading: headerLoading, error: headerError, refreshHeaderSettings } = useHeaderSettings();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
   const navigate = useNavigate();
-  
-  const fetchHeaderSettings = useCallback(async () => {
-    try {
-      // First try to get from localStorage as immediate fallback
-      const savedHeaderSettings = localStorage.getItem("headerSettings");
-      let localSettings = null;
-      
-      if (savedHeaderSettings) {
-        try {
-          localSettings = JSON.parse(savedHeaderSettings);
-          setHeaderSettings(localSettings);
-          console.log("Using cached header settings:", localSettings);
-        } catch (err) {
-          console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
-        }
-      }
-      
-      // Then try to get from Supabase
-      const { data, error } = await supabase
-        .from('header_settings')
-        .select('*')
-        .limit(1)
-        .maybeSingle();
-        
-      if (error) {
-        console.warn("Errore nel caricamento delle impostazioni header:", error);
-        
-        // If we already set from localStorage, don't show error
-        if (localSettings) return;
-        
-        setError("Impossibile connettersi al database. Controlla la tua connessione e riprova.");
-        return;
-      }
-      
-      if (data) {
-        const newSettings = {
-          logoUrl: data.logo_url,
-          headerColor: data.header_color,
-          establishmentName: data.establishment_name
-        };
-        
-        setHeaderSettings(newSettings);
-        
-        // Salva in localStorage come backup
-        localStorage.setItem("headerSettings", JSON.stringify(newSettings));
-      }
-    } catch (error) {
-      console.error("Errore nel caricamento delle impostazioni header:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
   
   // Funzione migliorata per sincronizzare le pagine con le icone del menu
   const syncPagesToMenuIcons = useCallback(async () => {
@@ -152,9 +98,6 @@ const Menu: React.FC = () => {
         toast.success(`${newIcons.length} pagine aggiunte al menu`);
       }
       
-      // Forza l'aggiornamento della vista del menu
-      setRefreshTrigger(prev => prev + 1);
-      
     } catch (error) {
       console.error("Errore nella sincronizzazione delle pagine:", error);
     }
@@ -162,7 +105,7 @@ const Menu: React.FC = () => {
   
   const checkForPagesOrIcons = useCallback(async () => {
     try {
-      // First try localStorage for cached icons
+      // Prima prova localStorage per icone in cache
       const cachedIcons = localStorage.getItem("icons_root");
       if (cachedIcons) {
         try {
@@ -177,8 +120,8 @@ const Menu: React.FC = () => {
         }
       }
       
-      // Try to check for published pages directly
-      console.log("Checking for published pages");
+      // Prova a verificare la presenza di pagine pubblicate direttamente
+      console.log("Verifica pagine pubblicate");
       const { count: pagesCount, error: pagesError } = await supabase
         .from('custom_pages')
         .select('*', { count: 'exact', head: true })
@@ -199,7 +142,7 @@ const Menu: React.FC = () => {
         return pagesCount;
       }
       
-      // If no published pages, try menu_icons table
+      // Se non ci sono pagine pubblicate, prova la tabella menu_icons
       const { count: iconsCount, error: iconsError } = await supabase
         .from('menu_icons')
         .select('*', { count: 'exact', head: true })
@@ -231,7 +174,6 @@ const Menu: React.FC = () => {
     const loadData = async () => {
       try {
         setLoading(true);
-        await fetchHeaderSettings();
         console.log("Menu - Forzando l'aggiornamento del menu all'avvio");
         
         // Prima sincronizza forzatamente tutte le pagine con le icone del menu
@@ -283,7 +225,7 @@ const Menu: React.FC = () => {
     };
     
     loadData();
-  }, [fetchHeaderSettings, checkForPagesOrIcons, syncPagesToMenuIcons]);
+  }, [refreshHeaderSettings, checkForPagesOrIcons, syncPagesToMenuIcons]);
   
   const handleRefresh = () => {
     console.log("Menu - Refresh manuale attivato");
@@ -297,7 +239,7 @@ const Menu: React.FC = () => {
       // Attendi un po' per dare tempo al database di aggiornare
       setTimeout(() => {
         // Ritenta la connessione
-        fetchHeaderSettings().then(() => {
+        refreshHeaderSettings().then(() => {
           checkForPagesOrIcons().then((count) => {
             if (count > 0) {
               toast.success("Menu aggiornato con successo");
@@ -311,15 +253,8 @@ const Menu: React.FC = () => {
     });
   };
   
-  if (loading) {
-    return (
-      <div className="flex flex-col h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100">
-        <Loader2 className="h-12 w-12 text-emerald-600 animate-spin" />
-        <p className="mt-4 text-emerald-700">
-          <TranslatedText text="Caricamento menu..." />
-        </p>
-      </div>
-    );
+  if (loading || headerLoading) {
+    return <LoadingView message="Caricamento menu..." fullScreen={true} />;
   }
 
   return (
@@ -334,29 +269,13 @@ const Menu: React.FC = () => {
       
       {/* Contenitore principale con icone che occupa tutto lo spazio disponibile */}
       <div className="flex-1 flex flex-col overflow-auto">
-        {error ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="bg-white p-6 rounded-lg shadow-md text-center max-w-md">
-              <p className="text-red-500 mb-4">
-                <TranslatedText text={error} />
-              </p>
-              <div className="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-2">
-                <button 
-                  onClick={handleRefresh}
-                  className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 flex items-center justify-center"
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  <TranslatedText text="Riprova" />
-                </button>
-                <button 
-                  onClick={() => window.location.reload()}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-                >
-                  <TranslatedText text="Ricarica pagina" />
-                </button>
-              </div>
-            </div>
-          </div>
+        {error || headerError ? (
+          <ErrorView 
+            message={error || headerError || "Errore di caricamento"}
+            onRefresh={handleRefresh}
+            onAlternativeAction={() => window.location.reload()}
+            alternativeActionText="Ricarica pagina"
+          />
         ) : (
           <FilteredIconNav 
             parentPath={null} 
