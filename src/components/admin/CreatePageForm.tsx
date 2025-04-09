@@ -24,6 +24,9 @@ import { PageIconSection } from "./form/PageIconSection";
 import { PageMultiImageSection, ImageItem } from "./form/PageMultiImageSection";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageContentSection } from "./form/PageContentSection";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Languages, Globe } from "lucide-react";
 
 const formSchema = z.object({
   title: z.string().min(1, "Il titolo è obbligatorio"),
@@ -52,6 +55,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
   const [currentTab, setCurrentTab] = useState<string>("content");
   const [isCreating, setIsCreating] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [autoTranslate, setAutoTranslate] = useState(false);
   const { translatePage } = useTranslation();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -140,7 +144,6 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         list_type: listType,
         list_items: listType && locationItems.length > 0 ? locationItems : null,
         published: true
-        // Removed the language field since it doesn't exist in the database
       };
       
       console.log("Dati pagina per inserimento:", pageData);
@@ -179,8 +182,63 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         }
       }
       
-      // Remove the automatic translation section since it uses the language field
-      // and we're now only creating the page in Italian
+      // Se è stato richiesto di tradurre automaticamente
+      if (autoTranslate && pageType !== "parent") {
+        setIsTranslating(true);
+        toast.info("Traduzione della pagina in corso...");
+        
+        // Lista delle lingue da tradurre
+        const languagesToTranslate = ['en', 'fr', 'es', 'de'];
+        
+        for (const lang of languagesToTranslate) {
+          try {
+            console.log(`Traduzione della pagina in ${lang}...`);
+            
+            // Utilizziamo il contesto di traduzione per tradurre il contenuto
+            const translatedData = await translatePage(formattedContent, values.title);
+            
+            // Creiamo un nuovo ID per la pagina tradotta
+            const translatedPageId = uuidv4();
+            
+            // Creiamo il percorso per la pagina tradotta (aggiungiamo il codice lingua)
+            const langPathPrefix = lang !== 'it' ? `/${lang}` : '';
+            const translatedPath = `${langPathPrefix}${finalPath}`;
+            
+            // Dati per la pagina tradotta
+            const translatedPageData = {
+              id: translatedPageId,
+              title: translatedData.title,
+              content: translatedData.content,
+              path: translatedPath,
+              image_url: pageType !== "parent" ? uploadedImage : null,
+              icon: values.icon || selectedIcon,
+              is_submenu: pageType === "submenu",
+              parent_path: pageType === "submenu" ? parentPath : null,
+              list_type: listType,
+              list_items: listType && locationItems.length > 0 ? locationItems : null,
+              published: true
+            };
+            
+            console.log(`Inserimento pagina tradotta in ${lang}:`, translatedPageData);
+            
+            // Inseriamo la pagina tradotta nel database
+            const { error: translationError } = await supabase
+              .from('custom_pages')
+              .insert(translatedPageData);
+            
+            if (translationError) {
+              console.error(`Errore nell'inserimento della pagina tradotta in ${lang}:`, translationError);
+              toast.error(`Errore nella traduzione in ${lang}`);
+            } else {
+              console.log(`Pagina tradotta in ${lang} inserita con successo`);
+              toast.success(`Pagina tradotta in ${lang} creata`);
+            }
+          } catch (translationError) {
+            console.error(`Errore nella traduzione in ${lang}:`, translationError);
+            toast.error(`Errore nella traduzione in ${lang}`);
+          }
+        }
+      }
       
       const { data: pagesData, error: fetchError } = await supabase
         .from('custom_pages')
@@ -206,7 +264,6 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
           pageImages: [],
           published: page.published || false,
           is_parent: pageType === "parent"
-          // Removed language field
         }));
         
         onPageCreated(formattedPages);
@@ -214,7 +271,11 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         console.log("Lista pagine aggiornata:", formattedPages);
         toast.success("Pagina creata con successo");
         
-        toast.info("Vai alla pagina menu per vedere le nuove pagine");
+        if (autoTranslate) {
+          toast.info("Traduzioni completate. Vai alla pagina menu per vedere tutte le pagine");
+        } else {
+          toast.info("Vai alla pagina menu per vedere le nuove pagine");
+        }
       }
       
       form.reset();
@@ -225,6 +286,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
       setListType(undefined);
       setSelectedIcon("FileText");
       setPageImages([]);
+      setAutoTranslate(false);
       
     } catch (error) {
       console.error("Errore nella creazione della pagina:", error);
@@ -323,12 +385,25 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
             </div>
           )}
           
+          {!isContentTabDisabled && (
+            <div className="flex items-center space-x-2 bg-blue-50 p-4 rounded-md border border-blue-100">
+              <Switch
+                id="auto-translate"
+                checked={autoTranslate}
+                onCheckedChange={setAutoTranslate}
+              />
+              <Label htmlFor="auto-translate" className="flex items-center gap-2 cursor-pointer">
+                <Globe className="h-4 w-4 text-blue-600" />
+                <span className="text-blue-800 font-medium">Crea automaticamente versioni tradotte (EN, FR, ES, DE)</span>
+              </Label>
+            </div>
+          )}
+          
           <Button type="submit" className="w-full" disabled={isCreating || isTranslating}>
-            {isCreating ? "Creazione in corso..." : "Crea pagina"}
+            {isCreating ? "Creazione in corso..." : isTranslating ? "Traduzione in corso..." : "Crea pagina"}
           </Button>
         </form>
       </Form>
     </>
   );
 };
-
