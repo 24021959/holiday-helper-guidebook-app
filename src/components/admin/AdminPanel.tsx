@@ -74,7 +74,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         <TabsContent value="create-page" className="mt-0">
           <CreatePageForm
             parentPages={parentPages}
-            handlePageCreated={handlePageCreated}
+            onPageCreated={handlePageCreated}
             keywordToIconMap={keywordToIconMap}
           />
         </TabsContent>
@@ -83,6 +83,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           <ManagePagesView
             pages={pages}
             onPagesUpdate={handlePagesUpdate}
+            parentPages={parentPages}
+            keywordToIconMap={keywordToIconMap}
           />
         </TabsContent>
 

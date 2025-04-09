@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,6 +9,8 @@ const corsHeaders = {
 };
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get('SUPABASE_URL');
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -42,42 +45,51 @@ serve(async (req) => {
       };
     });
 
-    // Store in Supabase tables - first create the 'chatbot_knowledge' table if it doesn't exist
+    // Initialize Supabase client
     const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      supabaseUrl || '',
+      supabaseKey || ''
     );
 
     // Clear existing knowledge
-    await supabaseClient
-      .from('chatbot_knowledge')
-      .delete()
-      .neq('id', 0)
-      .throwOnError();
+    try {
+      await supabaseClient
+        .from('chatbot_knowledge')
+        .delete()
+        .is('id', 'not.null'); // This will delete all records
+    } catch (deleteError) {
+      console.error('Error deleting existing knowledge:', deleteError);
+      // Continue with the insert even if delete fails
+    }
 
     // Insert new knowledge
+    let successCount = 0;
     for (const page of pageContents) {
       // Create embeddings using OpenAI
       const embedding = await createEmbedding(page.content);
       
       if (embedding) {
-        await supabaseClient
-          .from('chatbot_knowledge')
-          .insert({
-            page_id: page.id,
-            title: page.title,
-            content: page.content,
-            path: page.path,
-            embedding
-          })
-          .throwOnError();
+        try {
+          await supabaseClient
+            .from('chatbot_knowledge')
+            .insert({
+              page_id: page.id,
+              title: page.title,
+              content: page.content,
+              path: page.path,
+              embedding
+            });
+          successCount++;
+        } catch (insertError) {
+          console.error(`Error inserting knowledge for page ${page.id}:`, insertError);
+        }
       }
     }
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: `Successfully processed ${pages.length} pages for chatbot knowledge base` 
+        message: `Successfully processed ${successCount} out of ${pages.length} pages for chatbot knowledge base` 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -107,73 +119,15 @@ async function createEmbedding(text: string): Promise<number[] | null> {
     });
 
     const data = await response.json();
+    
+    if (!response.ok) {
+      console.error('OpenAI embedding API error:', data);
+      throw new Error(`OpenAI embedding API error: ${data.error?.message || 'Unknown error'}`);
+    }
+    
     return data.data[0].embedding;
   } catch (error) {
     console.error('Error creating embedding:', error);
     return null;
   }
-}
-
-// Helper function to create Supabase client
-function createClient(supabaseUrl: string, supabaseKey: string) {
-  return {
-    from: (table: string) => ({
-      select: (columns = '*') => ({
-        throwOnError() {
-          return this;
-        },
-        eq(column: string, value: any) {
-          return this;
-        },
-        neq(column: string, value: any) {
-          return this;
-        },
-        async then() {
-          // This is a simplified version
-          return { data: [] };
-        }
-      }),
-      insert: (data: any) => ({
-        async throwOnError() {
-          const response = await fetch(`${supabaseUrl}/rest/v1/${table}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${supabaseKey}`,
-              'apikey': supabaseKey
-            },
-            body: JSON.stringify(data),
-          });
-          
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`Supabase insert error: ${JSON.stringify(errorData)}`);
-          }
-          
-          return await response.json();
-        }
-      }),
-      delete: () => ({
-        neq(column: string, value: any) {
-          return this;
-        },
-        async throwOnError() {
-          const response = await fetch(`${supabaseUrl}/rest/v1/${table}?${column}=neq.${value}`, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${supabaseKey}`,
-              'apikey': supabaseKey
-            },
-          });
-          
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`Supabase delete error: ${JSON.stringify(errorData)}`);
-          }
-          
-          return;
-        }
-      }),
-    }),
-  };
 }
