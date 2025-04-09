@@ -59,15 +59,38 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [localPages, setLocalPages] = useState<PageData[]>(pages);
   const [activeTab, setActiveTab] = useState<string>("list");
-  const [showAllTranslations, setShowAllTranslations] = useState(false);
   
-  // Raggruppa le pagine per percorso base per la visualizzazione compatta
+  // Raggruppa le pagine per percorso base
   const groupedPages = groupPagesByBasePath(localPages);
   
   // Ottieni solo le pagine principali (in italiano o senza prefisso lingua)
-  const primaryPages = localPages.filter(page => {
-    const langPrefix = getLanguagePrefix(page.path);
-    return langPrefix === null || langPrefix === 'it';
+  const mainPages: PageData[] = [];
+  
+  // Identifichiamo una pagina rappresentante per ogni gruppo
+  Object.keys(groupedPages).forEach(normalizedPath => {
+    const pagesInGroup = groupedPages[normalizedPath];
+    
+    // Cerca prima una versione italiana
+    const italianPage = pagesInGroup.find(p => {
+      const langPrefix = getLanguagePrefix(p.path);
+      return langPrefix === 'it';
+    });
+    
+    // Se esiste la versione italiana, usa quella
+    if (italianPage) {
+      mainPages.push(italianPage);
+    } 
+    // Altrimenti, cerca una versione senza prefisso di lingua
+    else {
+      const noLangPage = pagesInGroup.find(p => !getLanguagePrefix(p.path));
+      if (noLangPage) {
+        mainPages.push(noLangPage);
+      } 
+      // Come ultima risorsa, usa la prima pagina disponibile nel gruppo
+      else if (pagesInGroup.length > 0) {
+        mainPages.push(pagesInGroup[0]);
+      }
+    }
   });
 
   // Use pages from props directly and avoid extra fetching
@@ -97,34 +120,48 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     try {
       setIsLoading(true);
       
-      const { error: pageError } = await supabase
-        .from('custom_pages')
-        .delete()
-        .eq('id', pageId);
-      
-      if (pageError) {
-        console.error("Errore nella cancellazione della pagina:", pageError);
-        throw pageError;
+      // Prima ottieni i dettagli della pagina che stiamo eliminando
+      const pageToDelete = localPages.find(p => p.id === pageId);
+      if (!pageToDelete) {
+        throw new Error("Pagina non trovata");
       }
       
-      const pageToDelete = localPages.find(p => p.id === pageId);
-      if (pageToDelete) {
-        console.log("Deleting menu icon for path:", pageToDelete.path);
-        const { error: iconError } = await supabase
-          .from('menu_icons')
-          .delete()
-          .eq('path', pageToDelete.path);
-        
-        if (iconError) {
-          console.error("Errore nella cancellazione dell'icona:", iconError);
-        }
+      // Ottieni il percorso normalizzato della pagina
+      const normalizedPath = normalizePath(pageToDelete.path);
+      
+      // Trova tutte le pagine correlate (traduzioni)
+      const relatedPages = localPages.filter(p => normalizePath(p.path) === normalizedPath);
+      const relatedPageIds = relatedPages.map(p => p.id);
+      const relatedPaths = relatedPages.map(p => p.path);
+      
+      console.log(`Eliminazione della pagina e delle sue traduzioni:`, relatedPaths);
+      
+      // Elimina tutte le pagine correlate
+      const { error: pagesError } = await supabase
+        .from('custom_pages')
+        .delete()
+        .in('id', relatedPageIds);
+      
+      if (pagesError) {
+        console.error("Errore nella cancellazione delle pagine:", pagesError);
+        throw pagesError;
+      }
+      
+      // Elimina le voci di menu corrispondenti
+      const { error: iconsError } = await supabase
+        .from('menu_icons')
+        .delete()
+        .in('path', relatedPaths);
+      
+      if (iconsError) {
+        console.error("Errore nella cancellazione delle icone:", iconsError);
       }
       
       // Update local state after successful deletion
-      const updatedPages = localPages.filter(p => p.id !== pageId);
+      const updatedPages = localPages.filter(p => !relatedPageIds.includes(p.id));
       setLocalPages(updatedPages);
       onPagesUpdate(updatedPages);
-      toast.success("Pagina eliminata con successo");
+      toast.success("Pagina e tutte le sue traduzioni eliminate con successo");
       
     } catch (error) {
       console.error("Errore nella cancellazione della pagina:", error);
@@ -196,24 +233,13 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
           ) : (
             <>
               <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center">
-                  <Button 
-                    variant={showAllTranslations ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setShowAllTranslations(!showAllTranslations)}
-                    className="mr-2"
-                  >
-                    <Languages className="h-4 w-4 mr-2" />
-                    {showAllTranslations ? "Nascondi traduzioni" : "Mostra tutte le traduzioni"}
-                  </Button>
-                </div>
                 <div className="text-sm text-gray-500">
-                  {localPages.length} pagine totali
+                  {mainPages.length} pagine principali, {localPages.length} pagine totali con traduzioni
                 </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {localPages.length === 0 ? (
+                {mainPages.length === 0 ? (
                   <div className="col-span-full bg-amber-50 border border-amber-200 rounded-lg p-6 text-center">
                     <p className="text-amber-700 mb-4">Nessuna pagina creata finora</p>
                     <Button 
@@ -229,29 +255,23 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
                     </Button>
                   </div>
                 ) : (
-                  showAllTranslations ? (
-                    // Mostra tutte le pagine, incluse le traduzioni
-                    localPages.map((page) => (
+                  // Mostra una card per ogni gruppo di pagine (pagina principale + traduzioni)
+                  mainPages.map((page) => {
+                    // Trova tutte le traduzioni per questa pagina
+                    const normalizedPath = normalizePath(page.path);
+                    const translations = groupedPages[normalizedPath] || [];
+                    
+                    return (
                       <PageListItem
                         key={page.id}
                         page={page}
+                        translations={translations}
                         onEdit={handleEditPage}
                         onDelete={handlePageDelete}
                         onPreview={handlePagePreview}
                       />
-                    ))
-                  ) : (
-                    // Mostra solo le pagine in italiano (versione compatta)
-                    primaryPages.map((page) => (
-                      <PageListItem
-                        key={page.id}
-                        page={page}
-                        onEdit={handleEditPage}
-                        onDelete={handlePageDelete}
-                        onPreview={handlePagePreview}
-                      />
-                    ))
-                  )
+                    );
+                  })
                 )}
               </div>
             </>

@@ -229,8 +229,13 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
     pageTitle: string,
     targetLangs: Language[]
   ): Promise<Record<Language, {title: string, content: string}>> => {
+    // Inizializziamo il risultato con tutte le lingue come vuote
     const results: Record<Language, {title: string, content: string}> = {
-      it: { title: pageTitle, content: pageContent } // Versione italiana originale
+      it: { title: pageTitle, content: pageContent }, // Versione italiana originale
+      en: { title: "", content: "" },
+      fr: { title: "", content: "" },
+      es: { title: "", content: "" },
+      de: { title: "", content: "" }
     };
     
     // Traduci il contenuto una lingua alla volta
@@ -240,15 +245,11 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
           console.log(`Traduzione in corso per ${languageMap[lang]}...`);
           toast.info(`Traduzione in corso: ${languageMap[lang]}`);
           
-          // Memorizza temporaneamente la lingua corrente
-          const originalLang = language;
-          
-          // Imposta temporaneamente la lingua target
-          // Nota: questo non influisce sull'interfaccia utente, solo sulle API calls
-          const currentLang = lang;
+          // Ottieni l'URL e la chiave di Supabase in modo sicuro
+          const supabaseServiceUrl = `${supabase.supabaseUrl}/functions/v1/translate`;
           
           // Translate title first
-          const translatedTitle = await fetch(`${supabase.supabaseUrl}/functions/v1/translate`, {
+          const titleResponse = await fetch(supabaseServiceUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -256,9 +257,12 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
             },
             body: JSON.stringify({ 
               text: pageTitle, 
-              targetLang: languageMap[currentLang]
+              targetLang: languageMap[lang]
             })
-          }).then(res => res.json()).then(data => data.translatedText || pageTitle);
+          });
+          
+          const titleData = await titleResponse.json();
+          const translatedTitle = titleData.translatedText || pageTitle;
           
           // Translate content
           let translatedContent: string;
@@ -275,7 +279,7 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
                 continue;
               }
               
-              const result = await fetch(`${supabase.supabaseUrl}/functions/v1/translate`, {
+              const sectionResponse = await fetch(supabaseServiceUrl, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -283,18 +287,19 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
                 },
                 body: JSON.stringify({ 
                   text: section, 
-                  targetLang: languageMap[currentLang]
+                  targetLang: languageMap[lang]
                 })
-              }).then(res => res.json());
+              });
               
-              translatedSections.push(result.translatedText || section);
+              const sectionData = await sectionResponse.json();
+              translatedSections.push(sectionData.translatedText || section);
             }
             
             // Rejoin with proper spacing
             translatedContent = translatedSections.join('\n\n');
           } else {
             // Content is small enough for a direct translation
-            const result = await fetch(`${supabase.supabaseUrl}/functions/v1/translate`, {
+            const contentResponse = await fetch(supabaseServiceUrl, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -302,11 +307,12 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
               },
               body: JSON.stringify({ 
                 text: pageContent, 
-                targetLang: languageMap[currentLang]
+                targetLang: languageMap[lang]
               })
-            }).then(res => res.json());
+            });
             
-            translatedContent = result.translatedText || pageContent;
+            const contentData = await contentResponse.json();
+            translatedContent = contentData.translatedText || pageContent;
           }
           
           // Store the result for this language
