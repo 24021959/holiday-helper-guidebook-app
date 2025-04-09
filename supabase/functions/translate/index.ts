@@ -31,11 +31,11 @@ serve(async (req) => {
       console.log(`Processing bulk translation request with ${bulkTranslation.length} items to ${targetLang}`);
       
       // Instruction for the model to translate a batch of texts
-      const systemPrompt = `Sei un traduttore professionale specializzato nella traduzione di contenuti web.
-      Traduci accuratamente ciascuno dei seguenti testi dall'italiano a ${targetLang}.
-      Mantieni la formattazione originale, inclusi eventuali tag HTML.
-      Assicurati che la traduzione suoni naturale e sia adatta al contesto web.
-      Rispondi con un array JSON di testi tradotti nello stesso ordine dell'input.`;
+      const systemPrompt = `You are a professional translator specializing in translating web content.
+      Translate each of the following texts from Italian to ${targetLang} accurately.
+      Maintain the original formatting, including any HTML tags.
+      Ensure the translation sounds natural and is appropriate for web context.
+      Respond with a JSON array of translated texts in the same order as the input.`;
       
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -85,9 +85,14 @@ serve(async (req) => {
       }
     } else {
       // Handle single text translation (original functionality)
-      // Instruction for the model to translate
-      const systemPrompt = `Sei un traduttore professionale. Traduci il seguente testo dall'italiano a ${targetLang}. 
-      Rispondi solo con la traduzione, nient'altro. Assicurati che la traduzione suoni naturale e sia adatta al contesto.`;
+      // Istruzioni specifiche per il modello di traduzione
+      const systemPrompt = `Sei un traduttore professionale.
+      La tua unica attività è tradurre il seguente testo dall'italiano a ${targetLang}.
+      Non aggiungere nessuna informazione, commento o spiegazione.
+      Restituisci solo il testo tradotto, mantenendo la formattazione originale come capoversi e punti elenco.
+      Se ci sono tag HTML o Markdown nel testo, mantienili esattamente come sono nel testo originale.
+      Se ci sono nomi propri o termini specifici, mantienili come sono senza tradurli.
+      Assicurati che la traduzione sia naturale e fluida nella lingua di destinazione.`;
       
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',

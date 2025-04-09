@@ -235,7 +235,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
             }
             
             // Creiamo anche l'icona del menu tradotta se necessario
-            if ((pageType === "normal" || pageType === "parent") && lang !== 'it') {
+            if (pageType === "normal" || pageType === "parent") {
               const translatedMenuIconData = {
                 id: uuidv4(),
                 path: translatedPath,
@@ -285,7 +285,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
           parentPath: page.parent_path || undefined,
           pageImages: [],
           published: page.published || false,
-          is_parent: false // Modifica qui: rimuoviamo il confronto diretto
+          is_parent: false
         }));
         
         onPageCreated(formattedPages);
@@ -319,7 +319,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
     }
   };
 
-  // Corretto il bug: isContentTabDisabled = pageType === "parent"
+  // Questo è un valore booleano, quindi usiamo un confronto corretto
   const isContentTabDisabled = pageType === "parent";
 
   return (
