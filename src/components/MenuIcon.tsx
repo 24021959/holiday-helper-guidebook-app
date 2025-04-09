@@ -34,9 +34,11 @@ const MenuIcon: React.FC<MenuIconProps> = ({ icon, index, onClick }) => {
         <IconRenderer iconName={icon.icon} />
       </div>
       <span className="text-center text-gray-700 font-medium text-lg">
-        <TranslatedText text={icon.title || icon.label || ""} />
+        <TranslatedText 
+          text={icon.title || icon.label || ""} 
+          showLoadingState={true}
+        />
       </span>
-      {/* Removed the "Contiene sottopagine" text indicator */}
     </div>
   );
 };

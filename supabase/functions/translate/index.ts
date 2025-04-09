@@ -31,10 +31,11 @@ serve(async (req) => {
       console.log(`Processing bulk translation request with ${bulkTranslation.length} items to ${targetLang}`);
       
       // Instruction for the model to translate a batch of texts
-      const systemPrompt = `You are a professional translator specializing in website content. 
-      Translate each of the following texts from Italian to ${targetLang}. 
-      Maintain proper formatting including any HTML tags. 
-      Respond with a JSON array of translated texts in the exact same order as the input.`;
+      const systemPrompt = `Sei un traduttore professionale specializzato nella traduzione di contenuti web.
+      Traduci accuratamente ciascuno dei seguenti testi dall'italiano a ${targetLang}.
+      Mantieni la formattazione originale, inclusi eventuali tag HTML.
+      Assicurati che la traduzione suoni naturale e sia adatta al contesto web.
+      Rispondi con un array JSON di testi tradotti nello stesso ordine dell'input.`;
       
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -85,7 +86,8 @@ serve(async (req) => {
     } else {
       // Handle single text translation (original functionality)
       // Instruction for the model to translate
-      const systemPrompt = `You are a professional translator. Translate the following text from Italian to ${targetLang}. Only respond with the translation, nothing else.`;
+      const systemPrompt = `Sei un traduttore professionale. Traduci il seguente testo dall'italiano a ${targetLang}. 
+      Rispondi solo con la traduzione, nient'altro. Assicurati che la traduzione suoni naturale e sia adatta al contesto.`;
       
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',

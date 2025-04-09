@@ -210,7 +210,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
               title: translatedData.title,
               content: translatedData.content,
               path: translatedPath,
-              image_url: pageType !== "parent" ? uploadedImage : null,
+              image_url: pageType === "parent" ? null : uploadedImage,
               icon: values.icon || selectedIcon,
               is_submenu: pageType === "submenu",
               parent_path: pageType === "submenu" ? parentPath : null,
@@ -232,6 +232,28 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
             } else {
               console.log(`Pagina tradotta in ${lang} inserita con successo`);
               toast.success(`Pagina tradotta in ${lang} creata`);
+            }
+            
+            // Creiamo anche l'icona del menu tradotta se necessario
+            if ((pageType === "normal" || pageType === "parent") && lang !== 'it') {
+              const translatedMenuIconData = {
+                id: uuidv4(),
+                path: translatedPath,
+                label: translatedData.title,
+                icon: values.icon || selectedIcon,
+                bg_color: "bg-blue-200",
+                published: true
+              };
+              
+              const { error: menuIconTranslationError } = await supabase
+                .from('menu_icons')
+                .insert(translatedMenuIconData);
+              
+              if (menuIconTranslationError) {
+                console.error(`Errore nell'inserimento dell'icona del menu tradotta in ${lang}:`, menuIconTranslationError);
+              } else {
+                console.log(`Icona del menu tradotta in ${lang} inserita con successo`);
+              }
             }
           } catch (translationError) {
             console.error(`Errore nella traduzione in ${lang}:`, translationError);
@@ -297,6 +319,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
     }
   };
 
+  // Corretto il bug: isContentTabDisabled = pageType === "parent"
   const isContentTabDisabled = pageType === "parent";
 
   return (

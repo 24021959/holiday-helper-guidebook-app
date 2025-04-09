@@ -10,14 +10,15 @@ type Language = {
   name: string;
   flag: string; // Emoji fallback
   flagSrc: string;
+  nativeName: string; // Nome della lingua nella sua lingua nativa
 };
 
 const languages: Language[] = [
-  { code: "it", name: "Italiano", flag: "🇮🇹", flagSrc: "/lovable-uploads/5303c7bc-6aa0-4c3b-bbc2-1c94e0d01b97.png" },
-  { code: "en", name: "English", flag: "🇬🇧", flagSrc: "/lovable-uploads/5db5eda4-9c7f-4ef5-ae67-f9372ffda8e1.png" },
-  { code: "fr", name: "Français", flag: "🇫🇷", flagSrc: "/lovable-uploads/075a9ac2-23e8-482c-beb3-45d28a3dcd94.png" },
-  { code: "es", name: "Español", flag: "🇪🇸", flagSrc: "/lovable-uploads/af6207d5-0a3c-4cad-84bc-b6c071c9d6f6.png" },
-  { code: "de", name: "Deutsch", flag: "🇩🇪", flagSrc: "/lovable-uploads/537376f3-5c3d-4d02-ba0d-37cb86165489.png" },
+  { code: "it", name: "Italiano", nativeName: "Italiano", flag: "🇮🇹", flagSrc: "/lovable-uploads/5303c7bc-6aa0-4c3b-bbc2-1c94e0d01b97.png" },
+  { code: "en", name: "English", nativeName: "English", flag: "🇬🇧", flagSrc: "/lovable-uploads/5db5eda4-9c7f-4ef5-ae67-f9372ffda8e1.png" },
+  { code: "fr", name: "Français", nativeName: "Français", flag: "🇫🇷", flagSrc: "/lovable-uploads/075a9ac2-23e8-482c-beb3-45d28a3dcd94.png" },
+  { code: "es", name: "Español", nativeName: "Español", flag: "🇪🇸", flagSrc: "/lovable-uploads/af6207d5-0a3c-4cad-84bc-b6c071c9d6f6.png" },
+  { code: "de", name: "Deutsch", nativeName: "Deutsch", flag: "🇩🇪", flagSrc: "/lovable-uploads/537376f3-5c3d-4d02-ba0d-37cb86165489.png" },
 ];
 
 interface LanguageSelectorProps {
@@ -40,16 +41,17 @@ export const LanguageSelector = ({ onSelectLanguage }: LanguageSelectorProps) =>
     
     // Save to localStorage
     localStorage.setItem("selectedLanguage", code);
-    console.log(`Language selected: ${code}`);
+    console.log(`Lingua selezionata: ${code}`);
     
     // Show a toast notification
-    toast.success(`Language changed to ${languages.find(lang => lang.code === code)?.name}`);
+    const langInfo = languages.find(lang => lang.code === code);
+    toast.success(`Lingua cambiata in ${langInfo?.name}`);
     
     // Call the original onSelectLanguage prop if provided
     if (onSelectLanguage) {
       onSelectLanguage(code);
     } else {
-      // MODIFICATO: Naviga al menu specifico della lingua, tranne per italiano che è il default
+      // Naviga al menu specifico della lingua, tranne per italiano che è il default
       if (code === 'it') {
         navigate("/menu");
       } else {
@@ -93,7 +95,10 @@ export const LanguageSelector = ({ onSelectLanguage }: LanguageSelectorProps) =>
                   />
                 )}
               </div>
-              <span className="text-2xl font-medium text-gray-700">{language.name}</span>
+              <div className="flex flex-col">
+                <span className="text-2xl font-medium text-gray-700">{language.name}</span>
+                <span className="text-sm text-gray-500">{language.nativeName}</span>
+              </div>
             </div>
             <span className="text-emerald-500">
               {currentLanguage === language.code ? "✓" : "→"}

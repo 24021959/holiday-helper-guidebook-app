@@ -51,17 +51,17 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
       
       setIsLoading(true);
       try {
-        console.log(`Translating: "${text}" to ${language}`);
+        console.log(`Traduzione: "${text}" in ${language}`);
         const result = await translate(text);
         
         if (isMounted) {
-          console.log(`Translation result: "${result}"`);
+          console.log(`Risultato traduzione: "${result}"`);
           setTranslatedText(result);
           // Save to cache
           translationCacheRef.current[cacheKey] = result;
         }
       } catch (error) {
-        console.error("Translation error:", error);
+        console.error("Errore di traduzione:", error);
         if (isMounted) {
           setTranslatedText(text); // Fallback to original text on error
         }
