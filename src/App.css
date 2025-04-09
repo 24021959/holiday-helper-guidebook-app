@@ -258,3 +258,13 @@ iframe[class*="supportfast"] {
   padding-left: 24px;
   padding-right: 24px;
 }
+
+/* Admin panel specific styles for better alignment */
+.admin-content {
+  width: 100%;
+  max-width: 100%;
+}
+
+.admin-tab-content {
+  width: 100%;
+}

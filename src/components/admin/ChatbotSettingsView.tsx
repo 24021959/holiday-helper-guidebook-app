@@ -65,7 +65,7 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
   };
 
   return (
-    <div className="w-full max-w-full space-y-6">
+    <div className="w-full space-y-6">
       <div>
         <h2 className="text-xl font-medium text-emerald-600 mb-4">Impostazioni Chatbot</h2>
         
