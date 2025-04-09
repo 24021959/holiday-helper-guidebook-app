@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/context/TranslationContext";
@@ -23,42 +22,39 @@ const languages: Language[] = [
 
 interface LanguageSelectorProps {
   onSelectLanguage?: (code: string) => void;
+  language?: string;
+  onChange?: (lang: 'it' | 'en' | 'fr' | 'es' | 'de') => void;
 }
 
-export const LanguageSelector = ({ onSelectLanguage }: LanguageSelectorProps) => {
+export const LanguageSelector = ({ onSelectLanguage, language: propLanguage, onChange }: LanguageSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { setLanguage, language: currentLanguage } = useTranslation();
+  const { setLanguage, language: contextLanguage } = useTranslation();
   const navigate = useNavigate();
   const [imageFailed, setImageFailed] = useState<Record<string, boolean>>({});
+
+  const currentLanguage = propLanguage || contextLanguage;
 
   const toggleLanguageSelector = () => {
     setIsOpen(!isOpen);
   };
 
   const handleSelectLanguage = (code: string) => {
-    // Update the language in our context
     setLanguage(code as 'it' | 'en' | 'fr' | 'es' | 'de');
-    
-    // Save to localStorage
     localStorage.setItem("selectedLanguage", code);
     console.log(`Lingua selezionata: ${code}`);
-    
-    // Show a toast notification
     const langInfo = languages.find(lang => lang.code === code);
     toast.success(`Lingua cambiata in ${langInfo?.name}`);
-    
-    // Call the original onSelectLanguage prop if provided
-    if (onSelectLanguage) {
+    if (onChange) {
+      onChange(code as 'it' | 'en' | 'fr' | 'es' | 'de');
+    } else if (onSelectLanguage) {
       onSelectLanguage(code);
     } else {
-      // Naviga al menu specifico della lingua, tranne per italiano che è il default
       if (code === 'it') {
         navigate("/menu");
       } else {
         navigate(`/${code}/menu`);
       }
     }
-    
     setIsOpen(false);
   };
 

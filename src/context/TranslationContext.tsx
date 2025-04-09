@@ -246,25 +246,20 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
           console.log(`Traduzione in corso per ${languageMap[lang]}...`);
           toast.info(`Traduzione in corso: ${languageMap[lang]}`);
           
-          // Call translate edge function directly with REST
-          const supabaseUrl = new URL(supabase.functions.url);
-          const funcUrl = `${supabaseUrl.origin}/functions/v1/translate`;
-          
-          // Translate title first
-          const titleResponse = await fetch(funcUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${supabase.supabaseClient.getPublicUrl().match(/.*\/rest\/v1/) ? supabase.supabaseClient.getPublicUrl().replace('/rest/v1', '') : ''}`
-            },
-            body: JSON.stringify({ 
+          // Use direct call to translate edge function
+          const { data: titleData, error: titleError } = await supabase.functions.invoke('translate', {
+            body: { 
               text: pageTitle, 
               targetLang: languageMap[lang]
-            })
+            }
           });
           
-          const titleData = await titleResponse.json();
-          const translatedTitle = titleData.translatedText || pageTitle;
+          if (titleError) {
+            console.error(`Error translating title to ${lang}:`, titleError);
+            continue;
+          }
+          
+          const translatedTitle = titleData?.translatedText || pageTitle;
           
           // Translate content
           let translatedContent: string;
@@ -281,40 +276,38 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
                 continue;
               }
               
-              const sectionResponse = await fetch(funcUrl, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${supabase.supabaseClient.getPublicUrl().match(/.*\/rest\/v1/) ? supabase.supabaseClient.getPublicUrl().replace('/rest/v1', '') : ''}`
-                },
-                body: JSON.stringify({ 
+              const { data: sectionData, error: sectionError } = await supabase.functions.invoke('translate', {
+                body: { 
                   text: section, 
                   targetLang: languageMap[lang]
-                })
+                }
               });
               
-              const sectionData = await sectionResponse.json();
-              translatedSections.push(sectionData.translatedText || section);
+              if (sectionError) {
+                console.error(`Error translating section to ${lang}:`, sectionError);
+                translatedSections.push(section);
+              } else {
+                translatedSections.push(sectionData?.translatedText || section);
+              }
             }
             
             // Rejoin with proper spacing
             translatedContent = translatedSections.join('\n\n');
           } else {
             // Content is small enough for a direct translation
-            const contentResponse = await fetch(funcUrl, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabase.supabaseClient.getPublicUrl().match(/.*\/rest\/v1/) ? supabase.supabaseClient.getPublicUrl().replace('/rest/v1', '') : ''}`
-              },
-              body: JSON.stringify({ 
+            const { data: contentData, error: contentError } = await supabase.functions.invoke('translate', {
+              body: { 
                 text: pageContent, 
                 targetLang: languageMap[lang]
-              })
+              }
             });
             
-            const contentData = await contentResponse.json();
-            translatedContent = contentData.translatedText || pageContent;
+            if (contentError) {
+              console.error(`Error translating content to ${lang}:`, contentError);
+              translatedContent = pageContent;
+            } else {
+              translatedContent = contentData?.translatedText || pageContent;
+            }
           }
           
           // Store the result for this language
@@ -388,43 +381,37 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
           // 2.2 Translate page title and content
           console.log(`Traduzione pagina: "${page.title}" in ${targetLang}`);
           
-          // Call translate edge function via REST API
-          const supabaseUrl = new URL(supabase.functions.url);
-          const funcUrl = `${supabaseUrl.origin}/functions/v1/translate`;
-          
           // Translate title
-          const titleResponse = await fetch(funcUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${supabase.supabaseClient.getPublicUrl().match(/.*\/rest\/v1/) ? supabase.supabaseClient.getPublicUrl().replace('/rest/v1', '') : ''}`
-            },
-            body: JSON.stringify({ 
+          const { data: titleData, error: titleError } = await supabase.functions.invoke('translate', {
+            body: { 
               text: page.title, 
               targetLang: languageMap[targetLang]
-            })
+            }
           });
           
-          const titleData = await titleResponse.json();
-          const translatedTitle = titleData.translatedText || page.title;
+          if (titleError) {
+            console.error(`Error translating title: ${page.title}`, titleError);
+            throw titleError;
+          }
+          
+          const translatedTitle = titleData?.translatedText || page.title;
           
           // Translate content
           let translatedContent = page.content;
           if (page.content) {
-            const contentResponse = await fetch(funcUrl, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabase.supabaseClient.getPublicUrl().match(/.*\/rest\/v1/) ? supabase.supabaseClient.getPublicUrl().replace('/rest/v1', '') : ''}`
-              },
-              body: JSON.stringify({ 
+            const { data: contentData, error: contentError } = await supabase.functions.invoke('translate', {
+              body: { 
                 text: page.content, 
                 targetLang: languageMap[targetLang]
-              })
+              }
             });
             
-            const contentData = await contentResponse.json();
-            translatedContent = contentData.translatedText || page.content;
+            if (contentError) {
+              console.error(`Error translating content for page: ${page.title}`, contentError);
+              throw contentError;
+            }
+            
+            translatedContent = contentData?.translatedText || page.content;
           }
 
           // 2.3 Save translated page to custom_pages
