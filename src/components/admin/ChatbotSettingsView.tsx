@@ -65,7 +65,7 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-full space-y-6">
       <div>
         <h2 className="text-xl font-medium text-emerald-600 mb-4">Impostazioni Chatbot</h2>
         
@@ -111,10 +111,10 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
           value={chatbotCode}
           onChange={(e) => setChatbotCode(e.target.value)}
           placeholder='<script defer id="supportfast-script" src="https://cdn.supportfast.ai/chatbot.js" data-chatbot-id="bot-ufqmgj3gyj"></script>'
-          className="font-mono min-h-[150px]"
+          className="font-mono min-h-[150px] w-full"
         />
         
-        <div className="mt-4 flex gap-3">
+        <div className="mt-4 flex flex-wrap gap-3">
           <Button onClick={handleSave} disabled={isSaving}>
             {isSaving ? (
               <>
