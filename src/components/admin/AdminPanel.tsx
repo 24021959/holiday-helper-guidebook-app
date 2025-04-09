@@ -5,6 +5,7 @@ import ManagePagesView from "./ManagePagesView";
 import { HeaderSettingsView } from "./HeaderSettingsView";
 import MenuTranslationManager from "./MenuTranslationManager";
 import { CreatePageForm } from "./CreatePageForm";
+import ChatbotSettings from "./ChatbotSettings";
 
 interface AdminPanelProps {
   activeTab: string;
@@ -60,6 +61,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         >
           Traduzioni Menu
         </TabsTrigger>
+        <TabsTrigger 
+          value="chatbot-settings"
+          className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
+        >
+          Chatbot
+        </TabsTrigger>
       </TabsList>
       
       <div className="admin-tab-content bg-white shadow-md rounded-md p-6 border">
@@ -91,6 +98,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
 
         <TabsContent value="translations" className="space-y-4 mt-0">
           <MenuTranslationManager />
+        </TabsContent>
+        
+        <TabsContent value="chatbot-settings" className="space-y-4 mt-0">
+          <ChatbotSettings />
         </TabsContent>
       </div>
     </Tabs>
