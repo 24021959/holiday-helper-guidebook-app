@@ -5,6 +5,7 @@ import ManagePagesView from "./ManagePagesView";
 import { HeaderSettingsView } from "./HeaderSettingsView";
 import { ChatbotSettingsView } from "./ChatbotSettingsView";
 import MenuTranslationManager from "./MenuTranslationManager";
+import { CreatePageForm } from "./CreatePageForm";
 
 interface AdminPanelProps {
   activeTab: string;
@@ -58,10 +59,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
       </TabsContent>
 
       <TabsContent value="create-page" className="space-y-4">
-        <ChatbotSettingsView 
-          chatbotCode={chatbotCode}
-          setChatbotCode={setChatbotCode}
-          onSave={handleSaveChatbotSettings}
+        <CreatePageForm
+          parentPages={parentPages}
+          onPageCreated={handlePageCreated}
+          keywordToIconMap={keywordToIconMap}
         />
       </TabsContent>
 

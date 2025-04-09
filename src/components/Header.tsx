@@ -1,6 +1,5 @@
 
 import React from "react";
-import AdminButton from "./AdminButton";
 
 interface HeaderProps {
   backgroundImage?: string;
@@ -33,13 +32,6 @@ const Header: React.FC<HeaderProps> = ({
           : {}
       }
     >
-      {/* Admin button in the top right corner */}
-      {showAdminButton && (
-        <div className="absolute top-3 right-4 z-20">
-          <AdminButton />
-        </div>
-      )}
-      
       {/* Decorative elements (only for colored headers, not for white background) */}
       {backgroundColor !== "bg-white" && (
         <div className="absolute top-0 left-0 w-full h-full opacity-20">
