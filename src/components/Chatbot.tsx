@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Bot, User, Send, X, Loader2, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -149,6 +150,8 @@ export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
         content: msg.content
       }));
 
+      console.log("Sending chat request with history:", chatHistory);
+      
       const { data, error } = await supabase.functions.invoke('chatbot', {
         body: { 
           message, 
@@ -157,7 +160,12 @@ export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase function error:", error);
+        throw error;
+      }
+
+      console.log("Received chatbot response:", data);
 
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -149,11 +150,11 @@ const ChatbotSettings: React.FC = () => {
       const italianMessage = chatbotConfig.welcomeMessage.it || defaultWelcomeMessages.it;
       
       const languages = ['en', 'fr', 'es', 'de'] as const;
-      const messagesToTranslate = languages.map(() => italianMessage);
+      const messagesToTranslate = [italianMessage];
       
       const translatedMessages = await Promise.all(
         languages.map((lang) => 
-          translateBulk([italianMessage], lang)
+          translateBulk(messagesToTranslate, lang)
             .then(result => ({ lang, message: result[0] }))
             .catch(() => ({ lang, message: defaultWelcomeMessages[lang] }))
         )

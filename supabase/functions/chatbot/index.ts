@@ -65,30 +65,33 @@ serve(async (req) => {
       }
     };
 
-    // Perform vector search
-    console.log("Performing vector search with embedding of length:", questionEmbedding.length);
-    
-    const { data: matchingContent, error: matchError } = await supabaseClient.rpc(
-      'match_documents',
-      {
-        query_embedding: questionEmbedding,
-        match_threshold: 0.5,
-        match_count: 5
-      }
-    );
-
-    if (matchError) {
-      console.error("Error in vector search:", matchError);
-      throw new Error(`Vector search failed: ${matchError.message}`);
-    }
-
+    // Check if the match_documents function exists
     let contextText = "No relevant information found.";
     
-    if (matchingContent && matchingContent.length > 0) {
-      contextText = matchingContent.map((item: any) => item.content).join("\n\n");
-      console.log(`Found ${matchingContent.length} matching documents`);
-    } else {
-      console.log("No matching content found");
+    try {
+      console.log("Performing vector search with embedding of length:", questionEmbedding.length);
+      
+      const { data: matchingContent, error: matchError } = await supabaseClient.rpc(
+        'match_documents',
+        {
+          query_embedding: questionEmbedding,
+          match_threshold: 0.5,
+          match_count: 5
+        }
+      );
+
+      if (matchError) {
+        console.error("Error in vector search:", matchError);
+        console.log("Proceeding without knowledge base match.");
+      } else if (matchingContent && matchingContent.length > 0) {
+        contextText = matchingContent.map((item: any) => item.content).join("\n\n");
+        console.log(`Found ${matchingContent.length} matching documents`);
+      } else {
+        console.log("No matching content found");
+      }
+    } catch (e) {
+      console.error("Error in knowledge base search:", e);
+      console.log("Proceeding without knowledge base match.");
     }
 
     // Build system message based on the language

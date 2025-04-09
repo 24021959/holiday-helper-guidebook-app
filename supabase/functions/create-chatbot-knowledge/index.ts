@@ -65,6 +65,28 @@ Content: ${cleanContent}${listItemsText}
       supabaseKey || ''
     );
 
+    // Check if vector extension is enabled and tables exist
+    try {
+      // Verify if the chatbot_knowledge table exists
+      const { data: tableExists, error: tableCheckError } = await supabaseClient
+        .from('chatbot_knowledge')
+        .select('id')
+        .limit(1);
+      
+      if (tableCheckError && tableCheckError.code !== 'PGRST116') {
+        console.error('Error checking chatbot_knowledge table:', tableCheckError);
+        throw new Error(`Database setup error: ${tableCheckError.message}`);
+      }
+    } catch (setupError) {
+      console.error('Database setup verification error:', setupError);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Database setup error. Please ensure proper migration has been applied.' 
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Clear existing knowledge
     console.log("Removing existing knowledge from database");
     try {
