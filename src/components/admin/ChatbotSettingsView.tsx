@@ -41,7 +41,7 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
       setSaveSuccess(true);
       toast({
         title: "Chatbot impostato correttamente",
-        description: "Le modifiche saranno visibili su tutte le pagine del sito dopo il riavvio.",
+        description: "Le modifiche saranno visibili dopo il riavvio completo del sito.",
       });
       
       // Salviamo in localStorage per un effetto immediato
@@ -68,6 +68,15 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-medium text-emerald-600 mb-4">Impostazioni Chatbot</h2>
+        
+        <Alert className="mb-4 bg-amber-50 border-amber-200">
+          <Info className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-700">
+            <strong>Attenzione:</strong> Il chatbot è già configurato direttamente nel codice HTML del sito. 
+            Eventuali modifiche qui richiederanno un riavvio completo dell'applicazione.
+          </AlertDescription>
+        </Alert>
+        
         <p className="text-sm text-gray-500 mb-4">
           Inserisci il codice JavaScript del chatbot per integrarlo nel tuo sito web.
           Assicurati di includere il tag <code>&lt;script&gt;</code> completo fornito dal servizio di chatbot.
@@ -76,7 +85,7 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
         <Alert className="mb-4 bg-blue-50 border-blue-200">
           <Info className="h-4 w-4 text-blue-600" />
           <AlertDescription className="text-blue-700">
-            Il chatbot sarà visibile in tutte le pagine pubbliche del sito. Per una corretta visualizzazione, il codice verrà inserito nell'HEAD del documento HTML.
+            Il chatbot sarà visibile in tutte le pagine pubbliche del sito. Per una corretta visualizzazione, il codice è stato inserito direttamente nell'HEAD del documento HTML.
           </AlertDescription>
         </Alert>
         
@@ -84,7 +93,7 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
           <Alert className="mb-4 bg-green-50 border-green-200">
             <Check className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-700">
-              Impostazioni chatbot salvate con successo! Il chatbot sarà visibile dopo il riavvio.
+              Impostazioni chatbot salvate con successo! Per vedere il chatbot, riavvia completamente l'applicazione.
             </AlertDescription>
           </Alert>
         )}
@@ -124,6 +133,16 @@ export const ChatbotSettingsView: React.FC<ChatbotSettingsViewProps> = ({
             }}
           >
             Ricarica Pagina
+          </Button>
+          
+          <Button 
+            variant="destructive" 
+            onClick={() => {
+              // Force a full page refresh to reload all scripts
+              window.location.href = window.location.href;
+            }}
+          >
+            Riavvio Completo
           </Button>
         </div>
       </div>
