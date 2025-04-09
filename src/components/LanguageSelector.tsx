@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/context/TranslationContext";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -35,13 +34,19 @@ export const LanguageSelector = ({ onSelectLanguage, language: propLanguage, onC
   const [imageFailed, setImageFailed] = useState<Record<string, boolean>>({});
 
   const currentLanguage = propLanguage || contextLanguage;
+  
+  useEffect(() => {
+    console.log("LanguageSelector - Current path:", location.pathname);
+    console.log("LanguageSelector - Current language:", currentLanguage);
+  }, [location.pathname, currentLanguage]);
 
   const toggleLanguageSelector = () => {
     setIsOpen(!isOpen);
   };
 
   const handleSelectLanguage = (code: string) => {
-    // Always update context and localStorage
+    console.log(`Selecting language: ${code} from current path: ${location.pathname}`);
+    
     setLanguage(code as 'it' | 'en' | 'fr' | 'es' | 'de');
     localStorage.setItem("selectedLanguage", code);
     
@@ -49,25 +54,54 @@ export const LanguageSelector = ({ onSelectLanguage, language: propLanguage, onC
     const langInfo = languages.find(lang => lang.code === code);
     toast.success(`Lingua cambiata in ${langInfo?.name}`);
     
-    // Check if we're on the index page
-    const onIndexPage = location.pathname === "/" || location.pathname === "";
+    const path = location.pathname;
+    const isOnIndexPage = path === "/" || path === "";
+    const isOnMenuPage = path === "/menu" || /^\/[a-z]{2}\/menu$/.test(path);
+    const isOnSubmenuPage = path.startsWith("/submenu/");
     
-    // Handle navigation based on props and current page
     if (onChange) {
-      // If onChange is provided, use it (custom handler)
       onChange(code as 'it' | 'en' | 'fr' | 'es' | 'de');
     } else if (onSelectLanguage) {
-      // If onSelectLanguage is provided, use it
       onSelectLanguage(code);
-    } else if (onIndexPage) {
-      // Direct navigation for index page
+    } else if (isOnIndexPage) {
       if (code === 'it') {
         navigate("/menu");
       } else {
         navigate(`/${code}/menu`);
       }
+    } else if (isOnMenuPage) {
+      if (code === 'it') {
+        navigate("/menu");
+      } else {
+        navigate(`/${code}/menu`);
+      }
+    } else if (isOnSubmenuPage) {
+      const pathParts = path.split('/').filter(Boolean);
+      
+      pathParts.shift();
+      
+      const hasLanguagePrefix = ['en', 'fr', 'es', 'de', 'it'].includes(pathParts[0]);
+      
+      if (hasLanguagePrefix && pathParts.length >= 2) {
+        if (code === 'it') {
+          navigate(`/submenu/${pathParts[1]}`);
+        } else {
+          navigate(`/submenu/${code}/${pathParts[1]}`);
+        }
+      } else if (!hasLanguagePrefix && pathParts.length >= 1) {
+        if (code === 'it') {
+          navigate(`/submenu/${pathParts[0]}`);
+        } else {
+          navigate(`/submenu/${code}/${pathParts[0]}`);
+        }
+      } else {
+        if (code === 'it') {
+          navigate("/menu");
+        } else {
+          navigate(`/${code}/menu`);
+        }
+      }
     } else {
-      // Default behavior: navigate to the appropriate menu
       if (code === 'it') {
         navigate("/menu");
       } else {

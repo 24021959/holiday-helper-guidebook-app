@@ -20,29 +20,44 @@ function App() {
       <Toaster position="top-right" />
       <Router>
         <Routes>
+          {/* Index and system pages */}
           <Route path="/" element={<Index />} />
-          <Route path="/menu" element={<Menu />} />
-          <Route path="/en/menu" element={<Menu />} />
-          <Route path="/fr/menu" element={<Menu />} />
-          <Route path="/es/menu" element={<Menu />} />
-          <Route path="/de/menu" element={<Menu />} />
           <Route path="/home" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/welcome" element={<Welcome />} />
           <Route path="/storia" element={<Storia />} />
           
-          {/* Fix submenu routes to handle language prefixes */}
+          {/* Main menu routes with language support */}
+          <Route path="/menu" element={<Menu />} />
+          <Route path="/en/menu" element={<Menu />} />
+          <Route path="/fr/menu" element={<Menu />} />
+          <Route path="/es/menu" element={<Menu />} />
+          <Route path="/de/menu" element={<Menu />} />
+          
+          {/* SubMenu routes with improved path handling */}
           <Route path="/submenu/:parentPath" element={<SubMenu />} />
           <Route path="/submenu/:language/:path" element={<SubMenu />} />
           
+          {/* Content page routes - both with and without language prefixes */}
           <Route path="/preview/*" element={<PreviewPage />} />
-          <Route path="*" element={<NotFound />} />
+          
+          {/* Content pages without language prefix */}
           <Route path="/:path" element={<PreviewPage />} />
+          <Route path="/:parent/:child" element={<PreviewPage />} />
+          
+          {/* Content pages with language prefixes */}
           <Route path="/en/:path" element={<PreviewPage />} />
+          <Route path="/en/:parent/:child" element={<PreviewPage />} />
           <Route path="/fr/:path" element={<PreviewPage />} />
+          <Route path="/fr/:parent/:child" element={<PreviewPage />} />
           <Route path="/es/:path" element={<PreviewPage />} />
+          <Route path="/es/:parent/:child" element={<PreviewPage />} />
           <Route path="/de/:path" element={<PreviewPage />} />
+          <Route path="/de/:parent/:child" element={<PreviewPage />} />
+          
+          {/* Catch-all for unmatched routes */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>
     </TranslationProvider>

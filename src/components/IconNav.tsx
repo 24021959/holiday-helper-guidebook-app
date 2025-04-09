@@ -72,17 +72,15 @@ const IconNav: React.FC<IconNavProps> = ({
     console.log("Clicked on icon:", icon);
     
     try {
-      // Prepare language prefix for paths, but only for non-Italian languages
+      // Language prefix for paths, but only for non-Italian languages
       const langPrefix = language !== 'it' ? `/${language}` : '';
       
       // Check if this is a parent page (has subpages)
       if (icon.is_parent) {
         console.log("Navigation to submenu for parent:", icon.path);
         
-        // Check if the path already contains a language prefix
+        // Path already has language prefix, like /en/services
         if (icon.path.match(/^\/[a-z]{2}\//)) {
-          // Path already has language prefix, like /en/services
-          // Extract the language and path
           const pathParts = icon.path.split('/');
           const pathLang = pathParts[1];
           const pathRest = pathParts.slice(2).join('/');
@@ -90,11 +88,10 @@ const IconNav: React.FC<IconNavProps> = ({
           console.log(`Path has language prefix: ${pathLang}, rest: ${pathRest}`);
           navigate(`/submenu/${pathLang}/${pathRest}`);
         } else {
-          // Path doesn't have language prefix
           // Extract path without initial slash for the URL parameter
           let pathParam = icon.path.startsWith('/') ? icon.path.substring(1) : icon.path;
           
-          // For non-Italian languages, we need to include the language in the URL
+          // For non-Italian languages, include the language in the URL
           if (language !== 'it') {
             navigate(`/submenu/${language}/${pathParam}`);
           } else {
@@ -118,7 +115,16 @@ const IconNav: React.FC<IconNavProps> = ({
         return;
       }
       
-      // For content paths, check if the path already has a language prefix
+      // For direct content navigation to pages like /services/reception
+      // Check if the path contains a slash after the first character
+      const isNestedPath = icon.path.substring(1).includes('/');
+      if (isNestedPath) {
+        console.log("Direct navigation to nested content page:", icon.path);
+        navigate(icon.path, { state: { parentPath } });
+        return;
+      }
+      
+      // For regular content paths, check if the path already has a language prefix
       let contentPath = icon.path;
       
       // If language is not Italian and the path doesn't already start with the language prefix

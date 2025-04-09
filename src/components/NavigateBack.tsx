@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import TranslatedText from "./TranslatedText";
+import { useTranslation } from "@/context/TranslationContext";
 
 interface NavigateBackProps {
   parentPath?: string | null;
@@ -13,6 +14,7 @@ const NavigateBack: React.FC<NavigateBackProps> = ({ parentPath }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { parentPath: urlParentPath } = useParams<{ parentPath: string }>();
+  const { language } = useTranslation();
   
   // Check if we're in a path that starts with /submenu/
   const isInSubmenu = location.pathname.startsWith('/submenu/');
@@ -26,49 +28,83 @@ const NavigateBack: React.FC<NavigateBackProps> = ({ parentPath }) => {
     console.log("NavigateBack - Parent path from props:", parentPath);
     console.log("NavigateBack - Parent path from URL:", urlParentPath);
     console.log("NavigateBack - Location state:", location.state);
+    console.log("NavigateBack - Current language:", language);
     
     // Check if this is a nested path like /servizi-hotel/reception
     const pathSegments = location.pathname.split('/').filter(Boolean);
     if (pathSegments.length >= 2) {
       console.log("NavigateBack - Detected nested path with segments:", pathSegments);
     }
-  }, [location, parentPath, urlParentPath]);
+  }, [location, parentPath, urlParentPath, language]);
   
   const handleBack = () => {
     try {
-      // Detect nested paths like /servizi-hotel/reception
+      // Detect language prefix in current path
       const pathSegments = location.pathname.split('/').filter(Boolean);
+      const hasLanguagePrefix = ['en', 'fr', 'es', 'de'].includes(pathSegments[0]);
       
+      // Detect nested paths like /servizi-hotel/reception or /en/servizi-hotel/reception
       if (pathSegments.length >= 2) {
-        // We're in a nested path, go back to the parent submenu
-        const parentSegment = pathSegments[0];
-        console.log("Navigating back to parent submenu:", parentSegment);
-        navigate(`/submenu/${parentSegment}`);
-        return;
+        console.log("Handling navigation for nested path with segments:", pathSegments);
+        
+        if (hasLanguagePrefix && pathSegments.length >= 3) {
+          // With language prefix: /en/servizi-hotel/reception -> /submenu/en/servizi-hotel
+          const lang = pathSegments[0];
+          const parent = pathSegments[1];
+          console.log(`Navigating back to submenu with language: /submenu/${lang}/${parent}`);
+          navigate(`/submenu/${lang}/${parent}`);
+          return;
+        } else if (pathSegments.length >= 2 && !hasLanguagePrefix) {
+          // Without language prefix: /servizi-hotel/reception -> /submenu/servizi-hotel
+          const parent = pathSegments[0];
+          console.log(`Navigating back to submenu: /submenu/${parent}`);
+          navigate(`/submenu/${parent}`);
+          return;
+        }
       }
       
+      // Handle submenu content pages
       if (isInSubmenuContentPage && location.state?.parentPath) {
-        // If we're in a content page that was accessed from a submenu, go back to that submenu
-        console.log("Navigating back to submenu:", location.state.parentPath);
+        console.log("Navigating back to submenu from content page:", location.state.parentPath);
         
         // Extract the path part after /submenu/
-        const submenuPath = location.state.parentPath.startsWith('/') 
-          ? location.state.parentPath.substring(1) 
-          : location.state.parentPath;
+        const parentPath = location.state.parentPath;
+        const segments = parentPath.split('/').filter(Boolean);
         
-        navigate(`/submenu/${submenuPath}`);
+        if (segments.length >= 1) {
+          // Check if first segment is a language code
+          const firstSegment = segments[0];
+          
+          if (['en', 'fr', 'es', 'de'].includes(firstSegment) && segments.length >= 2) {
+            // Language-prefixed path
+            navigate(`/submenu/${firstSegment}/${segments[1]}`);
+          } else {
+            // Regular path
+            navigate(`/submenu/${segments[0]}`);
+          }
+        } else {
+          // Fallback to main menu in current language
+          navigateToMainMenu();
+        }
       } else if (isInSubmenu) {
-        // If we're in a submenu, go back to menu
-        console.log("Navigating back to main menu from submenu");
-        navigate("/menu");
+        // If we're in a submenu, go back to menu in current language
+        navigateToMainMenu();
       } else {
-        // Default fallback to main menu
-        console.log("Navigating to main menu (default fallback)");
-        navigate("/menu");
+        // Default fallback to main menu in current language
+        navigateToMainMenu();
       }
     } catch (error) {
       console.error("Navigation error:", error);
       // Fallback to menu in case of any navigation error
+      navigateToMainMenu();
+    }
+  };
+  
+  const navigateToMainMenu = () => {
+    console.log("Navigating to main menu in language:", language);
+    if (language !== 'it') {
+      navigate(`/${language}/menu`);
+    } else {
       navigate("/menu");
     }
   };
