@@ -42,7 +42,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
 }) => {
   return (
     <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid grid-cols-5 mb-8">
+      <TabsList className="flex flex-wrap mb-8">
         <TabsTrigger value="manage-pages">Gestione Pagine</TabsTrigger>
         <TabsTrigger value="create-page">Crea Pagina</TabsTrigger>
         <TabsTrigger value="header-settings">Impostazioni Header</TabsTrigger>
