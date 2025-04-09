@@ -195,7 +195,7 @@ async function createEmbedding(text: string): Promise<number[] | null> {
       },
       body: JSON.stringify({
         model: 'text-embedding-3-small',
-        input: text
+        input: text.slice(0, 8000) // Limit to 8000 characters
       }),
     });
 

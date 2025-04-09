@@ -1,9 +1,9 @@
 
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import CreatePageForm from "./CreatePageForm";
+import { CreatePageForm } from "./CreatePageForm";
 import ManagePagesView from "./ManagePagesView";
-import HeaderSettingsView from "./HeaderSettingsView";
+import { HeaderSettingsView } from "./HeaderSettingsView";
 import MenuTranslationManager from "./MenuTranslationManager";
 import ChatbotSettings from "./ChatbotSettings";
 import { PageData } from "@/pages/Admin";
@@ -82,7 +82,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         <TabsContent value="manage-pages" className="mt-0">
           <ManagePagesView
             pages={pages}
-            handlePagesUpdate={handlePagesUpdate}
+            onPagesUpdate={handlePagesUpdate}
           />
         </TabsContent>
 
@@ -96,7 +96,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         </TabsContent>
 
         <TabsContent value="menu-translations" className="mt-0">
-          <MenuTranslationManager pages={pages} />
+          <MenuTranslationManager />
         </TabsContent>
         
         <TabsContent value="chatbot-settings" className="mt-0">
