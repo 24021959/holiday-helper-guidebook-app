@@ -65,29 +65,57 @@ serve(async (req) => {
       }
     };
 
-    // Check if the match_documents function exists
+    // Try to fetch relevant information from the knowledge base
     let contextText = "No relevant information found.";
     
     try {
       console.log("Performing vector search with embedding of length:", questionEmbedding.length);
       
-      const { data: matchingContent, error: matchError } = await supabaseClient.rpc(
-        'match_documents',
-        {
-          query_embedding: questionEmbedding,
-          match_threshold: 0.5,
-          match_count: 5
-        }
-      );
-
-      if (matchError) {
-        console.error("Error in vector search:", matchError);
-        console.log("Proceeding without knowledge base match.");
-      } else if (matchingContent && matchingContent.length > 0) {
-        contextText = matchingContent.map((item: any) => item.content).join("\n\n");
-        console.log(`Found ${matchingContent.length} matching documents`);
+      // First check if the function exists
+      const { data: functionsData, error: functionCheckError } = await supabaseClient
+        .rpc('get_schema_functions');
+        
+      if (functionCheckError) {
+        console.error("Error checking schema functions:", functionCheckError);
       } else {
-        console.log("No matching content found");
+        console.log("Available database functions:", functionsData);
+      }
+      
+      // Use direct SQL query as a fallback if RPC fails
+      const { data: directQueryData, error: directQueryError } = await supabaseClient
+        .from('chatbot_knowledge')
+        .select('content')
+        .limit(5);
+        
+      if (directQueryError) {
+        console.error("Error in direct query:", directQueryError);
+      } else if (directQueryData && directQueryData.length > 0) {
+        console.log(`Found ${directQueryData.length} knowledge entries via direct query`);
+        contextText = directQueryData.map((item: any) => item.content).join("\n\n");
+      }
+        
+      // Try the vector search if available
+      try {
+        const { data: matchingContent, error: matchError } = await supabaseClient.rpc(
+          'match_documents',
+          {
+            query_embedding: questionEmbedding,
+            match_threshold: 0.5,
+            match_count: 5
+          }
+        );
+
+        if (matchError) {
+          console.error("Error in vector search:", matchError);
+          console.log("Proceeding with direct query results or default response");
+        } else if (matchingContent && matchingContent.length > 0) {
+          contextText = matchingContent.map((item: any) => item.content).join("\n\n");
+          console.log(`Found ${matchingContent.length} matching documents via vector search`);
+        } else {
+          console.log("No matching content found via vector search");
+        }
+      } catch (vectorError) {
+        console.error("Exception in vector search:", vectorError);
       }
     } catch (e) {
       console.error("Error in knowledge base search:", e);

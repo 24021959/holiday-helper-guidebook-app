@@ -65,26 +65,124 @@ Content: ${cleanContent}${listItemsText}
       supabaseKey || ''
     );
 
-    // Check if vector extension is enabled and tables exist
+    // First, check if the match_documents function exists
+    const { data: functions, error: functionError } = await supabaseClient.rpc('get_schema_functions');
+    
+    if (functionError) {
+      console.log("Error checking if match_documents function exists:", functionError);
+      console.log("Will try to create it if needed");
+    } else {
+      console.log("Available functions:", functions);
+      const hasMatchDocuments = Array.isArray(functions) && 
+                                functions.some((f: any) => f.function_name === 'match_documents');
+      console.log("match_documents function exists:", hasMatchDocuments);
+    }
+
+    // Check if the vector extension is enabled
     try {
-      // Verify if the chatbot_knowledge table exists
-      const { data: tableExists, error: tableCheckError } = await supabaseClient
+      const { data: extensionData, error: extensionError } = await supabaseClient
+        .from('pg_extension')
+        .select('extname')
+        .eq('extname', 'vector')
+        .single();
+        
+      if (extensionError && extensionError.code !== 'PGRST116') {
+        console.log("Error checking vector extension:", extensionError);
+        console.log("Will attempt to create extension if needed");
+        
+        // Try to create the extension
+        await supabaseClient.rpc('create_vector_extension');
+        console.log("Vector extension creation attempted");
+      } else {
+        console.log("Vector extension status:", extensionData);
+      }
+    } catch (extErr) {
+      console.log("Exception checking vector extension:", extErr);
+    }
+
+    // Check if the chatbot_knowledge table exists
+    let tableExists = false;
+    try {
+      const { data: tableData, error: tableError } = await supabaseClient
         .from('chatbot_knowledge')
         .select('id')
         .limit(1);
-      
-      if (tableCheckError && tableCheckError.code !== 'PGRST116') {
-        console.error('Error checking chatbot_knowledge table:', tableCheckError);
-        throw new Error(`Database setup error: ${tableCheckError.message}`);
+        
+      if (tableError && tableError.code !== 'PGRST116') {
+        console.log("Error checking chatbot_knowledge table:", tableError);
+      } else {
+        tableExists = true;
+        console.log("chatbot_knowledge table exists");
       }
-    } catch (setupError) {
-      console.error('Database setup verification error:', setupError);
-      return new Response(
-        JSON.stringify({ 
-          error: 'Database setup error. Please ensure proper migration has been applied.' 
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    } catch (tableErr) {
+      console.log("Exception checking table:", tableErr);
+    }
+    
+    // Create the table if it doesn't exist
+    if (!tableExists) {
+      try {
+        console.log("Creating chatbot_knowledge table");
+        const createTableQuery = `
+          CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
+            id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+            page_id uuid NOT NULL,
+            title text NOT NULL,
+            content text NOT NULL,
+            path text NOT NULL,
+            embedding vector(1536),
+            created_at timestamp with time zone DEFAULT now(),
+            updated_at timestamp with time zone DEFAULT now()
+          );
+        `;
+        
+        await supabaseClient.rpc('run_sql', { sql: createTableQuery });
+        console.log("Table created successfully");
+        
+        // Create match_documents function if needed
+        console.log("Creating match_documents function");
+        const createFunctionQuery = `
+          CREATE OR REPLACE FUNCTION public.match_documents(
+            query_embedding vector(1536),
+            match_threshold float,
+            match_count int
+          )
+          RETURNS TABLE(
+            id uuid,
+            page_id uuid,
+            title text,
+            content text,
+            path text,
+            similarity float
+          )
+          LANGUAGE plpgsql
+          AS $$
+          BEGIN
+            RETURN QUERY
+            SELECT
+              "chatbot_knowledge"."id",
+              "chatbot_knowledge"."page_id",
+              "chatbot_knowledge"."title",
+              "chatbot_knowledge"."content",
+              "chatbot_knowledge"."path",
+              1 - ("chatbot_knowledge"."embedding" <=> query_embedding) AS "similarity"
+            FROM
+              "chatbot_knowledge"
+            WHERE
+              1 - ("chatbot_knowledge"."embedding" <=> query_embedding) > match_threshold
+            ORDER BY
+              "chatbot_knowledge"."embedding" <=> query_embedding
+            LIMIT
+              match_count;
+          END;
+          $$;
+        `;
+        
+        await supabaseClient.rpc('run_sql', { sql: createFunctionQuery });
+        console.log("Function created successfully");
+        
+      } catch (createErr) {
+        console.error("Error creating database objects:", createErr);
+      }
     }
 
     // Clear existing knowledge
@@ -111,7 +209,7 @@ Content: ${cleanContent}${listItemsText}
         
         if (embedding) {
           try {
-            await supabaseClient
+            const { error: insertError } = await supabaseClient
               .from('chatbot_knowledge')
               .insert({
                 page_id: page.id,
@@ -120,8 +218,14 @@ Content: ${cleanContent}${listItemsText}
                 path: page.path,
                 embedding: embedding
               });
-            successCount++;
-            console.log(`Successfully processed page: ${page.title}`);
+              
+            if (insertError) {
+              console.error(`Error inserting knowledge for page ${page.id}:`, insertError);
+              errorCount++;
+            } else {
+              successCount++;
+              console.log(`Successfully processed page: ${page.title}`);
+            }
           } catch (insertError) {
             console.error(`Error inserting knowledge for page ${page.id}:`, insertError);
             errorCount++;
