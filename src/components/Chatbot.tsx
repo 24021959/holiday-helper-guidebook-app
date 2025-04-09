@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Bot, User, Send, X, Loader2, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -57,7 +56,6 @@ export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
   const [initializing, setInitializing] = useState(true);
   
   useEffect(() => {
-    // If in preview mode, use the previewConfig
     if (previewConfig) {
       setConfig(previewConfig);
       setInitializing(false);
@@ -73,10 +71,9 @@ export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
           .single();
 
         if (error) {
-          if (error.code !== 'PGRST116') { // not found error
+          if (error.code !== 'PGRST116') {
             console.error("Error loading chatbot config:", error);
           }
-          // Use default config
         } else if (data) {
           setConfig({
             ...defaultConfig,
@@ -93,7 +90,6 @@ export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
     loadConfig();
   }, [previewConfig]);
 
-  // If previewConfig changes, update the config
   useEffect(() => {
     if (previewConfig) {
       setConfig(previewConfig);
@@ -134,7 +130,6 @@ export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
     setIsLoading(true);
 
     try {
-      // If we're in preview mode, just simulate a response
       if (previewConfig) {
         setTimeout(() => {
           const previewResponse: Message = {
@@ -270,14 +265,14 @@ export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
                       <div
                         className={`rounded-lg p-3 ${
                           msg.role === 'user'
-                            ? 'bg-blue-500 text-white'
+                            ? 'bg-gray-200 text-gray-800'
                             : 'bg-white border border-gray-200'
                         }`}
                       >
                         <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                         <div
                           className={`text-xs mt-1 ${
-                            msg.role === 'user' ? 'text-blue-100' : 'text-gray-400'
+                            msg.role === 'user' ? 'text-gray-500' : 'text-gray-400'
                           }`}
                         >
                           {new Date(msg.timestamp).toLocaleTimeString([], {
@@ -288,7 +283,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
                       </div>
                       {msg.role === 'user' && (
                         <Avatar className="ml-2 h-8 w-8 mt-1">
-                          <AvatarFallback className="bg-blue-600">
+                          <AvatarFallback className="bg-gray-500">
                             <User size={16} className="text-white" />
                           </AvatarFallback>
                         </Avatar>
