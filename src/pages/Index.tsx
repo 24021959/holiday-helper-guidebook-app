@@ -63,6 +63,21 @@ const Index: React.FC = () => {
     setLanguage('it');
   }, [setLanguage]);
   
+  // Custom navigation handler for language selection
+  const handleLanguageSelect = (selectedLanguage: 'it' | 'en' | 'fr' | 'es' | 'de') => {
+    console.log(`Index page - Language selected: ${selectedLanguage}`);
+    
+    // Set the language in context
+    setLanguage(selectedLanguage);
+    
+    // Navigate to appropriate menu
+    if (selectedLanguage === 'it') {
+      navigate('/menu');
+    } else {
+      navigate(`/${selectedLanguage}/menu`);
+    }
+  };
+  
   if (loading) {
     return (
       <div className="flex flex-col h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100">
@@ -95,7 +110,7 @@ const Index: React.FC = () => {
           </h1>
           <Card className="bg-white/90 backdrop-blur-sm shadow-xl border-0 rounded-2xl overflow-hidden">
             <CardContent className="p-6">
-              <LanguageSelector />
+              <LanguageSelector onChange={handleLanguageSelect} />
             </CardContent>
           </Card>
         </div>

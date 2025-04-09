@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -21,7 +20,7 @@ interface TranslationContextType {
   translateBulk: (texts: string[]) => Promise<string[]>;
   translatePage: (pageContent: string, pageTitle: string) => Promise<{title: string, content: string}>;
   translateSequential: (pageContent: string, pageTitle: string, targetLangs: Language[]) => Promise<Record<Language, {title: string, content: string}>>;
-  translateAndCloneMenu: (targetLang: Language) => Promise<void>;
+  translateAndCloneMenu: (targetLang: Language, progressCallback?: (completed: number, currentPage?: string) => void) => Promise<void>;
 }
 
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
@@ -335,7 +334,10 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
   };
 
   // New function to translate and clone the entire menu for a target language
-  const translateAndCloneMenu = async (targetLang: Language): Promise<void> => {
+  const translateAndCloneMenu = async (
+    targetLang: Language, 
+    progressCallback?: (completed: number, currentPage?: string) => void
+  ): Promise<void> => {
     try {
       if (targetLang === 'it') {
         toast.error("Non è necessario tradurre il menu in italiano (lingua base)");
@@ -370,6 +372,11 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
       let processedCount = 0;
       for (const page of italianPages) {
         try {
+          // Update progress with current page title
+          if (progressCallback) {
+            progressCallback(processedCount, page.title);
+          }
+          
           // 2.1 Check if this page already has a translation in the target language
           const targetPath = `/${targetLang}${page.path}`;
           const { data: existingTranslation } = await supabase
@@ -480,6 +487,12 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
           }
 
           processedCount++;
+          
+          // Update progress after each page is processed
+          if (progressCallback) {
+            progressCallback(processedCount);
+          }
+          
           if (processedCount % 5 === 0) {
             toast.info(`Tradotte ${processedCount} pagine su ${italianPages.length}`);
           }

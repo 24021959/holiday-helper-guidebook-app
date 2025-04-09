@@ -1,7 +1,8 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/context/TranslationContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 
 type Language = {
@@ -30,6 +31,7 @@ export const LanguageSelector = ({ onSelectLanguage, language: propLanguage, onC
   const [isOpen, setIsOpen] = useState(false);
   const { setLanguage, language: contextLanguage } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [imageFailed, setImageFailed] = useState<Record<string, boolean>>({});
 
   const currentLanguage = propLanguage || contextLanguage;
@@ -39,22 +41,33 @@ export const LanguageSelector = ({ onSelectLanguage, language: propLanguage, onC
   };
 
   const handleSelectLanguage = (code: string) => {
+    // Always update context and localStorage
     setLanguage(code as 'it' | 'en' | 'fr' | 'es' | 'de');
     localStorage.setItem("selectedLanguage", code);
+    
     console.log(`Lingua selezionata: ${code}`);
     const langInfo = languages.find(lang => lang.code === code);
     toast.success(`Lingua cambiata in ${langInfo?.name}`);
+    
+    // Check if we're on the index page
+    const onIndexPage = location.pathname === "/" || location.pathname === "";
+    
+    // Handle navigation based on props and current page
     if (onChange) {
+      // If onChange is provided, use it (custom handler)
       onChange(code as 'it' | 'en' | 'fr' | 'es' | 'de');
     } else if (onSelectLanguage) {
+      // If onSelectLanguage is provided, use it
       onSelectLanguage(code);
     } else {
+      // Default behavior: navigate to the appropriate menu
       if (code === 'it') {
         navigate("/menu");
       } else {
         navigate(`/${code}/menu`);
       }
     }
+    
     setIsOpen(false);
   };
 

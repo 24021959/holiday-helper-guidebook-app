@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +6,7 @@ import { useTranslation } from "@/context/TranslationContext";
 import { Loader2, Globe, Check, AlertTriangle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Progress } from "@/components/ui/progress";
 
 const languageNames = {
   en: "Inglese 🇬🇧",
@@ -20,6 +20,12 @@ type Language = 'en' | 'fr' | 'es' | 'de';
 interface LanguageStats {
   totalPages: number;
   translatedPages: number;
+}
+
+interface TranslationProgress {
+  total: number;
+  completed: number;
+  currentPage?: string;
 }
 
 const MenuTranslationManager: React.FC = () => {
@@ -41,6 +47,12 @@ const MenuTranslationManager: React.FC = () => {
     fr: { totalPages: 0, translatedPages: 0 },
     es: { totalPages: 0, translatedPages: 0 },
     de: { totalPages: 0, translatedPages: 0 }
+  });
+  const [translationProgress, setTranslationProgress] = useState<Record<Language, TranslationProgress>>({
+    en: { total: 0, completed: 0 },
+    fr: { total: 0, completed: 0 },
+    es: { total: 0, completed: 0 },
+    de: { total: 0, completed: 0 }
   });
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
@@ -78,6 +90,14 @@ const MenuTranslationManager: React.FC = () => {
         de: { totalPages: italianCount, translatedPages: 0 }
       };
       
+      // Initialize translation progress with stats data
+      const newProgress: Record<Language, TranslationProgress> = {
+        en: { total: italianCount, completed: 0 },
+        fr: { total: italianCount, completed: 0 },
+        es: { total: italianCount, completed: 0 },
+        de: { total: italianCount, completed: 0 }
+      };
+      
       // Check for each language
       for (const lang of ['en', 'fr', 'es', 'de'] as Language[]) {
         const { data: langPages, error: langError } = await supabase
@@ -87,7 +107,9 @@ const MenuTranslationManager: React.FC = () => {
           .eq('published', true);
           
         if (!langError) {
-          newStats[lang].translatedPages = langPages?.length || 0;
+          const translatedCount = langPages?.length || 0;
+          newStats[lang].translatedPages = translatedCount;
+          newProgress[lang].completed = translatedCount;
           
           // Mark as translated if we have at least some pages in this language
           if (langPages && langPages.length > 0) {
@@ -97,6 +119,7 @@ const MenuTranslationManager: React.FC = () => {
       }
       
       setStats(newStats);
+      setTranslationProgress(newProgress);
     } catch (error) {
       console.error("Error fetching translation stats:", error);
       toast.error("Errore nel caricamento delle statistiche");
@@ -107,15 +130,63 @@ const MenuTranslationManager: React.FC = () => {
 
   const handleTranslateMenu = async (language: Language) => {
     try {
+      if (language === 'it') {
+        toast.error("Non è necessario tradurre il menu in italiano (lingua base)");
+        return;
+      }
+      
       setIsTranslating(prev => ({ ...prev, [language]: true }));
       toast.info(`Avvio traduzione del menu in ${languageNames[language]}`);
       
-      await translateAndCloneMenu(language);
+      // 1. Get total number of Italian pages to translate
+      const { data: italianPages, error: pagesError } = await supabase
+        .from('custom_pages')
+        .select('title')
+        .not('path', 'like', '/en/%')
+        .not('path', 'like', '/fr/%')
+        .not('path', 'like', '/es/%')
+        .not('path', 'like', '/de/%')
+        .eq('published', true);
+
+      if (pagesError) {
+        throw pagesError;
+      }
+
+      if (!italianPages || italianPages.length === 0) {
+        toast.error("Nessuna pagina italiana trovata da tradurre");
+        return;
+      }
       
+      // 2. Initialize progress tracking
+      setTranslationProgress(prev => ({
+        ...prev,
+        [language]: {
+          total: italianPages.length,
+          completed: 0,
+          currentPage: ''
+        }
+      }));
+      
+      // 3. Setup progress update callback
+      const updateProgress = (completedPages: number, currentPage?: string) => {
+        setTranslationProgress(prev => ({
+          ...prev,
+          [language]: {
+            ...prev[language],
+            completed: completedPages,
+            currentPage
+          }
+        }));
+      };
+      
+      // 4. Perform the translation with progress updates
+      await translateAndCloneMenu(language, updateProgress);
+      
+      // 5. Update status after completion
       setTranslated(prev => ({ ...prev, [language]: true }));
       toast.success(`Menu tradotto in ${languageNames[language]} con successo!`);
       
-      // Refresh stats after translation
+      // 6. Refresh stats to show final state
       fetchStats();
     } catch (error) {
       console.error(`Errore nella traduzione del menu in ${language}:`, error);
@@ -126,6 +197,14 @@ const MenuTranslationManager: React.FC = () => {
   };
 
   const getProgressPercentage = (lang: Language): number => {
+    // During active translation, use the real-time progress
+    if (isTranslating[lang]) {
+      const { total, completed } = translationProgress[lang];
+      if (total === 0) return 0;
+      return Math.round((completed / total) * 100);
+    }
+    
+    // Otherwise, use the stored stats
     if (stats[lang].totalPages === 0) return 0;
     return Math.round((stats[lang].translatedPages / stats[lang].totalPages) * 100);
   };
@@ -195,14 +274,23 @@ const MenuTranslationManager: React.FC = () => {
                     <div className="mt-3">
                       <div className="flex justify-between text-xs text-gray-500 mb-1">
                         <span>Progresso</span>
-                        <span>{stats[lang].translatedPages} / {stats[lang].totalPages} pagine</span>
+                        <span>
+                          {isTranslating[lang] 
+                            ? `${translationProgress[lang].completed}/${translationProgress[lang].total} pagine` 
+                            : `${stats[lang].translatedPages}/${stats[lang].totalPages} pagine`}
+                        </span>
                       </div>
-                      <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-emerald-500 rounded-full" 
-                          style={{ width: `${getProgressPercentage(lang)}%` }}
-                        ></div>
-                      </div>
+                      <Progress 
+                        value={getProgressPercentage(lang)} 
+                        className="h-2"
+                      />
+                      
+                      {/* Current page being translated */}
+                      {isTranslating[lang] && translationProgress[lang].currentPage && (
+                        <div className="mt-1 text-xs text-gray-500 italic">
+                          Traduzione: {translationProgress[lang].currentPage}
+                        </div>
+                      )}
                     </div>
                     
                     <div className="mt-4">
