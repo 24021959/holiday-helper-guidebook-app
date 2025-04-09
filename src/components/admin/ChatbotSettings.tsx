@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -149,18 +150,24 @@ const ChatbotSettings: React.FC = () => {
       const italianMessage = chatbotConfig.welcomeMessage.it || defaultWelcomeMessages.it;
       
       const languages = ['en', 'fr', 'es', 'de'] as const;
+      const textsToTranslate = [italianMessage];
       
-      const translatedMessages = await Promise.all(
-        languages.map((lang) => 
-          translateBulk([italianMessage])
-            .then(result => ({ lang, message: result[0] }))
-            .catch(() => ({ lang, message: defaultWelcomeMessages[lang] }))
-        )
+      // Corrected translation call with proper language parameter
+      const results = await Promise.all(
+        languages.map(async (lang) => {
+          try {
+            const translated = await translateBulk(textsToTranslate, lang);
+            return { lang, message: translated[0] };
+          } catch (error) {
+            console.error(`Error translating to ${lang}:`, error);
+            return { lang, message: defaultWelcomeMessages[lang] };
+          }
+        })
       );
       
       const newWelcomeMessages = {
         it: italianMessage,
-        ...Object.fromEntries(translatedMessages.map(({ lang, message }) => [lang, message]))
+        ...Object.fromEntries(results.map(({ lang, message }) => [lang, message]))
       };
       
       setChatbotConfig({
