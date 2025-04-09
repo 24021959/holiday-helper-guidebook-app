@@ -24,11 +24,25 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     refreshTrigger 
   });
 
-  // Filtra le icone in base alla lingua corrente
-  const filterIconsByLanguage = (icons: any[]) => {
+  useEffect(() => {
+    console.log("FilteredIconNav - Render with icons:", allIcons.length, "parentPath:", parentPath);
+    console.log("FilteredIconNav - Current language:", language);
+    
+    if (allIcons.length === 0) {
+      console.log("FilteredIconNav - No icons found for parentPath:", parentPath, "and language:", language);
+    } else {
+      console.log("FilteredIconNav - First icon:", JSON.stringify(allIcons[0]));
+      if (parentPath) {
+        console.log("FilteredIconNav - Showing subpages for:", parentPath);
+      }
+    }
+  }, [allIcons, parentPath, language]);
+
+  // Filter icons based on current language
+  const icons = React.useMemo(() => {
     if (language === 'it') {
-      // Per italiano (default), mostra solo percorsi che non iniziano con i prefissi delle altre lingue
-      return icons.filter(icon => {
+      // For Italian (default), show only paths that don't start with prefixes of other languages
+      return allIcons.filter(icon => {
         const path = icon.path || '';
         return !path.startsWith('/en/') && 
                !path.startsWith('/fr/') && 
@@ -36,34 +50,18 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
                !path.startsWith('/de/');
       });
     } else {
-      // Per altre lingue, mostra solo percorsi che iniziano con il prefisso della lingua corrente
-      return icons.filter(icon => {
+      // For other languages, show only paths that start with the current language prefix
+      return allIcons.filter(icon => {
         const path = icon.path || '';
         return path.startsWith(`/${language}`);
       });
     }
-  };
-
-  const icons = filterIconsByLanguage(allIcons);
+  }, [allIcons, language]);
 
   useEffect(() => {
-    console.log("FilteredIconNav - Render with icons:", icons.length, "parentPath:", parentPath);
-    console.log("FilteredIconNav - Current language:", language);
     console.log("FilteredIconNav - All icons before filtering:", allIcons.length);
     console.log("FilteredIconNav - Icons after filtering:", icons.length);
-    
-    if (icons.length === 0) {
-      console.log("FilteredIconNav - No icons found for parentPath:", parentPath, "and language:", language);
-    } else {
-      console.log("FilteredIconNav - First icon:", JSON.stringify(icons[0]));
-      if (parentPath) {
-        console.log("FilteredIconNav - Showing subpages for:", parentPath);
-        icons.forEach(icon => {
-          console.log(`- Subpage: ${icon.title} (${icon.path}), parent: ${icon.parent_path}`);
-        });
-      }
-    }
-  }, [icons, allIcons, parentPath, language]);
+  }, [allIcons, icons]);
 
   const handleRefresh = () => {
     if (onRefresh) {

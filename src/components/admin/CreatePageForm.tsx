@@ -55,7 +55,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
   const [isCreating, setIsCreating] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
   const [autoTranslate, setAutoTranslate] = useState(false);
-  const { translatePage } = useTranslation();
+  const { translateSequential } = useTranslation();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -118,6 +118,13 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
     } else {
       setParentPath("");
     }
+  };
+
+  const sanitizeTitle = (title: string): string => {
+    return title
+      .toLowerCase()
+      .replace(/[^\w\s]/gi, '')  // Remove special chars
+      .replace(/\s+/g, '-');     // Replace spaces with hyphens
   };
 
   const doTranslate = async () => {
