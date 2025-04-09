@@ -66,6 +66,8 @@ serve(async (req) => {
     };
 
     // Perform vector search
+    console.log("Performing vector search with embedding of length:", questionEmbedding.length);
+    
     const { data: matchingContent, error: matchError } = await supabaseClient.rpc(
       'match_documents',
       {
@@ -77,6 +79,7 @@ serve(async (req) => {
 
     if (matchError) {
       console.error("Error in vector search:", matchError);
+      throw new Error(`Vector search failed: ${matchError.message}`);
     }
 
     let contextText = "No relevant information found.";
@@ -145,6 +148,9 @@ serve(async (req) => {
 
     // Add current message
     conversationHistory.push({ role: "user", content: message });
+
+    // Log the conversation for debugging
+    console.log("Conversation history:", JSON.stringify(conversationHistory));
 
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {

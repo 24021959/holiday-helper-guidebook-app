@@ -196,12 +196,15 @@ const ChatbotSettings: React.FC = () => {
         return;
       }
 
+      toast.info(`Elaborazione di ${pages.length} pagine per la base di conoscenza...`);
+
       // Create knowledge base for embedding
       const formattedContent = pages.map(page => ({
         id: page.id,
         title: page.title,
         content: page.content,
-        path: page.path
+        path: page.path,
+        list_items: page.list_items
       }));
 
       // Send to embedding function
@@ -214,7 +217,11 @@ const ChatbotSettings: React.FC = () => {
 
       if (embedError) throw embedError;
 
-      toast.success(`Base di conoscenza del chatbot aggiornata con ${pages.length} pagine`);
+      if (data.success) {
+        toast.success(`Base di conoscenza del chatbot aggiornata con ${data.message}`);
+      } else {
+        toast.error(`Errore: ${data.error || "Errore sconosciuto"}`);
+      }
     } catch (error) {
       console.error("Error updating chatbot knowledge base:", error);
       toast.error("Errore nell'aggiornamento della base di conoscenza del chatbot");

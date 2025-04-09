@@ -30,18 +30,32 @@ serve(async (req) => {
 
     console.log(`Processing ${pages.length} pages for chatbot knowledge base`);
 
-    // Prepare data for embeddings, extracting content from each page
+    // Prepare data for embeddings, processing and formatting content from each page
     const pageContents = pages.map(page => {
-      // Simple formatting of the page content
-      const formattedContent = `Page: ${page.title}\nURL: ${page.path}\nContent: ${
-        (page.content || "").replace(/<[^>]*>/g, " ").trim()
-      }`;
+      // Clean HTML tags and format content
+      const cleanContent = (page.content || "").replace(/<[^>]*>/g, " ").trim();
+      
+      // Extract any list items if present
+      let listItemsText = "";
+      if (page.list_items && Array.isArray(page.list_items) && page.list_items.length > 0) {
+        listItemsText = "\n\nItems in this page:\n" + 
+          page.list_items.map((item: any, index: number) => 
+            `${index + 1}. ${item.name || ""} - ${item.description || ""}`
+          ).join("\n");
+      }
+
+      // Format the content in a way that's useful for the chatbot
+      const formattedContent = `
+Page Title: ${page.title || "Untitled"}
+URL Path: ${page.path || ""}
+Content: ${cleanContent}${listItemsText}
+      `.trim();
 
       return {
         id: page.id,
-        title: page.title,
+        title: page.title || "Untitled",
         content: formattedContent,
-        path: page.path
+        path: page.path || ""
       };
     });
 
@@ -52,6 +66,7 @@ serve(async (req) => {
     );
 
     // Clear existing knowledge
+    console.log("Removing existing knowledge from database");
     try {
       await supabaseClient
         .from('chatbot_knowledge')
@@ -62,34 +77,50 @@ serve(async (req) => {
       // Continue with the insert even if delete fails
     }
 
-    // Insert new knowledge
+    // Insert new knowledge with embeddings
+    console.log("Creating new embeddings and inserting knowledge");
     let successCount = 0;
+    let errorCount = 0;
+    
     for (const page of pageContents) {
       // Create embeddings using OpenAI
-      const embedding = await createEmbedding(page.content);
-      
-      if (embedding) {
-        try {
-          await supabaseClient
-            .from('chatbot_knowledge')
-            .insert({
-              page_id: page.id,
-              title: page.title,
-              content: page.content,
-              path: page.path,
-              embedding
-            });
-          successCount++;
-        } catch (insertError) {
-          console.error(`Error inserting knowledge for page ${page.id}:`, insertError);
+      try {
+        const embedding = await createEmbedding(page.content);
+        
+        if (embedding) {
+          try {
+            await supabaseClient
+              .from('chatbot_knowledge')
+              .insert({
+                page_id: page.id,
+                title: page.title,
+                content: page.content,
+                path: page.path,
+                embedding: embedding
+              });
+            successCount++;
+            console.log(`Successfully processed page: ${page.title}`);
+          } catch (insertError) {
+            console.error(`Error inserting knowledge for page ${page.id}:`, insertError);
+            errorCount++;
+          }
+        } else {
+          console.error(`Failed to create embedding for page ${page.id}`);
+          errorCount++;
         }
+      } catch (error) {
+        console.error(`Error processing page ${page.id}:`, error);
+        errorCount++;
       }
     }
+
+    console.log(`Knowledge base update complete. Success: ${successCount}, Errors: ${errorCount}`);
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: `Successfully processed ${successCount} out of ${pages.length} pages for chatbot knowledge base` 
+        message: `Successfully processed ${successCount} out of ${pages.length} pages for chatbot knowledge base`,
+        errors: errorCount 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
