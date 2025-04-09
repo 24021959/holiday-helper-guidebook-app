@@ -42,51 +42,78 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
 }) => {
   return (
     <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="inline-flex w-full justify-start overflow-x-auto mb-8">
-        <TabsTrigger value="manage-pages">Gestione Pagine</TabsTrigger>
-        <TabsTrigger value="create-page">Crea Pagina</TabsTrigger>
-        <TabsTrigger value="header-settings">Impostazioni Header</TabsTrigger>
-        <TabsTrigger value="translations">Traduzioni Menu</TabsTrigger>
-        <TabsTrigger value="chatbot-settings">Impostazioni Chatbot</TabsTrigger>
+      <TabsList className="inline-flex w-full justify-start overflow-x-auto space-x-1 mb-8 border-b rounded-none bg-transparent h-auto pb-0 p-0">
+        <TabsTrigger 
+          value="manage-pages"
+          className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
+        >
+          Gestione Pagine
+        </TabsTrigger>
+        <TabsTrigger 
+          value="create-page"
+          className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
+        >
+          Crea Pagina
+        </TabsTrigger>
+        <TabsTrigger 
+          value="header-settings"
+          className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
+        >
+          Impostazioni Header
+        </TabsTrigger>
+        <TabsTrigger 
+          value="translations"
+          className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
+        >
+          Traduzioni Menu
+        </TabsTrigger>
+        <TabsTrigger 
+          value="chatbot-settings"
+          className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
+        >
+          Impostazioni Chatbot
+        </TabsTrigger>
       </TabsList>
       
-      <TabsContent value="manage-pages" className="space-y-4">
-        <ManagePagesView 
-          pages={pages} 
-          onPagesUpdate={handlePagesUpdate}
-          parentPages={parentPages}
-          keywordToIconMap={keywordToIconMap}
-        />
-      </TabsContent>
+      <div className="admin-tab-content bg-white shadow-md rounded-md p-6 border">
+        <TabsContent value="manage-pages" className="space-y-4 mt-0">
+          <ManagePagesView 
+            pages={pages} 
+            onPagesUpdate={handlePagesUpdate}
+            parentPages={parentPages}
+            keywordToIconMap={keywordToIconMap}
+          />
+        </TabsContent>
 
-      <TabsContent value="create-page" className="space-y-4">
-        <CreatePageForm
-          parentPages={parentPages}
-          onPageCreated={handlePageCreated}
-          keywordToIconMap={keywordToIconMap}
-        />
-      </TabsContent>
+        <TabsContent value="create-page" className="space-y-4 mt-0">
+          <CreatePageForm
+            parentPages={parentPages}
+            onPageCreated={handlePageCreated}
+            keywordToIconMap={keywordToIconMap}
+          />
+        </TabsContent>
 
-      <TabsContent value="header-settings" className="space-y-4">
-        <HeaderSettingsView 
-          uploadedLogo={uploadedLogo}
-          setUploadedLogo={setUploadedLogo}
-          headerColor={headerColor}
-          setHeaderColor={setHeaderColor}
-        />
-      </TabsContent>
+        <TabsContent value="header-settings" className="space-y-4 mt-0">
+          <HeaderSettingsView 
+            uploadedLogo={uploadedLogo}
+            setUploadedLogo={setUploadedLogo}
+            headerColor={headerColor}
+            setHeaderColor={setHeaderColor}
+          />
+        </TabsContent>
 
-      <TabsContent value="translations" className="space-y-4">
-        <MenuTranslationManager />
-      </TabsContent>
-      
-      <TabsContent value="chatbot-settings" className="space-y-4">
-        <ChatbotSettingsView 
-          chatbotCode={chatbotCode}
-          setChatbotCode={setChatbotCode}
-          onSave={handleSaveChatbotSettings}
-        />
-      </TabsContent>
+        <TabsContent value="translations" className="space-y-4 mt-0">
+          <MenuTranslationManager />
+        </TabsContent>
+        
+        <TabsContent value="chatbot-settings" className="space-y-4 mt-0">
+          <ChatbotSettingsView 
+            chatbotCode={chatbotCode}
+            setChatbotCode={setChatbotCode}
+            onSave={handleSaveChatbotSettings}
+          />
+        </TabsContent>
+      </div>
     </Tabs>
   );
 };
