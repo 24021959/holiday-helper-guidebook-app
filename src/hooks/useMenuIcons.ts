@@ -2,6 +2,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useTranslation } from "@/context/TranslationContext";
 
 export interface IconData {
   id: string;
@@ -26,8 +27,9 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
   const [icons, setIcons] = useState<IconData[]>([]);
   const [hasConnectionError, setHasConnectionError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const { language } = useTranslation();
   
-  console.log(`useMenuIcons initialized with parentPath: ${parentPath}`);
+  console.log(`useMenuIcons initialized with parentPath: ${parentPath}, language: ${language}`);
 
   // Main function to load icons
   const loadIcons = useCallback(async () => {
@@ -38,51 +40,91 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
       
       // Be careful with localStorage and handle quota errors
       try {
-        const cacheKey = `icons_${parentPath || 'root'}_${refreshTrigger}`;
+        const cacheKey = `icons_${parentPath || 'root'}_${language}_${refreshTrigger}`;
         localStorage.removeItem(cacheKey);
       } catch (e) {
         console.warn("Could not access localStorage, continuing without cache:", e);
       }
       
-      console.log(`Loading icons for parentPath: ${parentPath}, refreshTrigger: ${refreshTrigger}`);
+      console.log(`Loading icons for parentPath: ${parentPath}, language: ${language}, refreshTrigger: ${refreshTrigger}`);
 
       // LOAD TOP LEVEL PAGES OR SUBPAGES
       let pageIcons: IconData[] = [];
       
+      // Gestione delle query in base alla lingua corrente e al path
       if (parentPath === null) {
-        // We're in the root menu - load main pages (parent_path === null)
-        console.log("Loading root level pages");
-        const { data: rootPages, error: rootError } = await supabase
-          .from('custom_pages')
-          .select('id, title, path, icon, parent_path, published')
-          .is('parent_path', null)
-          .eq('published', true);
-          
-        if (rootError) {
-          console.error("Error loading root pages:", rootError);
-          throw rootError;
-        } else if (rootPages && rootPages.length > 0) {
-          console.log(`Found ${rootPages.length} published root pages:`, rootPages);
-          
-          pageIcons = rootPages.map(page => ({
-            id: page.id,
-            path: page.path,
-            label: page.title,
-            title: page.title,
-            icon: page.icon || 'FileText',
-            parent_path: page.parent_path,
-            published: page.published,
-            is_parent: false // Default value, will be updated later
-          }));
+        // Siamo nel menu principale - carica pagine principali 
+        console.log(`Loading root level pages for language: ${language}`);
+        
+        if (language === 'it') {
+          // Per l'italiano (default), carica pagine che non hanno prefisso lingua
+          const { data: rootPages, error: rootError } = await supabase
+            .from('custom_pages')
+            .select('id, title, path, icon, parent_path, published')
+            .is('parent_path', null)
+            .eq('published', true)
+            .not('path', 'like', '/en/%')
+            .not('path', 'like', '/fr/%')
+            .not('path', 'like', '/es/%')
+            .not('path', 'like', '/de/%');
+            
+          if (rootError) {
+            console.error("Error loading root pages:", rootError);
+            throw rootError;
+          } else if (rootPages && rootPages.length > 0) {
+            console.log(`Found ${rootPages.length} published root pages for IT:`, rootPages);
+            
+            pageIcons = rootPages.map(page => ({
+              id: page.id,
+              path: page.path,
+              label: page.title,
+              title: page.title,
+              icon: page.icon || 'FileText',
+              parent_path: page.parent_path,
+              published: page.published,
+              is_parent: false // Default value, will be updated later
+            }));
+          } else {
+            console.log("No root pages found for IT");
+          }
         } else {
-          console.log("No root pages found");
+          // Per altre lingue, carica solo pagine con prefisso lingua
+          const { data: langPages, error: langError } = await supabase
+            .from('custom_pages')
+            .select('id, title, path, icon, parent_path, published')
+            .is('parent_path', null)
+            .eq('published', true)
+            .like('path', `/${language}/%`);
+            
+          if (langError) {
+            console.error(`Error loading root pages for language ${language}:`, langError);
+            throw langError;
+          } else if (langPages && langPages.length > 0) {
+            console.log(`Found ${langPages.length} published root pages for ${language}:`, langPages);
+            
+            pageIcons = langPages.map(page => ({
+              id: page.id,
+              path: page.path,
+              label: page.title,
+              title: page.title,
+              icon: page.icon || 'FileText',
+              parent_path: page.parent_path,
+              published: page.published,
+              is_parent: false // Default value, will be updated later
+            }));
+          } else {
+            console.log(`No root pages found for language ${language}`);
+          }
         }
       } else {
-        // We're in a submenu - load subpages for the specific parent path
-        console.log(`Loading subpages for parent path: ${parentPath}`);
+        // Siamo in un sottomenu - carica sottopagine specifiche per il path genitore
+        console.log(`Loading subpages for parent path: ${parentPath}, language: ${language}`);
         
-        // FIXED QUERY - Compare with ILIKE for case-insensitive matching 
-        // to ensure we catch all subpages regardless of case
+        // Verifica se il parentPath ha un prefisso lingua
+        const hasLanguagePrefix = /^\/[a-z]{2}\//.test(parentPath);
+        console.log(`Path has language prefix: ${hasLanguagePrefix}`);
+        
+        // Ottieni sottopagine in base al percorso
         const { data: subPages, error: subPagesError } = await supabase
           .from('custom_pages')
           .select('id, title, path, icon, parent_path, published')
@@ -94,7 +136,6 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
           throw subPagesError;
         } else if (subPages && subPages.length > 0) {
           console.log(`Found ${subPages.length} published subpages for ${parentPath}:`, subPages);
-          console.log("Subpages detail:", JSON.stringify(subPages));
           
           pageIcons = subPages.map(page => ({
             id: page.id,
@@ -109,7 +150,7 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
         } else {
           console.log(`No subpages found for parent path: ${parentPath}`);
           
-          // Try with case-insensitive search as fallback
+          // Prova con ricerca case-insensitive come fallback
           const normalizedPath = parentPath.toLowerCase();
           console.log(`Trying fallback search with normalized path: ${normalizedPath}`);
           
@@ -167,7 +208,7 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
         
         // Carefully handle localStorage to avoid quota errors
         try {
-          const cacheKey = `icons_${parentPath || 'root'}_${refreshTrigger}`;
+          const cacheKey = `icons_${parentPath || 'root'}_${language}_${refreshTrigger}`;
           const iconString = JSON.stringify(uniqueIcons);
           
           // Only store if small enough to avoid quota issues
@@ -182,11 +223,28 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
       } else {
         console.log("No page icons found, checking for direct menu_icons");
         // Check if there are any direct menu_icons for this parent
-        const { data: menuIconsData, error: menuIconsError } = await supabase
+        
+        // Costruisci la query in base alla lingua
+        let menuIconsQuery = supabase
           .from('menu_icons')
           .select('*')
-          .eq('parent_path', parentPath)
           .eq('published', true);
+          
+        if (parentPath !== null) {
+          menuIconsQuery = menuIconsQuery.eq('parent_path', parentPath);
+        } else if (language !== 'it') {
+          // Per menu principale in lingua diversa dall'italiano
+          menuIconsQuery = menuIconsQuery.like('path', `/${language}/%`);
+        } else {
+          // Per italiano, escludi percorsi con prefissi lingua
+          menuIconsQuery = menuIconsQuery
+            .not('path', 'like', '/en/%')
+            .not('path', 'like', '/fr/%')
+            .not('path', 'like', '/es/%')
+            .not('path', 'like', '/de/%');
+        }
+        
+        const { data: menuIconsData, error: menuIconsError } = await menuIconsQuery;
         
         if (!menuIconsError && menuIconsData && menuIconsData.length > 0) {
           console.log(`Found ${menuIconsData.length} menu icons for parent_path:`, parentPath);
@@ -224,7 +282,7 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
           
           // Safely store in localStorage
           try {
-            const cacheKey = `icons_${parentPath || 'root'}_${refreshTrigger}`;
+            const cacheKey = `icons_${parentPath || 'root'}_${language}_${refreshTrigger}`;
             const iconString = JSON.stringify(iconData);
             
             if (iconString.length < 100000) {
@@ -245,7 +303,7 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
       
       // Try to use cached icons as a last resort, but handle localStorage errors
       try {
-        const cacheKey = `icons_${parentPath || 'root'}_${refreshTrigger-1}`;
+        const cacheKey = `icons_${parentPath || 'root'}_${language}_${refreshTrigger-1}`;
         const cachedIconsStr = localStorage.getItem(cacheKey);
         if (cachedIconsStr) {
           try {
@@ -264,13 +322,13 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
     } finally {
       setIsLoading(false);
     }
-  }, [parentPath, refreshTrigger]);
+  }, [parentPath, refreshTrigger, language]);
 
   // Load icons when component mounts or refreshTrigger changes
   useEffect(() => {
-    console.log(`useMenuIcons - Loading icons with refreshTrigger: ${refreshTrigger}`);
+    console.log(`useMenuIcons - Loading icons with refreshTrigger: ${refreshTrigger}, language: ${language}`);
     loadIcons();
-  }, [loadIcons, refreshTrigger]);
+  }, [loadIcons, refreshTrigger, language]);
   
   // Try to reconnect if there's a connection error
   useEffect(() => {
@@ -295,7 +353,7 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
     
     // Clear cache to force fresh data
     try {
-      const cacheKey = `icons_${parentPath || 'root'}_${refreshTrigger}`;
+      const cacheKey = `icons_${parentPath || 'root'}_${language}_${refreshTrigger}`;
       localStorage.removeItem(cacheKey);
     } catch (e) {
       console.warn("Could not clear localStorage cache:", e);
@@ -311,4 +369,3 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
     refreshIcons
   };
 };
-

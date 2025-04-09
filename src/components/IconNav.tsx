@@ -7,6 +7,7 @@ import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";
 import { IconData } from "@/hooks/useMenuIcons";
 import TranslatedText from "./TranslatedText";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTranslation } from "@/context/TranslationContext";
 
 interface IconNavProps {
   parentPath: string | null;
@@ -22,9 +23,11 @@ const IconNav: React.FC<IconNavProps> = ({
   const navigate = useNavigate();
   const keywordToIconMap = useKeywordToIconMap();
   const isMobile = useIsMobile();
+  const { language } = useTranslation();
 
   useEffect(() => {
     console.log("IconNav - Received", icons.length, "icons with parentPath:", parentPath);
+    console.log("IconNav - Current language:", language);
     
     if (icons.length > 0) {
       console.log("IconNav - First icon details:", JSON.stringify(icons[0]));
@@ -33,7 +36,7 @@ const IconNav: React.FC<IconNavProps> = ({
     if (parentPath) {
       console.log("IconNav - All subpages under parent:", parentPath);
     }
-  }, [icons, parentPath]);
+  }, [icons, parentPath, language]);
 
   // Format icons for component use
   const formattedIcons = icons.map(icon => {
@@ -69,12 +72,21 @@ const IconNav: React.FC<IconNavProps> = ({
     console.log("Clicked on icon:", icon);
     
     try {
+      // Prepara il prefisso della lingua per i percorsi, ma solo per lingue diverse dall'italiano
+      const langPrefix = language !== 'it' ? `/${language}` : '';
+      
       // Check if this is a parent page (has subpages)
       if (icon.is_parent) {
         console.log("Navigation to submenu for parent:", icon.path);
         // Extract path without initial slash for the URL parameter
-        const pathParam = icon.path.startsWith('/') ? icon.path.substring(1) : icon.path;
-        navigate(`/submenu/${pathParam}`);
+        let pathParam = icon.path.startsWith('/') ? icon.path.substring(1) : icon.path;
+        
+        // Se la pagina non inizia già con il prefisso lingua (es. /en/), aggiungi il prefisso
+        if (language !== 'it' && !pathParam.startsWith(`${language}/`)) {
+          navigate(`/submenu/${language}/${pathParam}`);
+        } else {
+          navigate(`/submenu/${pathParam}`);
+        }
         return;
       }
       
@@ -82,14 +94,28 @@ const IconNav: React.FC<IconNavProps> = ({
       const systemRoutes = ['/menu', '/admin', '/home', '/login', '/welcome'];
       if (systemRoutes.includes(icon.path)) {
         console.log("Navigation to system route:", icon.path);
-        navigate(icon.path);
+        
+        // Per le rotte di sistema come /menu, aggiungi il prefisso lingua
+        if (language !== 'it' && icon.path === '/menu') {
+          navigate(`${langPrefix}${icon.path}`);
+        } else {
+          navigate(icon.path);
+        }
         return;
       }
       
-      // For content pages, navigate directly to the path of the page
-      // and pass the parent path in the state for proper "back" navigation
-      console.log("Navigation to content page:", icon.path);
-      navigate(icon.path, { 
+      // Per i percorsi di contenuto, controlla se il percorso ha già il prefisso lingua
+      let contentPath = icon.path;
+      
+      // Se la lingua non è italiano e il percorso non inizia già con il prefisso lingua
+      if (language !== 'it' && !contentPath.startsWith(`/${language}`)) {
+        // Cerca se esiste una versione localizzata della pagina
+        console.log(`Looking for localized version of page: ${langPrefix}${contentPath}`);
+        contentPath = `${langPrefix}${contentPath}`;
+      }
+      
+      console.log("Navigation to content page:", contentPath);
+      navigate(contentPath, { 
         state: { 
           parentPath: parentPath 
         } 

@@ -113,6 +113,12 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/menu" element={<Menu />} />
           
+          {/* Rotte multilingua per il menu */}
+          <Route path="/en/menu" element={<Menu />} />
+          <Route path="/fr/menu" element={<Menu />} />
+          <Route path="/es/menu" element={<Menu />} />
+          <Route path="/de/menu" element={<Menu />} />
+          
           {/* Protected routes */}
           <Route 
             path="/admin" 
@@ -124,8 +130,9 @@ function App() {
           />
           <Route path="/home" element={<Home />} />
           
-          {/* Specific routes for submenu */}
+          {/* Specific routes for submenu - supporto per percorsi multilingua */}
           <Route path="/submenu/:parentPath" element={<SubMenu />} />
+          <Route path="/submenu/:language/:path" element={<SubMenu />} />
           
           {/* Preview route for admin */}
           <Route path="/preview/*" element={<PreviewPage />} />
@@ -133,6 +140,9 @@ function App() {
           {/* IMPORTANT: Route for dynamic pages, including nested paths */}
           <Route path="/:category/:subcategory" element={<PreviewPage />} />
           <Route path="/:category/:subcategory/:item" element={<PreviewPage />} />
+          
+          {/* Supporto per pagine di primo livello multilingua */}
+          <Route path="/:language/:pageSlug" element={<PreviewPage />} />
           
           {/* Route for top level pages */}
           <Route path="/:pageSlug" element={<PreviewPage />} />

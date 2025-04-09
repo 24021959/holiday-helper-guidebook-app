@@ -49,8 +49,12 @@ export const LanguageSelector = ({ onSelectLanguage }: LanguageSelectorProps) =>
     if (onSelectLanguage) {
       onSelectLanguage(code);
     } else {
-      // If no callback is provided, navigate to menu
-      navigate("/menu");
+      // MODIFICATO: Naviga al menu specifico della lingua, tranne per italiano che è il default
+      if (code === 'it') {
+        navigate("/menu");
+      } else {
+        navigate(`/${code}/menu`);
+      }
     }
     
     setIsOpen(false);

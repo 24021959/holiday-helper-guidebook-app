@@ -12,6 +12,7 @@ import BackToMenu from "@/components/BackToMenu";
 import FilteredIconNav from "@/components/FilteredIconNav";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTranslation } from "@/context/TranslationContext";
 
 interface PageDetails {
   id: string;
@@ -19,7 +20,11 @@ interface PageDetails {
 }
 
 const SubMenu: React.FC = () => {
-  const { parentPath } = useParams<{ parentPath: string }>();
+  const { parentPath, language, path } = useParams<{ 
+    parentPath: string;
+    language?: string;
+    path?: string;
+  }>();
   const { headerSettings, loading: headerLoading } = useHeaderSettings();
   const [pageDetails, setPageDetails] = useState<PageDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,30 +32,44 @@ const SubMenu: React.FC = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { language: currentLanguage, setLanguage } = useTranslation();
+  
+  // Se abbiamo language e path nei parametri, costruiamo il percorso genitore in modo speciale
+  const effectiveParentPath = language && path ? 
+    `/${language}/${path}` : 
+    parentPath ? `/${parentPath}` : null;
+  
+  // Se abbiamo language nei parametri, impostiamo la lingua corrente
+  useEffect(() => {
+    if (language && ['it', 'en', 'fr', 'es', 'de'].includes(language)) {
+      if (language !== currentLanguage) {
+        console.log(`SubMenu - Setting language from URL params: ${language}`);
+        setLanguage(language as 'it' | 'en' | 'fr' | 'es' | 'de');
+      }
+    }
+  }, [language, currentLanguage, setLanguage]);
   
   // Handle path with special characters (like accented letters)
-  const decodedPath = parentPath ? decodeURIComponent(parentPath) : null;
-  // Always prepend / to the path for database lookups
-  const realPath = decodedPath ? `/${decodedPath}` : null;
+  const decodedPath = effectiveParentPath ? decodeURIComponent(effectiveParentPath) : null;
   
-  console.log("SubMenu - Rendering with parentPath:", parentPath);
-  console.log("SubMenu - Decoded path:", decodedPath);
-  console.log("SubMenu - Real path for database lookup:", realPath);
+  console.log("SubMenu - Rendering with params:", {
+    parentPath, language, path, effectiveParentPath, decodedPath
+  });
   
   // Load parent page details
   const fetchPageDetails = useCallback(async () => {
-    if (!parentPath) return;
+    if (!decodedPath) return;
     
     try {
       setLoading(true);
       
-      console.log("SubMenu - Fetching page details for path:", realPath);
+      console.log("SubMenu - Fetching page details for path:", decodedPath);
       
       // Try with exact match first
       let { data: pageData, error: pageError } = await supabase
         .from('custom_pages')
         .select('id, title')
-        .eq('path', realPath)
+        .eq('path', decodedPath)
         .eq('published', true)
         .maybeSingle();
 
@@ -60,7 +79,7 @@ const SubMenu: React.FC = () => {
         const { data: fuzzyPageData, error: fuzzyError } = await supabase
           .from('custom_pages')
           .select('id, title')
-          .ilike('path', realPath)
+          .ilike('path', decodedPath)
           .eq('published', true)
           .maybeSingle();
 
@@ -80,7 +99,7 @@ const SubMenu: React.FC = () => {
         });
         console.log("Loaded parent page details:", pageData);
       } else {
-        console.log("No parent page found for path:", realPath);
+        console.log("No parent page found for path:", decodedPath);
         setError("Parent page not found");
       }
     } catch (error) {
@@ -89,7 +108,7 @@ const SubMenu: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [parentPath, realPath]);
+  }, [decodedPath]);
 
   useEffect(() => {
     fetchPageDetails();
@@ -119,7 +138,7 @@ const SubMenu: React.FC = () => {
       <div className="bg-gradient-to-r from-emerald-100 to-teal-100 py-3 px-4 shadow-sm flex items-center">
         <BackToMenu showBackButton={false} />
         <h1 className="text-xl font-medium text-emerald-800 flex-1 text-center pr-6">
-          {pageDetails ? pageDetails.title : "Submenu"}
+          {pageDetails ? <TranslatedText text={pageDetails.title} /> : "Submenu"}
         </h1>
       </div>
       
@@ -129,12 +148,19 @@ const SubMenu: React.FC = () => {
           <ErrorView 
             message={error || "Error loading submenu"}
             onRefresh={handleRefresh}
-            onAlternativeAction={() => navigate('/menu')}
+            onAlternativeAction={() => {
+              // Torna al menu principale nella lingua corrente
+              if (currentLanguage === 'it') {
+                navigate('/menu');
+              } else {
+                navigate(`/${currentLanguage}/menu`);
+              }
+            }}
             alternativeActionText="Back to menu"
           />
         ) : (
           <FilteredIconNav 
-            parentPath={realPath} 
+            parentPath={decodedPath} 
             onRefresh={handleRefresh}
             refreshTrigger={refreshTrigger}
           />

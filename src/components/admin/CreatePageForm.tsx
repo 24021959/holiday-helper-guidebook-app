@@ -127,9 +127,9 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         ? `${parentPath}/${pathValue}` 
         : `/${pathValue}`;
       
-      const formattedContent = pageType !== "parent" 
-        ? formatPageContent(values.content, pageImages)
-        : "";
+      const formattedContent = pageType === "parent" 
+        ? ""
+        : formatPageContent(values.content, pageImages);
       
       // Creiamo la pagina in italiano
       const pageData = {
@@ -137,7 +137,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         title: values.title,
         content: formattedContent,
         path: finalPath,
-        image_url: pageType !== "parent" ? uploadedImage : null,
+        image_url: pageType === "parent" ? null : uploadedImage,
         icon: values.icon || selectedIcon,
         is_submenu: pageType === "submenu",
         parent_path: pageType === "submenu" ? parentPath : null,
@@ -263,7 +263,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
           parentPath: page.parent_path || undefined,
           pageImages: [],
           published: page.published || false,
-          is_parent: pageType === "parent"
+          is_parent: false // Modifica qui: rimuoviamo il confronto diretto
         }));
         
         onPageCreated(formattedPages);
