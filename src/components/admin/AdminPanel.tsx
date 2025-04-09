@@ -3,7 +3,6 @@ import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ManagePagesView from "./ManagePagesView";
 import { HeaderSettingsView } from "./HeaderSettingsView";
-import { ChatbotSettingsView } from "./ChatbotSettingsView";
 import MenuTranslationManager from "./MenuTranslationManager";
 import { CreatePageForm } from "./CreatePageForm";
 
@@ -16,11 +15,8 @@ interface AdminPanelProps {
   setUploadedLogo: (logo: string | null) => void;
   headerColor: string;
   setHeaderColor: (color: string) => void;
-  chatbotCode: string;
-  setChatbotCode: (code: string) => void;
   handlePageCreated: (pages: any[]) => void;
   handlePagesUpdate: (pages: any[]) => void;
-  handleSaveChatbotSettings: () => Promise<void>;
   keywordToIconMap: Record<string, string>;
 }
 
@@ -33,11 +29,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   setUploadedLogo,
   headerColor,
   setHeaderColor,
-  chatbotCode,
-  setChatbotCode,
   handlePageCreated,
   handlePagesUpdate,
-  handleSaveChatbotSettings,
   keywordToIconMap
 }) => {
   return (
@@ -66,12 +59,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
         >
           Traduzioni Menu
-        </TabsTrigger>
-        <TabsTrigger 
-          value="chatbot-settings"
-          className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
-        >
-          Impostazioni Chatbot
         </TabsTrigger>
       </TabsList>
       
@@ -104,14 +91,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
 
         <TabsContent value="translations" className="space-y-4 mt-0">
           <MenuTranslationManager />
-        </TabsContent>
-        
-        <TabsContent value="chatbot-settings" className="space-y-4 mt-0">
-          <ChatbotSettingsView 
-            chatbotCode={chatbotCode}
-            setChatbotCode={setChatbotCode}
-            onSave={handleSaveChatbotSettings}
-          />
         </TabsContent>
       </div>
     </Tabs>

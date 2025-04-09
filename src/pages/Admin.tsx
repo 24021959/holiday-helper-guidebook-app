@@ -54,7 +54,6 @@ const Admin: React.FC = () => {
   const [pages, setPages] = useState<PageData[]>([]);
   const [uploadedLogo, setUploadedLogo] = useState<string | null>(null);
   const [headerColor, setHeaderColor] = useState<string>("bg-gradient-to-r from-teal-500 to-emerald-600");
-  const [chatbotCode, setChatbotCode] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("create-page");
   const [loadError, setLoadError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -72,41 +71,6 @@ const Admin: React.FC = () => {
       setActiveTab("user-management");
     }
   }, [location.search, isMaster]);
-  
-  const fetchChatbotSettings = async () => {
-    try {
-      const localStorageCode = localStorage.getItem("chatbotCode");
-      if (localStorageCode) {
-        console.log("Loaded chatbot code from localStorage");
-        setChatbotCode(localStorageCode);
-        return;
-      }
-      
-      const { data, error } = await supabase
-        .from('chatbot_settings')
-        .select('code')
-        .eq('id', 1)
-        .maybeSingle();
-        
-      if (error && error.code !== 'PGRST116') {
-        console.warn("Error loading chatbot settings:", error);
-        return;
-      }
-      
-      if (data && data.code) {
-        console.log("Loaded chatbot code from Supabase");
-        setChatbotCode(data.code);
-        
-        try {
-          localStorage.setItem("chatbotCode", data.code);
-        } catch (e) {
-          console.warn("Failed to store chatbotCode in localStorage:", e);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching chatbot settings:", error);
-    }
-  };
   
   const safelyStorePagesInLocalStorage = (pagesData: PageData[]): boolean => {
     try {
@@ -231,7 +195,6 @@ const Admin: React.FC = () => {
   useEffect(() => {
     if (isAuthenticated && !isMaster) {
       fetchPages();
-      fetchChatbotSettings();
     }
   }, [isAuthenticated, isMaster]);
   
@@ -266,39 +229,6 @@ const Admin: React.FC = () => {
     console.log("Admin - Pages updated, count:", updatedPages.length);
     setPages(updatedPages);
     safelyStorePagesInLocalStorage(updatedPages);
-  };
-  
-  const handleSaveChatbotSettings = async () => {
-    try {
-      try {
-        localStorage.setItem("chatbotCode", chatbotCode);
-        console.log("Chatbot code saved to localStorage");
-      } catch (e) {
-        console.warn("Failed to store chatbotCode in localStorage:", e);
-      }
-      
-      try {
-        const { error } = await supabase
-          .from('chatbot_settings')
-          .upsert({ id: 1, code: chatbotCode })
-          .select();
-
-        if (error) {
-          console.warn("Error saving to Supabase, using localStorage as fallback:", error);
-        } else {
-          console.log("Chatbot code saved to Supabase successfully");
-        }
-      } catch (e) {
-        console.warn("Supabase request failed:", e);
-      }
-      
-      toast.success("Impostazioni chatbot salvate con successo");
-      return Promise.resolve();
-    } catch (error) {
-      console.error("Error saving chatbot settings:", error);
-      toast.error("Errore nel salvataggio delle impostazioni chatbot");
-      return Promise.reject(error);
-    }
   };
   
   if (isLoading) {
@@ -344,11 +274,8 @@ const Admin: React.FC = () => {
             setUploadedLogo={setUploadedLogo}
             headerColor={headerColor}
             setHeaderColor={setHeaderColor}
-            chatbotCode={chatbotCode}
-            setChatbotCode={setChatbotCode}
             handlePageCreated={handlePageCreated}
             handlePagesUpdate={handlePagesUpdate}
-            handleSaveChatbotSettings={handleSaveChatbotSettings}
             keywordToIconMap={keywordToIconMap}
           />
         )}

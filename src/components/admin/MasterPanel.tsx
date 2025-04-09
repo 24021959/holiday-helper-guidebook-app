@@ -1,6 +1,5 @@
 
-import React, { useState, useEffect } from "react";
-import { toast } from "sonner";
+import React, { useState } from "react";
 import {
   Card,
   CardContent,
@@ -10,20 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch"; // Changed from Toggle to Switch
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { UserManagementView } from "./UserManagementView";
-import { UserData } from "@/pages/Admin";
 
 interface MasterPanelProps {}
 
