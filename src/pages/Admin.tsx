@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -98,7 +97,6 @@ const Admin: React.FC = () => {
         console.log("Loaded chatbot code from Supabase");
         setChatbotCode(data.code);
         
-        // Safely store in localStorage with error handling
         try {
           localStorage.setItem("chatbotCode", data.code);
         } catch (e) {
@@ -112,11 +110,9 @@ const Admin: React.FC = () => {
   
   const safelyStorePagesInLocalStorage = (pagesData: PageData[]): boolean => {
     try {
-      // Calculate approximate size of pages data
       const pagesString = JSON.stringify(pagesData);
       const sizeInMB = (pagesString.length * 2) / (1024 * 1024);
       
-      // If data is too large (>4MB), don't even try to store it
       if (sizeInMB > 4) {
         console.warn("Pages data too large for localStorage (approx " + sizeInMB.toFixed(2) + "MB)");
         return false;
@@ -135,7 +131,6 @@ const Admin: React.FC = () => {
       setLoadError(null);
       console.log("Admin - Fetching pages from database");
       
-      // Try to use cached pages while waiting for fresh data
       try {
         const cachedPagesString = localStorage.getItem('cached_pages');
         if (cachedPagesString) {
@@ -210,7 +205,6 @@ const Admin: React.FC = () => {
         console.log("Admin - Pages loaded from database:", formattedPages.length);
         setPages(formattedPages);
         
-        // Safely try to store pages in localStorage but don't throw if it fails
         safelyStorePagesInLocalStorage(formattedPages);
       } else {
         console.log("Admin - No pages data returned from database");
@@ -221,7 +215,6 @@ const Admin: React.FC = () => {
       setLoadError("Errore nel recupero delle pagine. Prova ad aggiornare la pagina.");
       toast.error("Errore nel recupero delle pagine");
       
-      // Try to use cached pages as fallback
       try {
         const cachedPagesString = localStorage.getItem('cached_pages');
         if (cachedPagesString) {
@@ -277,7 +270,6 @@ const Admin: React.FC = () => {
   
   const handleSaveChatbotSettings = async () => {
     try {
-      // Safely store in localStorage
       try {
         localStorage.setItem("chatbotCode", chatbotCode);
         console.log("Chatbot code saved to localStorage");

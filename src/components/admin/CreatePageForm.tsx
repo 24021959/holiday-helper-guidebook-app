@@ -127,7 +127,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         ? formatPageContent(values.content, pageImages)
         : "";
       
-      // Prima creiamo la pagina in italiano
+      // Creiamo la pagina in italiano
       const pageData = {
         id: pageId,
         title: values.title,
@@ -139,8 +139,8 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         parent_path: pageType === "submenu" ? parentPath : null,
         list_type: listType,
         list_items: listType && locationItems.length > 0 ? locationItems : null,
-        published: true,
-        language: "it" // Contrassegniamo la pagina come italiana
+        published: true
+        // Removed the language field since it doesn't exist in the database
       };
       
       console.log("Dati pagina per inserimento:", pageData);
@@ -179,50 +179,8 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         }
       }
       
-      // Ora traduciamo automaticamente la pagina nelle altre lingue
-      if (pageType !== "parent" && formattedContent) {
-        setIsTranslating(true);
-        toast.info("Traduzione automatica della pagina nelle altre lingue...");
-        
-        // Array di lingue supportate (escluso italiano)
-        const languages = ["en", "fr", "es", "de"];
-        
-        // Per ogni lingua, traduciamo titolo e contenuto
-        for (const lang of languages) {
-          try {
-            console.log(`Traduzione in ${lang} iniziata...`);
-            
-            // Traduciamo titolo e contenuto
-            const { title: translatedTitle, content: translatedContent } = 
-              await translatePage(formattedContent, values.title);
-            
-            // Creiamo una pagina tradotta
-            const translatedPageData = {
-              ...pageData,
-              id: uuidv4(), // Nuovo ID per la pagina tradotta
-              title: translatedTitle,
-              content: translatedContent,
-              language: lang
-            };
-            
-            // Salviamo la pagina tradotta nel database
-            const { error: translationError } = await supabase
-              .from('custom_pages')
-              .insert(translatedPageData);
-            
-            if (translationError) {
-              console.error(`Errore nella traduzione in ${lang}:`, translationError);
-            } else {
-              console.log(`Pagina tradotta in ${lang} salvata con successo`);
-            }
-          } catch (error) {
-            console.error(`Errore durante la traduzione in ${lang}:`, error);
-          }
-        }
-        
-        setIsTranslating(false);
-        toast.success("Traduzioni automatiche completate");
-      }
+      // Remove the automatic translation section since it uses the language field
+      // and we're now only creating the page in Italian
       
       const { data: pagesData, error: fetchError } = await supabase
         .from('custom_pages')
@@ -247,8 +205,8 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
           parentPath: page.parent_path || undefined,
           pageImages: [],
           published: page.published || false,
-          is_parent: pageType === "parent",
-          language: page.language
+          is_parent: pageType === "parent"
+          // Removed language field
         }));
         
         onPageCreated(formattedPages);
@@ -365,17 +323,12 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
             </div>
           )}
           
-          <div className="bg-blue-50 border border-blue-200 p-4 rounded-md">
-            <p className="text-blue-800">
-              Questa pagina verrà automaticamente tradotta in inglese, francese, spagnolo e tedesco dopo la creazione.
-            </p>
-          </div>
-          
           <Button type="submit" className="w-full" disabled={isCreating || isTranslating}>
-            {isCreating ? "Creazione in corso..." : isTranslating ? "Traduzione in corso..." : "Crea pagina"}
+            {isCreating ? "Creazione in corso..." : "Crea pagina"}
           </Button>
         </form>
       </Form>
     </>
   );
 };
+
