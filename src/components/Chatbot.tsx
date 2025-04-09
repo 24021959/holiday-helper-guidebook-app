@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Bot, User, Send, X, Loader2, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -52,7 +51,6 @@ export const Chatbot: React.FC = () => {
   const { language } = useTranslation();
   const [initializing, setInitializing] = useState(true);
   
-  // Load chatbot configuration
   useEffect(() => {
     const loadConfig = async () => {
       try {
@@ -83,7 +81,6 @@ export const Chatbot: React.FC = () => {
     loadConfig();
   }, []);
 
-  // Add welcome message
   useEffect(() => {
     if (!initializing && !messages.length) {
       const welcomeMessage = config.welcomeMessage[language] || config.welcomeMessage.en || "Hi! How can I help you today?";
@@ -99,7 +96,6 @@ export const Chatbot: React.FC = () => {
     }
   }, [language, initializing, config]);
 
-  // Auto scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -119,7 +115,6 @@ export const Chatbot: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Transform chat history to the format expected by the API
       const chatHistory = messages.map(msg => ({
         role: msg.role,
         content: msg.content
@@ -166,10 +161,8 @@ export const Chatbot: React.FC = () => {
     }
   };
 
-  // If chatbot is disabled, don't render
   if (!config.enabled) return null;
 
-  // Apply custom styles
   const getCustomStyles = () => {
     const position = config.position || 'right';
     return {
@@ -189,12 +182,10 @@ export const Chatbot: React.FC = () => {
 
   return (
     <>
-      {/* Chatbot Bubble */}
       <div 
         className={`fixed bottom-6 z-50 ${config.position === 'left' ? 'left-6' : 'right-6'}`}
         style={styles.container}
       >
-        {/* Chat Window */}
         <AnimatePresence>
           {isOpen && (
             <motion.div
@@ -208,7 +199,6 @@ export const Chatbot: React.FC = () => {
                 maxHeight: 'calc(100vh - 160px)',
               }}
             >
-              {/* Chat Header */}
               <div 
                 className="flex items-center justify-between p-3 text-white"
                 style={{ backgroundColor: config.primaryColor }}
@@ -227,7 +217,6 @@ export const Chatbot: React.FC = () => {
                 </Button>
               </div>
 
-              {/* Messages Area */}
               <div className="flex-1 overflow-y-auto p-3 bg-gray-50">
                 {messages.map((msg) => (
                   <div
@@ -293,7 +282,6 @@ export const Chatbot: React.FC = () => {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Input Area */}
               <div className="p-3 border-t border-gray-200 bg-white">
                 <div className="flex items-center space-x-2">
                   <Input
@@ -323,7 +311,6 @@ export const Chatbot: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Chat Button */}
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
