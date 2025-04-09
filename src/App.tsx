@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound";
 import PreviewPage from "./pages/PreviewPage";
 import { TranslationProvider } from "./context/TranslationContext";
 import { Toaster } from "sonner";
+import ChatbotBubble from "./components/ChatbotBubble";
 
 function App() {
   return (
@@ -59,6 +60,7 @@ function App() {
           {/* Catch-all for unmatched routes */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <ChatbotBubble />
       </Router>
     </TranslationProvider>
   );
