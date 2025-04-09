@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";
 import ErrorView from "../ErrorView";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 interface ManagePagesViewProps {
   pages: PageData[];
@@ -59,6 +60,8 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [localPages, setLocalPages] = useState<PageData[]>(pages);
   const [activeTab, setActiveTab] = useState<string>("list");
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [pageToDelete, setPageToDelete] = useState<PageData | null>(null);
   
   // Raggruppa le pagine per percorso base
   const groupedPages = groupPagesByBasePath(localPages);
@@ -116,15 +119,20 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
     setActiveTab("list");
   };
 
-  const handlePageDelete = async (pageId: string) => {
+  const confirmPageDelete = (page: PageData) => {
+    setPageToDelete(page);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handlePageDelete = async () => {
     try {
+      if (!pageToDelete) return;
+      
       setIsLoading(true);
+      setDeleteConfirmOpen(false);
       
       // Prima ottieni i dettagli della pagina che stiamo eliminando
-      const pageToDelete = localPages.find(p => p.id === pageId);
-      if (!pageToDelete) {
-        throw new Error("Pagina non trovata");
-      }
+      const pageId = pageToDelete.id;
       
       // Ottieni il percorso normalizzato della pagina
       const normalizedPath = normalizePath(pageToDelete.path);
@@ -168,6 +176,7 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
       toast.error("Errore nella cancellazione della pagina");
     } finally {
       setIsLoading(false);
+      setPageToDelete(null);
     }
   };
 
@@ -267,7 +276,7 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
                         page={page}
                         translations={translations}
                         onEdit={handleEditPage}
-                        onDelete={handlePageDelete}
+                        onDelete={confirmPageDelete}
                         onPreview={handlePagePreview}
                       />
                     );
@@ -299,6 +308,35 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
           </TabsContent>
         )}
       </Tabs>
+
+      {/* Confirmation Dialog for Page Deletion */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Conferma eliminazione</DialogTitle>
+            <DialogDescription>
+              Stai per eliminare la pagina "{pageToDelete?.title}" e tutte le sue traduzioni. 
+              Questa azione è permanente e non può essere annullata.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-amber-50 border border-amber-200 rounded p-3 my-2">
+            <div className="flex items-start">
+              <AlertTriangle className="h-5 w-5 text-amber-600 mr-2 mt-0.5" />
+              <div className="text-amber-800 text-sm">
+                <p>Verranno eliminate anche tutte le traduzioni di questa pagina e le relative voci di menu in tutte le lingue.</p>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
+              Annulla
+            </Button>
+            <Button variant="destructive" onClick={handlePageDelete}>
+              Elimina
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

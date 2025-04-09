@@ -10,7 +10,7 @@ import FilteredIconNav from "@/components/FilteredIconNav";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTranslation } from "@/context/TranslationContext";
 import { useLocation, useNavigate } from "react-router-dom";
-import LanguageSelector from "@/components/LanguageSelector";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 const Menu: React.FC = () => {
   const { headerSettings, loading: headerLoading, error: headerError, refreshHeaderSettings } = useHeaderSettings();

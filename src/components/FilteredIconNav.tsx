@@ -53,7 +53,7 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
       // For other languages, show only paths that start with the current language prefix
       return allIcons.filter(icon => {
         const path = icon.path || '';
-        return path.startsWith(`/${language}`);
+        return path.startsWith(`/${language}/`);
       });
     }
   }, [allIcons, language]);

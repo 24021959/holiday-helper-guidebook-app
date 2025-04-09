@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -114,7 +114,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
   const handlePageTypeChange = (newType: "normal" | "submenu" | "parent") => {
     setPageType(newType);
     if (newType === "submenu") {
-      form.setFocus("parentPath");
+      setParentPath("");
     } else {
       setParentPath("");
     }

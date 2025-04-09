@@ -20,6 +20,7 @@ interface TranslationContextType {
   translateBulk: (texts: string[]) => Promise<string[]>;
   translatePage: (pageContent: string, pageTitle: string) => Promise<{title: string, content: string}>;
   translateSequential: (pageContent: string, pageTitle: string, targetLangs: Language[]) => Promise<Record<Language, {title: string, content: string}>>;
+  translateAndCloneMenu: (targetLang: Language) => Promise<void>;
 }
 
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
@@ -222,7 +223,7 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
     }
   };
   
-  // Nuova funzione per tradurre sequenzialmente in più lingue
+  // Function to translate sequentially in multiple languages
   const translateSequential = async (
     pageContent: string, 
     pageTitle: string,
@@ -244,15 +245,17 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
           console.log(`Traduzione in corso per ${languageMap[lang]}...`);
           toast.info(`Traduzione in corso: ${languageMap[lang]}`);
           
-          // Ottieni l'URL e la chiave di Supabase in modo sicuro
-          const supabaseServiceUrl = `${supabase.supabaseUrl}/functions/v1/translate`;
+          // Get the Supabase URL and anon key in a secure way
+          const supabaseUrl = supabase.supabaseUrl;
+          const supabaseAnon = supabase.supabaseKey;
+          const supabaseServiceUrl = `${supabaseUrl}/functions/v1/translate`;
           
           // Translate title first
           const titleResponse = await fetch(supabaseServiceUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${supabase.supabaseKey}`
+              'Authorization': `Bearer ${supabaseAnon}`
             },
             body: JSON.stringify({ 
               text: pageTitle, 
@@ -282,7 +285,7 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${supabase.supabaseKey}`
+                  'Authorization': `Bearer ${supabaseAnon}`
                 },
                 body: JSON.stringify({ 
                   text: section, 
@@ -302,7 +305,7 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabase.supabaseKey}`
+                'Authorization': `Bearer ${supabaseAnon}`
               },
               body: JSON.stringify({ 
                 text: pageContent, 
@@ -338,13 +341,182 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
     return results;
   };
 
+  // New function to translate and clone the entire menu for a target language
+  const translateAndCloneMenu = async (targetLang: Language): Promise<void> => {
+    try {
+      if (targetLang === 'it') {
+        toast.error("Non è necessario tradurre il menu in italiano (lingua base)");
+        return;
+      }
+
+      toast.info(`Iniziando la traduzione e duplicazione del menu in ${languageMap[targetLang]}...`);
+      
+      // 1. Get all Italian pages from custom_pages table
+      const { data: italianPages, error: pagesError } = await supabase
+        .from('custom_pages')
+        .select('*')
+        .not('path', 'like', '/en/%')
+        .not('path', 'like', '/fr/%')
+        .not('path', 'like', '/es/%')
+        .not('path', 'like', '/de/%')
+        .eq('published', true);
+
+      if (pagesError) {
+        throw pagesError;
+      }
+
+      if (!italianPages || italianPages.length === 0) {
+        toast.error("Nessuna pagina italiana trovata da tradurre");
+        return;
+      }
+
+      console.log(`Trovate ${italianPages.length} pagine italiane da tradurre in ${targetLang}`);
+      toast.info(`Traduzione di ${italianPages.length} pagine in corso...`);
+
+      // 2. Process each page in sequence
+      let processedCount = 0;
+      for (const page of italianPages) {
+        try {
+          // 2.1 Check if this page already has a translation in the target language
+          const targetPath = `/${targetLang}${page.path}`;
+          const { data: existingTranslation } = await supabase
+            .from('custom_pages')
+            .select('id')
+            .eq('path', targetPath)
+            .maybeSingle();
+
+          // 2.2 Translate page title and content
+          console.log(`Traduzione pagina: "${page.title}" in ${targetLang}`);
+          
+          const supabaseUrl = supabase.supabaseUrl;
+          const supabaseAnon = supabase.supabaseKey;
+          const supabaseServiceUrl = `${supabaseUrl}/functions/v1/translate`;
+          
+          // Translate title
+          const titleResponse = await fetch(supabaseServiceUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseAnon}`
+            },
+            body: JSON.stringify({ 
+              text: page.title, 
+              targetLang: languageMap[targetLang]
+            })
+          });
+          
+          const titleData = await titleResponse.json();
+          const translatedTitle = titleData.translatedText || page.title;
+          
+          // Translate content
+          let translatedContent = page.content;
+          if (page.content) {
+            const contentResponse = await fetch(supabaseServiceUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseAnon}`
+              },
+              body: JSON.stringify({ 
+                text: page.content, 
+                targetLang: languageMap[targetLang]
+              })
+            });
+            
+            const contentData = await contentResponse.json();
+            translatedContent = contentData.translatedText || page.content;
+          }
+
+          // 2.3 Save translated page to custom_pages
+          let parentPath = page.parent_path;
+          if (parentPath) {
+            // Update parent path to use the target language prefix
+            parentPath = `/${targetLang}${parentPath}`;
+          }
+          
+          const newPageData = {
+            title: translatedTitle,
+            content: translatedContent,
+            path: targetPath,
+            image_url: page.image_url,
+            icon: page.icon,
+            is_submenu: page.is_submenu,
+            parent_path: parentPath,
+            published: page.published,
+            list_type: page.list_type,
+            list_items: page.list_items
+          };
+
+          if (existingTranslation) {
+            // Update existing translation
+            await supabase
+              .from('custom_pages')
+              .update(newPageData)
+              .eq('id', existingTranslation.id);
+              
+            console.log(`Pagina esistente aggiornata: ${targetPath}`);
+          } else {
+            // Create new translation
+            await supabase
+              .from('custom_pages')
+              .insert(newPageData);
+              
+            console.log(`Nuova pagina tradotta creata: ${targetPath}`);
+          }
+
+          // 2.4 Create or update matching menu_icons entry
+          const { data: existingIcon } = await supabase
+            .from('menu_icons')
+            .select('id')
+            .eq('path', targetPath)
+            .maybeSingle();
+
+          const menuIconData = {
+            path: targetPath,
+            label: translatedTitle,
+            icon: page.icon || 'FileText',
+            bg_color: 'bg-blue-200',
+            is_submenu: page.is_submenu,
+            parent_path: parentPath,
+            published: page.published
+          };
+
+          if (existingIcon) {
+            await supabase
+              .from('menu_icons')
+              .update(menuIconData)
+              .eq('id', existingIcon.id);
+          } else {
+            await supabase
+              .from('menu_icons')
+              .insert(menuIconData);
+          }
+
+          processedCount++;
+          if (processedCount % 5 === 0) {
+            toast.info(`Tradotte ${processedCount} pagine su ${italianPages.length}`);
+          }
+        } catch (pageError) {
+          console.error(`Errore nella traduzione della pagina "${page.title}":`, pageError);
+          toast.error(`Errore nella traduzione della pagina: ${page.title}`);
+        }
+      }
+
+      toast.success(`Traduzione e clonazione del menu in ${languageMap[targetLang]} completata! ${processedCount} pagine tradotte.`);
+    } catch (error) {
+      console.error(`Errore nella traduzione del menu in ${targetLang}:`, error);
+      toast.error(`Errore nella traduzione del menu in ${languageMap[targetLang]}`);
+    }
+  };
+
   const value = { 
     language, 
     setLanguage, 
     translate,
     translateBulk,
     translatePage,
-    translateSequential
+    translateSequential,
+    translateAndCloneMenu
   };
 
   return (
