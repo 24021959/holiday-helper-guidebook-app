@@ -25,8 +25,8 @@ import { Label } from "@/components/ui/label";
 import { PageTypeSection } from "./form/PageTypeSection";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Languages } from "lucide-react";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Languages, Loader2 } from "lucide-react";
+import { useTranslation } from "@/context/TranslationContext";
 
 interface EditPageFormProps {
   selectedPage: PageData;
@@ -50,6 +50,8 @@ const supportedLanguages = {
   de: 'Deutsch'
 };
 
+type Language = 'it' | 'en' | 'fr' | 'es' | 'de';
+
 const getLanguageFromPath = (path: string): string => {
   const match = path.match(/^\/([a-z]{2})\//);
   return match ? match[1] : 'it';
@@ -71,10 +73,10 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
   const [uploadedImage, setUploadedImage] = useState<string | null>(selectedPage.imageUrl || null);
   const [pageImages, setPageImages] = useState<ImageItem[]>(selectedPage.pageImages || []);
   const [currentTab, setCurrentTab] = useState<string>("content");
-  const [isTranslateDialogOpen, setIsTranslateDialogOpen] = useState(false);
-  const [targetLanguage, setTargetLanguage] = useState<string>("en");
+  const [isTranslating, setIsTranslating] = useState(false);
   const [availableTranslations, setAvailableTranslations] = useState<Record<string, boolean>>({});
-  const [isCreatingTranslation, setIsCreatingTranslation] = useState(false);
+
+  const { translateSequential } = useTranslation();
   
   const initialPageType = selectedPage.is_parent ? "parent" : selectedPage.isSubmenu ? "submenu" : "normal";
   const [pageType, setPageType] = useState<"normal" | "submenu" | "parent">(initialPageType);
@@ -260,75 +262,127 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
     }
   };
 
-  const handleCreateTranslation = async () => {
-    if (!targetLanguage || isCreatingTranslation) return;
+  const handleTranslateToAllLanguages = async () => {
+    if (isTranslating) return;
     
     try {
-      setIsCreatingTranslation(true);
-      
-      if (availableTranslations[targetLanguage]) {
-        toast.info(`Una traduzione in ${supportedLanguages[targetLanguage as keyof typeof supportedLanguages]} esiste già`);
-        setIsTranslateDialogOpen(false);
-        return;
-      }
+      setIsTranslating(true);
       
       const formValues = form.getValues();
       const contentToTranslate = formValues.content;
       const titleToTranslate = formValues.title;
       
-      const targetPath = `/${targetLanguage}${normalizedPath}`;
+      const targetLangs: Language[] = ['en', 'fr', 'es', 'de'];
       
-      const newPageId = crypto.randomUUID();
+      toast.info("Avvio traduzione in tutte le lingue...");
       
-      const { error: insertError } = await supabase
-        .from('custom_pages')
-        .insert({
-          id: newPageId,
-          title: titleToTranslate,
-          content: contentToTranslate,
+      const translations = await translateSequential(
+        contentToTranslate,
+        titleToTranslate,
+        targetLangs
+      );
+      
+      for (const lang of targetLangs) {
+        const translation = translations[lang];
+        const targetPath = `/${lang}${normalizedPath}`;
+        
+        const { data: existingPage, error: queryError } = await supabase
+          .from('custom_pages')
+          .select('id')
+          .eq('path', targetPath)
+          .maybeSingle();
+          
+        if (queryError) {
+          console.error(`Errore nella verifica della pagina in ${lang}:`, queryError);
+          continue;
+        }
+        
+        const pageData = {
+          title: translation.title,
+          content: formatPageContent(translation.content, pageImages),
           path: targetPath,
           image_url: uploadedImage,
           icon: selectedIcon,
           is_submenu: pageType === "submenu",
-          parent_path: pageType === "submenu" ? parentPath : null
-        });
+          parent_path: pageType === "submenu" ? parentPath.replace(/^\/[a-z]{2}/, `/${lang}`) : null,
+          published: true
+        };
         
-      if (insertError) {
-        throw insertError;
+        if (existingPage) {
+          const { error: updateError } = await supabase
+            .from('custom_pages')
+            .update(pageData)
+            .eq('id', existingPage.id);
+            
+          if (updateError) {
+            console.error(`Errore nell'aggiornamento della pagina in ${lang}:`, updateError);
+            toast.error(`Errore nell'aggiornamento della traduzione in ${supportedLanguages[lang]}`);
+            continue;
+          }
+          
+          const { error: menuError } = await supabase
+            .from('menu_icons')
+            .update({
+              label: translation.title,
+              parent_path: pageType === "submenu" ? parentPath.replace(/^\/[a-z]{2}/, `/${lang}`) : null,
+              is_submenu: pageType === "submenu"
+            })
+            .eq('path', targetPath);
+            
+          if (menuError) {
+            console.error(`Errore nell'aggiornamento del menu in ${lang}:`, menuError);
+          }
+          
+          console.log(`Aggiornata pagina in ${lang}: ${targetPath}`);
+        } else {
+          const { error: insertError } = await supabase
+            .from('custom_pages')
+            .insert({
+              ...pageData,
+              id: crypto.randomUUID()
+            });
+            
+          if (insertError) {
+            console.error(`Errore nella creazione della pagina in ${lang}:`, insertError);
+            toast.error(`Errore nella creazione della traduzione in ${supportedLanguages[lang]}`);
+            continue;
+          }
+          
+          const { error: menuError } = await supabase
+            .from('menu_icons')
+            .insert({
+              path: targetPath,
+              label: translation.title,
+              icon: selectedIcon,
+              bg_color: "bg-blue-200",
+              parent_path: pageType === "submenu" ? parentPath.replace(/^\/[a-z]{2}/, `/${lang}`) : null,
+              is_submenu: pageType === "submenu",
+              published: true
+            });
+            
+          if (menuError) {
+            console.error(`Errore nella creazione del menu in ${lang}:`, menuError);
+          }
+          
+          console.log(`Creata nuova pagina in ${lang}: ${targetPath}`);
+        }
+        
+        setAvailableTranslations(prev => ({
+          ...prev,
+          [lang]: true
+        }));
       }
       
-      const { error: menuError } = await supabase
-        .from('menu_icons')
-        .insert({
-          path: targetPath,
-          label: titleToTranslate,
-          icon: selectedIcon,
-          bg_color: "bg-blue-200",
-          parent_path: pageType === "submenu" ? parentPath : null,
-          is_submenu: pageType === "submenu"
-        });
-        
-      if (menuError) {
-        console.error("Errore nella creazione dell'icona di menu:", menuError);
-      }
+      toast.success("Traduzioni completate con successo");
       
-      setAvailableTranslations({
-        ...availableTranslations,
-        [targetLanguage]: true
-      });
-      
-      toast.success(`Traduzione in ${supportedLanguages[targetLanguage as keyof typeof supportedLanguages]} creata con successo`);
-      
-      const { data: pagesData, error: fetchError } = await supabase
+      const { data: updatedPagesData, error: fetchError } = await supabase
         .from('custom_pages')
         .select('*');
         
       if (fetchError) {
-        throw fetchError;
-      }
-      
-      if (pagesData) {
-        const formattedPages = pagesData.map(page => ({
+        console.error("Errore nel recupero delle pagine aggiornate:", fetchError);
+      } else if (updatedPagesData) {
+        const formattedPages = updatedPagesData.map(page => ({
           id: page.id,
           title: page.title,
           content: page.content,
@@ -357,11 +411,10 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
       }
       
     } catch (error) {
-      console.error("Errore nella creazione della traduzione:", error);
-      toast.error("Errore nella creazione della traduzione");
+      console.error("Errore nella traduzione:", error);
+      toast.error("Errore nella traduzione delle pagine");
     } finally {
-      setIsCreatingTranslation(false);
-      setIsTranslateDialogOpen(false);
+      setIsTranslating(false);
     }
   };
 
@@ -469,60 +522,19 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
             <p className="text-sm text-gray-600">{selectedPage.path}</p>
           </div>
           
-          <AlertDialog open={isTranslateDialogOpen} onOpenChange={setIsTranslateDialogOpen}>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Languages className="h-4 w-4" />
-                <span>Gestisci Traduzioni</span>
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Crea una nuova traduzione</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Seleziona la lingua per cui vuoi creare una copia di questa pagina.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              
-              <div className="py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  {Object.entries(supportedLanguages).map(([code, name]) => (
-                    <div 
-                      key={code}
-                      className={`p-3 border rounded-lg cursor-pointer ${
-                        availableTranslations[code] 
-                          ? 'bg-green-50 border-green-200' 
-                          : 'bg-white border-gray-200 hover:border-blue-300'
-                      } ${targetLanguage === code ? 'ring-2 ring-blue-500' : ''}`}
-                      onClick={() => setTargetLanguage(code)}
-                    >
-                      <div className="flex items-center">
-                        <div className="flex-1">
-                          <div className="font-medium">{name}</div>
-                          <div className="text-xs text-gray-500">{code.toUpperCase()}</div>
-                        </div>
-                        {availableTranslations[code] && (
-                          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
-                            Traduzione esistente
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <AlertDialogFooter>
-                <AlertDialogCancel>Annulla</AlertDialogCancel>
-                <AlertDialogAction 
-                  onClick={handleCreateTranslation}
-                  disabled={isCreatingTranslation || availableTranslations[targetLanguage]}
-                >
-                  {isCreatingTranslation ? 'Creazione...' : 'Crea Traduzione'}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={handleTranslateToAllLanguages}
+            disabled={isTranslating}
+          >
+            {isTranslating ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Languages className="h-4 w-4" />
+            )}
+            <span>{isTranslating ? "Traduzione in corso..." : "Traduci pagina"}</span>
+          </Button>
         </div>
         
         <div className="mt-4 flex flex-wrap gap-2">
