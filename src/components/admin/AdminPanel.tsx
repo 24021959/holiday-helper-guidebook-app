@@ -42,11 +42,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
 }) => {
   return (
     <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid grid-cols-4 mb-8">
+      <TabsList className="grid grid-cols-5 mb-8">
         <TabsTrigger value="manage-pages">Gestione Pagine</TabsTrigger>
         <TabsTrigger value="create-page">Crea Pagina</TabsTrigger>
         <TabsTrigger value="header-settings">Impostazioni Header</TabsTrigger>
         <TabsTrigger value="translations">Traduzioni Menu</TabsTrigger>
+        <TabsTrigger value="chatbot-settings">Impostazioni Chatbot</TabsTrigger>
       </TabsList>
       
       <TabsContent value="manage-pages" className="space-y-4">
@@ -77,6 +78,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
 
       <TabsContent value="translations" className="space-y-4">
         <MenuTranslationManager />
+      </TabsContent>
+      
+      <TabsContent value="chatbot-settings" className="space-y-4">
+        <ChatbotSettingsView 
+          chatbotCode={chatbotCode}
+          setChatbotCode={setChatbotCode}
+          onSave={handleSaveChatbotSettings}
+        />
       </TabsContent>
     </Tabs>
   );
