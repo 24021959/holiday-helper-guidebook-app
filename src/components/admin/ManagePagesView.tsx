@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageListItem } from "./PageListItem";
 import { CreatePageForm } from "./CreatePageForm";
 import EditPageForm from "./EditPageForm";
-import { PlusCircle, AlertTriangle } from "lucide-react";
+import { PlusCircle, AlertTriangle, Languages } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";
@@ -18,6 +18,34 @@ interface ManagePagesViewProps {
   parentPages: PageData[];
   keywordToIconMap: Record<string, string>;
 }
+
+// Funzione per trovare l'ID base della pagina senza prefisso lingua
+const getLanguagePrefix = (path: string): string | null => {
+  const match = path.match(/^\/([a-z]{2})\//);
+  return match ? match[1] : null;
+};
+
+// Funzione per normalizzare un percorso rimuovendo il prefisso lingua
+const normalizePath = (path: string): string => {
+  return path.replace(/^\/[a-z]{2}/, '');
+};
+
+// Raggruppa le pagine per percorso base
+const groupPagesByBasePath = (pages: PageData[]): Record<string, PageData[]> => {
+  const groups: Record<string, PageData[]> = {};
+  
+  pages.forEach(page => {
+    const normalizedPath = normalizePath(page.path);
+    
+    if (!groups[normalizedPath]) {
+      groups[normalizedPath] = [];
+    }
+    
+    groups[normalizedPath].push(page);
+  });
+  
+  return groups;
+};
 
 const ManagePagesView: React.FC<ManagePagesViewProps> = ({ 
   pages,
@@ -31,6 +59,16 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [localPages, setLocalPages] = useState<PageData[]>(pages);
   const [activeTab, setActiveTab] = useState<string>("list");
+  const [showAllTranslations, setShowAllTranslations] = useState(false);
+  
+  // Raggruppa le pagine per percorso base per la visualizzazione compatta
+  const groupedPages = groupPagesByBasePath(localPages);
+  
+  // Ottieni solo le pagine principali (in italiano o senza prefisso lingua)
+  const primaryPages = localPages.filter(page => {
+    const langPrefix = getLanguagePrefix(page.path);
+    return langPrefix === null || langPrefix === 'it';
+  });
 
   // Use pages from props directly and avoid extra fetching
   useEffect(() => {
@@ -156,34 +194,67 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
               <span className="ml-3 text-emerald-700">Caricamento pagine...</span>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {localPages.length === 0 ? (
-                <div className="col-span-full bg-amber-50 border border-amber-200 rounded-lg p-6 text-center">
-                  <p className="text-amber-700 mb-4">Nessuna pagina creata finora</p>
+            <>
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center">
                   <Button 
-                    onClick={() => {
-                      setIsCreateMode(true);
-                      setSelectedPage(null);
-                      setActiveTab("create");
-                    }}
-                    className="bg-emerald-600 hover:bg-emerald-700"
+                    variant={showAllTranslations ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setShowAllTranslations(!showAllTranslations)}
+                    className="mr-2"
                   >
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Crea Prima Pagina
+                    <Languages className="h-4 w-4 mr-2" />
+                    {showAllTranslations ? "Nascondi traduzioni" : "Mostra tutte le traduzioni"}
                   </Button>
                 </div>
-              ) : (
-                localPages.map((page) => (
-                  <PageListItem
-                    key={page.id}
-                    page={page}
-                    onEdit={handleEditPage}
-                    onDelete={handlePageDelete}
-                    onPreview={handlePagePreview}
-                  />
-                ))
-              )}
-            </div>
+                <div className="text-sm text-gray-500">
+                  {localPages.length} pagine totali
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {localPages.length === 0 ? (
+                  <div className="col-span-full bg-amber-50 border border-amber-200 rounded-lg p-6 text-center">
+                    <p className="text-amber-700 mb-4">Nessuna pagina creata finora</p>
+                    <Button 
+                      onClick={() => {
+                        setIsCreateMode(true);
+                        setSelectedPage(null);
+                        setActiveTab("create");
+                      }}
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                    >
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Crea Prima Pagina
+                    </Button>
+                  </div>
+                ) : (
+                  showAllTranslations ? (
+                    // Mostra tutte le pagine, incluse le traduzioni
+                    localPages.map((page) => (
+                      <PageListItem
+                        key={page.id}
+                        page={page}
+                        onEdit={handleEditPage}
+                        onDelete={handlePageDelete}
+                        onPreview={handlePagePreview}
+                      />
+                    ))
+                  ) : (
+                    // Mostra solo le pagine in italiano (versione compatta)
+                    primaryPages.map((page) => (
+                      <PageListItem
+                        key={page.id}
+                        page={page}
+                        onEdit={handleEditPage}
+                        onDelete={handlePageDelete}
+                        onPreview={handlePagePreview}
+                      />
+                    ))
+                  )
+                )}
+              </div>
+            </>
           )}
         </TabsContent>
         

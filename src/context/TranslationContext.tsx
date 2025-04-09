@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -19,6 +20,7 @@ interface TranslationContextType {
   translate: (text: string) => Promise<string>;
   translateBulk: (texts: string[]) => Promise<string[]>;
   translatePage: (pageContent: string, pageTitle: string) => Promise<{title: string, content: string}>;
+  translateSequential: (pageContent: string, pageTitle: string, targetLangs: Language[]) => Promise<Record<Language, {title: string, content: string}>>;
 }
 
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
@@ -220,13 +222,124 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
       return { title: pageTitle, content: pageContent };
     }
   };
+  
+  // Nuova funzione per tradurre sequenzialmente in più lingue
+  const translateSequential = async (
+    pageContent: string, 
+    pageTitle: string,
+    targetLangs: Language[]
+  ): Promise<Record<Language, {title: string, content: string}>> => {
+    const results: Record<Language, {title: string, content: string}> = {
+      it: { title: pageTitle, content: pageContent } // Versione italiana originale
+    };
+    
+    // Traduci il contenuto una lingua alla volta
+    for (const lang of targetLangs) {
+      if (lang !== 'it') { // Salta l'italiano (è già l'originale)
+        try {
+          console.log(`Traduzione in corso per ${languageMap[lang]}...`);
+          toast.info(`Traduzione in corso: ${languageMap[lang]}`);
+          
+          // Memorizza temporaneamente la lingua corrente
+          const originalLang = language;
+          
+          // Imposta temporaneamente la lingua target
+          // Nota: questo non influisce sull'interfaccia utente, solo sulle API calls
+          const currentLang = lang;
+          
+          // Translate title first
+          const translatedTitle = await fetch(`${supabase.supabaseUrl}/functions/v1/translate`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabase.supabaseKey}`
+            },
+            body: JSON.stringify({ 
+              text: pageTitle, 
+              targetLang: languageMap[currentLang]
+            })
+          }).then(res => res.json()).then(data => data.translatedText || pageTitle);
+          
+          // Translate content
+          let translatedContent: string;
+          
+          if (pageContent.length > 8000) {
+            // Break into paragraphs or sections for larger content
+            const sections = pageContent.split(/\n\n+/).filter(s => s.trim() !== '');
+            
+            // Translate each section individually
+            const translatedSections = [];
+            for (const section of sections) {
+              if (section.trim() === '') {
+                translatedSections.push('');
+                continue;
+              }
+              
+              const result = await fetch(`${supabase.supabaseUrl}/functions/v1/translate`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${supabase.supabaseKey}`
+                },
+                body: JSON.stringify({ 
+                  text: section, 
+                  targetLang: languageMap[currentLang]
+                })
+              }).then(res => res.json());
+              
+              translatedSections.push(result.translatedText || section);
+            }
+            
+            // Rejoin with proper spacing
+            translatedContent = translatedSections.join('\n\n');
+          } else {
+            // Content is small enough for a direct translation
+            const result = await fetch(`${supabase.supabaseUrl}/functions/v1/translate`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabase.supabaseKey}`
+              },
+              body: JSON.stringify({ 
+                text: pageContent, 
+                targetLang: languageMap[currentLang]
+              })
+            }).then(res => res.json());
+            
+            translatedContent = result.translatedText || pageContent;
+          }
+          
+          // Store the result for this language
+          results[lang] = {
+            title: translatedTitle,
+            content: translatedContent
+          };
+          
+          console.log(`Traduzione completata per ${languageMap[lang]}`);
+          toast.success(`Traduzione completata: ${languageMap[lang]}`);
+          
+        } catch (error) {
+          console.error(`Error translating to ${lang}:`, error);
+          toast.error(`Errore nella traduzione in ${languageMap[lang]}`, {
+            description: 'Impossibile completare la traduzione.'
+          });
+          
+          // Add empty/default result for this language in case of error
+          results[lang] = { title: pageTitle, content: pageContent };
+        }
+      }
+    }
+    
+    return results;
+  };
 
   const value = { 
     language, 
     setLanguage, 
     translate,
     translateBulk,
-    translatePage
+    translatePage,
+    translateSequential
   };
 
   return (
