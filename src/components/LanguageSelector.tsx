@@ -59,6 +59,13 @@ export const LanguageSelector = ({ onSelectLanguage, language: propLanguage, onC
     } else if (onSelectLanguage) {
       // If onSelectLanguage is provided, use it
       onSelectLanguage(code);
+    } else if (onIndexPage) {
+      // Direct navigation for index page
+      if (code === 'it') {
+        navigate("/menu");
+      } else {
+        navigate(`/${code}/menu`);
+      }
     } else {
       // Default behavior: navigate to the appropriate menu
       if (code === 'it') {

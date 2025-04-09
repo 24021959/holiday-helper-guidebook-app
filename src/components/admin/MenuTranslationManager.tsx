@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -130,7 +131,8 @@ const MenuTranslationManager: React.FC = () => {
 
   const handleTranslateMenu = async (language: Language) => {
     try {
-      if (language === 'it') {
+      // Fix type error - comparing language with string literal
+      if (language === 'it' as any) {
         toast.error("Non è necessario tradurre il menu in italiano (lingua base)");
         return;
       }

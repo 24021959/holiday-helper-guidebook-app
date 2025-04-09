@@ -72,20 +72,34 @@ const IconNav: React.FC<IconNavProps> = ({
     console.log("Clicked on icon:", icon);
     
     try {
-      // Prepara il prefisso della lingua per i percorsi, ma solo per lingue diverse dall'italiano
+      // Prepare language prefix for paths, but only for non-Italian languages
       const langPrefix = language !== 'it' ? `/${language}` : '';
       
       // Check if this is a parent page (has subpages)
       if (icon.is_parent) {
         console.log("Navigation to submenu for parent:", icon.path);
-        // Extract path without initial slash for the URL parameter
-        let pathParam = icon.path.startsWith('/') ? icon.path.substring(1) : icon.path;
         
-        // Se la pagina non inizia già con il prefisso lingua (es. /en/), aggiungi il prefisso
-        if (language !== 'it' && !pathParam.startsWith(`${language}/`)) {
-          navigate(`/submenu/${language}/${pathParam}`);
+        // Check if the path already contains a language prefix
+        if (icon.path.match(/^\/[a-z]{2}\//)) {
+          // Path already has language prefix, like /en/services
+          // Extract the language and path
+          const pathParts = icon.path.split('/');
+          const pathLang = pathParts[1];
+          const pathRest = pathParts.slice(2).join('/');
+          
+          console.log(`Path has language prefix: ${pathLang}, rest: ${pathRest}`);
+          navigate(`/submenu/${pathLang}/${pathRest}`);
         } else {
-          navigate(`/submenu/${pathParam}`);
+          // Path doesn't have language prefix
+          // Extract path without initial slash for the URL parameter
+          let pathParam = icon.path.startsWith('/') ? icon.path.substring(1) : icon.path;
+          
+          // For non-Italian languages, we need to include the language in the URL
+          if (language !== 'it') {
+            navigate(`/submenu/${language}/${pathParam}`);
+          } else {
+            navigate(`/submenu/${pathParam}`);
+          }
         }
         return;
       }
@@ -95,7 +109,7 @@ const IconNav: React.FC<IconNavProps> = ({
       if (systemRoutes.includes(icon.path)) {
         console.log("Navigation to system route:", icon.path);
         
-        // Per le rotte di sistema come /menu, aggiungi il prefisso lingua
+        // For system routes like /menu, add language prefix
         if (language !== 'it' && icon.path === '/menu') {
           navigate(`${langPrefix}${icon.path}`);
         } else {
@@ -104,12 +118,12 @@ const IconNav: React.FC<IconNavProps> = ({
         return;
       }
       
-      // Per i percorsi di contenuto, controlla se il percorso ha già il prefisso lingua
+      // For content paths, check if the path already has a language prefix
       let contentPath = icon.path;
       
-      // Se la lingua non è italiano e il percorso non inizia già con il prefisso lingua
+      // If language is not Italian and the path doesn't already start with the language prefix
       if (language !== 'it' && !contentPath.startsWith(`/${language}`)) {
-        // Cerca se esiste una versione localizzata della pagina
+        // Look for a localized version of the page
         console.log(`Looking for localized version of page: ${langPrefix}${contentPath}`);
         contentPath = `${langPrefix}${contentPath}`;
       }

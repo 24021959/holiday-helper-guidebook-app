@@ -34,12 +34,20 @@ const SubMenu: React.FC = () => {
   const isMobile = useIsMobile();
   const { language: currentLanguage, setLanguage } = useTranslation();
   
-  // Se abbiamo language e path nei parametri, costruiamo il percorso genitore in modo speciale
-  const effectiveParentPath = language && path ? 
-    `/${language}/${path}` : 
-    parentPath ? `/${parentPath}` : null;
+  // Construct the parent path based on parameters
+  const effectiveParentPath = (() => {
+    if (language && path) {
+      return `/${language}/${path}`;
+    } else if (parentPath) {
+      return `/${parentPath}`;
+    }
+    return null;
+  })();
   
-  // Se abbiamo language nei parametri, impostiamo la lingua corrente
+  console.log("SubMenu - URL params:", { parentPath, language, path });
+  console.log("SubMenu - Effective parent path:", effectiveParentPath);
+  
+  // Set language from URL parameters if available
   useEffect(() => {
     if (language && ['it', 'en', 'fr', 'es', 'de'].includes(language)) {
       if (language !== currentLanguage) {
@@ -68,7 +76,7 @@ const SubMenu: React.FC = () => {
       // Try with exact match first
       let { data: pageData, error: pageError } = await supabase
         .from('custom_pages')
-        .select('id, title')
+        .select('id, title, path')
         .eq('path', decodedPath)
         .eq('published', true)
         .maybeSingle();
@@ -78,7 +86,7 @@ const SubMenu: React.FC = () => {
         console.log("No exact path match, trying case-insensitive match");
         const { data: fuzzyPageData, error: fuzzyError } = await supabase
           .from('custom_pages')
-          .select('id, title')
+          .select('id, title, path')
           .ilike('path', decodedPath)
           .eq('published', true)
           .maybeSingle();
@@ -149,7 +157,7 @@ const SubMenu: React.FC = () => {
             message={error || "Error loading submenu"}
             onRefresh={handleRefresh}
             onAlternativeAction={() => {
-              // Torna al menu principale nella lingua corrente
+              // Return to main menu in current language
               if (currentLanguage === 'it') {
                 navigate('/menu');
               } else {

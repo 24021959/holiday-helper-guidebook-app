@@ -31,7 +31,11 @@ function App() {
           <Route path="/admin" element={<Admin />} />
           <Route path="/welcome" element={<Welcome />} />
           <Route path="/storia" element={<Storia />} />
+          
+          {/* Fix submenu routes to handle language prefixes */}
           <Route path="/submenu/:parentPath" element={<SubMenu />} />
+          <Route path="/submenu/:language/:path" element={<SubMenu />} />
+          
           <Route path="/preview/*" element={<PreviewPage />} />
           <Route path="*" element={<NotFound />} />
           <Route path="/:path" element={<PreviewPage />} />
