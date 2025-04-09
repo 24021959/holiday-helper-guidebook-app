@@ -9,7 +9,7 @@ import { Pencil, Trash2, Eye, Flag, Languages, ChevronDown, ChevronUp } from "lu
 interface PageListItemProps {
   page: PageData;
   translations: PageData[];
-  onDelete: (id: string) => void;
+  onDelete: (page: PageData) => void;
   onEdit: (page: PageData) => void;
   onPreview: (path: string) => void;
 }
@@ -29,13 +29,22 @@ const languageNames: Record<string, string> = {
   de: 'Deutsch'
 };
 
+// Mappa delle bandiere per lingua
+const languageFlags: Record<string, string> = {
+  it: '/flags/italy.png',
+  en: '/flags/uk.png',
+  fr: '/flags/france.png',
+  es: '/flags/spain.png',
+  de: '/flags/germany.png'
+};
+
 // Componente per visualizzare la bandiera della lingua
 const LanguageFlag: React.FC<{ language: string, onClick?: () => void, size?: "sm" | "md" }> = ({ 
   language, 
   onClick,
   size = "md" 
 }) => {
-  const flagSrc = `/flags/${language === 'en' ? 'uk' : language}.png`;
+  const flagSrc = languageFlags[language] || '/flags/italy.png';
   
   return (
     <img 
@@ -44,6 +53,11 @@ const LanguageFlag: React.FC<{ language: string, onClick?: () => void, size?: "s
       title={languageNames[language]}
       className={`${size === "sm" ? "h-4 w-6" : "h-5 w-7"} border border-gray-200 rounded ${onClick ? 'cursor-pointer hover:shadow-md transition-transform' : ''}`}
       onClick={onClick}
+      onError={(e) => {
+        // Fallback if image fails to load
+        console.warn(`Flag image for ${language} failed to load`);
+        (e.target as HTMLImageElement).src = '/flags/italy.png';
+      }}
     />
   );
 };
@@ -144,7 +158,7 @@ export const PageListItem: React.FC<PageListItemProps> = ({
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Annulla</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => onDelete(page.id)}>
+                    <AlertDialogAction onClick={() => onDelete(page)}>
                       Elimina
                     </AlertDialogAction>
                   </AlertDialogFooter>

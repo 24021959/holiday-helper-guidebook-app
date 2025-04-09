@@ -81,8 +81,8 @@ const Menu: React.FC = () => {
       {/* Language selector */}
       <div className="bg-gray-100 py-2 px-4 border-b border-gray-200">
         <LanguageSelector 
-          currentLanguage={language} 
-          onLanguageChange={handleLanguageChange}
+          language={language} 
+          onChange={handleLanguageChange}
         />
       </div>
       

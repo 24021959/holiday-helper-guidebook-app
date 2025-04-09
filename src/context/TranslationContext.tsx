@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -245,17 +246,16 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
           console.log(`Traduzione in corso per ${languageMap[lang]}...`);
           toast.info(`Traduzione in corso: ${languageMap[lang]}`);
           
-          // Get the Supabase URL and anon key in a secure way
-          const supabaseUrl = supabase.supabaseUrl;
-          const supabaseAnon = supabase.supabaseKey;
-          const supabaseServiceUrl = `${supabaseUrl}/functions/v1/translate`;
+          // Call translate edge function directly with REST
+          const supabaseUrl = new URL(supabase.functions.url);
+          const funcUrl = `${supabaseUrl.origin}/functions/v1/translate`;
           
           // Translate title first
-          const titleResponse = await fetch(supabaseServiceUrl, {
+          const titleResponse = await fetch(funcUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${supabaseAnon}`
+              'Authorization': `Bearer ${supabase.supabaseClient.getPublicUrl().match(/.*\/rest\/v1/) ? supabase.supabaseClient.getPublicUrl().replace('/rest/v1', '') : ''}`
             },
             body: JSON.stringify({ 
               text: pageTitle, 
@@ -281,11 +281,11 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
                 continue;
               }
               
-              const sectionResponse = await fetch(supabaseServiceUrl, {
+              const sectionResponse = await fetch(funcUrl, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${supabaseAnon}`
+                  'Authorization': `Bearer ${supabase.supabaseClient.getPublicUrl().match(/.*\/rest\/v1/) ? supabase.supabaseClient.getPublicUrl().replace('/rest/v1', '') : ''}`
                 },
                 body: JSON.stringify({ 
                   text: section, 
@@ -301,11 +301,11 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
             translatedContent = translatedSections.join('\n\n');
           } else {
             // Content is small enough for a direct translation
-            const contentResponse = await fetch(supabaseServiceUrl, {
+            const contentResponse = await fetch(funcUrl, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabaseAnon}`
+                'Authorization': `Bearer ${supabase.supabaseClient.getPublicUrl().match(/.*\/rest\/v1/) ? supabase.supabaseClient.getPublicUrl().replace('/rest/v1', '') : ''}`
               },
               body: JSON.stringify({ 
                 text: pageContent, 
@@ -388,16 +388,16 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
           // 2.2 Translate page title and content
           console.log(`Traduzione pagina: "${page.title}" in ${targetLang}`);
           
-          const supabaseUrl = supabase.supabaseUrl;
-          const supabaseAnon = supabase.supabaseKey;
-          const supabaseServiceUrl = `${supabaseUrl}/functions/v1/translate`;
+          // Call translate edge function via REST API
+          const supabaseUrl = new URL(supabase.functions.url);
+          const funcUrl = `${supabaseUrl.origin}/functions/v1/translate`;
           
           // Translate title
-          const titleResponse = await fetch(supabaseServiceUrl, {
+          const titleResponse = await fetch(funcUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${supabaseAnon}`
+              'Authorization': `Bearer ${supabase.supabaseClient.getPublicUrl().match(/.*\/rest\/v1/) ? supabase.supabaseClient.getPublicUrl().replace('/rest/v1', '') : ''}`
             },
             body: JSON.stringify({ 
               text: page.title, 
@@ -411,11 +411,11 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
           // Translate content
           let translatedContent = page.content;
           if (page.content) {
-            const contentResponse = await fetch(supabaseServiceUrl, {
+            const contentResponse = await fetch(funcUrl, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabaseAnon}`
+                'Authorization': `Bearer ${supabase.supabaseClient.getPublicUrl().match(/.*\/rest\/v1/) ? supabase.supabaseClient.getPublicUrl().replace('/rest/v1', '') : ''}`
               },
               body: JSON.stringify({ 
                 text: page.content, 

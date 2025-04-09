@@ -1,11 +1,12 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "@/context/TranslationContext";
-import { Loader2, Globe, Check, AlertTriangle } from "lucide-react";
+import { Loader2, Globe, Check, AlertTriangle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const languageNames = {
   en: "Inglese 🇬🇧",
@@ -15,6 +16,11 @@ const languageNames = {
 };
 
 type Language = 'en' | 'fr' | 'es' | 'de';
+
+interface LanguageStats {
+  totalPages: number;
+  translatedPages: number;
+}
 
 const MenuTranslationManager: React.FC = () => {
   const { translateAndCloneMenu } = useTranslation();
@@ -30,6 +36,74 @@ const MenuTranslationManager: React.FC = () => {
     es: false,
     de: false
   });
+  const [stats, setStats] = useState<Record<Language, LanguageStats>>({
+    en: { totalPages: 0, translatedPages: 0 },
+    fr: { totalPages: 0, translatedPages: 0 },
+    es: { totalPages: 0, translatedPages: 0 },
+    de: { totalPages: 0, translatedPages: 0 }
+  });
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+
+  // Load initial statistics
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      setIsLoadingStats(true);
+      
+      // Get Italian pages count (base count)
+      const { data: italianPages, error: italianError } = await supabase
+        .from('custom_pages')
+        .select('id', { count: 'exact' })
+        .not('path', 'like', '/en/%')
+        .not('path', 'like', '/fr/%')
+        .not('path', 'like', '/es/%')
+        .not('path', 'like', '/de/%')
+        .eq('published', true);
+        
+      if (italianError) {
+        console.error("Error loading Italian pages:", italianError);
+        return;
+      }
+      
+      const italianCount = italianPages?.length || 0;
+      
+      // Get translated pages count for each language
+      const newStats: Record<Language, LanguageStats> = {
+        en: { totalPages: italianCount, translatedPages: 0 },
+        fr: { totalPages: italianCount, translatedPages: 0 },
+        es: { totalPages: italianCount, translatedPages: 0 },
+        de: { totalPages: italianCount, translatedPages: 0 }
+      };
+      
+      // Check for each language
+      for (const lang of ['en', 'fr', 'es', 'de'] as Language[]) {
+        const { data: langPages, error: langError } = await supabase
+          .from('custom_pages')
+          .select('id', { count: 'exact' })
+          .like('path', `/${lang}/%`)
+          .eq('published', true);
+          
+        if (!langError) {
+          newStats[lang].translatedPages = langPages?.length || 0;
+          
+          // Mark as translated if we have at least some pages in this language
+          if (langPages && langPages.length > 0) {
+            setTranslated(prev => ({ ...prev, [lang]: true }));
+          }
+        }
+      }
+      
+      setStats(newStats);
+    } catch (error) {
+      console.error("Error fetching translation stats:", error);
+      toast.error("Errore nel caricamento delle statistiche");
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
 
   const handleTranslateMenu = async (language: Language) => {
     try {
@@ -40,12 +114,20 @@ const MenuTranslationManager: React.FC = () => {
       
       setTranslated(prev => ({ ...prev, [language]: true }));
       toast.success(`Menu tradotto in ${languageNames[language]} con successo!`);
+      
+      // Refresh stats after translation
+      fetchStats();
     } catch (error) {
       console.error(`Errore nella traduzione del menu in ${language}:`, error);
       toast.error(`Errore nella traduzione del menu in ${languageNames[language]}`);
     } finally {
       setIsTranslating(prev => ({ ...prev, [language]: false }));
     }
+  };
+
+  const getProgressPercentage = (lang: Language): number => {
+    if (stats[lang].totalPages === 0) return 0;
+    return Math.round((stats[lang].translatedPages / stats[lang].totalPages) * 100);
   };
 
   return (
@@ -75,7 +157,24 @@ const MenuTranslationManager: React.FC = () => {
               </div>
             </div>
 
-            <h3 className="text-lg font-medium text-gray-700 mb-2">Seleziona la lingua da tradurre:</h3>
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-lg font-medium text-gray-700">Seleziona la lingua da tradurre:</h3>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={fetchStats}
+                disabled={isLoadingStats}
+                className="flex items-center"
+              >
+                {isLoadingStats ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                )}
+                Aggiorna statistiche
+              </Button>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {(['en', 'fr', 'es', 'de'] as Language[]).map(lang => (
                 <Card key={lang} className={`border ${translated[lang] ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
@@ -91,6 +190,21 @@ const MenuTranslationManager: React.FC = () => {
                         </Badge>
                       )}
                     </div>
+                    
+                    {/* Progress indicator */}
+                    <div className="mt-3">
+                      <div className="flex justify-between text-xs text-gray-500 mb-1">
+                        <span>Progresso</span>
+                        <span>{stats[lang].translatedPages} / {stats[lang].totalPages} pagine</span>
+                      </div>
+                      <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-emerald-500 rounded-full" 
+                          style={{ width: `${getProgressPercentage(lang)}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    
                     <div className="mt-4">
                       <Button 
                         onClick={() => handleTranslateMenu(lang)}
