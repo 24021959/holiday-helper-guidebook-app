@@ -53,7 +53,7 @@ const MasterPanel: React.FC<MasterPanelProps> = () => {
         </TabsContent>
         
         <TabsContent value="site-settings" className="mt-0">
-          <div>
+          <div className="w-full max-w-full">
             <h2 className="text-xl font-medium text-emerald-600 mb-4">
               Impostazioni del Sito (WIP)
             </h2>
