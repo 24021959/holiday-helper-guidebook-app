@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,6 +9,8 @@ const corsHeaders = {
 };
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get('SUPABASE_URL');
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -36,16 +39,20 @@ serve(async (req) => {
 
     // Get relevant content from the knowledge base
     const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      supabaseUrl || '',
+      supabaseKey || ''
     );
 
     // Get site settings for chatbot config
-    const { data: settingsData } = await supabaseClient
+    const { data: settingsData, error: settingsError } = await supabaseClient
       .from('site_settings')
       .select('*')
       .eq('key', 'chatbot_config')
       .single();
+
+    if (settingsError && settingsError.code !== 'PGRST116') {
+      console.error("Error fetching chatbot settings:", settingsError);
+    }
 
     const chatbotConfig = settingsData?.value || {
       botName: "Assistente Virtuale",
@@ -59,7 +66,7 @@ serve(async (req) => {
     };
 
     // Perform vector search
-    const { data: matchingContent } = await supabaseClient.rpc(
+    const { data: matchingContent, error: matchError } = await supabaseClient.rpc(
       'match_documents',
       {
         query_embedding: questionEmbedding,
@@ -68,10 +75,17 @@ serve(async (req) => {
       }
     );
 
+    if (matchError) {
+      console.error("Error in vector search:", matchError);
+    }
+
     let contextText = "No relevant information found.";
     
     if (matchingContent && matchingContent.length > 0) {
       contextText = matchingContent.map((item: any) => item.content).join("\n\n");
+      console.log(`Found ${matchingContent.length} matching documents`);
+    } else {
+      console.log("No matching content found");
     }
 
     // Build system message based on the language
@@ -148,6 +162,12 @@ serve(async (req) => {
     });
 
     const data = await response.json();
+    
+    if (!response.ok) {
+      console.error('OpenAI API error:', data);
+      throw new Error(`OpenAI API error: ${data.error?.message || 'Unknown error'}`);
+    }
+    
     const botResponse = data.choices[0].message.content;
 
     return new Response(
@@ -180,35 +200,15 @@ async function createEmbedding(text: string): Promise<number[] | null> {
     });
 
     const data = await response.json();
+    
+    if (!response.ok) {
+      console.error('OpenAI embedding API error:', data);
+      throw new Error(`OpenAI embedding API error: ${data.error?.message || 'Unknown error'}`);
+    }
+    
     return data.data[0].embedding;
   } catch (error) {
     console.error('Error creating embedding:', error);
     return null;
   }
-}
-
-// Helper function to create Supabase client
-function createClient(supabaseUrl: string, supabaseKey: string) {
-  return {
-    from: (table: string) => ({
-      select: (columns = '*') => ({
-        eq(column: string, value: any) {
-          return this;
-        },
-        single() {
-          return this;
-        },
-        async then() {
-          // This is a simplified version
-          return { data: null };
-        }
-      }),
-    }),
-    rpc: (functionName: string, params: any) => ({
-      async then() {
-        // Implementation for vector search would go here
-        return { data: [] };
-      }
-    }),
-  };
 }

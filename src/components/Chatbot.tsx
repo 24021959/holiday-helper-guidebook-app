@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Bot, User, Send, X, Loader2, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -41,17 +42,28 @@ const defaultConfig: ChatbotConfig = {
   iconType: 'default'
 };
 
-export const Chatbot: React.FC = () => {
+interface ChatbotProps {
+  previewConfig?: ChatbotConfig; // Optional prop for preview mode
+}
+
+export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [config, setConfig] = useState<ChatbotConfig>(defaultConfig);
+  const [config, setConfig] = useState<ChatbotConfig>(previewConfig || defaultConfig);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { language } = useTranslation();
   const [initializing, setInitializing] = useState(true);
   
   useEffect(() => {
+    // If in preview mode, use the previewConfig
+    if (previewConfig) {
+      setConfig(previewConfig);
+      setInitializing(false);
+      return;
+    }
+    
     const loadConfig = async () => {
       try {
         const { data, error } = await supabase
@@ -79,7 +91,14 @@ export const Chatbot: React.FC = () => {
     };
 
     loadConfig();
-  }, []);
+  }, [previewConfig]);
+
+  // If previewConfig changes, update the config
+  useEffect(() => {
+    if (previewConfig) {
+      setConfig(previewConfig);
+    }
+  }, [previewConfig]);
 
   useEffect(() => {
     if (!initializing && !messages.length) {
@@ -115,6 +134,21 @@ export const Chatbot: React.FC = () => {
     setIsLoading(true);
 
     try {
+      // If we're in preview mode, just simulate a response
+      if (previewConfig) {
+        setTimeout(() => {
+          const previewResponse: Message = {
+            id: (Date.now() + 1).toString(),
+            content: "Questa è un'anteprima del chatbot. In modalità anteprima, non vengono inviate richieste reali all'API.",
+            role: 'assistant',
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, previewResponse]);
+          setIsLoading(false);
+        }, 1500);
+        return;
+      }
+
       const chatHistory = messages.map(msg => ({
         role: msg.role,
         content: msg.content
@@ -161,7 +195,7 @@ export const Chatbot: React.FC = () => {
     }
   };
 
-  if (!config.enabled) return null;
+  if (!config.enabled && !previewConfig) return null;
 
   const getCustomStyles = () => {
     const position = config.position || 'right';

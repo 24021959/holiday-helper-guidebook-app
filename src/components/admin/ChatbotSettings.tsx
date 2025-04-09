@@ -10,7 +10,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "@/context/TranslationContext";
 import { Bot, RefreshCw, Settings2, MessageSquare, Globe } from "lucide-react";
-import { LanguageSelector } from "@/components/LanguageSelector";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import Chatbot from "@/components/Chatbot";
 
 interface ChatbotConfig {
   enabled: boolean;
@@ -45,6 +46,7 @@ const ChatbotSettings: React.FC = () => {
   });
   const [activeLanguage, setActiveLanguage] = useState<'it' | 'en' | 'fr' | 'es' | 'de'>('it');
   const [welcomeMessage, setWelcomeMessage] = useState(defaultWelcomeMessages.it);
+  const [showPreview, setShowPreview] = useState(false);
   const { translateBulk } = useTranslation();
 
   useEffect(() => {
@@ -152,7 +154,7 @@ const ChatbotSettings: React.FC = () => {
       
       const translatedMessages = await Promise.all(
         languages.map((lang, index) => 
-          translateBulk([messagesToTranslate[index]])
+          translateBulk([messagesToTranslate[index]], lang)
             .then(result => ({ lang, message: result[0] }))
             .catch(() => ({ lang, message: defaultWelcomeMessages[lang] }))
         )
@@ -222,11 +224,47 @@ const ChatbotSettings: React.FC = () => {
     }
   };
 
+  // Generate a temporary preview config for use in the preview mode
+  const previewConfig = {
+    ...chatbotConfig,
+    welcomeMessage: {
+      ...chatbotConfig.welcomeMessage,
+      [activeLanguage]: welcomeMessage
+    }
+  };
+
   return (
     <div className="w-full max-w-full">
-      <div className="flex items-center space-x-2 mb-6">
-        <Bot className="h-6 w-6 text-emerald-600" />
-        <h2 className="text-xl font-medium text-emerald-600">Impostazioni Chatbot</h2>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-2">
+          <Bot className="h-6 w-6 text-emerald-600" />
+          <h2 className="text-xl font-medium text-emerald-600">Impostazioni Chatbot</h2>
+        </div>
+        
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button
+              onClick={() => setShowPreview(true)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              <MessageSquare className="mr-2 h-4 w-4" />
+              Anteprima Chatbot
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-full sm:max-w-lg md:max-w-xl">
+            <div className="h-full flex flex-col">
+              <h3 className="text-lg font-medium my-4">Anteprima Chatbot</h3>
+              <div className="flex-1 bg-gray-100 rounded-lg p-4 relative overflow-hidden">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <p className="text-gray-500 italic">
+                    Questa è un'anteprima del chatbot con le impostazioni attuali
+                  </p>
+                </div>
+                <Chatbot previewConfig={previewConfig} />
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -457,11 +495,15 @@ const ChatbotSettings: React.FC = () => {
           <div className="space-y-4 bg-gray-50 border rounded-lg p-4">
             <h3 className="text-lg font-medium">Anteprima</h3>
             <div className="relative p-5 border rounded-lg bg-white shadow-sm min-h-[250px]">
-              <div className="absolute bottom-4 right-4 bg-emerald-500 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-md">
+              <div className="absolute bottom-4 right-4 bg-emerald-500 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-md" 
+                   style={{ backgroundColor: chatbotConfig.primaryColor }}>
                 <Bot className="h-6 w-6" />
               </div>
-              <div className="absolute bottom-20 right-4 max-w-xs bg-white rounded-lg shadow-md p-3 border-l-4 border-emerald-500">
-                <div className="text-xs text-emerald-600 font-medium mb-1">{chatbotConfig.botName}</div>
+              <div className="absolute bottom-20 right-4 max-w-xs bg-white rounded-lg shadow-md p-3 border-l-4" 
+                   style={{ borderColor: chatbotConfig.primaryColor }}>
+                <div className="text-xs font-medium mb-1" style={{ color: chatbotConfig.primaryColor }}>
+                  {chatbotConfig.botName}
+                </div>
                 <p className="text-sm text-gray-700">{welcomeMessage}</p>
               </div>
             </div>
