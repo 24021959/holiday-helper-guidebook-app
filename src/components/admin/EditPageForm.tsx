@@ -25,7 +25,7 @@ import { Label } from "@/components/ui/label";
 import { PageTypeSection } from "./form/PageTypeSection";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Languages, Translator } from "lucide-react";
+import { Languages } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface EditPageFormProps {
@@ -33,6 +33,7 @@ interface EditPageFormProps {
   parentPages: PageData[];
   onPageUpdated: (updatedPages: PageData[]) => void;
   keywordToIconMap: Record<string, string>;
+  allPages?: PageData[];
 }
 
 const formSchema = z.object({
@@ -62,7 +63,8 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
   selectedPage,
   parentPages,
   onPageUpdated,
-  keywordToIconMap
+  keywordToIconMap,
+  allPages = []
 }) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedIcon, setSelectedIcon] = useState(selectedPage.icon || "FileText");
@@ -95,6 +97,19 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
       try {
         const normalizedPath = normalizePath(selectedPage.path);
         
+        if (allPages.length > 0) {
+          const translations: Record<string, boolean> = {};
+          
+          Object.keys(supportedLanguages).forEach(lang => {
+            const langPath = `/${lang}${normalizedPath}`;
+            const exists = allPages.some(page => page.path === langPath);
+            translations[lang] = !!exists;
+          });
+          
+          setAvailableTranslations(translations);
+          return;
+        }
+        
         const { data, error } = await supabase
           .from('custom_pages')
           .select('path')
@@ -120,7 +135,7 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
     };
     
     checkAvailableTranslations();
-  }, [selectedPage.path]);
+  }, [selectedPage.path, allPages]);
 
   const formatPageContent = (content: string, images: ImageItem[]) => {
     let processedContent = content;
@@ -457,7 +472,7 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
           <AlertDialog open={isTranslateDialogOpen} onOpenChange={setIsTranslateDialogOpen}>
             <AlertDialogTrigger asChild>
               <Button variant="outline" className="flex items-center gap-2">
-                <Translator className="h-4 w-4" />
+                <Languages className="h-4 w-4" />
                 <span>Gestisci Traduzioni</span>
               </Button>
             </AlertDialogTrigger>
@@ -487,7 +502,7 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
                           <div className="text-xs text-gray-500">{code.toUpperCase()}</div>
                         </div>
                         {availableTranslations[code] && (
-                          <Badge variant="success" className="bg-green-100 text-green-800 border-green-200">
+                          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
                             Traduzione esistente
                           </Badge>
                         )}

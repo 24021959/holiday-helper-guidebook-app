@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageListItem } from "./PageListItem";
 import { CreatePageForm } from "./CreatePageForm";
 import EditPageForm from "./EditPageForm";
-import { PlusCircle, AlertTriangle, Languages } from "lucide-react";
+import { PlusCircle, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";
@@ -21,7 +21,7 @@ interface ManagePagesViewProps {
 }
 
 // Funzione per trovare l'ID base della pagina senza prefisso lingua
-const getLanguagePrefix = (path: string): string | null => {
+const getLanguageFromPath = (path: string): string | null => {
   const match = path.match(/^\/([a-z]{2})\//);
   return match ? match[1] : null;
 };
@@ -29,23 +29,6 @@ const getLanguagePrefix = (path: string): string | null => {
 // Funzione per normalizzare un percorso rimuovendo il prefisso lingua
 const normalizePath = (path: string): string => {
   return path.replace(/^\/[a-z]{2}/, '');
-};
-
-// Raggruppa le pagine per percorso base
-const groupPagesByBasePath = (pages: PageData[]): Record<string, PageData[]> => {
-  const groups: Record<string, PageData[]> = {};
-  
-  pages.forEach(page => {
-    const normalizedPath = normalizePath(page.path);
-    
-    if (!groups[normalizedPath]) {
-      groups[normalizedPath] = [];
-    }
-    
-    groups[normalizedPath].push(page);
-  });
-  
-  return groups;
 };
 
 const ManagePagesView: React.FC<ManagePagesViewProps> = ({ 
@@ -63,37 +46,10 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [pageToDelete, setPageToDelete] = useState<PageData | null>(null);
   
-  // Raggruppa le pagine per percorso base
-  const groupedPages = groupPagesByBasePath(localPages);
-  
-  // Ottieni solo le pagine principali (in italiano o senza prefisso lingua)
-  const mainPages: PageData[] = [];
-  
-  // Identifichiamo una pagina rappresentante per ogni gruppo
-  Object.keys(groupedPages).forEach(normalizedPath => {
-    const pagesInGroup = groupedPages[normalizedPath];
-    
-    // Cerca prima una versione italiana
-    const italianPage = pagesInGroup.find(p => {
-      const langPrefix = getLanguagePrefix(p.path);
-      return langPrefix === 'it';
-    });
-    
-    // Se esiste la versione italiana, usa quella
-    if (italianPage) {
-      mainPages.push(italianPage);
-    } 
-    // Altrimenti, cerca una versione senza prefisso di lingua
-    else {
-      const noLangPage = pagesInGroup.find(p => !getLanguagePrefix(p.path));
-      if (noLangPage) {
-        mainPages.push(noLangPage);
-      } 
-      // Come ultima risorsa, usa la prima pagina disponibile nel gruppo
-      else if (pagesInGroup.length > 0) {
-        mainPages.push(pagesInGroup[0]);
-      }
-    }
+  // Filtra solo le pagine in italiano o senza prefisso di lingua
+  const italianPages = localPages.filter(page => {
+    const langPrefix = getLanguageFromPath(page.path);
+    return langPrefix === 'it' || !langPrefix;
   });
 
   // Use pages from props directly and avoid extra fetching
@@ -243,12 +199,12 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
             <>
               <div className="mb-4 flex items-center justify-between">
                 <div className="text-sm text-gray-500">
-                  {mainPages.length} pagine principali, {localPages.length} pagine totali con traduzioni
+                  {italianPages.length} pagine in italiano
                 </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {mainPages.length === 0 ? (
+                {italianPages.length === 0 ? (
                   <div className="col-span-full bg-amber-50 border border-amber-200 rounded-lg p-6 text-center">
                     <p className="text-amber-700 mb-4">Nessuna pagina creata finora</p>
                     <Button 
@@ -264,23 +220,16 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
                     </Button>
                   </div>
                 ) : (
-                  // Mostra una card per ogni gruppo di pagine (pagina principale + traduzioni)
-                  mainPages.map((page) => {
-                    // Trova tutte le traduzioni per questa pagina
-                    const normalizedPath = normalizePath(page.path);
-                    const translations = groupedPages[normalizedPath] || [];
-                    
-                    return (
-                      <PageListItem
-                        key={page.id}
-                        page={page}
-                        translations={translations}
-                        onEdit={handleEditPage}
-                        onDelete={confirmPageDelete}
-                        onPreview={handlePagePreview}
-                      />
-                    );
-                  })
+                  // Mostra solo le pagine in italiano
+                  italianPages.map((page) => (
+                    <PageListItem
+                      key={page.id}
+                      page={page}
+                      onEdit={handleEditPage}
+                      onDelete={confirmPageDelete}
+                      onPreview={handlePagePreview}
+                    />
+                  ))
                 )}
               </div>
             </>
@@ -294,6 +243,7 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
               parentPages={parentPages}
               onPageUpdated={handlePageUpdated}
               keywordToIconMap={keywordToIconMap}
+              allPages={localPages}
             />
           </TabsContent>
         )}

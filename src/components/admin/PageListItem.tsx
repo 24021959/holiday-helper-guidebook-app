@@ -8,29 +8,17 @@ import { Pencil, Trash2, Eye } from "lucide-react";
 
 interface PageListItemProps {
   page: PageData;
-  translations: PageData[];
   onDelete: (page: PageData) => void;
   onEdit: (page: PageData) => void;
   onPreview: (path: string) => void;
 }
 
-// Determina la lingua da un percorso
-const getLanguageFromPath = (path: string): string => {
-  const match = path.match(/^\/([a-z]{2})\//);
-  return match ? match[1] : 'it';
-};
-
 export const PageListItem: React.FC<PageListItemProps> = ({ 
   page, 
-  translations,
   onDelete, 
   onEdit, 
   onPreview
 }) => {
-  // Determina la lingua della pagina corrente
-  const currentLanguage = getLanguageFromPath(page.path);
-  const hasTranslations = translations.length > 1;
-  
   return (
     <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
       <CardContent className="p-4">
@@ -43,11 +31,7 @@ export const PageListItem: React.FC<PageListItemProps> = ({
           </div>
         </div>
         
-        <div className="flex items-center justify-between mt-2">
-          <div className="text-sm text-gray-600">
-            {hasTranslations ? `${translations.length} versioni linguistiche` : 'Solo versione principale'}
-          </div>
-          
+        <div className="flex items-center justify-end mt-2">
           <div className="flex items-center space-x-2">
             <Button 
               variant="outline" 
@@ -82,7 +66,7 @@ export const PageListItem: React.FC<PageListItemProps> = ({
                   <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
                   <AlertDialogDescription>
                     Sei sicuro di voler eliminare questa pagina e tutte le sue traduzioni? 
-                    Questa azione eliminerà {translations.length} pagine e non può essere annullata.
+                    Questa azione eliminerà tutte le versioni linguistiche e non può essere annullata.
                     {!page.isSubmenu && " Verranno eliminate anche tutte le sottopagine."}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
