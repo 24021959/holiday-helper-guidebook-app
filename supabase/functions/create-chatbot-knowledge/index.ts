@@ -65,54 +65,51 @@ Content: ${cleanContent}${listItemsText}
       supabaseKey || ''
     );
 
-    // First, check if the match_documents function exists
-    const { data: functions, error: functionError } = await supabaseClient.rpc('get_schema_functions');
-    
-    if (functionError) {
-      console.log("Error checking if match_documents function exists:", functionError);
-      console.log("Will try to create it if needed");
-    } else {
-      console.log("Available functions:", functions);
-      const hasMatchDocuments = Array.isArray(functions) && 
-                                functions.some((f: any) => f.function_name === 'match_documents');
-      console.log("match_documents function exists:", hasMatchDocuments);
-    }
-
-    // Check if the vector extension is enabled
+    // First, check if the vector extension exists
+    let vectorExtensionExists = false;
     try {
       const { data: extensionData, error: extensionError } = await supabaseClient
-        .from('pg_extension')
-        .select('extname')
-        .eq('extname', 'vector')
-        .single();
+        .rpc('check_vector_extension');
         
-      if (extensionError && extensionError.code !== 'PGRST116') {
+      if (extensionError) {
         console.log("Error checking vector extension:", extensionError);
-        console.log("Will attempt to create extension if needed");
-        
-        // Try to create the extension
-        await supabaseClient.rpc('create_vector_extension');
-        console.log("Vector extension creation attempted");
+        console.log("Will attempt to create extension");
       } else {
-        console.log("Vector extension status:", extensionData);
+        vectorExtensionExists = !!extensionData;
+        console.log("Vector extension exists:", vectorExtensionExists);
       }
     } catch (extErr) {
       console.log("Exception checking vector extension:", extErr);
+    }
+    
+    // Create vector extension if it doesn't exist
+    if (!vectorExtensionExists) {
+      try {
+        const { data: createExtensionData, error: createExtensionError } = await supabaseClient
+          .rpc('create_vector_extension');
+          
+        if (createExtensionError) {
+          console.log("Error creating vector extension:", createExtensionError);
+        } else {
+          console.log("Vector extension created successfully");
+          vectorExtensionExists = true;
+        }
+      } catch (createExtErr) {
+        console.log("Exception creating vector extension:", createExtErr);
+      }
     }
 
     // Check if the chatbot_knowledge table exists
     let tableExists = false;
     try {
       const { data: tableData, error: tableError } = await supabaseClient
-        .from('chatbot_knowledge')
-        .select('id')
-        .limit(1);
+        .rpc('table_exists', { table_name: 'chatbot_knowledge' });
         
-      if (tableError && tableError.code !== 'PGRST116') {
-        console.log("Error checking chatbot_knowledge table:", tableError);
+      if (tableError) {
+        console.log("Error checking if table exists:", tableError);
       } else {
-        tableExists = true;
-        console.log("chatbot_knowledge table exists");
+        tableExists = !!tableData;
+        console.log("chatbot_knowledge table exists:", tableExists);
       }
     } catch (tableErr) {
       console.log("Exception checking table:", tableErr);
@@ -135,10 +132,17 @@ Content: ${cleanContent}${listItemsText}
           );
         `;
         
-        await supabaseClient.rpc('run_sql', { sql: createTableQuery });
-        console.log("Table created successfully");
+        const { error: createTableError } = await supabaseClient
+          .rpc('run_sql', { sql: createTableQuery });
+          
+        if (createTableError) {
+          console.log("Error creating table:", createTableError);
+        } else {
+          console.log("Table created successfully");
+          tableExists = true;
+        }
         
-        // Create match_documents function if needed
+        // Create match_documents function
         console.log("Creating match_documents function");
         const createFunctionQuery = `
           CREATE OR REPLACE FUNCTION public.match_documents(
@@ -177,30 +181,120 @@ Content: ${cleanContent}${listItemsText}
           $$;
         `;
         
-        await supabaseClient.rpc('run_sql', { sql: createFunctionQuery });
-        console.log("Function created successfully");
+        const { error: createFunctionError } = await supabaseClient
+          .rpc('run_sql', { sql: createFunctionQuery });
+          
+        if (createFunctionError) {
+          console.log("Error creating function:", createFunctionError);
+        } else {
+          console.log("Function created successfully");
+        }
         
       } catch (createErr) {
         console.error("Error creating database objects:", createErr);
       }
     }
 
+    // If the table exists but we didn't just create it, make sure the match_documents function exists
+    if (tableExists && vectorExtensionExists) {
+      try {
+        // Check if the match_documents function exists by trying to call it with parameters
+        const testQuery = {
+          query_embedding: Array(1536).fill(0),
+          match_threshold: 0.5,
+          match_count: 1
+        };
+        
+        const { data: functionTestData, error: functionTestError } = await supabaseClient
+          .rpc('match_documents', testQuery);
+          
+        if (functionTestError && functionTestError.code === 'PGRST202') {
+          console.log("match_documents function doesn't exist or has wrong parameters, creating it");
+          
+          // Create match_documents function
+          const createFunctionQuery = `
+            CREATE OR REPLACE FUNCTION public.match_documents(
+              query_embedding vector(1536),
+              match_threshold float,
+              match_count int
+            )
+            RETURNS TABLE(
+              id uuid,
+              page_id uuid,
+              title text,
+              content text,
+              path text,
+              similarity float
+            )
+            LANGUAGE plpgsql
+            AS $$
+            BEGIN
+              RETURN QUERY
+              SELECT
+                "chatbot_knowledge"."id",
+                "chatbot_knowledge"."page_id",
+                "chatbot_knowledge"."title",
+                "chatbot_knowledge"."content",
+                "chatbot_knowledge"."path",
+                1 - ("chatbot_knowledge"."embedding" <=> query_embedding) AS "similarity"
+              FROM
+                "chatbot_knowledge"
+              WHERE
+                1 - ("chatbot_knowledge"."embedding" <=> query_embedding) > match_threshold
+              ORDER BY
+                "chatbot_knowledge"."embedding" <=> query_embedding
+              LIMIT
+                match_count;
+            END;
+            $$;
+          `;
+          
+          const { error: createFunctionError } = await supabaseClient
+            .rpc('run_sql', { sql: createFunctionQuery });
+            
+          if (createFunctionError) {
+            console.log("Error creating function:", createFunctionError);
+          } else {
+            console.log("Function created successfully");
+          }
+        } else {
+          console.log("match_documents function exists and works correctly");
+        }
+      } catch (functionErr) {
+        console.log("Exception checking/creating function:", functionErr);
+      }
+    }
+
     // Clear existing knowledge
-    console.log("Removing existing knowledge from database");
-    try {
-      await supabaseClient
-        .from('chatbot_knowledge')
-        .delete()
-        .is('id', 'not.null'); // This will delete all records
-    } catch (deleteError) {
-      console.error('Error deleting existing knowledge:', deleteError);
-      // Continue with the insert even if delete fails
+    if (tableExists) {
+      console.log("Removing existing knowledge from database");
+      try {
+        const { error: deleteError } = await supabaseClient
+          .from('chatbot_knowledge')
+          .delete()
+          .is('id', 'not.null'); // This will delete all records
+          
+        if (deleteError) {
+          console.error('Error deleting existing knowledge:', deleteError);
+        }
+      } catch (deleteError) {
+        console.error('Error deleting existing knowledge:', deleteError);
+      }
     }
 
     // Insert new knowledge with embeddings
     console.log("Creating new embeddings and inserting knowledge");
     let successCount = 0;
     let errorCount = 0;
+    
+    if (!tableExists || !vectorExtensionExists) {
+      return new Response(
+        JSON.stringify({ 
+          error: "Database setup is incomplete. Table exists: " + tableExists + ", Vector extension exists: " + vectorExtensionExists 
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     for (const page of pageContents) {
       // Create embeddings using OpenAI
@@ -245,7 +339,7 @@ Content: ${cleanContent}${listItemsText}
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: `Successfully processed ${successCount} out of ${pages.length} pages for chatbot knowledge base`,
+        message: `Successfully processed ${successCount} out of ${pageContents.length} pages for chatbot knowledge base`,
         errors: errorCount 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

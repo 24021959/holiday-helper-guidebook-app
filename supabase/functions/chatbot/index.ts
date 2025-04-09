@@ -67,59 +67,98 @@ serve(async (req) => {
 
     // Try to fetch relevant information from the knowledge base
     let contextText = "No relevant information found.";
+    let knowledgeFound = false;
     
     try {
       console.log("Performing vector search with embedding of length:", questionEmbedding.length);
       
-      // First check if the function exists
-      const { data: functionsData, error: functionCheckError } = await supabaseClient
-        .rpc('get_schema_functions');
-        
-      if (functionCheckError) {
-        console.error("Error checking schema functions:", functionCheckError);
-      } else {
-        console.log("Available database functions:", functionsData);
+      // Check if the vector extension exists
+      let hasVectorExtension = false;
+      try {
+        const { data: extensionData, error: extensionError } = await supabaseClient
+          .rpc('check_vector_extension');
+          
+        if (extensionError) {
+          console.error("Error checking vector extension:", extensionError);
+        } else {
+          hasVectorExtension = extensionData;
+          console.log("Vector extension exists:", hasVectorExtension);
+        }
+      } catch (e) {
+        console.error("Error checking vector extension:", e);
+      }
+
+      // Check if the chatbot_knowledge table exists
+      let hasKnowledgeTable = false;
+      try {
+        const { data: tableData, error: tableError } = await supabaseClient
+          .rpc('table_exists', { table_name: 'chatbot_knowledge' });
+          
+        if (tableError) {
+          console.error("Error checking if table exists:", tableError);
+        } else {
+          hasKnowledgeTable = tableData;
+          console.log("Chatbot knowledge table exists:", hasKnowledgeTable);
+        }
+      } catch (e) {
+        console.error("Error checking if table exists:", e);
       }
       
-      // Use direct SQL query as a fallback if RPC fails
-      const { data: directQueryData, error: directQueryError } = await supabaseClient
-        .from('chatbot_knowledge')
-        .select('content')
-        .limit(5);
-        
-      if (directQueryError) {
-        console.error("Error in direct query:", directQueryError);
-      } else if (directQueryData && directQueryData.length > 0) {
-        console.log(`Found ${directQueryData.length} knowledge entries via direct query`);
-        contextText = directQueryData.map((item: any) => item.content).join("\n\n");
+      // Try direct query first
+      try {
+        const { data: directQueryData, error: directQueryError } = await supabaseClient
+          .from('chatbot_knowledge')
+          .select('content')
+          .limit(5);
+          
+        if (directQueryError) {
+          console.error("Error in direct query:", directQueryError);
+        } else if (directQueryData && directQueryData.length > 0) {
+          console.log(`Found ${directQueryData.length} knowledge entries via direct query`);
+          contextText = directQueryData.map((item: any) => item.content).join("\n\n");
+          knowledgeFound = true;
+        }
+      } catch (directQueryError) {
+        console.error("Exception in direct query:", directQueryError);
       }
         
       // Try the vector search if available
-      try {
-        const { data: matchingContent, error: matchError } = await supabaseClient.rpc(
-          'match_documents',
-          {
-            query_embedding: questionEmbedding,
-            match_threshold: 0.5,
-            match_count: 5
-          }
-        );
+      if (hasVectorExtension && hasKnowledgeTable) {
+        try {
+          const { data: matchingContent, error: matchError } = await supabaseClient.rpc(
+            'match_documents',
+            {
+              query_embedding: questionEmbedding,
+              match_threshold: 0.5,
+              match_count: 5
+            }
+          );
 
-        if (matchError) {
-          console.error("Error in vector search:", matchError);
-          console.log("Proceeding with direct query results or default response");
-        } else if (matchingContent && matchingContent.length > 0) {
-          contextText = matchingContent.map((item: any) => item.content).join("\n\n");
-          console.log(`Found ${matchingContent.length} matching documents via vector search`);
-        } else {
-          console.log("No matching content found via vector search");
+          if (matchError) {
+            console.error("Error in vector search:", matchError);
+            console.log("Proceeding with direct query results or default response");
+          } else if (matchingContent && matchingContent.length > 0) {
+            contextText = matchingContent.map((item: any) => item.content).join("\n\n");
+            knowledgeFound = true;
+            console.log(`Found ${matchingContent.length} matching documents via vector search`);
+          } else {
+            console.log("No matching content found via vector search");
+          }
+        } catch (vectorError) {
+          console.error("Exception in vector search:", vectorError);
         }
-      } catch (vectorError) {
-        console.error("Exception in vector search:", vectorError);
+      } else {
+        console.log("Vector search not available. Vector extension exists:", hasVectorExtension, 
+                    "Knowledge table exists:", hasKnowledgeTable);
       }
     } catch (e) {
       console.error("Error in knowledge base search:", e);
       console.log("Proceeding without knowledge base match.");
+    }
+
+    // Add context about knowledge base status to debug any issues
+    if (!knowledgeFound) {
+      contextText += "\n\nNote: The knowledge base may not be properly set up yet or may not contain relevant information for this query.";
     }
 
     // Build system message based on the language

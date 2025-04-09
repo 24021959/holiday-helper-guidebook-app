@@ -149,11 +149,10 @@ const ChatbotSettings: React.FC = () => {
       const italianMessage = chatbotConfig.welcomeMessage.it || defaultWelcomeMessages.it;
       
       const languages = ['en', 'fr', 'es', 'de'] as const;
-      const messagesToTranslate = [italianMessage];
       
       const translatedMessages = await Promise.all(
         languages.map((lang) => 
-          translateBulk(messagesToTranslate, lang)
+          translateBulk([italianMessage], lang)
             .then(result => ({ lang, message: result[0] }))
             .catch(() => ({ lang, message: defaultWelcomeMessages[lang] }))
         )

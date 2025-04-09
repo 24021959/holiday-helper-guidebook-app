@@ -20,3 +20,42 @@ BEGIN
   CREATE EXTENSION IF NOT EXISTS vector;
 END;
 $$;
+
+-- Function to check if the vector extension exists
+CREATE OR REPLACE FUNCTION public.check_vector_extension()
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  extension_exists BOOLEAN;
+BEGIN
+  SELECT EXISTS(
+    SELECT 1 
+    FROM pg_extension 
+    WHERE extname = 'vector'
+  ) INTO extension_exists;
+  
+  RETURN extension_exists;
+END;
+$$;
+
+-- Function to check if a table exists
+CREATE OR REPLACE FUNCTION public.table_exists(table_name text)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  does_exist BOOLEAN;
+BEGIN
+  SELECT EXISTS(
+    SELECT 1 
+    FROM information_schema.tables 
+    WHERE table_schema = 'public' 
+    AND table_name = table_name
+  ) INTO does_exist;
+  
+  RETURN does_exist;
+END;
+$$;
