@@ -1,3 +1,4 @@
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -23,11 +24,6 @@
 .fb_dialog,
 .fb-customerchat,
 .tawk-min-container,
-.supportfast-widget,
-.supportfast-container,
-.supportfast-chat-button,
-.supportfast-chat,
-.supportfast-bubble,
 .ev-ai-widget,
 .ev-ai-bubble,
 .ev-ai-chat,
@@ -52,11 +48,6 @@
 /* Botsonic */
 .botsonic-container,
 .botsonic-bubble,
-/* SupportFast specific selectors */
-[id*="supportfast"],
-[class*="supportfast"],
-iframe[id*="supportfast"],
-iframe[class*="supportfast"],
 /* Catch-all classes for various chatbot implementations */
 [class*="chat-widget"],
 [class*="chatbot"],
@@ -145,11 +136,6 @@ iframe[class*="supportfast"],
   .fb_dialog,
   .fb-customerchat,
   .tawk-min-container,
-  .supportfast-widget,
-  .supportfast-container,
-  .supportfast-chat-button,
-  .supportfast-chat,
-  .supportfast-bubble,
   .ev-ai-widget,
   .ev-ai-bubble,
   .ev-ai-chat,
@@ -174,11 +160,6 @@ iframe[class*="supportfast"],
   /* Botsonic */
   .botsonic-container,
   .botsonic-bubble,
-  /* SupportFast specific selectors */
-  [id*="supportfast"],
-  [class*="supportfast"],
-  iframe[id*="supportfast"],
-  iframe[class*="supportfast"],
   /* Generic selectors to catch others */
   [class*="chat-widget"],
   [class*="chatbot"],
