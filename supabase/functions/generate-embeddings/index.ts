@@ -27,7 +27,7 @@ serve(async (req) => {
       .from('chatbot_knowledge')
       .select('id, content')
       .is('embedding', null)
-      .limit(50);  // Process in smaller batches
+      .limit(10);  // Process in smaller batches
     
     if (fetchError) {
       console.error("Error fetching records:", fetchError);

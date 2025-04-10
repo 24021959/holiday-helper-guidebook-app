@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
@@ -39,14 +40,17 @@ serve(async (req) => {
 
     try {
       // First check if the table exists
-      const { data: tableCheck, error: tableCheckError } = await supabaseClient.rpc('run_sql', {
-        sql: "SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'chatbot_knowledge')"
-      });
+      const { data: tableCheck, error: tableCheckError } = await supabaseClient
+        .from('information_schema.tables')
+        .select('table_name')
+        .eq('table_schema', 'public')
+        .eq('table_name', 'chatbot_knowledge')
+        .maybeSingle();
       
       if (tableCheckError) {
         console.error("Error checking if table exists:", tableCheckError);
         tableExists = false;
-      } else if (tableCheck && tableCheck.length > 0 && tableCheck[0].exists === false) {
+      } else if (!tableCheck) {
         console.log("Chatbot knowledge table doesn't exist");
         tableExists = false;
       }
