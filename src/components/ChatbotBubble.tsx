@@ -1,9 +1,9 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import Chatbot from "./Chatbot";
-import { supabase } from "@/integrations/supabase/client";
 
+// Define a simple configuration type
 interface ChatbotConfigType {
   enabled: boolean;
   primaryColor: string;
@@ -15,6 +15,7 @@ interface ChatbotConfigType {
   customIconUrl?: string;
 }
 
+// Default configuration
 const defaultConfig: ChatbotConfigType = {
   enabled: true,
   primaryColor: "#4ade80",
@@ -33,57 +34,17 @@ const defaultConfig: ChatbotConfigType = {
 
 const ChatbotBubble: React.FC = () => {
   const location = useLocation();
-  const [chatbotConfig, setChatbotConfig] = useState<ChatbotConfigType>(defaultConfig);
-  const [loading, setLoading] = useState(true);
+  const [chatbotConfig] = useState<ChatbotConfigType>(defaultConfig);
   
   // Hide the chatbot on admin and login pages
   const isAdminPage = location.pathname.includes('/admin') || 
                      location.pathname.includes('/login');
   
-  useEffect(() => {
-    const loadChatbotConfig = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('site_settings')
-          .select('*')
-          .eq('key', 'chatbot_config')
-          .single();
-
-        if (error && error.code !== 'PGRST116') {
-          console.error("Error loading chatbot config:", error);
-        }
-        
-        if (data && data.value) {
-          // Ensure we have a valid configuration by merging with defaults
-          const config = {
-            ...defaultConfig,
-            ...(typeof data.value === 'object' ? data.value : {})
-          };
-          
-          setChatbotConfig(config);
-        }
-      } catch (error) {
-        console.error("Error loading chatbot config:", error);
-        // Use default config on error
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadChatbotConfig();
-  }, []);
-  
-  // Don't render until we've tried to load config, and don't show on admin pages
-  if (loading || isAdminPage) {
+  // Don't show on admin pages
+  if (isAdminPage) {
     return null;
   }
   
-  // Only render the chatbot if it's enabled in the config
-  if (!chatbotConfig.enabled) {
-    return null;
-  }
-
-  // Return the chatbot component with safe error boundaries
   try {
     return <Chatbot previewConfig={chatbotConfig} />;
   } catch (error) {

@@ -13,9 +13,9 @@ import NotFound from "./pages/NotFound";
 import PreviewPage from "./pages/PreviewPage";
 import { TranslationProvider } from "./context/TranslationContext";
 import { Toaster } from "sonner";
-import ChatbotBubble from "./components/ChatbotBubble";
 import DevNavigation from "@/components/DevNavigation";
 import { Suspense, lazy } from "react";
+import ChatbotBubble from "./components/ChatbotBubble";
 
 function App() {
   return (
@@ -25,7 +25,7 @@ function App() {
       
       <TranslationProvider>
         <Router>
-          <Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<div className="p-4">Loading...</div>}>
             <Routes>
               {/* Index and system pages */}
               <Route path="/" element={<Index />} />
@@ -66,11 +66,6 @@ function App() {
               {/* Catch-all for unmatched routes */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </Suspense>
-          
-          {/* Wrap ChatbotBubble in Suspense to prevent it from causing render failures */}
-          <Suspense fallback={null}>
-            <ChatbotBubble />
           </Suspense>
           
           <Toaster position="top-right" richColors />
