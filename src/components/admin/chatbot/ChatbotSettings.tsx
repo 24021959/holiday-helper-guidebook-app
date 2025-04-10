@@ -126,40 +126,50 @@ const ChatbotSettings: React.FC = () => {
         console.error("Error creating table:", tableError);
       }
 
-      const { count, error: countError } = await supabase
-        .from('chatbot_knowledge')
-        .select('*', { count: 'exact', head: true })
-        .catchError(e => {
-          if (e.code === '42P01') return { count: 0 };
-          throw e;
-        });
-      
-      if (countError && countError.code !== '42P01') {
-        console.error("Error checking record count:", countError);
-        setProcessingError("Errore nel controllare la base di conoscenza");
-        return;
-      }
-      
-      let lastUpdated = null;
-      
-      if (count && count > 0) {
-        const { data: latestRecord, error: latestError } = await supabase
+      try {
+        const { count, error: countError } = await supabase
           .from('chatbot_knowledge')
-          .select('updated_at')
-          .order('updated_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-          
-        if (!latestError && latestRecord) {
-          lastUpdated = new Date(latestRecord.updated_at).toLocaleString('it-IT');
+          .select('*', { count: 'exact', head: true });
+        
+        if (countError) {
+          // Table likely doesn't exist
+          console.error("Error checking knowledge base:", countError);
+          setKnowledgeStatus({
+            exists: false,
+            count: 0,
+            lastUpdated: null
+          });
+          return;
         }
+        
+        let lastUpdated = null;
+        
+        if (count && count > 0) {
+          const { data: latestRecord, error: latestError } = await supabase
+            .from('chatbot_knowledge')
+            .select('updated_at')
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+            
+          if (!latestError && latestRecord) {
+            lastUpdated = new Date(latestRecord.updated_at).toLocaleString('it-IT');
+          }
+        }
+        
+        setKnowledgeStatus({
+          exists: count ? count > 0 : false,
+          count: count || 0,
+          lastUpdated
+        });
+      } catch (error) {
+        console.error("Error checking knowledge base:", error);
+        setKnowledgeStatus({
+          exists: false,
+          count: 0,
+          lastUpdated: null
+        });
       }
-      
-      setKnowledgeStatus({
-        exists: count ? count > 0 : false,
-        count: count || 0,
-        lastUpdated
-      });
     } catch (error) {
       console.error("Error checking knowledge base:", error);
       setProcessingError("Errore nel controllare la base di conoscenza");
@@ -288,7 +298,14 @@ const ChatbotSettings: React.FC = () => {
       }
 
       try {
-        await supabase.from('chatbot_knowledge').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        const { error: deleteError } = await supabase
+          .from('chatbot_knowledge')
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000');
+          
+        if (deleteError) {
+          console.error("Error clearing existing data:", deleteError);
+        }
       } catch (clearError) {
         console.error("Error clearing existing data:", clearError);
         // Continue anyway
