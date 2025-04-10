@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
@@ -33,51 +32,80 @@ serve(async (req) => {
 
     // Create an embedding for the query
     const queryEmbedding = await createEmbedding(message);
-    if (!queryEmbedding) {
-      throw new Error('Failed to create embedding for query');
-    }
-
+    
     let relevantContent = '';
     let tableExists = true;
+    let useDirectContent = false;
 
     try {
-      // Check if the table exists
-      const { error: tableCheckError } = await supabaseClient.rpc('run_sql', {
+      // First check if the table exists
+      const { data: tableCheck, error: tableCheckError } = await supabaseClient.rpc('run_sql', {
         sql: "SELECT to_regclass('public.chatbot_knowledge')"
       });
       
-      if (tableCheckError) {
-        console.error("Table check error:", tableCheckError);
+      if (tableCheckError || !tableCheck || tableCheck.length === 0 || !tableCheck[0].to_regclass) {
+        console.log("Chatbot knowledge table doesn't exist");
         tableExists = false;
-      } else {
-        // Get relevant documents from the knowledge base
-        const { data: documents, error: matchError } = await supabaseClient.rpc(
-          'match_documents',
-          {
-            query_embedding: queryEmbedding,
-            match_threshold: 0.6,
-            match_count: 5
-          }
-        );
+      } else if (tableExists) {
+        // Try to get relevant documents with vector search first
+        if (queryEmbedding) {
+          try {
+            const { data: documents, error: matchError } = await supabaseClient.rpc(
+              'match_documents',
+              {
+                query_embedding: queryEmbedding,
+                match_threshold: 0.6,
+                match_count: 5
+              }
+            );
 
-        if (matchError) {
-          if (matchError.code === '42883') { // Function doesn't exist
-            console.log("Function match_documents doesn't exist yet");
-            tableExists = false;
-          } else {
-            console.error("Error matching documents:", matchError);
-            throw matchError;
+            if (matchError) {
+              console.error("Error matching documents with embeddings:", matchError);
+              // Fall back to direct content search
+              useDirectContent = true;
+            } else if (documents && documents.length > 0) {
+              relevantContent = documents
+                .map(doc => doc.content)
+                .join('\n\n');
+              
+              console.log(`Found ${documents.length} relevant documents using vector search`);
+            } else {
+              console.log("No relevant documents found with vector search");
+              useDirectContent = true;
+            }
+          } catch (matchError) {
+            console.error("Error during vector search:", matchError);
+            useDirectContent = true;
           }
+        } else {
+          console.log("No embedding could be created, using direct content search");
+          useDirectContent = true;
         }
 
-        if (documents && documents.length > 0) {
-          relevantContent = documents
-            .map(doc => doc.content)
-            .join('\n\n');
-          
-          console.log(`Found ${documents.length} relevant documents`);
-        } else {
-          console.log("No relevant documents found");
+        // Fall back to direct content search if no results from vector search
+        if (useDirectContent) {
+          try {
+            // Get content directly from the table without using embeddings
+            const { data: directDocuments, error: directError } = await supabaseClient
+              .from('chatbot_knowledge')
+              .select('content')
+              .order('created_at', { ascending: false })
+              .limit(10);
+
+            if (directError) {
+              console.error("Error fetching direct content:", directError);
+            } else if (directDocuments && directDocuments.length > 0) {
+              relevantContent = directDocuments
+                .map(doc => doc.content)
+                .join('\n\n');
+              
+              console.log(`Found ${directDocuments.length} documents using direct content fetch`);
+            } else {
+              console.log("No documents found using direct content fetch");
+            }
+          } catch (directError) {
+            console.error("Error during direct content fetch:", directError);
+          }
         }
       }
     } catch (error) {
@@ -212,11 +240,11 @@ Communication style:
 Rules to strictly follow:
 - Use exclusively information present in the official website pages of the facility. Do not improvise or invent details.
 - If a guest asks for information that is not available, kindly advise them to contact the facility staff directly.
-- For specific requests (e.g., special bookings, special needs), direct the guest to contact reception directly.
+- For specific requests (e.g., special bookings, special needs) indirizza l'ospite a contattare direttamente la reception.
 
-Response formatting:
-- Short, clear responses organized in paragraphs.
-- Use bullet points to clearly indicate options and recommendations.`,
+Formattazione risposte:
+- Risposte brevi, chiare e organizzate in paragrafi.
+- Usa elenchi puntati per indicare chiaramente opzioni e raccomandazioni.`,
     
     fr: `Vous êtes un assistant virtuel intelligent conçu pour soutenir les clients d'un établissement d'accueil. Votre tâche principale est de fournir des informations détaillées, précises et opportunes qui facilitent et améliorent l'expérience de séjour de l'invité.
 
@@ -236,7 +264,7 @@ Règles à suivre strictement:
 - Si un invité demande des informations qui ne sont pas disponibles, conseillez-lui aimablement de contacter directement le personnel de l'établissement.
 - Pour des demandes spécifiques (par exemple, des réservations spéciales, des besoins particuliers), dirigez l'invité vers la réception directement.
 
-Formatage des réponses:
+Formattage des réponses:
 - Réponses courtes et claires, organisées en paragraphes.
 - Utilisez des puces pour indiquer clairement les options et les recommandations.`,
     
@@ -287,7 +315,7 @@ Antwortformatierung:
 
   let promptWithKnowledge = basePrompt[language as keyof typeof basePrompt] || basePrompt.en;
   
-  if (hasKnowledgeBase && relevantContent) {
+  if (relevantContent) {
     const knowledgeIntro = {
       it: `\n\nInformazioni rilevanti dalle pagine del sito:\n${relevantContent}\n\nUtilizza queste informazioni per rispondere alla domanda dell'utente. Se le informazioni non sono sufficienti, rispondi in base a ciò che sai, ma senza inventare dettagli.`,
       en: `\n\nRelevant information from the website pages:\n${relevantContent}\n\nUse this information to answer the user's question. If the information is not sufficient, respond based on what you know, but without making up details.`,
@@ -297,7 +325,7 @@ Antwortformatierung:
     };
 
     promptWithKnowledge += knowledgeIntro[language as keyof typeof knowledgeIntro] || knowledgeIntro.en;
-  } else {
+  } else if (!hasKnowledgeBase) {
     const noKnowledgeWarning = {
       it: `\n\nATTENZIONE: La base di conoscenza non è stata ancora configurata o non ci sono informazioni rilevanti per questa domanda. Rispondi in modo generico ma utile, chiarendo all'utente che potrebbero contattare direttamente la struttura per informazioni più dettagliate.`,
       en: `\n\nWARNING: The knowledge base has not been configured yet or there is no relevant information for this question. Respond in a generic but helpful way, making it clear to the user that they might want to contact the facility directly for more detailed information.`,
@@ -307,6 +335,16 @@ Antwortformatierung:
     };
 
     promptWithKnowledge += noKnowledgeWarning[language as keyof typeof noKnowledgeWarning] || noKnowledgeWarning.en;
+  } else {
+    const noRelevantInfoWarning = {
+      it: `\n\nNon sono state trovate informazioni specifiche per questa domanda nella base di conoscenza. Risponderò in modo generico basandomi sulle informazioni generali disponibili.`,
+      en: `\n\nNo specific information was found for this question in the knowledge base. I will respond in a generic way based on the general information available.`,
+      fr: `\n\nAucune information spécifique n'a été trouvée pour cette question dans la base de connaissances. Je répondrai de manière générique en me basant sur les informations générales disponibles.`,
+      es: `\n\nNo se encontró información específica para esta pregunta en la base de conocimientos. Responderé de manera genérica basándome en la información general disponible.`,
+      de: `\n\nFür diese Frage wurden in der Wissensdatenbank keine spezifischen Informationen gefunden. Ich werde allgemein antworten, basierend auf den verfügbaren allgemeinen Informationen.`
+    };
+
+    promptWithKnowledge += noRelevantInfoWarning[language as keyof typeof noRelevantInfoWarning] || noRelevantInfoWarning.en;
   }
 
   return promptWithKnowledge;

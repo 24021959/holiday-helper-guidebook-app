@@ -1,9 +1,10 @@
 
 import React from 'react';
-import { AlertCircle, RefreshCw, CheckCircle2, XCircle } from 'lucide-react';
+import { AlertCircle, RefreshCw, CheckCircle2, XCircle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
 
 interface KnowledgeBaseStatusProps {
   status: {
@@ -73,11 +74,25 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
       {errorMessage && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            {errorMessage}
-          </AlertDescription>
+          <AlertDescription>{errorMessage}</AlertDescription>
         </Alert>
       )}
+      
+      <div className="bg-slate-50 p-3 rounded-md border border-slate-200">
+        <div className="flex items-center mb-2">
+          <Info className="h-4 w-4 text-blue-500 mr-1" />
+          <span className="text-sm font-medium text-blue-600">Informazioni sul processo</span>
+        </div>
+        <p className="text-sm text-slate-700 mb-2">
+          L'aggiornamento della base di conoscenza estrae i contenuti dalle pagine pubblicate 
+          e li prepara per l'utilizzo da parte del chatbot.
+        </p>
+        <p className="text-xs text-slate-600">
+          • Vengono eliminati i tag HTML e formattati i contenuti<br />
+          • Vengono generati embedding vettoriali tramite OpenAI<br />
+          • Il contenuto viene salvato in database per le ricerche
+        </p>
+      </div>
       
       {processingProgress > 0 && (
         <div className="space-y-2 mt-2">
@@ -86,22 +101,34 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
             <span className="text-sm">{processingProgress}%</span>
           </div>
           <Progress value={processingProgress} className="w-full" />
+          <p className="text-xs text-gray-500 italic">
+            Non chiudere questa finestra durante l'elaborazione
+          </p>
         </div>
       )}
+      
+      <Separator className="my-2" />
       
       <Button
         onClick={onUpdateKnowledgeBase}
         disabled={isProcessing}
-        className="w-full bg-blue-500 hover:bg-blue-600 text-white mt-2"
+        className="w-full bg-blue-500 hover:bg-blue-600 text-white"
       >
         <RefreshCw className={`mr-2 h-4 w-4 ${isProcessing ? 'animate-spin' : ''}`} />
         {isProcessing ? 'Aggiornamento in corso...' : 'Aggiorna Base di Conoscenza'}
       </Button>
       
-      <p className="text-xs text-gray-500 mt-1">
-        Questo processo aggiorna la base di conoscenza del chatbot con i contenuti delle pagine pubblicate sul sito.
-        L'aggiornamento potrebbe richiedere alcuni minuti.
-      </p>
+      {errorMessage && (
+        <div className="mt-3 pt-3 border-t border-red-200">
+          <p className="text-sm font-medium text-red-600 mb-1">Risoluzione dei problemi:</p>
+          <ul className="text-xs space-y-1 text-red-700 list-disc pl-4">
+            <li>Verifica che l'API key di OpenAI sia valida</li>
+            <li>Controlla che ci siano pagine pubblicate sul sito</li>
+            <li>Prova ad aggiornare di nuovo tra qualche minuto</li>
+            <li>Controlla i log delle funzioni Edge su Supabase</li>
+          </ul>
+        </div>
+      )}
     </div>
   );
 };

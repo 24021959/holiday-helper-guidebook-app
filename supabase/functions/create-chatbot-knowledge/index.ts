@@ -30,16 +30,83 @@ serve(async (req) => {
 
     console.log(`Processing ${pages.length} pages for chatbot knowledge base`);
 
-    // Prepare data for embeddings, processing and formatting content from each page
+    // Initialize Supabase client
+    const supabaseClient = createClient(
+      supabaseUrl || '',
+      supabaseKey || ''
+    );
+
+    // Ensure the chatbot_knowledge table exists
+    try {
+      // First make sure the table exists using direct SQL
+      await supabaseClient.rpc('run_sql', {
+        sql: `
+          CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
+            id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+            page_id uuid NOT NULL,
+            title text NOT NULL,
+            content text NOT NULL,
+            path text NOT NULL,
+            embedding vector(1536),
+            created_at timestamp with time zone DEFAULT now(),
+            updated_at timestamp with time zone DEFAULT now()
+          );
+        `
+      });
+
+      console.log("Table chatbot_knowledge created or already exists");
+    } catch (dbError) {
+      console.error("Error creating table:", dbError);
+      // Attempt to create the table one more time directly
+      try {
+        await supabaseClient.rpc('run_sql', {
+          sql: `
+            CREATE EXTENSION IF NOT EXISTS vector;
+            CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
+              id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+              page_id uuid NOT NULL,
+              title text NOT NULL,
+              content text NOT NULL,
+              path text NOT NULL,
+              embedding vector(1536),
+              created_at timestamp with time zone DEFAULT now(),
+              updated_at timestamp with time zone DEFAULT now()
+            );
+          `
+        });
+      } catch (finalError) {
+        console.error("Final error creating table:", finalError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to set up database structure', details: finalError.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // Clear existing knowledge
+    try {
+      console.log("Clearing existing knowledge base data");
+      await supabaseClient.from('chatbot_knowledge').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      console.log("Existing knowledge cleared successfully");
+    } catch (deleteError) {
+      console.error('Error during delete operation:', deleteError);
+      // Continue anyway, as we'll try to insert new data
+    }
+
+    // Prepare data for embeddings
     const pageContents = pages.map(page => {
       // Clean HTML tags and format content
-      const cleanContent = (page.content || "").replace(/<[^>]*>/g, " ").trim();
+      const cleanContent = (page.content || "")
+        .replace(/<[^>]*>/g, " ")
+        .replace(/<!--.*?-->/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
       
-      // Extract any list items if present
+      // Extract list items if present
       let listItemsText = "";
       if (page.list_items && Array.isArray(page.list_items) && page.list_items.length > 0) {
         listItemsText = "\n\nItems in this page:\n" + 
-          page.list_items.map((item: any, index: number) => 
+          page.list_items.map((item, index) => 
             `${index + 1}. ${item.name || ""} - ${item.description || ""}`
           ).join("\n");
       }
@@ -59,134 +126,116 @@ Content: ${cleanContent}${listItemsText}
       };
     });
 
-    // Initialize Supabase client
-    const supabaseClient = createClient(
-      supabaseUrl || '',
-      supabaseKey || ''
-    );
+    // Process pages in batches to avoid timeouts
+    const batchSize = 5;
+    const successResults = [];
+    const errorResults = [];
 
-    // Create the table directly without using run_sql function
-    console.log("Creating or verifying chatbot_knowledge table");
-    
-    try {
-      // Check if table exists
-      const { data: tableExists, error: checkError } = await supabaseClient
-        .from('chatbot_knowledge')
-        .select('id')
-        .limit(1);
-        
-      if (checkError && checkError.code === '42P01') {
-        console.log("Table doesn't exist, creating it");
-        
-        // Create the table
-        const { error: createTableError } = await supabaseClient
-          .rpc('create_chatbot_knowledge_table');
-        
-        if (createTableError) {
-          console.error("Error creating table:", createTableError);
+    for (let i = 0; i < pageContents.length; i += batchSize) {
+      const batch = pageContents.slice(i, i + batchSize);
+      console.log(`Processing batch ${i/batchSize + 1} of ${Math.ceil(pageContents.length/batchSize)}`);
+      
+      const batchPromises = batch.map(async (page) => {
+        try {
+          console.log(`Creating embedding for page: ${page.title}`);
+          const embedding = await createEmbedding(page.content);
           
-          // Direct SQL solution as fallback
-          const { error: fallbackError } = await supabaseClient.auth.admin.executeSql(`
-            CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
-              id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-              page_id uuid NOT NULL,
-              title text NOT NULL,
-              content text NOT NULL,
-              path text NOT NULL,
-              embedding vector(1536),
-              created_at timestamp with time zone DEFAULT now(),
-              updated_at timestamp with time zone DEFAULT now()
-            );
-          `);
-          
-          if (fallbackError) {
-            throw new Error(`Failed to create chatbot_knowledge table: ${fallbackError.message}`);
-          }
-        }
-      } else {
-        console.log("Table exists, continuing with operation");
-      }
-    } catch (dbSetupError) {
-      console.error("Database setup error:", dbSetupError);
-      return new Response(
-        JSON.stringify({ 
-          error: `Database setup error: ${dbSetupError.message}`,
-          details: "Failed to set up database. Try running the migration SQL manually from the SQL editor."
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Clear existing knowledge
-    try {
-      console.log("Clearing existing knowledge base data");
-      const { error: deleteError } = await supabaseClient
-        .from('chatbot_knowledge')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // This will delete all records
-          
-      if (deleteError) {
-        console.error('Error deleting existing knowledge:', deleteError);
-        throw deleteError;
-      } else {
-        console.log("Existing knowledge cleared successfully");
-      }
-    } catch (deleteError) {
-      console.error('Error during delete operation:', deleteError);
-      // Continue anyway, as we'll try to insert new data
-    }
-
-    // Insert new knowledge with embeddings
-    console.log("Creating new embeddings and inserting knowledge");
-    let successCount = 0;
-    let errorCount = 0;
-    
-    for (const page of pageContents) {
-      // Create embeddings using OpenAI
-      try {
-        console.log(`Processing page: ${page.title}`);
-        const embedding = await createEmbedding(page.content);
-        
-        if (embedding) {
-          try {
-            const { error: insertError } = await supabaseClient
-              .from('chatbot_knowledge')
-              .insert({
-                page_id: page.id,
-                title: page.title,
-                content: page.content,
-                path: page.path,
-                embedding: embedding
-              });
+          if (embedding) {
+            try {
+              const { error } = await supabaseClient
+                .from('chatbot_knowledge')
+                .insert({
+                  page_id: page.id,
+                  title: page.title,
+                  content: page.content,
+                  path: page.path,
+                  embedding: embedding
+                });
+                
+              if (error) {
+                console.error(`Error inserting knowledge for page ${page.id}:`, error);
+                errorResults.push({ id: page.id, title: page.title, error: error.message });
+                return false;
+              }
               
-            if (insertError) {
-              console.error(`Error inserting knowledge for page ${page.id}:`, insertError);
-              errorCount++;
-            } else {
-              successCount++;
               console.log(`Successfully processed page: ${page.title}`);
+              successResults.push({ id: page.id, title: page.title });
+              return true;
+            } catch (insertError) {
+              console.error(`Error inserting knowledge for page ${page.id}:`, insertError);
+              errorResults.push({ id: page.id, title: page.title, error: insertError.message });
+              return false;
             }
-          } catch (insertError) {
-            console.error(`Error inserting knowledge for page ${page.id}:`, insertError);
-            errorCount++;
+          } else {
+            console.error(`Failed to create embedding for page ${page.id}`);
+            errorResults.push({ id: page.id, title: page.title, error: 'Failed to create embedding' });
+            return false;
           }
-        } else {
-          console.error(`Failed to create embedding for page ${page.id}`);
-          errorCount++;
+        } catch (error) {
+          console.error(`Error processing page ${page.id}:`, error);
+          errorResults.push({ id: page.id, title: page.title, error: error.message });
+          return false;
         }
-      } catch (error) {
-        console.error(`Error processing page ${page.id}:`, error);
-        errorCount++;
-      }
+      });
+
+      // Wait for all promises in the current batch to complete
+      await Promise.all(batchPromises);
     }
 
-    console.log(`Knowledge base update complete. Success: ${successCount}, Errors: ${errorCount}`);
+    console.log(`Knowledge base update complete. Success: ${successResults.length}, Errors: ${errorResults.length}`);
+
+    // If OpenAI API fails but we have content, let's also try to store the content without embeddings
+    if (successResults.length === 0 && errorResults.length > 0) {
+      console.log("Attempting to store content without embeddings as fallback");
+      
+      const fallbackPromises = pageContents.map(async (page) => {
+        try {
+          // Store without embedding for now
+          const { error } = await supabaseClient
+            .from('chatbot_knowledge')
+            .insert({
+              page_id: page.id,
+              title: page.title,
+              content: page.content,
+              path: page.path,
+              // embedding will be NULL
+            });
+            
+          if (error) {
+            console.error(`Error in fallback insert for page ${page.id}:`, error);
+            return false;
+          }
+          
+          console.log(`Successfully stored page without embedding: ${page.title}`);
+          return true;
+        } catch (insertError) {
+          console.error(`Error in fallback insert for page ${page.id}:`, insertError);
+          return false;
+        }
+      });
+
+      const fallbackResults = await Promise.all(fallbackPromises);
+      const fallbackSuccessCount = fallbackResults.filter(result => result).length;
+      
+      if (fallbackSuccessCount > 0) {
+        return new Response(
+          JSON.stringify({ 
+            success: true,
+            message: `Successfully stored ${fallbackSuccessCount} pages without embeddings (fallback mode)`,
+            warning: "Pages were stored without embeddings due to OpenAI API issues",
+            errors: errorResults.length 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
 
     return new Response(
       JSON.stringify({ 
-        success: true,
-        message: `Successfully processed ${successCount} out of ${pageContents.length} pages for chatbot knowledge base`,
-        errors: errorCount 
+        success: successResults.length > 0,
+        message: `Successfully processed ${successResults.length} out of ${pageContents.length} pages for chatbot knowledge base`,
+        errors: errorResults.length,
+        errorDetails: errorResults.length > 0 ? errorResults : undefined
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -219,7 +268,7 @@ async function createEmbedding(text: string): Promise<number[] | null> {
       },
       body: JSON.stringify({
         model: 'text-embedding-3-small',
-        input: text.slice(0, 8000) // Limit to 8000 characters
+        input: text.slice(0, 8000) // Limit to 8000 characters as a safety measure
       }),
     });
 
