@@ -6,7 +6,7 @@
   text-align: center;
 }
 
-/* Chatbot container positioning */
+/* Chatbot container positioning - only for non-admin pages */
 .chatbot-container {
   position: fixed !important;
   bottom: 20px !important;
