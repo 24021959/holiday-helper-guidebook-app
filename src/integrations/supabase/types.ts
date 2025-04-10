@@ -39,6 +39,42 @@ export type Database = {
         }
         Relationships: []
       }
+      chatbot_knowledge: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          language: string
+          metadata: Json | null
+          page_id: string
+          path: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          language?: string
+          metadata?: Json | null
+          page_id: string
+          path: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          language?: string
+          metadata?: Json | null
+          page_id?: string
+          path?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       chatbot_settings: {
         Row: {
           code: string | null

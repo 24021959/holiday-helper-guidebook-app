@@ -1,72 +1,56 @@
 
-import React from "react";
-import { MessageSquare, ChevronDown } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useChatbot } from '@/hooks/useChatbot';
-import ChatBox from './ChatBox';
+import React, { useState, useEffect } from 'react';
+import { useChatbot } from "@/hooks/useChatbot";
+import Chatbot from "./Chatbot";
+import { Bot, X } from 'lucide-react';
 
-export const ChatbotBubble: React.FC = () => {
-  const {
-    isOpen,
-    messages,
-    isLoading,
-    config,
-    sendMessage,
-    toggleChat,
-    initializing
+const ChatbotBubble: React.FC = () => {
+  const { 
+    isOpen, 
+    toggleChat, 
+    closeChat, 
+    config, 
+    initializing 
   } = useChatbot();
 
-  if (!config.enabled || initializing) return null;
-
-  const getCustomStyles = () => {
-    const position = config.position || 'right';
-    return {
-      container: {
-        [position]: '20px',
-      },
-      bubbleButton: {
-        backgroundColor: config.primaryColor,
-      }
-    };
-  };
-
-  const styles = getCustomStyles();
-
+  // Hide bubble when initializing
+  if (initializing || !config.enabled) {
+    return null;
+  }
+  
   return (
-    <div 
-      className={`fixed bottom-6 z-50 ${config.position === 'left' ? 'left-6' : 'right-6'}`}
-      style={styles.container}
-    >
-      <AnimatePresence>
-        {isOpen && (
-          <ChatBox 
-            messages={messages}
-            isLoading={isLoading}
-            config={config}
-            onSendMessage={sendMessage}
-            onClose={toggleChat}
-          />
-        )}
-      </AnimatePresence>
-
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+    <>
+      {/* Chatbot interface */}
+      {isOpen && (
+        <div className="fixed bottom-20 z-50 max-h-[calc(100vh-100px)] w-full max-w-md shadow-xl rounded-lg overflow-hidden transition-all duration-300"
+           style={{ 
+             [config.position === 'right' ? 'right' : 'left']: '20px',
+           }}>
+          <Chatbot />
+        </div>
+      )}
+      
+      {/* Chat button */}
+      <button
         onClick={toggleChat}
-        className="flex items-center justify-center rounded-full w-14 h-14 shadow-lg"
-        style={{ backgroundColor: config.primaryColor }}
+        className="fixed bottom-4 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-all duration-300 hover:scale-110"
+        style={{ 
+          backgroundColor: config.primaryColor,
+          [config.position === 'right' ? 'right' : 'left']: '20px',
+        }}
+        aria-label={isOpen ? "Chiudi chat" : "Apri chat"}
       >
         {isOpen ? (
-          <ChevronDown className="h-6 w-6 text-white" />
+          <X className="h-6 w-6 text-white" />
         ) : (
           config.iconType === 'custom' && config.customIconUrl ? (
-            <img src={config.customIconUrl} alt="Chatbot" className="h-8 w-8" />
+            <img src={config.customIconUrl} alt="Chat icon" className="h-6 w-6" />
           ) : (
-            <MessageSquare className="h-6 w-6 text-white" />
+            <Bot className="h-6 w-6 text-white" />
           )
         )}
-      </motion.button>
-    </div>
+      </button>
+    </>
   );
 };
 
