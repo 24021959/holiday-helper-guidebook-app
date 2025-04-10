@@ -38,7 +38,7 @@ const defaultConfig: ChatbotConfig = {
   primaryColor: "#4ade80",
   secondaryColor: "#ffffff",
   botName: "Assistente Virtuale",
-  position: 'right',
+  position: 'right', // Assicuriamoci che sia sempre 'right' o 'left'
   iconType: 'default'
 };
 
@@ -68,9 +68,14 @@ export const Chatbot: React.FC = () => {
           }
           // Use default config
         } else if (data) {
+          // Assicuriamoci che la posizione sia valida
+          const configValue = data.value as Partial<ChatbotConfig>;
+          const position = configValue.position === 'left' ? 'left' : 'right';
+          
           setConfig({
             ...defaultConfig,
-            ...data.value as ChatbotConfig
+            ...configValue,
+            position
           });
         }
       } catch (error) {

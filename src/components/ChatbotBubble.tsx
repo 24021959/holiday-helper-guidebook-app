@@ -15,8 +15,12 @@ const ChatbotBubble: React.FC = () => {
     return null;
   }
 
-  // Altrimenti, mostra il componente Chatbot
-  return <Chatbot />;
+  // Altrimenti, mostra il componente Chatbot con posizione corretta
+  return (
+    <div className="chatbot-container z-50">
+      <Chatbot />
+    </div>
+  );
 };
 
 export default ChatbotBubble;

@@ -78,51 +78,36 @@ iframe[class*="supportfast"],
   pointer-events: auto !important;
   transform: none !important;
   transition: none !important;
-  max-width: 90% !important;
-  max-height: 90% !important;
+  max-width: 90vw !important; /* Limitiamo la larghezza a 90% della viewport */
+  max-height: 80vh !important; /* Limitiamo l'altezza a 80% della viewport */
   overflow: visible !important;
 }
 
-/* Aggiungiamo specifici selettori per SupportFast */
-#supportfast-widget,
-#supportfast-root,
-.supportfast-root,
-.supportfast-widget,
-.supportfast-bubble,
-.supportfast-button,
-#supportfast-button,
-#supportfast-chat,
-.supportfast-chat,
-#supportfast-container,
-.supportfast-container {
-  z-index: 9999 !important;
+/* Correzioni specifiche per il nostro chatbot */
+.chatbot-container {
   position: fixed !important;
-  bottom: 20px !important;
-  right: 20px !important;
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  pointer-events: auto !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  z-index: 9999 !important;
+  width: auto !important;
+  height: auto !important;
 }
 
-/* All IFRAMEs that might be used by chatbots */
-iframe[id*="chat"],
-iframe[class*="chat"],
-iframe[id*="bot"],
-iframe[class*="bot"],
-iframe[id*="support"],
-iframe[class*="support"],
-iframe[id*="widget"],
-iframe[class*="widget"],
-iframe[id*="supportfast"],
-iframe[class*="supportfast"] {
-  z-index: 9998 !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  display: block !important;
+/* Posizionamento del chatbot nella pagina */
+.chatbot-container .chat-window {
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow: hidden;
+  margin-bottom: 20px;
 }
 
+/* Rendere il chatbot responsive su dispositivi mobili */
 @media (max-width: 768px) {
+  .chatbot-container .chat-window {
+    width: 90vw !important;
+    max-height: 70vh !important;
+  }
+  
   #root {
     max-width: 100%;
     width: 100%;
