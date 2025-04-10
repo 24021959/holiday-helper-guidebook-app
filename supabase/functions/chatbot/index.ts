@@ -43,7 +43,6 @@ serve(async (req) => {
     // Get relevant documents from the knowledge base
     let relevantContent = [];
     try {
-      // Check if chatbot_knowledge table exists
       try {
         const { data: tableExists, error: tableCheckError } = await supabaseClient
           .from('information_schema.tables')
