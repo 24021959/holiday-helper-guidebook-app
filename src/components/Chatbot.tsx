@@ -42,27 +42,18 @@ const defaultConfig: ChatbotConfig = {
   iconType: 'default'
 };
 
-interface ChatbotProps {
-  previewConfig?: ChatbotConfig; // Optional prop for preview mode
-}
-
-export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
+export const Chatbot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [config, setConfig] = useState<ChatbotConfig>(previewConfig || defaultConfig);
+  const [config, setConfig] = useState<ChatbotConfig>(defaultConfig);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { language } = useTranslation();
   const [initializing, setInitializing] = useState(true);
   
+  // Load chatbot configuration
   useEffect(() => {
-    if (previewConfig) {
-      setConfig(previewConfig);
-      setInitializing(false);
-      return;
-    }
-    
     const loadConfig = async () => {
       try {
         const { data, error } = await supabase
@@ -72,9 +63,10 @@ export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
           .single();
 
         if (error) {
-          if (error.code !== 'PGRST116') {
+          if (error.code !== 'PGRST116') { // not found error
             console.error("Error loading chatbot config:", error);
           }
+          // Use default config
         } else if (data) {
           setConfig({
             ...defaultConfig,
@@ -89,14 +81,9 @@ export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
     };
 
     loadConfig();
-  }, [previewConfig]);
+  }, []);
 
-  useEffect(() => {
-    if (previewConfig) {
-      setConfig(previewConfig);
-    }
-  }, [previewConfig]);
-
+  // Add welcome message
   useEffect(() => {
     if (!initializing && !messages.length) {
       const welcomeMessage = config.welcomeMessage[language] || config.welcomeMessage.en || "Hi! How can I help you today?";
@@ -112,6 +99,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
     }
   }, [language, initializing, config]);
 
+  // Auto scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -131,27 +119,12 @@ export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
     setIsLoading(true);
 
     try {
-      if (previewConfig) {
-        setTimeout(() => {
-          const previewResponse: Message = {
-            id: (Date.now() + 1).toString(),
-            content: "Questa è un'anteprima del chatbot. In modalità anteprima, non vengono inviate richieste reali all'API.",
-            role: 'assistant',
-            timestamp: new Date()
-          };
-          setMessages(prev => [...prev, previewResponse]);
-          setIsLoading(false);
-        }, 1500);
-        return;
-      }
-
+      // Transform chat history to the format expected by the API
       const chatHistory = messages.map(msg => ({
         role: msg.role,
         content: msg.content
       }));
 
-      console.log("Sending chat request with history:", chatHistory);
-      
       const { data, error } = await supabase.functions.invoke('chatbot', {
         body: { 
           message, 
@@ -160,12 +133,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
         }
       });
 
-      if (error) {
-        console.error("Supabase function error:", error);
-        throw error;
-      }
-
-      console.log("Received chatbot response:", data);
+      if (error) throw error;
 
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
@@ -198,8 +166,10 @@ export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
     }
   };
 
-  if (!config.enabled && !previewConfig) return null;
+  // If chatbot is disabled, don't render
+  if (!config.enabled) return null;
 
+  // Apply custom styles
   const getCustomStyles = () => {
     const position = config.position || 'right';
     return {
@@ -219,10 +189,12 @@ export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
 
   return (
     <>
+      {/* Chatbot Bubble */}
       <div 
         className={`fixed bottom-6 z-50 ${config.position === 'left' ? 'left-6' : 'right-6'}`}
         style={styles.container}
       >
+        {/* Chat Window */}
         <AnimatePresence>
           {isOpen && (
             <motion.div
@@ -236,6 +208,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
                 maxHeight: 'calc(100vh - 160px)',
               }}
             >
+              {/* Chat Header */}
               <div 
                 className="flex items-center justify-between p-3 text-white"
                 style={{ backgroundColor: config.primaryColor }}
@@ -254,6 +227,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
                 </Button>
               </div>
 
+              {/* Messages Area */}
               <div className="flex-1 overflow-y-auto p-3 bg-gray-50">
                 {messages.map((msg) => (
                   <div
@@ -273,14 +247,14 @@ export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
                       <div
                         className={`rounded-lg p-3 ${
                           msg.role === 'user'
-                            ? 'bg-gray-200 text-gray-800'
+                            ? 'bg-blue-500 text-white'
                             : 'bg-white border border-gray-200'
                         }`}
                       >
                         <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                         <div
                           className={`text-xs mt-1 ${
-                            msg.role === 'user' ? 'text-gray-500' : 'text-gray-400'
+                            msg.role === 'user' ? 'text-blue-100' : 'text-gray-400'
                           }`}
                         >
                           {new Date(msg.timestamp).toLocaleTimeString([], {
@@ -291,7 +265,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
                       </div>
                       {msg.role === 'user' && (
                         <Avatar className="ml-2 h-8 w-8 mt-1">
-                          <AvatarFallback className="bg-gray-500">
+                          <AvatarFallback className="bg-blue-600">
                             <User size={16} className="text-white" />
                           </AvatarFallback>
                         </Avatar>
@@ -319,6 +293,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
                 <div ref={messagesEndRef} />
               </div>
 
+              {/* Input Area */}
               <div className="p-3 border-t border-gray-200 bg-white">
                 <div className="flex items-center space-x-2">
                   <Input
@@ -348,6 +323,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
           )}
         </AnimatePresence>
 
+        {/* Chat Button */}
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}

@@ -13,72 +13,54 @@ import NotFound from "./pages/NotFound";
 import PreviewPage from "./pages/PreviewPage";
 import { TranslationProvider } from "./context/TranslationContext";
 import { Toaster } from "sonner";
-import DevNavigation from "@/components/DevNavigation";
-import { Suspense, lazy } from "react";
-
-// Importiamo il chatbot in modo lazy per evitare problemi di rendering
-const ChatbotBubble = lazy(() => import('./components/ChatbotBubble'));
 
 function App() {
   return (
-    <>
-      {/* Aggiungi il componente DevNavigation in cima all'app */}
-      <DevNavigation />
-      
-      <TranslationProvider>
-        <Router>
-          <Suspense fallback={<div className="p-4">Loading...</div>}>
-            <Routes>
-              {/* Index and system pages */}
-              <Route path="/" element={<Index />} />
-              <Route path="/home" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/welcome" element={<Welcome />} />
-              <Route path="/storia" element={<Storia />} />
-              
-              {/* Main menu routes with language support */}
-              <Route path="/menu" element={<Menu />} />
-              <Route path="/en/menu" element={<Menu />} />
-              <Route path="/fr/menu" element={<Menu />} />
-              <Route path="/es/menu" element={<Menu />} />
-              <Route path="/de/menu" element={<Menu />} />
-              
-              {/* SubMenu routes with improved path handling */}
-              <Route path="/submenu/:parentPath" element={<SubMenu />} />
-              <Route path="/submenu/:language/:path" element={<SubMenu />} />
-              
-              {/* Content page routes - both with and without language prefixes */}
-              <Route path="/preview/*" element={<PreviewPage />} />
-              
-              {/* Content pages without language prefix */}
-              <Route path="/:path" element={<PreviewPage />} />
-              <Route path="/:parent/:child" element={<PreviewPage />} />
-              
-              {/* Content pages with language prefixes */}
-              <Route path="/en/:path" element={<PreviewPage />} />
-              <Route path="/en/:parent/:child" element={<PreviewPage />} />
-              <Route path="/fr/:path" element={<PreviewPage />} />
-              <Route path="/fr/:parent/:child" element={<PreviewPage />} />
-              <Route path="/es/:path" element={<PreviewPage />} />
-              <Route path="/es/:parent/:child" element={<PreviewPage />} />
-              <Route path="/de/:path" element={<PreviewPage />} />
-              <Route path="/de/:parent/:child" element={<PreviewPage />} />
-              
-              {/* Catch-all for unmatched routes */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
+    <TranslationProvider>
+      <Toaster position="top-right" />
+      <Router>
+        <Routes>
+          {/* Index and system pages */}
+          <Route path="/" element={<Index />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/welcome" element={<Welcome />} />
+          <Route path="/storia" element={<Storia />} />
           
-          {/* Il ChatbotBubble viene caricato in modo lazy e con fallback vuoto */}
-          <Suspense fallback={null}>
-            <ChatbotBubble />
-          </Suspense>
+          {/* Main menu routes with language support */}
+          <Route path="/menu" element={<Menu />} />
+          <Route path="/en/menu" element={<Menu />} />
+          <Route path="/fr/menu" element={<Menu />} />
+          <Route path="/es/menu" element={<Menu />} />
+          <Route path="/de/menu" element={<Menu />} />
           
-          <Toaster position="top-right" richColors />
-        </Router>
-      </TranslationProvider>
-    </>
+          {/* SubMenu routes with improved path handling */}
+          <Route path="/submenu/:parentPath" element={<SubMenu />} />
+          <Route path="/submenu/:language/:path" element={<SubMenu />} />
+          
+          {/* Content page routes - both with and without language prefixes */}
+          <Route path="/preview/*" element={<PreviewPage />} />
+          
+          {/* Content pages without language prefix */}
+          <Route path="/:path" element={<PreviewPage />} />
+          <Route path="/:parent/:child" element={<PreviewPage />} />
+          
+          {/* Content pages with language prefixes */}
+          <Route path="/en/:path" element={<PreviewPage />} />
+          <Route path="/en/:parent/:child" element={<PreviewPage />} />
+          <Route path="/fr/:path" element={<PreviewPage />} />
+          <Route path="/fr/:parent/:child" element={<PreviewPage />} />
+          <Route path="/es/:path" element={<PreviewPage />} />
+          <Route path="/es/:parent/:child" element={<PreviewPage />} />
+          <Route path="/de/:path" element={<PreviewPage />} />
+          <Route path="/de/:parent/:child" element={<PreviewPage />} />
+          
+          {/* Catch-all for unmatched routes */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Router>
+    </TranslationProvider>
   );
 }
 
