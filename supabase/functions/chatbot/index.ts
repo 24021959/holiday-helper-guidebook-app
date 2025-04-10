@@ -44,49 +44,118 @@ serve(async (req) => {
       supabaseKey || ''
     );
 
-    // Get relevant documents from the knowledge base
+    // Get relevant documents from the knowledge base using better semantic search
     let relevantContent = [];
     try {
-      console.log("Checking if table exists...");
-      
-      const { data: tableData, error: tableError } = await supabaseClient
+      // Check if the table exists and has records
+      const { count, error: countError } = await supabaseClient
         .from('chatbot_knowledge')
-        .select('count(*)', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true });
         
-      if (tableError) {
-        console.error("Error checking table:", tableError);
-      } else {
-        console.log("Table exists, proceeding with query");
+      if (countError) {
+        console.error("Error checking knowledge base:", countError);
+        throw new Error("Knowledge base unavailable");
+      }
+      
+      if (!count || count === 0) {
+        console.log("Knowledge base is empty");
+        throw new Error("Knowledge base is empty");
+      }
+      
+      console.log(`Found ${count} documents in knowledge base`);
+      
+      // Full-text search using ILIKE for multiple keywords
+      const searchTerms = message.toLowerCase().split(/\s+/)
+        .filter((term: string) => term.length > 3)  // Only terms with 4+ chars
+        .slice(0, 6);  // Limit to 6 keywords
         
-        // Query the knowledge base
-        const { data: knowledgeData, error: knowledgeError } = await supabaseClient
+      console.log("Search terms:", searchTerms);
+      
+      if (searchTerms.length === 0) {
+        // If no good search terms, get most recently updated documents
+        console.log("No good search terms found, retrieving recent documents");
+        const { data: recentDocs, error: recentError } = await supabaseClient
           .from('chatbot_knowledge')
           .select('*')
-          .limit(10);
-        
-        if (knowledgeError) {
-          console.error("Knowledge base query error:", knowledgeError);
-        } else {
-          console.log(`Found ${knowledgeData?.length || 0} documents in knowledge base`);
+          .order('updated_at', { ascending: false })
+          .limit(3);
           
-          if (knowledgeData && knowledgeData.length > 0) {
-            // Simple text search to find most relevant documents
-            const normalizedQuery = message.toLowerCase();
-            relevantContent = knowledgeData
-              .map(item => ({
-                ...item,
-                relevance: calculateRelevance(item.content, normalizedQuery)
-              }))
-              .sort((a, b) => b.relevance - a.relevance)
-              .slice(0, 3); // Get top 3 most relevant documents
-              
-            console.log(`Selected ${relevantContent.length} most relevant documents`);
+        if (recentError) {
+          console.error("Error fetching recent documents:", recentError);
+        } else if (recentDocs && recentDocs.length > 0) {
+          relevantContent = recentDocs;
+          console.log(`Selected ${relevantContent.length} recent documents`);
+        }
+      } else {
+        // Build a query with OR conditions for each search term
+        let orConditions = [];
+        
+        for (const term of searchTerms) {
+          if (term.length >= 3) {
+            orConditions.push(`content.ilike.%${term}%`);
+            orConditions.push(`title.ilike.%${term}%`);
           }
+        }
+        
+        const orQuery = orConditions.join(',');
+        console.log("OR query:", orQuery);
+        
+        const { data: searchData, error: searchError } = await supabaseClient
+          .from('chatbot_knowledge')
+          .select('*')
+          .or(orQuery)
+          .limit(5);
+          
+        if (searchError) {
+          console.error("Error in search query:", searchError);
+          
+          // Fallback to simple title search if OR query fails
+          const { data: fallbackData, error: fallbackError } = await supabaseClient
+            .from('chatbot_knowledge')
+            .select('*')
+            .ilike('title', `%${searchTerms[0] || ''}%`)
+            .limit(3);
+            
+          if (fallbackError) {
+            console.error("Error in fallback search:", fallbackError);
+          } else if (fallbackData && fallbackData.length > 0) {
+            relevantContent = fallbackData;
+            console.log(`Selected ${relevantContent.length} documents via fallback search`);
+          }
+        } else if (searchData && searchData.length > 0) {
+          // Score documents by number of term matches
+          relevantContent = searchData.map(doc => {
+            const docText = (doc.title + ' ' + doc.content).toLowerCase();
+            const score = searchTerms.reduce((count, term) => {
+              return count + (docText.includes(term) ? 1 : 0);
+            }, 0);
+            return { ...doc, relevance_score: score };
+          })
+          .sort((a, b) => b.relevance_score - a.relevance_score)
+          .slice(0, 3);
+          
+          console.log(`Selected ${relevantContent.length} most relevant documents`);
+        }
+      }
+      
+      // If we still have no content, get all documents as last resort
+      if (relevantContent.length === 0) {
+        console.log("No relevant content found, retrieving all documents");
+        const { data: allDocs, error: allError } = await supabaseClient
+          .from('chatbot_knowledge')
+          .select('*')
+          .limit(3);
+          
+        if (allError) {
+          console.error("Error fetching all documents:", allError);
+        } else if (allDocs) {
+          relevantContent = allDocs;
+          console.log(`Retrieved ${relevantContent.length} documents as fallback`);
         }
       }
     } catch (error) {
       console.error("Error retrieving knowledge base content:", error);
-      // Continue with empty relevant content
+      relevantContent = [];
     }
 
     if (!openAIApiKey) {
@@ -103,7 +172,7 @@ serve(async (req) => {
     const formattedHistory = chatHistory ? chatHistory.map(msg => ({
       role: msg.role,
       content: msg.content
-    })) : [];
+    })).slice(-4) : [];  // Only include last 4 messages for context
 
     // Create context from knowledge base
     let knowledgeContext = "";
@@ -120,38 +189,56 @@ serve(async (req) => {
 
     console.log("Calling OpenAI API...");
     
-    // Call OpenAI for a response
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          ...formattedHistory.slice(-4), // Include last 4 messages for context
-          { role: 'user', content: promptWithContext }
-        ],
-        temperature: 0.7,
-      }),
-    });
+    // Call OpenAI for a response with better error handling
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            ...formattedHistory,
+            { role: 'user', content: promptWithContext }
+          ],
+          temperature: 0.7,
+        }),
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("OpenAI API error:", errorText);
-      throw new Error(`OpenAI API error: ${errorText}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("OpenAI API error:", errorText);
+        throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data || !data.choices || !data.choices[0] || !data.choices[0].message) {
+        console.error("Invalid response format from OpenAI:", data);
+        throw new Error("Invalid response format from OpenAI");
+      }
+      
+      const chatbotResponse = data.choices[0].message.content;
+      console.log("Received response from OpenAI");
+
+      return new Response(
+        JSON.stringify({ response: chatbotResponse }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (openAIError) {
+      console.error('OpenAI API error:', openAIError);
+      
+      return new Response(
+        JSON.stringify({ 
+          error: openAIError.message,
+          response: "Mi dispiace, si è verificato un errore durante l'elaborazione della tua richiesta. Riprova più tardi o contatta direttamente la struttura."
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
-
-    const data = await response.json();
-    const chatbotResponse = data.choices[0].message.content;
-    console.log("Received response from OpenAI");
-
-    return new Response(
-      JSON.stringify({ response: chatbotResponse }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
   } catch (error) {
     console.error('Error in chatbot function:', error);
     
@@ -164,30 +251,3 @@ serve(async (req) => {
     );
   }
 });
-
-// Simple relevance calculation function (keyword matching)
-function calculateRelevance(content: string, query: string): number {
-  if (!content) return 0;
-  
-  const normalizedContent = content.toLowerCase();
-  const queryWords = query.split(/\s+/).filter(word => word.length > 2);
-  
-  let score = 0;
-  for (const word of queryWords) {
-    const regex = new RegExp(word, 'gi');
-    const matches = normalizedContent.match(regex) || [];
-    score += matches.length;
-  }
-  
-  // Bonus points for title matches
-  if (normalizedContent.includes("title:")) {
-    for (const word of queryWords) {
-      const titleMatch = normalizedContent.match(new RegExp(`title:.*${word}`, 'i'));
-      if (titleMatch) {
-        score += 5;
-      }
-    }
-  }
-  
-  return score;
-}

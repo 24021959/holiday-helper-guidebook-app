@@ -1,7 +1,8 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/context/TranslationContext';
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Message {
   id: string;
@@ -61,7 +62,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
           .single();
 
         if (error) {
-          if (error.code !== 'PGRST116') {
+          if (error.code !== 'PGRST116') { // Not found error
             console.error("Error loading chatbot config:", error);
           }
         } else if (data) {
@@ -101,7 +102,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
     }
   }, [language, initializing, config, messages.length]);
 
-  const sendMessage = async (message: string) => {
+  const sendMessage = useCallback(async (message: string) => {
     if (!message.trim()) return;
 
     const userMessage: Message = {
@@ -135,7 +136,6 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
       }));
       
       console.log("Sending message to chatbot function:", message);
-      console.log("Chat history:", chatHistory);
       
       const { data, error } = await supabase.functions.invoke('chatbot', {
         body: { 
@@ -147,13 +147,13 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
 
       if (error) {
         console.error("Supabase function error:", error);
-        throw error;
+        throw new Error(`Errore nella funzione chatbot: ${error.message}`);
       }
 
       console.log("Response received from chatbot function:", data);
 
       if (!data || !data.response) {
-        throw new Error("No response received from chatbot function");
+        throw new Error("Nessuna risposta ricevuta dalla funzione chatbot");
       }
 
       const botResponse: Message = {
@@ -167,6 +167,9 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
     } catch (error) {
       console.error("Error sending message to chatbot:", error);
       
+      // Show toast with error message
+      toast.error("Errore nella comunicazione con il chatbot");
+      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: "Mi dispiace, ho avuto un problema nel rispondere. Riprova più tardi o contatta direttamente la struttura.",
@@ -178,11 +181,11 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [messages, language, previewConfig]);
 
-  const toggleChat = () => setIsOpen(!isOpen);
-  const closeChat = () => setIsOpen(false);
-  const openChat = () => setIsOpen(true);
+  const toggleChat = useCallback(() => setIsOpen(prev => !prev), []);
+  const closeChat = useCallback(() => setIsOpen(false), []);
+  const openChat = useCallback(() => setIsOpen(true), []);
 
   return {
     isOpen,

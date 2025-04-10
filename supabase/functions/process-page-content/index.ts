@@ -33,12 +33,8 @@ serve(async (req) => {
     // Create Supabase client
     const supabase = createClient(supabaseUrl || '', supabaseKey || '');
     
-    // Clean HTML and format content
-    const cleanContent = (page.content || "")
-      .replace(/<[^>]*>/g, " ")
-      .replace(/<!--.*?-->/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
+    // Extract content using a specialized HTML processing approach
+    const extractedContent = extractContentFromHtml(page.content || "");
     
     // Format any list items if present
     let listItemsText = "";
@@ -49,13 +45,23 @@ serve(async (req) => {
         ).join("\n");
     }
     
-    // Create formatted content
-    let formattedContent = "";
+    // Create a well-structured content format
+    const formattedContent = `
+# ${page.title || "Untitled"}
+URL Path: ${page.path || ""}
+
+${extractedContent}
+${listItemsText}
+    `.trim();
+    
+    // If OpenAI API key is available, use it for enhanced content processing
+    let finalContent = formattedContent;
     
     if (openAIApiKey) {
       try {
-        // Use OpenAI to extract and format the content in a structured way
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        console.log("Using OpenAI to enhance content structure");
+        
+        const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${openAIApiKey}`,
@@ -66,64 +72,55 @@ serve(async (req) => {
             messages: [
               { 
                 role: 'system', 
-                content: `You are a content extractor. Your task is to extract relevant information from website content 
-                and format it in a clear, structured markdown format that will be used by a chatbot to answer questions.
-                Focus on extracting factual information that would be useful for answering user questions. 
-                Include details about services, locations, pricing, schedules, policies, and descriptions.
-                Format with clear headings and bullet points when appropriate.` 
+                content: `You are a content extractor specialized in hospitality information. 
+                Your task is to extract and structure information from hotel and accommodation websites.
+                Focus on capturing details about:
+                - Room amenities and types
+                - Services offered (restaurant, spa, etc.)
+                - Location details and transportation
+                - Check-in/check-out policies
+                - Pricing information
+                - Special features or highlights
+                
+                Structure the content clearly with headings, bullet points, and organized sections.
+                Remove any marketing fluff and focus on factual information.`
               },
               { 
                 role: 'user', 
-                content: `
-                Page Title: ${page.title || "Untitled"}
-                URL Path: ${page.path || ""}
-                Raw Content: ${cleanContent}
-                ${listItemsText}
+                content: `Extract and structure the key information from this hotel page content. Make it clear and organized:
                 
-                Please extract and format the key information from this content in clear, structured markdown.
-                `
+                Title: ${page.title || "Untitled"}
+                URL: ${page.path || ""}
+                Content: ${formattedContent}`
               }
             ],
-            temperature: 0.3,
+            temperature: 0.2,
           }),
         });
-    
-        if (!response.ok) {
-          throw new Error(`OpenAI API error: ${response.statusText}`);
+        
+        if (!aiResponse.ok) {
+          throw new Error(`OpenAI API error: ${aiResponse.statusText}`);
         }
         
-        const data = await response.json();
-        formattedContent = data.choices[0].message.content;
-      } catch (openAIError) {
-        console.error("OpenAI processing error:", openAIError);
-        // Fall back to manual formatting if OpenAI fails
-        formattedContent = `
-# ${page.title || "Untitled"}
-URL: ${page.path || ""}
-
-${cleanContent}
-${listItemsText}
-        `.trim();
+        const aiData = await aiResponse.json();
+        finalContent = aiData.choices[0].message.content;
+        console.log("Content enhanced with AI successfully");
+      } catch (aiError) {
+        console.error("Error using OpenAI for content enhancement:", aiError);
+        // If AI processing fails, use the original formatted content
       }
-    } else {
-      // No OpenAI key available, use manual formatting
-      formattedContent = `
-# ${page.title || "Untitled"}
-URL: ${page.path || ""}
-
-${cleanContent}
-${listItemsText}
-      `.trim();
     }
     
     // Store the processed content in the database
     try {
+      console.log(`Storing processed content for page ${page.id}`);
+      
       const { error } = await supabase
         .from('chatbot_knowledge')
         .upsert({
           page_id: page.id,
           title: page.title || "Untitled",
-          content: formattedContent,
+          content: finalContent,
           path: page.path || "",
           updated_at: new Date().toISOString()
         }, {
@@ -137,7 +134,11 @@ ${listItemsText}
       console.log(`Successfully processed and stored page ${page.id}`);
       
       return new Response(
-        JSON.stringify({ success: true, message: 'Content processed and stored successfully' }),
+        JSON.stringify({ 
+          success: true, 
+          message: 'Content processed and stored successfully',
+          content: finalContent.substring(0, 500) + '...' // Return preview of processed content
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     } catch (dbError) {
@@ -153,3 +154,58 @@ ${listItemsText}
     );
   }
 });
+
+// Specialized function to extract content from HTML with better handling of structures
+function extractContentFromHtml(htmlContent: string): string {
+  if (!htmlContent) return "";
+  
+  // First, basic HTML stripping
+  let text = htmlContent
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, " ") // Remove scripts
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, " ")    // Remove styles
+    .replace(/<!--[\s\S]*?-->/g, " ")                                    // Remove comments
+    .replace(/<[^>]+>/g, " ");                                           // Remove tags
+  
+  // Normalize whitespace
+  text = text.replace(/\s+/g, " ").trim();
+  
+  // Try to identify and preserve structural elements
+  // This is a simplified approach - in reality you might use a DOM parser
+  
+  // Extract headings from original HTML
+  const headings: string[] = [];
+  const headingRegex = /<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/gi;
+  let headingMatch;
+  
+  while ((headingMatch = headingRegex.exec(htmlContent)) !== null) {
+    const headingText = headingMatch[1].replace(/<[^>]+>/g, "").trim();
+    if (headingText) {
+      headings.push(headingText);
+    }
+  }
+  
+  // Extract list items
+  const listItems: string[] = [];
+  const listItemRegex = /<li[^>]*>([\s\S]*?)<\/li>/gi;
+  let listItemMatch;
+  
+  while ((listItemMatch = listItemRegex.exec(htmlContent)) !== null) {
+    const itemText = listItemMatch[1].replace(/<[^>]+>/g, "").trim();
+    if (itemText) {
+      listItems.push(`- ${itemText}`);
+    }
+  }
+  
+  // Build the structured content
+  let structuredContent = text;
+  
+  if (headings.length > 0) {
+    structuredContent += "\n\n### Key Information\n" + headings.map(h => `- ${h}`).join("\n");
+  }
+  
+  if (listItems.length > 0) {
+    structuredContent += "\n\n### Details\n" + listItems.join("\n");
+  }
+  
+  return structuredContent;
+}
