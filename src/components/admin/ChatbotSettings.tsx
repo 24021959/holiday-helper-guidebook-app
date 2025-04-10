@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -153,7 +152,7 @@ const ChatbotSettings: React.FC = () => {
       
       const translatedMessages = await Promise.all(
         languages.map((lang) => 
-          translateBulk([italianMessage], lang as any)
+          translateBulk([italianMessage])
             .then(result => ({ lang, message: result[0] }))
             .catch(() => ({ lang, message: defaultWelcomeMessages[lang] }))
         )
@@ -215,12 +214,17 @@ const ChatbotSettings: React.FC = () => {
         }
       );
 
-      if (embedError) throw embedError;
+      if (embedError) {
+        console.error("Embedding function error:", embedError);
+        throw embedError;
+      }
 
-      if (data.success) {
+      if (data && data.success) {
         toast.success(`Base di conoscenza del chatbot aggiornata con ${data.message}`);
       } else {
-        toast.error(`Errore: ${data.error || "Errore sconosciuto"}`);
+        const errorMessage = data ? data.error : "Errore sconosciuto";
+        console.error("Embedding function returned error:", errorMessage);
+        toast.error(`Errore: ${errorMessage}`);
       }
     } catch (error) {
       console.error("Error updating chatbot knowledge base:", error);
