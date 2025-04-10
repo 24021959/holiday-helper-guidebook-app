@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -152,10 +151,11 @@ const ChatbotSettings: React.FC = () => {
       const languages = ['en', 'fr', 'es', 'de'] as const;
       const textsToTranslate = [italianMessage];
       
-      // Correzione della chiamata a translateBulk con un solo parametro
+      // Correzione della chiamata a translateBulk con un solo parametro di destinazione
       const results = await Promise.all(
         languages.map(async (lang) => {
           try {
+            // Ora passiamo solo la lingua di destinazione senza il secondo parametro
             const translated = await translateBulk(textsToTranslate, lang);
             return { lang, message: translated[0] };
           } catch (error) {
