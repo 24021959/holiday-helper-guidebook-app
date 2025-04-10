@@ -6,7 +6,7 @@
   text-align: center;
 }
 
-/* Enhanced chatbot visibility for ALL types of chatbot widgets */
+/* Chatbot container positioning */
 .chatbot-container {
   position: fixed !important;
   bottom: 20px !important;
@@ -48,21 +48,6 @@
   .prose p {
     padding-left: 12px;
     padding-right: 12px;
-  }
-  
-  /* Enhanced chatbot visibility on mobile */
-  .chatbot-container {
-    z-index: 9999 !important;
-    max-width: 90% !important;
-    right: 10px !important;
-    bottom: 10px !important;
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-    transform: none !important;
-    transition: none !important;
-    overflow: visible !important;
   }
 }
 
