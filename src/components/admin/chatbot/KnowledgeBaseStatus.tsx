@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle, AlertTriangle, RefreshCw, Database } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface KnowledgeBaseStatusProps {
   status: {
@@ -24,6 +25,40 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
   errorMessage,
   onUpdateKnowledgeBase
 }) => {
+  const createTable = async () => {
+    try {
+      // Create the knowledge base table directly using SQL
+      const { error } = await supabase.rpc('run_sql', {
+        sql: `
+          CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
+            id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+            page_id uuid NOT NULL,
+            title text NOT NULL,
+            content text NOT NULL, 
+            path text NOT NULL,
+            created_at timestamp with time zone DEFAULT now(),
+            updated_at timestamp with time zone DEFAULT now()
+          );
+        `
+      });
+      
+      if (error) {
+        console.error("Error creating knowledge base table:", error);
+      } else {
+        console.log("Knowledge base table created or already exists");
+      }
+    } catch (error) {
+      console.error("Error creating knowledge base table:", error);
+    }
+  };
+
+  const handleUpdateClick = async () => {
+    // Create the table first to ensure it exists
+    await createTable();
+    // Then proceed with the knowledge base update
+    onUpdateKnowledgeBase();
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -33,7 +68,7 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
         </div>
         <Button
           size="sm"
-          onClick={onUpdateKnowledgeBase}
+          onClick={handleUpdateClick}
           disabled={isProcessing}
           className="bg-emerald-600 hover:bg-emerald-700 text-white"
         >
