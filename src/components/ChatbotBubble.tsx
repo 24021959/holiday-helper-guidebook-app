@@ -1,6 +1,7 @@
+
 import React from "react";
 import { useLocation } from "react-router-dom";
-import Chatbot from "./Chatbot";
+import { ChatbotBubble as NewChatbotBubble } from "./chatbot/ChatbotBubble";
 
 const ChatbotBubble: React.FC = () => {
   const location = useLocation();
@@ -14,8 +15,8 @@ const ChatbotBubble: React.FC = () => {
     return null;
   }
 
-  // Otherwise, show the Chatbot component
-  return <Chatbot />;
+  // Use the new refactored ChatbotBubble component
+  return <NewChatbotBubble />;
 };
 
 export default ChatbotBubble;
