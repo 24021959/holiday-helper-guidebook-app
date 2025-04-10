@@ -65,93 +65,53 @@ Content: ${cleanContent}${listItemsText}
       supabaseKey || ''
     );
 
-    // First make sure the vector extension is installed
+    // Create the table directly without using run_sql function
+    console.log("Creating or verifying chatbot_knowledge table");
+    
     try {
-      console.log("Checking if vector extension exists or installing it");
-      const { error: extensionError } = await supabaseClient.rpc('run_sql', {
-        sql: "CREATE EXTENSION IF NOT EXISTS vector;"
-      });
-      
-      if (extensionError) {
-        console.error("Error with vector extension:", extensionError);
-        throw new Error(`Failed to ensure vector extension: ${extensionError.message}`);
+      // Check if table exists
+      const { data: tableExists, error: checkError } = await supabaseClient
+        .from('chatbot_knowledge')
+        .select('id')
+        .limit(1);
+        
+      if (checkError && checkError.code === '42P01') {
+        console.log("Table doesn't exist, creating it");
+        
+        // Create the table
+        const { error: createTableError } = await supabaseClient
+          .rpc('create_chatbot_knowledge_table');
+        
+        if (createTableError) {
+          console.error("Error creating table:", createTableError);
+          
+          // Direct SQL solution as fallback
+          const { error: fallbackError } = await supabaseClient.auth.admin.executeSql(`
+            CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
+              id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+              page_id uuid NOT NULL,
+              title text NOT NULL,
+              content text NOT NULL,
+              path text NOT NULL,
+              embedding vector(1536),
+              created_at timestamp with time zone DEFAULT now(),
+              updated_at timestamp with time zone DEFAULT now()
+            );
+          `);
+          
+          if (fallbackError) {
+            throw new Error(`Failed to create chatbot_knowledge table: ${fallbackError.message}`);
+          }
+        }
+      } else {
+        console.log("Table exists, continuing with operation");
       }
-      
-      // Create the table if it doesn't exist
-      console.log("Creating chatbot_knowledge table if it doesn't exist");
-      const { error: tableError } = await supabaseClient.rpc('run_sql', {
-        sql: `
-          CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
-            id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-            page_id uuid NOT NULL,
-            title text NOT NULL,
-            content text NOT NULL,
-            path text NOT NULL,
-            embedding vector(1536),
-            created_at timestamp with time zone DEFAULT now(),
-            updated_at timestamp with time zone DEFAULT now()
-          );
-        `
-      });
-      
-      if (tableError) {
-        console.error("Error creating table:", tableError);
-        throw new Error(`Failed to create chatbot_knowledge table: ${tableError.message}`);
-      }
-      
-      // Create the match_documents function for vector search
-      console.log("Creating match_documents function");
-      const { error: functionError } = await supabaseClient.rpc('run_sql', {
-        sql: `
-          CREATE OR REPLACE FUNCTION public.match_documents(
-            query_embedding vector(1536),
-            match_threshold float DEFAULT 0.7,
-            match_count int DEFAULT 5
-          )
-          RETURNS TABLE(
-            id uuid,
-            page_id uuid,
-            title text,
-            content text,
-            path text,
-            similarity float
-          )
-          LANGUAGE plpgsql
-          AS $$
-          BEGIN
-            RETURN QUERY
-            SELECT
-              "chatbot_knowledge"."id",
-              "chatbot_knowledge"."page_id",
-              "chatbot_knowledge"."title",
-              "chatbot_knowledge"."content",
-              "chatbot_knowledge"."path",
-              1 - ("chatbot_knowledge"."embedding" <=> query_embedding) AS "similarity"
-            FROM
-              "chatbot_knowledge"
-            WHERE
-              1 - ("chatbot_knowledge"."embedding" <=> query_embedding) > match_threshold
-            ORDER BY
-              "chatbot_knowledge"."embedding" <=> query_embedding
-            LIMIT
-              match_count;
-          END;
-          $$;
-        `
-      });
-      
-      if (functionError) {
-        console.error("Error creating function:", functionError);
-        throw new Error(`Failed to create match_documents function: ${functionError.message}`);
-      }
-      
-      console.log("Database setup completed successfully");
     } catch (dbSetupError) {
       console.error("Database setup error:", dbSetupError);
       return new Response(
         JSON.stringify({ 
           error: `Database setup error: ${dbSetupError.message}`,
-          details: "Failed to set up database objects. Check your database permissions."
+          details: "Failed to set up database. Try running the migration SQL manually from the SQL editor."
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -167,11 +127,7 @@ Content: ${cleanContent}${listItemsText}
           
       if (deleteError) {
         console.error('Error deleting existing knowledge:', deleteError);
-        if (deleteError.code === '42P01') {
-          console.log("Table doesn't exist yet, continuing with creation");
-        } else {
-          throw deleteError;
-        }
+        throw deleteError;
       } else {
         console.log("Existing knowledge cleared successfully");
       }
