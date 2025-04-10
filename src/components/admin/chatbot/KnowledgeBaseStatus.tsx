@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface KnowledgeBaseStatusProps {
   status: {
@@ -12,6 +13,7 @@ interface KnowledgeBaseStatusProps {
   };
   isProcessing: boolean;
   processingProgress: number;
+  errorMessage: string | null;
   onUpdateKnowledgeBase: () => Promise<void>;
 }
 
@@ -19,14 +21,25 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
   status,
   isProcessing,
   processingProgress,
+  errorMessage,
   onUpdateKnowledgeBase
 }) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium">Stato base di conoscenza:</span>
-        <span className={`text-sm font-medium ${status.exists ? 'text-green-600' : 'text-amber-600'}`}>
-          {status.exists ? 'Attiva' : 'Non configurata'}
+        <span className={`text-sm font-medium ${status.exists ? 'text-green-600' : 'text-amber-600'} flex items-center`}>
+          {status.exists ? (
+            <>
+              <CheckCircle2 className="h-4 w-4 text-green-600 mr-1" />
+              Attiva
+            </>
+          ) : (
+            <>
+              <AlertCircle className="h-4 w-4 text-amber-600 mr-1" />
+              Non configurata
+            </>
+          )}
         </span>
       </div>
       
@@ -55,6 +68,15 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
             </div>
           </div>
         </div>
+      )}
+      
+      {errorMessage && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {errorMessage}
+          </AlertDescription>
+        </Alert>
       )}
       
       {processingProgress > 0 && (

@@ -65,114 +65,93 @@ Content: ${cleanContent}${listItemsText}
       supabaseKey || ''
     );
 
-    // First check if we have the SQL admin functions
+    // First make sure the vector extension is installed
     try {
-      // Try to create vector extension directly with SQL
-      const sqlResult = await supabaseClient.rpc('run_sql', {
+      console.log("Checking if vector extension exists or installing it");
+      const { error: extensionError } = await supabaseClient.rpc('run_sql', {
         sql: "CREATE EXTENSION IF NOT EXISTS vector;"
       });
       
-      if (sqlResult.error) {
-        console.error("Failed to create vector extension:", sqlResult.error);
-        return new Response(
-          JSON.stringify({ 
-            error: "Failed to create vector extension. Please ensure the database functions are properly set up." 
-          }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      } else {
-        console.log("Vector extension created or already exists");
+      if (extensionError) {
+        console.error("Error with vector extension:", extensionError);
+        throw new Error(`Failed to ensure vector extension: ${extensionError.message}`);
       }
       
       // Create the table if it doesn't exist
-      const createTableSQL = `
-        CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
-          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-          page_id uuid NOT NULL,
-          title text NOT NULL,
-          content text NOT NULL,
-          path text NOT NULL,
-          embedding vector(1536),
-          created_at timestamp with time zone DEFAULT now(),
-          updated_at timestamp with time zone DEFAULT now()
-        );
-      `;
-      
-      const tableResult = await supabaseClient.rpc('run_sql', {
-        sql: createTableSQL
+      console.log("Creating chatbot_knowledge table if it doesn't exist");
+      const { error: tableError } = await supabaseClient.rpc('run_sql', {
+        sql: `
+          CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
+            id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+            page_id uuid NOT NULL,
+            title text NOT NULL,
+            content text NOT NULL,
+            path text NOT NULL,
+            embedding vector(1536),
+            created_at timestamp with time zone DEFAULT now(),
+            updated_at timestamp with time zone DEFAULT now()
+          );
+        `
       });
       
-      if (tableResult.error) {
-        console.error("Failed to create table:", tableResult.error);
-        return new Response(
-          JSON.stringify({ 
-            error: "Failed to create chatbot_knowledge table. Please ensure the database functions are properly set up." 
-          }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      } else {
-        console.log("chatbot_knowledge table created or already exists");
+      if (tableError) {
+        console.error("Error creating table:", tableError);
+        throw new Error(`Failed to create chatbot_knowledge table: ${tableError.message}`);
       }
       
-      // Create the match_documents function
-      const createFunctionSQL = `
-        CREATE OR REPLACE FUNCTION public.match_documents(
-          query_embedding vector(1536),
-          match_threshold float,
-          match_count int
-        )
-        RETURNS TABLE(
-          id uuid,
-          page_id uuid,
-          title text,
-          content text,
-          path text,
-          similarity float
-        )
-        LANGUAGE plpgsql
-        AS $$
-        BEGIN
-          RETURN QUERY
-          SELECT
-            "chatbot_knowledge"."id",
-            "chatbot_knowledge"."page_id",
-            "chatbot_knowledge"."title",
-            "chatbot_knowledge"."content",
-            "chatbot_knowledge"."path",
-            1 - ("chatbot_knowledge"."embedding" <=> query_embedding) AS "similarity"
-          FROM
-            "chatbot_knowledge"
-          WHERE
-            1 - ("chatbot_knowledge"."embedding" <=> query_embedding) > match_threshold
-          ORDER BY
-            "chatbot_knowledge"."embedding" <=> query_embedding
-          LIMIT
-            match_count;
-        END;
-        $$;
-      `;
-      
-      const functionResult = await supabaseClient.rpc('run_sql', {
-        sql: createFunctionSQL
+      // Create the match_documents function for vector search
+      console.log("Creating match_documents function");
+      const { error: functionError } = await supabaseClient.rpc('run_sql', {
+        sql: `
+          CREATE OR REPLACE FUNCTION public.match_documents(
+            query_embedding vector(1536),
+            match_threshold float DEFAULT 0.7,
+            match_count int DEFAULT 5
+          )
+          RETURNS TABLE(
+            id uuid,
+            page_id uuid,
+            title text,
+            content text,
+            path text,
+            similarity float
+          )
+          LANGUAGE plpgsql
+          AS $$
+          BEGIN
+            RETURN QUERY
+            SELECT
+              "chatbot_knowledge"."id",
+              "chatbot_knowledge"."page_id",
+              "chatbot_knowledge"."title",
+              "chatbot_knowledge"."content",
+              "chatbot_knowledge"."path",
+              1 - ("chatbot_knowledge"."embedding" <=> query_embedding) AS "similarity"
+            FROM
+              "chatbot_knowledge"
+            WHERE
+              1 - ("chatbot_knowledge"."embedding" <=> query_embedding) > match_threshold
+            ORDER BY
+              "chatbot_knowledge"."embedding" <=> query_embedding
+            LIMIT
+              match_count;
+          END;
+          $$;
+        `
       });
       
-      if (functionResult.error) {
-        console.error("Failed to create match_documents function:", functionResult.error);
-        return new Response(
-          JSON.stringify({ 
-            error: "Failed to create match_documents function. Please ensure the database functions are properly set up." 
-          }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      } else {
-        console.log("match_documents function created or updated");
+      if (functionError) {
+        console.error("Error creating function:", functionError);
+        throw new Error(`Failed to create match_documents function: ${functionError.message}`);
       }
       
-    } catch (error) {
-      console.error("Error setting up database objects:", error);
+      console.log("Database setup completed successfully");
+    } catch (dbSetupError) {
+      console.error("Database setup error:", dbSetupError);
       return new Response(
         JSON.stringify({ 
-          error: "Failed to set up database objects. Check that run_sql function is available." 
+          error: `Database setup error: ${dbSetupError.message}`,
+          details: "Failed to set up database objects. Check your database permissions."
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -180,25 +159,25 @@ Content: ${cleanContent}${listItemsText}
 
     // Clear existing knowledge
     try {
+      console.log("Clearing existing knowledge base data");
       const { error: deleteError } = await supabaseClient
         .from('chatbot_knowledge')
         .delete()
-        .is('id', 'not.null'); // This will delete all records
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // This will delete all records
           
       if (deleteError) {
         console.error('Error deleting existing knowledge:', deleteError);
-        return new Response(
-          JSON.stringify({ error: "Failed to clear existing knowledge: " + deleteError.message }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        if (deleteError.code === '42P01') {
+          console.log("Table doesn't exist yet, continuing with creation");
+        } else {
+          throw deleteError;
+        }
+      } else {
+        console.log("Existing knowledge cleared successfully");
       }
-      console.log("Existing knowledge cleared successfully");
     } catch (deleteError) {
-      console.error('Error deleting existing knowledge:', deleteError);
-      return new Response(
-        JSON.stringify({ error: "Failed to clear existing knowledge: " + deleteError.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.error('Error during delete operation:', deleteError);
+      // Continue anyway, as we'll try to insert new data
     }
 
     // Insert new knowledge with embeddings
@@ -209,6 +188,7 @@ Content: ${cleanContent}${listItemsText}
     for (const page of pageContents) {
       // Create embeddings using OpenAI
       try {
+        console.log(`Processing page: ${page.title}`);
         const embedding = await createEmbedding(page.content);
         
         if (embedding) {
@@ -258,7 +238,10 @@ Content: ${cleanContent}${listItemsText}
     console.error('Error in create-chatbot-knowledge function:', error);
     
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: "Unexpected error occurred. Check function logs for more information."
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
@@ -267,6 +250,11 @@ Content: ${cleanContent}${listItemsText}
 // Helper function to create embeddings using OpenAI
 async function createEmbedding(text: string): Promise<number[] | null> {
   try {
+    if (!openAIApiKey) {
+      throw new Error("OpenAI API key is not configured");
+    }
+    
+    console.log("Requesting embedding from OpenAI");
     const response = await fetch('https://api.openai.com/v1/embeddings', {
       method: 'POST',
       headers: {
@@ -279,11 +267,17 @@ async function createEmbedding(text: string): Promise<number[] | null> {
       }),
     });
 
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('OpenAI API response error:', response.status, errorData);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
+    }
+
     const data = await response.json();
     
-    if (!response.ok) {
-      console.error('OpenAI embedding API error:', data);
-      throw new Error(`OpenAI embedding API error: ${data.error?.message || 'Unknown error'}`);
+    if (!data.data || !data.data[0] || !data.data[0].embedding) {
+      console.error('Unexpected response format from OpenAI:', data);
+      throw new Error('Unexpected response format from OpenAI API');
     }
     
     return data.data[0].embedding;

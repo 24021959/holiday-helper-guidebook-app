@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -40,6 +39,7 @@ const ChatbotSettings: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
+  const [processingError, setProcessingError] = useState<string | null>(null);
   const [knowledgeStatus, setKnowledgeStatus] = useState<{
     exists: boolean;
     count: number;
@@ -66,10 +66,6 @@ const ChatbotSettings: React.FC = () => {
     loadChatbotConfig();
     checkKnowledgeBase();
   }, []);
-
-  useEffect(() => {
-    setWelcomeMessage(chatbotConfig.welcomeMessage[activeLanguage] || defaultWelcomeMessages[activeLanguage]);
-  }, [activeLanguage, chatbotConfig.welcomeMessage]);
 
   const loadChatbotConfig = async () => {
     setIsLoading(true);
@@ -106,17 +102,44 @@ const ChatbotSettings: React.FC = () => {
 
   const checkKnowledgeBase = async () => {
     try {
-      // Verifica l'esistenza della knowledge base
+      setProcessingError(null);
+      
+      // Check if the table exists first
+      const { error: tableError } = await supabase.rpc('run_sql', {
+        sql: "SELECT to_regclass('public.chatbot_knowledge')"
+      });
+      
+      if (tableError) {
+        console.error("Error checking table existence:", tableError);
+        setKnowledgeStatus({
+          exists: false,
+          count: 0,
+          lastUpdated: null
+        });
+        return;
+      }
+      
+      // Verify the existence of the knowledge base
       const { data, error } = await supabase
         .from('chatbot_knowledge')
         .select('id, updated_at', { count: 'exact' });
 
       if (error) {
-        console.error("Errore nel controllare la knowledge base:", error);
+        if (error.code === '42P01') {
+          // Table doesn't exist yet
+          setKnowledgeStatus({
+            exists: false,
+            count: 0,
+            lastUpdated: null
+          });
+        } else {
+          console.error("Error checking the knowledge base:", error);
+          setProcessingError("Errore nel controllare la base di conoscenza");
+        }
         return;
       }
 
-      // Trova l'ultima data di aggiornamento
+      // Find the last update date
       let lastUpdated = null;
       if (data && data.length > 0) {
         const dates = data.map(item => new Date(item.updated_at).getTime());
@@ -130,7 +153,8 @@ const ChatbotSettings: React.FC = () => {
         lastUpdated
       });
     } catch (error) {
-      console.error("Errore nel controllare la knowledge base:", error);
+      console.error("Error checking the knowledge base:", error);
+      setProcessingError("Errore nel controllare la base di conoscenza");
     }
   };
 
@@ -231,6 +255,7 @@ const ChatbotSettings: React.FC = () => {
   const updatePageContent = async () => {
     setIsProcessing(true);
     setProcessingProgress(10);
+    setProcessingError(null);
     try {
       // Fetch all pages to create a knowledge base for the chatbot
       const { data: pages, error } = await supabase
@@ -242,6 +267,9 @@ const ChatbotSettings: React.FC = () => {
 
       if (!pages || pages.length === 0) {
         toast.warning("Nessuna pagina trovata per creare la base di conoscenza del chatbot");
+        setProcessingError("Nessuna pagina pubblicata trovata per creare la base di conoscenza");
+        setIsProcessing(false);
+        setProcessingProgress(0);
         return;
       }
 
@@ -271,7 +299,7 @@ const ChatbotSettings: React.FC = () => {
 
       if (embedError) {
         console.error("Errore nella funzione di embedding:", embedError);
-        throw embedError;
+        throw new Error(`Errore nella funzione di embedding: ${embedError.message}`);
       }
 
       if (data && data.success) {
@@ -281,17 +309,21 @@ const ChatbotSettings: React.FC = () => {
       } else {
         const errorMessage = data ? data.error : "Errore sconosciuto";
         console.error("La funzione di embedding ha restituito un errore:", errorMessage);
+        setProcessingError(`Errore: ${errorMessage}`);
         toast.error(`Errore: ${errorMessage}`);
         setProcessingProgress(0);
       }
     } catch (error) {
       console.error("Errore nell'aggiornamento della base di conoscenza del chatbot:", error);
+      setProcessingError(`Errore nell'aggiornamento della base di conoscenza: ${error.message}`);
       toast.error("Errore nell'aggiornamento della base di conoscenza del chatbot");
       setProcessingProgress(0);
     } finally {
       setIsProcessing(false);
       setTimeout(() => {
-        setProcessingProgress(0);
+        if (processingProgress > 0) {
+          setProcessingProgress(0);
+        }
       }, 1000);
     }
   };
@@ -375,6 +407,7 @@ const ChatbotSettings: React.FC = () => {
                 status={knowledgeStatus}
                 isProcessing={isProcessing}
                 processingProgress={processingProgress}
+                errorMessage={processingError}
                 onUpdateKnowledgeBase={updatePageContent}
               />
             </CardContent>
