@@ -9,12 +9,6 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 export const supabase = createClient<{ Tables: Tables }>(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true
-  },
-  global: {
-    fetch: (...args) => {
-      // Use for debugging specific requests if needed
-      return fetch(...args);
-    }
   }
 });
 

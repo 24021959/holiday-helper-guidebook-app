@@ -6,11 +6,9 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Settings } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import TranslatedText from "@/components/TranslatedText";
 import { useTranslation } from "@/context/TranslationContext";
-import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface HeaderSettings {
   logoUrl?: string | null;
@@ -23,7 +21,6 @@ const Index: React.FC = () => {
   const [headerSettings, setHeaderSettings] = useState<HeaderSettings>({});
   const [loading, setLoading] = useState(true);
   const { language, setLanguage } = useTranslation();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   
   useEffect(() => {
     const fetchHeaderSettings = async () => {
@@ -62,12 +59,6 @@ const Index: React.FC = () => {
     
     fetchHeaderSettings();
     
-    // Check authentication status
-    const authStatus = localStorage.getItem("isAuthenticated");
-    if (authStatus === "true") {
-      setIsAuthenticated(true);
-    }
-    
     // Reset language to default to ensure proper selection
     setLanguage('it');
   }, [setLanguage]);
@@ -86,20 +77,6 @@ const Index: React.FC = () => {
       navigate(`/${selectedLanguage}/menu`);
     }
   };
-
-  // Navigate to admin or login page
-  const handleAdminClick = () => {
-    if (isAuthenticated) {
-      navigate('/admin');
-    } else {
-      navigate('/login');
-    }
-  };
-  
-  // Navigate to other pages
-  const navigateTo = (path: string) => {
-    navigate(path);
-  };
   
   if (loading) {
     return (
@@ -114,44 +91,6 @@ const Index: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-gray-100">
-      {/* Navigation Bar */}
-      <div className="w-full bg-gray-100 border-b border-gray-200">
-        <div className="container mx-auto px-4 py-2 flex justify-between items-center">
-          {/* Left side - Main navigation */}
-          <div className="flex items-center space-x-4">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="font-medium text-gray-700 hover:text-emerald-700">
-                  <TranslatedText text="Home" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
-                <DropdownMenuItem onClick={() => navigateTo("/menu")}>
-                  <TranslatedText text="Menu" />
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigateTo("/welcome")}>
-                  <TranslatedText text="Benvenuto" />
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigateTo("/storia")}>
-                  <TranslatedText text="Storia" />
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-          
-          {/* Right side - Admin button */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={handleAdminClick}
-            className="text-gray-600 hover:text-emerald-600"
-            title={isAuthenticated ? "Pannello amministrazione" : "Accedi"}
-          >
-            <Settings size={20} />
-          </Button>
-        </div>
-      </div>
-      
       {/* Header with settings from database */}
       <Header 
         backgroundColor={headerSettings.headerColor || "bg-white"}
