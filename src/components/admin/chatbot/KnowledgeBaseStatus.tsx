@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { AlertCircle, RefreshCw, CheckCircle2, XCircle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
 
 interface KnowledgeBaseStatusProps {
   status: {
@@ -25,6 +26,19 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
   errorMessage,
   onUpdateKnowledgeBase
 }) => {
+  const [showError, setShowError] = useState<boolean>(!!errorMessage);
+  
+  const handleUpdateKnowledgeBase = async () => {
+    try {
+      setShowError(false);
+      await onUpdateKnowledgeBase();
+    } catch (error) {
+      console.error("Error in knowledge base update:", error);
+      toast.error("Si è verificato un errore durante l'aggiornamento della base di conoscenza");
+      setShowError(true);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -48,11 +62,11 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
         <>
           <div className="flex items-center justify-between">
             <span className="text-sm">Elementi presenti:</span>
-            <span className="text-sm">{status.count}</span>
+            <span className="text-sm">{status.count || 0}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm">Ultimo aggiornamento:</span>
-            <span className="text-sm">{status.lastUpdated}</span>
+            <span className="text-sm">{status.lastUpdated || 'N/A'}</span>
           </div>
         </>
       )}
@@ -71,7 +85,7 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
         </div>
       )}
       
-      {errorMessage && (
+      {showError && errorMessage && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{errorMessage}</AlertDescription>
@@ -110,7 +124,7 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
       <Separator className="my-2" />
       
       <Button
-        onClick={onUpdateKnowledgeBase}
+        onClick={handleUpdateKnowledgeBase}
         disabled={isProcessing}
         className="w-full bg-blue-500 hover:bg-blue-600 text-white"
       >
@@ -118,7 +132,7 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
         {isProcessing ? 'Aggiornamento in corso...' : 'Aggiorna Base di Conoscenza'}
       </Button>
       
-      {errorMessage && (
+      {showError && errorMessage && (
         <div className="mt-3 pt-3 border-t border-red-200">
           <p className="text-sm font-medium text-red-600 mb-1">Risoluzione dei problemi:</p>
           <ul className="text-xs space-y-1 text-red-700 list-disc pl-4">

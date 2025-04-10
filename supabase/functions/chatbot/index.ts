@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
@@ -96,7 +97,8 @@ serve(async (req) => {
               console.error("Error fetching direct content:", directError);
             } else if (directDocuments && directDocuments.length > 0) {
               relevantContent = directDocuments
-                .map(doc => doc.content)
+                .map(doc => doc.content || '')
+                .filter(content => content)
                 .join('\n\n');
               
               console.log(`Found ${directDocuments.length} documents using direct content fetch`);
@@ -111,6 +113,29 @@ serve(async (req) => {
     } catch (error) {
       console.error("Error searching for relevant content:", error);
       // Continue without relevant content
+    }
+
+    // Create a fallback if there's no relevant content - try to get some page content directly
+    if (!relevantContent && tableExists === false) {
+      try {
+        const { data: pages, error: pagesError } = await supabaseClient
+          .from('custom_pages')
+          .select('title, content, path')
+          .eq('published', true)
+          .limit(5);
+
+        if (!pagesError && pages && pages.length > 0) {
+          relevantContent = "Informazioni base dal sito:\n\n" + pages.map(page => 
+            `Pagina: ${page.title || 'Senza titolo'}\nURL: ${page.path || ''}\nContenuto: ${
+              (page.content || '').replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().substring(0, 500)
+            }...`
+          ).join('\n\n');
+          
+          console.log(`Created fallback content from ${pages.length} pages`);
+        }
+      } catch (fallbackError) {
+        console.error("Error creating fallback content:", fallbackError);
+      }
     }
 
     const systemPrompt = getSystemPrompt(language, relevantContent, tableExists);
