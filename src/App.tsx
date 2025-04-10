@@ -60,7 +60,6 @@ function App() {
           {/* Catch-all for unmatched routes */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-        {/* ChatbotBubble component - only appears on non-admin/login pages */}
         <ChatbotBubble />
       </Router>
     </TranslationProvider>

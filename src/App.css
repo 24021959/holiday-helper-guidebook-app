@@ -6,65 +6,7 @@
   text-align: center;
 }
 
-/* Chatbot container positioning - for regular pages only, not admin */
-.chatbot-container {
-  position: fixed !important;
-  bottom: 20px !important;
-  right: 20px !important;
-  z-index: 9999 !important;
-  width: auto !important;
-  height: auto !important;
-}
-
-/* Admin panel chatbot settings - ensure it appears as a normal tab content */
-.admin-tab-content .chatbot-settings {
-  position: static !important;
-  width: 100% !important;
-  height: auto !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  box-shadow: none !important;
-  z-index: 1 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-}
-
-/* Chatbot window size constraints */
-.chatbot-container .chat-window {
-  max-width: 340px;
-  max-height: 80vh;
-  overflow: hidden;
-  margin-bottom: 20px;
-}
-
-/* Mobile responsiveness */
-@media (max-width: 768px) {
-  .chatbot-container .chat-window {
-    width: 90vw !important;
-    max-height: 70vh !important;
-  }
-  
-  #root {
-    max-width: 100%;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-  }
-  
-  .content-container {
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    width: 100% !important;
-    max-width: none !important;
-  }
-  
-  .prose p {
-    padding-left: 12px;
-    padding-right: 12px;
-  }
-}
-
-/* Animations */
+/* Animation keyframes */
 @keyframes logo-spin {
   from {
     transform: rotate(0deg);
@@ -118,4 +60,26 @@
   right: auto !important;
   bottom: auto !important;
   left: auto !important;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  #root {
+    max-width: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .content-container {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  
+  .prose p {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
 }

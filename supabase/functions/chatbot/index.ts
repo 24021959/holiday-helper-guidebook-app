@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,6 +9,8 @@ const corsHeaders = {
 };
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get('SUPABASE_URL');
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -36,16 +39,20 @@ serve(async (req) => {
 
     // Get relevant content from the knowledge base
     const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      supabaseUrl || '',
+      supabaseKey || ''
     );
 
     // Get site settings for chatbot config
-    const { data: settingsData } = await supabaseClient
+    const { data: settingsData, error: settingsError } = await supabaseClient
       .from('site_settings')
       .select('*')
       .eq('key', 'chatbot_config')
       .single();
+
+    if (settingsError && settingsError.code !== 'PGRST116') {
+      console.error("Error fetching chatbot settings:", settingsError);
+    }
 
     const chatbotConfig = settingsData?.value || {
       botName: "Assistente Virtuale",
@@ -58,20 +65,100 @@ serve(async (req) => {
       }
     };
 
-    // Perform vector search
-    const { data: matchingContent } = await supabaseClient.rpc(
-      'match_documents',
-      {
-        query_embedding: questionEmbedding,
-        match_threshold: 0.5,
-        match_count: 5
-      }
-    );
-
+    // Try to fetch relevant information from the knowledge base
     let contextText = "No relevant information found.";
+    let knowledgeFound = false;
     
-    if (matchingContent && matchingContent.length > 0) {
-      contextText = matchingContent.map((item: any) => item.content).join("\n\n");
+    try {
+      console.log("Performing vector search with embedding of length:", questionEmbedding.length);
+      
+      // Check if the vector extension exists
+      let hasVectorExtension = false;
+      try {
+        const { data: extensionData, error: extensionError } = await supabaseClient
+          .rpc('check_vector_extension');
+          
+        if (extensionError) {
+          console.error("Error checking vector extension:", extensionError);
+        } else {
+          hasVectorExtension = extensionData;
+          console.log("Vector extension exists:", hasVectorExtension);
+        }
+      } catch (e) {
+        console.error("Error checking vector extension:", e);
+      }
+
+      // Check if the chatbot_knowledge table exists
+      let hasKnowledgeTable = false;
+      try {
+        const { data: tableData, error: tableError } = await supabaseClient
+          .rpc('table_exists', { table_name: 'chatbot_knowledge' });
+          
+        if (tableError) {
+          console.error("Error checking if table exists:", tableError);
+        } else {
+          hasKnowledgeTable = tableData;
+          console.log("Chatbot knowledge table exists:", hasKnowledgeTable);
+        }
+      } catch (e) {
+        console.error("Error checking if table exists:", e);
+      }
+      
+      // Try direct query first
+      try {
+        const { data: directQueryData, error: directQueryError } = await supabaseClient
+          .from('chatbot_knowledge')
+          .select('content')
+          .limit(5);
+          
+        if (directQueryError) {
+          console.error("Error in direct query:", directQueryError);
+        } else if (directQueryData && directQueryData.length > 0) {
+          console.log(`Found ${directQueryData.length} knowledge entries via direct query`);
+          contextText = directQueryData.map((item: any) => item.content).join("\n\n");
+          knowledgeFound = true;
+        }
+      } catch (directQueryError) {
+        console.error("Exception in direct query:", directQueryError);
+      }
+        
+      // Try the vector search if available
+      if (hasVectorExtension && hasKnowledgeTable) {
+        try {
+          const { data: matchingContent, error: matchError } = await supabaseClient.rpc(
+            'match_documents',
+            {
+              query_embedding: questionEmbedding,
+              match_threshold: 0.5,
+              match_count: 5
+            }
+          );
+
+          if (matchError) {
+            console.error("Error in vector search:", matchError);
+            console.log("Proceeding with direct query results or default response");
+          } else if (matchingContent && matchingContent.length > 0) {
+            contextText = matchingContent.map((item: any) => item.content).join("\n\n");
+            knowledgeFound = true;
+            console.log(`Found ${matchingContent.length} matching documents via vector search`);
+          } else {
+            console.log("No matching content found via vector search");
+          }
+        } catch (vectorError) {
+          console.error("Exception in vector search:", vectorError);
+        }
+      } else {
+        console.log("Vector search not available. Vector extension exists:", hasVectorExtension, 
+                    "Knowledge table exists:", hasKnowledgeTable);
+      }
+    } catch (e) {
+      console.error("Error in knowledge base search:", e);
+      console.log("Proceeding without knowledge base match.");
+    }
+
+    // Add context about knowledge base status to debug any issues
+    if (!knowledgeFound) {
+      contextText += "\n\nNote: The knowledge base may not be properly set up yet or may not contain relevant information for this query.";
     }
 
     // Build system message based on the language
@@ -132,6 +219,9 @@ serve(async (req) => {
     // Add current message
     conversationHistory.push({ role: "user", content: message });
 
+    // Log the conversation for debugging
+    console.log("Conversation history:", JSON.stringify(conversationHistory));
+
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -148,6 +238,12 @@ serve(async (req) => {
     });
 
     const data = await response.json();
+    
+    if (!response.ok) {
+      console.error('OpenAI API error:', data);
+      throw new Error(`OpenAI API error: ${data.error?.message || 'Unknown error'}`);
+    }
+    
     const botResponse = data.choices[0].message.content;
 
     return new Response(
@@ -175,40 +271,20 @@ async function createEmbedding(text: string): Promise<number[] | null> {
       },
       body: JSON.stringify({
         model: 'text-embedding-3-small',
-        input: text
+        input: text.slice(0, 8000) // Limit to 8000 characters
       }),
     });
 
     const data = await response.json();
+    
+    if (!response.ok) {
+      console.error('OpenAI embedding API error:', data);
+      throw new Error(`OpenAI embedding API error: ${data.error?.message || 'Unknown error'}`);
+    }
+    
     return data.data[0].embedding;
   } catch (error) {
     console.error('Error creating embedding:', error);
     return null;
   }
-}
-
-// Helper function to create Supabase client
-function createClient(supabaseUrl: string, supabaseKey: string) {
-  return {
-    from: (table: string) => ({
-      select: (columns = '*') => ({
-        eq(column: string, value: any) {
-          return this;
-        },
-        single() {
-          return this;
-        },
-        async then() {
-          // This is a simplified version
-          return { data: null };
-        }
-      }),
-    }),
-    rpc: (functionName: string, params: any) => ({
-      async then() {
-        // Implementation for vector search would go here
-        return { data: [] };
-      }
-    }),
-  };
 }

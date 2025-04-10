@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Bot, User, Send, X, Loader2, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,6 @@ import { useTranslation } from '@/context/TranslationContext';
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useLocation } from "react-router-dom";
 
 interface Message {
   id: string;
@@ -42,26 +42,27 @@ const defaultConfig: ChatbotConfig = {
   iconType: 'default'
 };
 
-export const Chatbot: React.FC = () => {
-  const location = useLocation();
-  
-  const isAdminOrLoginPage = location.pathname.includes('/admin') || 
-                           location.pathname.includes('/login');
-                           
-  if (isAdminOrLoginPage) {
-    return null;
-  }
+interface ChatbotProps {
+  previewConfig?: ChatbotConfig; // Optional prop for preview mode
+}
 
+export const Chatbot: React.FC<ChatbotProps> = ({ previewConfig }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [config, setConfig] = useState<ChatbotConfig>(defaultConfig);
+  const [config, setConfig] = useState<ChatbotConfig>(previewConfig || defaultConfig);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { language } = useTranslation();
   const [initializing, setInitializing] = useState(true);
   
   useEffect(() => {
+    if (previewConfig) {
+      setConfig(previewConfig);
+      setInitializing(false);
+      return;
+    }
+    
     const loadConfig = async () => {
       try {
         const { data, error } = await supabase
@@ -71,19 +72,13 @@ export const Chatbot: React.FC = () => {
           .single();
 
         if (error) {
-          if (error.code !== 'PGRST116') { // not found error
+          if (error.code !== 'PGRST116') {
             console.error("Error loading chatbot config:", error);
           }
-          // Use default config
         } else if (data) {
-          // Ensure position is valid
-          const configValue = data.value as Partial<ChatbotConfig>;
-          const position = configValue.position === 'left' ? 'left' : 'right';
-          
           setConfig({
             ...defaultConfig,
-            ...configValue,
-            position
+            ...data.value as ChatbotConfig
           });
         }
       } catch (error) {
@@ -94,7 +89,13 @@ export const Chatbot: React.FC = () => {
     };
 
     loadConfig();
-  }, []);
+  }, [previewConfig]);
+
+  useEffect(() => {
+    if (previewConfig) {
+      setConfig(previewConfig);
+    }
+  }, [previewConfig]);
 
   useEffect(() => {
     if (!initializing && !messages.length) {
@@ -130,11 +131,27 @@ export const Chatbot: React.FC = () => {
     setIsLoading(true);
 
     try {
+      if (previewConfig) {
+        setTimeout(() => {
+          const previewResponse: Message = {
+            id: (Date.now() + 1).toString(),
+            content: "Questa è un'anteprima del chatbot. In modalità anteprima, non vengono inviate richieste reali all'API.",
+            role: 'assistant',
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, previewResponse]);
+          setIsLoading(false);
+        }, 1500);
+        return;
+      }
+
       const chatHistory = messages.map(msg => ({
         role: msg.role,
         content: msg.content
       }));
 
+      console.log("Sending chat request with history:", chatHistory);
+      
       const { data, error } = await supabase.functions.invoke('chatbot', {
         body: { 
           message, 
@@ -143,7 +160,12 @@ export const Chatbot: React.FC = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase function error:", error);
+        throw error;
+      }
+
+      console.log("Received chatbot response:", data);
 
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
@@ -176,9 +198,14 @@ export const Chatbot: React.FC = () => {
     }
   };
 
+  if (!config.enabled && !previewConfig) return null;
+
   const getCustomStyles = () => {
     const position = config.position || 'right';
     return {
+      container: {
+        [position]: '20px',
+      },
       bubbleButton: {
         backgroundColor: config.primaryColor,
       },
@@ -192,7 +219,10 @@ export const Chatbot: React.FC = () => {
 
   return (
     <>
-      <div className="chatbot-wrapper">
+      <div 
+        className={`fixed bottom-6 z-50 ${config.position === 'left' ? 'left-6' : 'right-6'}`}
+        style={styles.container}
+      >
         <AnimatePresence>
           {isOpen && (
             <motion.div
@@ -243,14 +273,14 @@ export const Chatbot: React.FC = () => {
                       <div
                         className={`rounded-lg p-3 ${
                           msg.role === 'user'
-                            ? 'bg-blue-500 text-white'
+                            ? 'bg-gray-200 text-gray-800'
                             : 'bg-white border border-gray-200'
                         }`}
                       >
                         <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                         <div
                           className={`text-xs mt-1 ${
-                            msg.role === 'user' ? 'text-blue-100' : 'text-gray-400'
+                            msg.role === 'user' ? 'text-gray-500' : 'text-gray-400'
                           }`}
                         >
                           {new Date(msg.timestamp).toLocaleTimeString([], {
@@ -261,7 +291,7 @@ export const Chatbot: React.FC = () => {
                       </div>
                       {msg.role === 'user' && (
                         <Avatar className="ml-2 h-8 w-8 mt-1">
-                          <AvatarFallback className="bg-blue-600">
+                          <AvatarFallback className="bg-gray-500">
                             <User size={16} className="text-white" />
                           </AvatarFallback>
                         </Avatar>
