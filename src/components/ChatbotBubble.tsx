@@ -34,7 +34,7 @@ const defaultConfig: ChatbotConfigType = {
 const ChatbotBubble: React.FC = () => {
   const location = useLocation();
   const [chatbotConfig, setChatbotConfig] = useState<ChatbotConfigType>(defaultConfig);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [loading, setLoading] = useState(true);
   
   // Hide the chatbot on admin and login pages
   const isAdminPage = location.pathname.includes('/admin') || 
@@ -43,11 +43,15 @@ const ChatbotBubble: React.FC = () => {
   useEffect(() => {
     const loadChatbotConfig = async () => {
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('site_settings')
           .select('*')
           .eq('key', 'chatbot_config')
           .single();
+
+        if (error && error.code !== 'PGRST116') {
+          console.error("Error loading chatbot config:", error);
+        }
         
         if (data && data.value) {
           // Ensure we have a valid configuration by merging with defaults
@@ -62,7 +66,7 @@ const ChatbotBubble: React.FC = () => {
         console.error("Error loading chatbot config:", error);
         // Use default config on error
       } finally {
-        setIsInitialized(true);
+        setLoading(false);
       }
     };
 
@@ -70,7 +74,7 @@ const ChatbotBubble: React.FC = () => {
   }, []);
   
   // Don't render until we've tried to load config, and don't show on admin pages
-  if (!isInitialized || isAdminPage) {
+  if (loading || isAdminPage) {
     return null;
   }
   

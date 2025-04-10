@@ -68,7 +68,7 @@ function App() {
             </Routes>
           </Suspense>
           
-          {/* Ensure Chatbot is wrapped in error boundary */}
+          {/* Wrap ChatbotBubble in Suspense to prevent it from causing render failures */}
           <Suspense fallback={null}>
             <ChatbotBubble />
           </Suspense>
