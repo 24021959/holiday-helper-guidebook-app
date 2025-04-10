@@ -1,9 +1,9 @@
 
 import React from "react";
 import { useLocation } from "react-router-dom";
-import { ChatbotBubble as NewChatbotBubble } from "./chatbot/ChatbotBubble";
+import ChatbotBubble from "./chatbot/ChatbotBubble";
 
-const ChatbotBubble: React.FC = () => {
+const ChatbotBubbleWrapper: React.FC = () => {
   const location = useLocation();
   
   // Hide the chatbot on admin and login pages
@@ -16,7 +16,7 @@ const ChatbotBubble: React.FC = () => {
   }
 
   // Use the new refactored ChatbotBubble component
-  return <NewChatbotBubble />;
+  return <ChatbotBubble />;
 };
 
-export default ChatbotBubble;
+export default ChatbotBubbleWrapper;
