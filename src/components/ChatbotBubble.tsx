@@ -35,6 +35,7 @@ const ChatbotBubble: React.FC = () => {
   const location = useLocation();
   const [chatbotConfig, setChatbotConfig] = useState<ChatbotConfigType>(defaultConfig);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<boolean>(false);
   
   useEffect(() => {
     const loadChatbotConfig = async () => {
@@ -65,13 +66,20 @@ const ChatbotBubble: React.FC = () => {
         }
       } catch (error) {
         console.error("Error in loading chatbot config:", error);
-        toast.error("Errore nel caricamento della configurazione del chatbot");
+        setError(true);
+        // Use default config on error
       } finally {
         setLoading(false);
       }
     };
 
-    loadChatbotConfig();
+    try {
+      loadChatbotConfig();
+    } catch (err) {
+      console.error("Fatal error in ChatbotBubble:", err);
+      setError(true);
+      setLoading(false);
+    }
   }, []);
   
   // Hide the chatbot on admin and login pages
@@ -79,12 +87,18 @@ const ChatbotBubble: React.FC = () => {
                        location.pathname.includes('/login');
 
   // If it's an admin page or loading or disabled, don't show the chatbot
-  if (isAdminPage || loading || !chatbotConfig.enabled) {
+  if (isAdminPage || loading || !chatbotConfig.enabled || error) {
     return null;
   }
 
-  // Otherwise, show the Chatbot component with the configuration
-  return <Chatbot previewConfig={chatbotConfig} />;
+  // Wrap in try-catch to prevent blank screen on render errors
+  try {
+    // Otherwise, show the Chatbot component with the configuration
+    return <Chatbot previewConfig={chatbotConfig} />;
+  } catch (err) {
+    console.error("Error rendering Chatbot:", err);
+    return null;
+  }
 };
 
 export default ChatbotBubble;
