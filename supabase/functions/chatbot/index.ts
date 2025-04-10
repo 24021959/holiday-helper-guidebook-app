@@ -92,89 +92,107 @@ serve(async (req) => {
         console.error("Errore nel controllo dell'esistenza della tabella:", e);
       }
       
-      // Prima strategia: ricerca vettoriale (semantica)
+      // Prima strategia: ricerca vettoriale (semantica) combinata con ricerca testuale
       if (hasKnowledgeTable) {
         try {
-          console.log("Esecuzione della ricerca vettoriale con soglia di rilevanza 0.6 e limite 8 documenti");
+          console.log("Esecuzione della ricerca combinata con embedding e testo della query:", message);
           
-          // Aumentiamo il conteggio dei documenti per una ricerca più completa
+          // Chiamiamo la funzione match_documents con il testo della query
           const { data: matchingContent, error: matchError } = await supabaseClient.rpc(
             'match_documents',
             {
               query_embedding: questionEmbedding,
-              match_threshold: 0.6,   // Soglia più bassa per catturare più documenti potenzialmente rilevanti
-              match_count: 8          // Più documenti per avere più contesto
+              match_threshold: 0.55,   // Soglia più bassa per catturare più documenti potenzialmente rilevanti
+              match_count: 12,         // Più documenti per avere più contesto
+              query_text: message       // Aggiungiamo il testo della query per abilitare ricerca full-text
             }
           );
 
           if (matchError) {
-            console.error("Errore nella ricerca vettoriale:", matchError);
+            console.error("Errore nella ricerca combinata:", matchError);
+            
+            // Fallback alla vecchia funzione se la nuova non è disponibile
+            const { data: legacyContent, error: legacyError } = await supabaseClient.rpc(
+              'match_documents',
+              {
+                query_embedding: questionEmbedding,
+                match_threshold: 0.55,
+                match_count: 12
+              }
+            );
+            
+            if (legacyError) {
+              console.error("Errore anche nella ricerca legacy:", legacyError);
+            } else if (legacyContent && legacyContent.length > 0) {
+              relevantDocuments = legacyContent.sort((a, b) => b.similarity - a.similarity);
+              console.log(`Trovati ${relevantDocuments.length} documenti corrispondenti tramite ricerca legacy`);
+            }
           } else if (matchingContent && matchingContent.length > 0) {
             // Ordina i risultati per rilevanza
             relevantDocuments = matchingContent.sort((a, b) => b.similarity - a.similarity);
-            console.log(`Trovati ${relevantDocuments.length} documenti corrispondenti tramite ricerca vettoriale`);
+            console.log(`Trovati ${relevantDocuments.length} documenti corrispondenti tramite ricerca combinata`);
             
             // Estrai informazioni sulla rilevanza per il debugging
-            console.log("Top 3 documenti per rilevanza:", 
-              relevantDocuments.slice(0, 3).map(doc => ({
+            console.log("Top 5 documenti per rilevanza:", 
+              relevantDocuments.slice(0, 5).map(doc => ({
                 titolo: doc.title,
+                tipo: doc.content_type || 'default',
+                sezione: doc.section_title || 'N/A',
                 similarità: doc.similarity.toFixed(3),
                 anteprima: doc.content.substring(0, 100) + "..."
               }))
             );
           } else {
-            console.log("Nessun contenuto corrispondente trovato tramite ricerca vettoriale");
+            console.log("Nessun contenuto corrispondente trovato tramite ricerca combinata");
           }
         } catch (vectorError) {
-          console.error("Errore nella ricerca vettoriale:", vectorError);
+          console.error("Errore nella ricerca combinata:", vectorError);
         }
         
-        // Seconda strategia: ricerca per parole chiave come backup
-        // Estraiamo parole chiave dalla domanda per una ricerca testuale di supporto
+        // Ricerca testuale diretta come supporto ulteriore
         if (relevantDocuments.length < 3) {
           try {
-            console.log("Ricerca vettoriale insufficiente, tentativo con ricerca testuale (ILIKE)");
+            console.log("Ricerca combinata insufficiente, tentativo con ricerca testuale diretta");
             
-            // Estrai potenziali parole chiave dalla domanda (parole di almeno 4 caratteri)
-            const keywords = message.toLowerCase()
-              .replace(/[^\w\s]/g, '')
+            // Creiamo un array di parole da cercare
+            const searchTerms = message
+              .toLowerCase()
+              .replace(/[^\w\sàèìòùáéíóúÀÈÌÒÙÁÉÍÓÚ]/g, ' ')  // Mantieni solo lettere, numeri e spazi
               .split(/\s+/)
-              .filter(word => word.length >= 4);
+              .filter(word => word.length > 2);  // Filtra parole troppo brevi
               
-            if (keywords.length > 0) {
-              console.log("Parole chiave estratte:", keywords);
-              
-              // Crea condizioni ILIKE per ogni parola chiave
-              for (const keyword of keywords) {
-                if (keyword.trim().length < 3) continue;
+            if (searchTerms.length > 0) {
+              // Costruisci un filtro OR per tutti i termini di ricerca
+              let query = supabaseClient
+                .from('chatbot_knowledge')
+                .select('*');
                 
-                const { data: keywordResults, error: keywordError } = await supabaseClient
-                  .from('chatbot_knowledge')
-                  .select('*')
-                  .or(`content.ilike.%${keyword}%, title.ilike.%${keyword}%`)
-                  .limit(5);
-                  
-                if (keywordError) {
-                  console.error(`Errore nella ricerca per parola chiave '${keyword}':`, keywordError);
-                } else if (keywordResults && keywordResults.length > 0) {
-                  console.log(`Trovati ${keywordResults.length} risultati per la parola chiave '${keyword}'`);
-                  
-                  // Aggiungi questi risultati ai documenti di fallback se non sono già nei risultati principali
-                  keywordResults.forEach(doc => {
-                    if (!relevantDocuments.some(d => d.id === doc.id) && 
-                        !fallbackDocuments.some(d => d.id === doc.id)) {
-                      fallbackDocuments.push({
-                        ...doc,
-                        similarity: 0.5,  // Valore arbitrario per i risultati testuali
-                        keyword: keyword  // Aggiungi la parola chiave per tracciabilità
-                      });
-                    }
-                  });
-                }
+              let orConditions = searchTerms.map(term => `content.ilike.%${term}%`);
+              
+              query = query.or(orConditions.join(','));
+              query = query.order('created_at', { ascending: false });
+              query = query.limit(10);
+              
+              const { data: textSearchResults, error: textSearchError } = await query;
+              
+              if (textSearchError) {
+                console.error("Errore nella ricerca testuale diretta:", textSearchError);
+              } else if (textSearchResults && textSearchResults.length > 0) {
+                console.log(`Trovati ${textSearchResults.length} risultati tramite ricerca testuale diretta`);
+                
+                // Aggiungi questi risultati come fallback
+                textSearchResults.forEach(doc => {
+                  if (!relevantDocuments.some(d => d.id === doc.id)) {
+                    fallbackDocuments.push({
+                      ...doc,
+                      similarity: 0.4  // Valore arbitrario più basso per ricerca di fallback
+                    });
+                  }
+                });
               }
             }
-          } catch (keywordError) {
-            console.error("Errore nella ricerca per parole chiave:", keywordError);
+          } catch (textSearchError) {
+            console.error("Errore nella ricerca testuale diretta:", textSearchError);
           }
         }
       } else {
@@ -205,7 +223,7 @@ serve(async (req) => {
       }
       
       // Combina i risultati principali con quelli di fallback, mantenendo la priorità
-      const allDocuments = [...relevantDocuments];
+      let allDocuments = [...relevantDocuments];
       
       // Aggiungi i documenti di fallback solo se non abbiamo abbastanza documenti rilevanti
       if (allDocuments.length < 5 && fallbackDocuments.length > 0) {
@@ -213,17 +231,68 @@ serve(async (req) => {
         allDocuments.push(...fallbackDocuments);
       }
       
-      // Formatta il contesto per l'AI
+      // Organizza i documenti in base a sezioni e ordine originale
       if (allDocuments.length > 0) {
-        // Formattazione migliorata per una migliore comprensione del contesto
-        contextText = allDocuments.map((item, index) => {
-          // Aggiungi informazioni sul percorso della pagina quando disponibile
-          const pathInfo = item.path ? `[Pagina: ${item.path}]` : '';
-          // Miglior formattazione per chiarezza
-          return `--- DOCUMENTO ${index + 1} ${pathInfo} ---\nTitolo: ${item.title}\nContenuto:\n${item.content}\n`;
-        }).join("\n\n");
+        // Ordina per sezione e posizione originale se disponibili
+        allDocuments.sort((a, b) => {
+          // Prima ordina per sezione
+          if (a.section_title && b.section_title && a.section_title !== b.section_title) {
+            return a.section_title.localeCompare(b.section_title);
+          }
+          
+          // Poi per posizione originale
+          if (a.original_position !== undefined && b.original_position !== undefined) {
+            return a.original_position - b.original_position;
+          }
+          
+          // Infine per similarità
+          return b.similarity - a.similarity;
+        });
         
-        console.log(`Contesto finale composto da ${allDocuments.length} documenti`);
+        // Formatta il contesto per l'AI
+        contextText = "--- INFORMAZIONI RILEVANTI DAL SITO ---\n\n";
+        
+        // Identifica le sezioni uniche
+        const uniqueSections = [...new Set(allDocuments
+          .filter(doc => doc.section_title)
+          .map(doc => doc.section_title))];
+        
+        // Per ogni sezione, raggruppa i documenti correlati
+        if (uniqueSections.length > 0) {
+          uniqueSections.forEach(section => {
+            // Documenti per questa sezione
+            const sectionDocs = allDocuments.filter(doc => doc.section_title === section);
+            
+            if (sectionDocs.length > 0) {
+              // Aggiungi il titolo della sezione
+              contextText += `### ${section} ###\n`;
+              
+              // Aggiungi i contenuti
+              sectionDocs.forEach(doc => {
+                contextText += `${doc.content}\n\n`;
+              });
+              
+              contextText += "\n";
+            }
+          });
+          
+          // Aggiungi documenti senza sezione
+          const noSectionDocs = allDocuments.filter(doc => !doc.section_title);
+          if (noSectionDocs.length > 0) {
+            contextText += "### ALTRE INFORMAZIONI RILEVANTI ###\n";
+            noSectionDocs.forEach(doc => {
+              contextText += `${doc.title}: ${doc.content}\n\n`;
+            });
+          }
+        } else {
+          // Formato classico se non ci sono sezioni
+          contextText += allDocuments.map((item, index) => {
+            const pathInfo = item.path ? `[Pagina: ${item.path}]` : '';
+            return `--- DOCUMENTO ${index + 1} ${pathInfo} ---\nTitolo: ${item.title}\nContenuto:\n${item.content}\n`;
+          }).join("\n\n");
+        }
+        
+        console.log(`Contesto finale composto da ${allDocuments.length} documenti organizzati`);
       } else {
         contextText = "Non sono disponibili informazioni specifiche su questo argomento nel database del sito.";
         console.log("Nessun documento rilevante trovato, usando messaggio di fallback");
@@ -253,6 +322,9 @@ serve(async (req) => {
           5. Sii preciso nelle risposte, citando sezioni specifiche dei documenti forniti quando possibile.
           6. Mantieni risposte concise ma complete (massimo 150 parole).
           7. Non menzionare mai che stai usando un "contesto" o "documenti" nelle tue risposte; semplicemente fornisci l'informazione.
+          8. Se l'utente chiede dettagli specifici (come orari di apertura, tariffe, ecc.) che si trovano nel contesto, assicurati di fornirli con precisione.
+          9. Sii particolarmente attento a rispondere accuratamente a domande su ORARI, SERVIZI, DISPONIBILITÀ e PRENOTAZIONI utilizzando i dati forniti.
+          10. Cerca sempre nelle sezioni appropriate del contesto per trovare informazioni specifiche richieste dall'utente.
           
           Comunica in modo naturale come se fossi un rappresentante reale del sito.`,
           
@@ -267,6 +339,9 @@ serve(async (req) => {
           5. Be precise in your answers, citing specific sections of the provided documents when possible.
           6. Keep responses concise but complete (maximum 150 words).
           7. Never mention that you are using a "context" or "documents" in your responses; simply provide the information.
+          8. If the user asks for specific details (like opening hours, rates, etc.) that are in the context, make sure to provide them accurately.
+          9. Be particularly careful to accurately answer questions about HOURS, SERVICES, AVAILABILITY, and BOOKINGS using the provided data.
+          10. Always search in the appropriate sections of the context to find specific information requested by the user.
           
           Communicate naturally as if you were a real representative of the website.`,
           
@@ -281,6 +356,9 @@ serve(async (req) => {
           5. Soyez précis dans vos réponses, en citant des sections spécifiques des documents fournis lorsque c'est possible.
           6. Gardez des réponses concises mais complètes (maximum 150 mots).
           7. Ne mentionnez jamais que vous utilisez un "contexte" ou des "documents" dans vos réponses; fournissez simplement l'information.
+          8. Si l'utilisateur demande des détails spécifiques (comme les heures d'ouverture, les tarifs, etc.) qui se trouvent dans le contexte, assurez-vous de les fournir avec précision.
+          9. Soyez particulièrement attentif à répondre précisément aux questions sur les HORAIRES, SERVICES, DISPONIBILITÉS et RÉSERVATIONS en utilisant les données fournies.
+          10. Recherchez toujours dans les sections appropriées du contexte pour trouver les informations spécifiques demandées par l'utilisateur.
           
           Communiquez naturellement comme si vous étiez un véritable représentant du site web.`,
           
@@ -295,6 +373,9 @@ serve(async (req) => {
           5. Sé preciso en tus respuestas, citando secciones específicas de los documentos proporcionados cuando sea posible.
           6. Mantén respuestas concisas pero completas (máximo 150 palabras).
           7. Nunca menciones que estás utilizando un "contexto" o "documentos" en tus respuestas; simplemente proporciona la información.
+          8. Si el usuario solicita detalles específicos (como horarios de apertura, tarifas, etc.) que se encuentran en el contexto, asegúrate de proporcionarlos con precisión.
+          9. Sé particularmente cuidadoso al responder con precisión a preguntas sobre HORARIOS, SERVICIOS, DISPONIBILIDAD y RESERVAS utilizando los datos proporcionados.
+          10. Busca siempre en las secciones apropiadas del contexto para encontrar la información específica solicitada por el usuario.
           
           Comunícate de forma natural como si fueras un representante real del sitio web.`,
           
@@ -309,6 +390,9 @@ serve(async (req) => {
           5. Seien Sie präzise in Ihren Antworten und zitieren Sie nach Möglichkeit bestimmte Abschnitte der bereitgestellten Dokumente.
           6. Halten Sie die Antworten prägnant, aber vollständig (maximal 150 Wörter).
           7. Erwähnen Sie in Ihren Antworten niemals, dass Sie einen "Kontext" oder "Dokumente" verwenden; geben Sie einfach die Information.
+          8. Wenn der Benutzer nach spezifischen Details fragt (wie Öffnungszeiten, Preise usw.), die sich im Kontext befinden, stellen Sie sicher, dass Sie diese genau bereitstellen.
+          9. Achten Sie besonders darauf, Fragen zu ÖFFNUNGSZEITEN, DIENSTLEISTUNGEN, VERFÜGBARKEIT und BUCHUNGEN anhand der bereitgestellten Daten genau zu beantworten.
+          10. Suchen Sie immer in den entsprechenden Abschnitten des Kontexts nach spezifischen Informationen, die vom Benutzer angefordert werden.
           
           Kommunizieren Sie natürlich, als wären Sie ein echter Vertreter der Website.`
       };
