@@ -156,6 +156,7 @@ const ChatbotSettings: React.FC = () => {
       const results = await Promise.all(
         languages.map(async (lang) => {
           try {
+            // Fix: Pass only one argument to translateBulk as expected by the function
             const translated = await translateBulk(textsToTranslate, lang);
             return { lang, message: translated[0] };
           } catch (error) {

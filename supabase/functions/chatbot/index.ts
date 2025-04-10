@@ -65,8 +65,28 @@ serve(async (req) => {
       }
     };
 
-    // Potenziamento: Migliora la strategia di ricerca combinando ricerca vettoriale e testuale
-    // per trovare informazioni più pertinenti e complete
+    // Miglioramento: Aggiungi ricerca diretta per informazioni specifiche come orari, piscina, etc.
+    const specificKeywords = {
+      "piscina": ["orari", "apertura", "chiusura", "ora", "apre", "chiude", "vasca", "nuotare"],
+      "orari": ["apertura", "chiusura", "apre", "chiude", "ora", "dalle", "alle", "mattina", "pomeriggio", "sera"],
+      "colazione": ["orari", "ora", "quando", "mattina", "dalle", "alle"],
+      "servizi": ["hotel", "albergo", "incluso", "gratuito", "offrire", "disponibile"],
+      "check-in": ["orari", "ora", "quando", "dalle", "alle"],
+      "check-out": ["orari", "ora", "quando", "dalle", "alle"],
+    };
+
+    // Verifica se la domanda contiene parole chiave specifiche
+    const messageWords = message.toLowerCase().split(/\s+/);
+    const matchingCategories = Object.entries(specificKeywords)
+      .filter(([category, keywords]) => {
+        // Verifica se la categoria è presente nella domanda
+        if (messageWords.includes(category)) return true;
+        // Verifica se almeno una delle parole chiave è presente nella domanda
+        return keywords.some(keyword => messageWords.includes(keyword));
+      })
+      .map(([category]) => category);
+
+    console.log("Categorie individuate nella domanda:", matchingCategories);
     
     // Array per memorizzare informazioni trovate e la loro rilevanza
     let relevantDocuments = [];
@@ -97,14 +117,19 @@ serve(async (req) => {
         try {
           console.log("Esecuzione della ricerca combinata con embedding e testo della query:", message);
           
+          // Imposta una soglia più bassa per la corrispondenza e ottieni più risultati
+          // specialmente se la domanda riguarda categorie specifiche come gli orari
+          const matchThreshold = matchingCategories.length > 0 ? 0.45 : 0.55;
+          const matchCount = matchingCategories.length > 0 ? 20 : 12;
+          
           // Chiamiamo la funzione match_documents con il testo della query
           const { data: matchingContent, error: matchError } = await supabaseClient.rpc(
             'match_documents',
             {
               query_embedding: questionEmbedding,
-              match_threshold: 0.55,   // Soglia più bassa per catturare più documenti potenzialmente rilevanti
-              match_count: 12,         // Più documenti per avere più contesto
-              query_text: message       // Aggiungiamo il testo della query per abilitare ricerca full-text
+              match_threshold: matchThreshold,   
+              match_count: matchCount,       
+              query_text: message       
             }
           );
 
@@ -116,8 +141,8 @@ serve(async (req) => {
               'match_documents',
               {
                 query_embedding: questionEmbedding,
-                match_threshold: 0.55,
-                match_count: 12
+                match_threshold: matchThreshold,
+                match_count: matchCount
               }
             );
             
@@ -147,6 +172,61 @@ serve(async (req) => {
           }
         } catch (vectorError) {
           console.error("Errore nella ricerca combinata:", vectorError);
+        }
+        
+        // Ricerca aggiuntiva per categorie specifiche come orari, piscina, etc.
+        if (matchingCategories.length > 0) {
+          try {
+            console.log(`Esecuzione ricerca specifica per categorie: ${matchingCategories.join(", ")}`);
+            
+            // Costruisci una condizione di ricerca avanzata
+            let textQuery = supabaseClient
+              .from('chatbot_knowledge')
+              .select('*');
+            
+            // Aggiungi filtri per ogni categoria
+            let searchConditions = matchingCategories.map(category => {
+              return `content.ilike.%${category}%`;
+            });
+            
+            // Aggiungi anche filtri per parole chiave associate
+            matchingCategories.forEach(category => {
+              if (specificKeywords[category]) {
+                specificKeywords[category].forEach(keyword => {
+                  searchConditions.push(`content.ilike.%${keyword}%`);
+                });
+              }
+            });
+            
+            // Esegui una ricerca OR su tutte le condizioni
+            textQuery = textQuery.or(searchConditions.join(','));
+            
+            // Ordina per recency e limita i risultati
+            textQuery = textQuery.order('created_at', { ascending: false });
+            textQuery = textQuery.limit(15);
+            
+            const { data: specificResults, error: specificError } = await textQuery;
+            
+            if (specificError) {
+              console.error("Errore nella ricerca specifica per categorie:", specificError);
+            } else if (specificResults && specificResults.length > 0) {
+              console.log(`Trovati ${specificResults.length} risultati specifici per categorie`);
+              
+              // Priorizza questi risultati
+              specificResults.forEach(doc => {
+                // Aggiungi solo se non è già presente
+                if (!relevantDocuments.some(d => d.id === doc.id)) {
+                  relevantDocuments.push({
+                    ...doc,
+                    similarity: 0.9,  // Alta priorità per risultati specifici
+                    content_type: 'specific_result'
+                  });
+                }
+              });
+            }
+          } catch (specificError) {
+            console.error("Errore nella ricerca specifica per categorie:", specificError);
+          }
         }
         
         // Ricerca testuale diretta come supporto ulteriore
@@ -231,11 +311,49 @@ serve(async (req) => {
         allDocuments.push(...fallbackDocuments);
       }
       
+      // Miglioramento: Se la domanda era specifica su orari, evidenzia tutte le informazioni sugli orari trovate
+      if (matchingCategories.includes('orari') || matchingCategories.includes('piscina')) {
+        // Filtra per frammenti che contengono informazioni sugli orari
+        const timeRelatedDocs = allDocuments.filter(doc => 
+          doc.content.toLowerCase().includes('orari') || 
+          doc.content.toLowerCase().includes('orario') ||
+          doc.content.toLowerCase().includes('aperto') ||
+          doc.content.toLowerCase().includes('chiuso') ||
+          doc.content.toLowerCase().includes('dalle') ||
+          doc.content.toLowerCase().includes('alle') ||
+          /\d{1,2}:\d{2}/.test(doc.content) // Cerca pattern di orari (es. 9:30)
+        );
+        
+        console.log(`Trovati ${timeRelatedDocs.length} documenti contenenti informazioni su orari`);
+        
+        // Se abbiamo trovato informazioni sugli orari, mettiamole in cima
+        if (timeRelatedDocs.length > 0) {
+          // Rimuovi questi documenti da allDocuments
+          allDocuments = allDocuments.filter(doc => 
+            !timeRelatedDocs.some(timeDoc => timeDoc.id === doc.id)
+          );
+          
+          // Poi mettili in cima con alta priorità
+          allDocuments = [
+            ...timeRelatedDocs.map(doc => ({...doc, similarity: 0.95})),
+            ...allDocuments
+          ];
+        }
+      }
+      
       // Organizza i documenti in base a sezioni e ordine originale
       if (allDocuments.length > 0) {
         // Ordina per sezione e posizione originale se disponibili
         allDocuments.sort((a, b) => {
-          // Prima ordina per sezione
+          // Prima ordina per tipo di contenuto (prioritizzando i risultati specifici)
+          if (a.content_type === 'specific_result' && b.content_type !== 'specific_result') {
+            return -1;
+          }
+          if (a.content_type !== 'specific_result' && b.content_type === 'specific_result') {
+            return 1;
+          }
+          
+          // Poi per sezione
           if (a.section_title && b.section_title && a.section_title !== b.section_title) {
             return a.section_title.localeCompare(b.section_title);
           }
@@ -249,8 +367,14 @@ serve(async (req) => {
           return b.similarity - a.similarity;
         });
         
-        // Formatta il contesto per l'AI
+        // Formatta il contesto per l'AI evidenziando le informazioni specifiche richieste
         contextText = "--- INFORMAZIONI RILEVANTI DAL SITO ---\n\n";
+        
+        // Se ci sono categorie specifiche nella domanda, evidenziamole
+        if (matchingCategories.length > 0) {
+          contextText += `ATTENZIONE: L'utente sta chiedendo informazioni specifiche su: ${matchingCategories.join(", ")}. `;
+          contextText += "Fornisci risposte dirette e precise utilizzando i dettagli seguenti, se disponibili.\n\n";
+        }
         
         // Identifica le sezioni uniche
         const uniqueSections = [...new Set(allDocuments
@@ -319,12 +443,12 @@ serve(async (req) => {
           2. Usa SOLO le informazioni presenti nel contesto fornito.
           3. Se non trovi informazioni sufficienti nel contesto, ammettilo onestamente e suggerisci di contattare direttamente la struttura.
           4. MAI inventare informazioni non presenti nel contesto (prezzi, orari, servizi, ecc.).
-          5. Sii preciso nelle risposte, citando sezioni specifiche dei documenti forniti quando possibile.
+          5. Sii preciso nelle risposte, citando specifiche sezioni dei documenti forniti quando possibile.
           6. Mantieni risposte concise ma complete (massimo 150 parole).
           7. Non menzionare mai che stai usando un "contesto" o "documenti" nelle tue risposte; semplicemente fornisci l'informazione.
           8. Se l'utente chiede dettagli specifici (come orari di apertura, tariffe, ecc.) che si trovano nel contesto, assicurati di fornirli con precisione.
-          9. Sii particolarmente attento a rispondere accuratamente a domande su ORARI, SERVIZI, DISPONIBILITÀ e PRENOTAZIONI utilizzando i dati forniti.
-          10. Cerca sempre nelle sezioni appropriate del contesto per trovare informazioni specifiche richieste dall'utente.
+          9. Cerca attentamente nel contesto qualsiasi menzione di ORARI, particolarmente per servizi come la PISCINA, COLAZIONE, ecc. e riportali esattamente come sono indicati.
+          10. Se l'utente chiede di orari specifici (es. piscina, ristorante), ma non trovi informazioni esplicite, non dire genericamente che non ci sono informazioni, ma suggerisci di contattare la struttura per dettagli precisi.
           
           Comunica in modo naturale come se fossi un rappresentante reale del sito.`,
           
@@ -440,11 +564,11 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',     // Modello aggiornato
+        model: 'gpt-4o-mini',
         messages: conversationHistory,
-        temperature: 0.5,         // Temperatura leggermente ridotta per maggiore precisione
-        max_tokens: 600,          // Aumento del limite di token per risposte più complete
-        top_p: 0.9,               // Mantiene buona creatività pur essendo focalizzato
+        temperature: 0.5,
+        max_tokens: 600,
+        top_p: 0.9,
       }),
     });
 
