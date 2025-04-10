@@ -16,7 +16,7 @@
   height: auto !important;
 }
 
-/* Completely separate chatbot styles from admin panel tabs */
+/* Admin panel chatbot settings - ensure it appears as a normal tab content */
 .admin-tab-content .chatbot-settings {
   position: static !important;
   width: 100% !important;
@@ -25,6 +25,8 @@
   padding: 0 !important;
   box-shadow: none !important;
   z-index: 1 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
 }
 
 /* Chatbot window size constraints */
