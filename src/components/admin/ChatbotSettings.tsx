@@ -1,277 +1,25 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { useTranslation } from "@/context/TranslationContext";
-import { Bot, RefreshCw, Settings2, MessageSquare, Globe } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import Chatbot from "@/components/Chatbot";
+import { Bot, Settings2 } from "lucide-react";
 
-interface ChatbotConfig {
-  enabled: boolean;
-  welcomeMessage: Record<string, string>;
-  primaryColor: string;
-  secondaryColor: string;
-  botName: string;
-  position: 'right' | 'left';
-  iconType: 'default' | 'custom';
-  customIconUrl?: string;
-}
+// Import custom hooks
+import { useChatbotConfig } from "./chatbot/useChatbotConfig";
 
-const defaultWelcomeMessages = {
-  it: "Ciao! Sono qui per aiutarti. Come posso assisterti oggi?",
-  en: "Hi! I'm here to help. How can I assist you today?",
-  fr: "Bonjour! Je suis là pour vous aider. Comment puis-je vous aider aujourd'hui?",
-  es: "¡Hola! Estoy aquí para ayudarte. ¿Cómo puedo ayudarte hoy?",
-  de: "Hallo! Ich bin hier um zu helfen. Wie kann ich Ihnen heute helfen?"
-};
+// Import component parts
+import GeneralSettings from "./chatbot/GeneralSettings";
+import WelcomeMessageEditor from "./chatbot/WelcomeMessageEditor";
+import ChatbotPreview from "./chatbot/ChatbotPreview";
+import KnowledgeBaseUpdater from "./chatbot/KnowledgeBaseUpdater";
+import ChatbotPreviewDialog from "./chatbot/ChatbotPreviewDialog";
 
 const ChatbotSettings: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [chatbotConfig, setChatbotConfig] = useState<ChatbotConfig>({
-    enabled: true,
-    welcomeMessage: { ...defaultWelcomeMessages },
-    primaryColor: "#4ade80",
-    secondaryColor: "#ffffff",
-    botName: "Assistente Virtuale",
-    position: 'right',
-    iconType: 'default'
-  });
+  const { isLoading, isSaving, chatbotConfig, setChatbotConfig, saveChatbotConfig } = useChatbotConfig();
   const [activeLanguage, setActiveLanguage] = useState<'it' | 'en' | 'fr' | 'es' | 'de'>('it');
-  const [welcomeMessage, setWelcomeMessage] = useState(defaultWelcomeMessages.it);
-  const [showPreview, setShowPreview] = useState(false);
-  const { translateBulk } = useTranslation();
-
-  useEffect(() => {
-    loadChatbotConfig();
-  }, []);
-
-  useEffect(() => {
-    setWelcomeMessage(chatbotConfig.welcomeMessage[activeLanguage] || defaultWelcomeMessages[activeLanguage]);
-  }, [activeLanguage, chatbotConfig.welcomeMessage]);
-
-  const loadChatbotConfig = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('site_settings')
-        .select('*')
-        .eq('key', 'chatbot_config')
-        .single();
-
-      if (error) {
-        if (error.code !== 'PGRST116') { // not found error
-          throw error;
-        }
-        // If not found, we'll use the default config
-      } else if (data) {
-        const config = data.value as ChatbotConfig;
-        setChatbotConfig({
-          ...config,
-          // Ensure all languages have a welcome message
-          welcomeMessage: {
-            ...defaultWelcomeMessages,
-            ...config.welcomeMessage
-          }
-        });
-      }
-    } catch (error) {
-      console.error("Error loading chatbot config:", error);
-      toast.error("Errore nel caricamento della configurazione del chatbot");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const saveChatbotConfig = async () => {
-    setIsSaving(true);
-    try {
-      // Ensure the welcomeMessage for the activeLanguage is saved
-      const updatedConfig = {
-        ...chatbotConfig,
-        welcomeMessage: {
-          ...chatbotConfig.welcomeMessage,
-          [activeLanguage]: welcomeMessage
-        }
-      };
-
-      setChatbotConfig(updatedConfig);
-
-      const { data, error } = await supabase
-        .from('site_settings')
-        .upsert({
-          key: 'chatbot_config',
-          value: updatedConfig
-        }, { onConflict: 'key' });
-
-      if (error) throw error;
-
-      toast.success("Configurazione del chatbot salvata con successo");
-    } catch (error) {
-      console.error("Error saving chatbot config:", error);
-      toast.error("Errore nel salvataggio della configurazione del chatbot");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleSwitchChange = (checked: boolean) => {
-    setChatbotConfig({
-      ...chatbotConfig,
-      enabled: checked
-    });
-  };
-
-  const handlePositionChange = (position: 'right' | 'left') => {
-    setChatbotConfig({
-      ...chatbotConfig,
-      position
-    });
-  };
-
-  const handleIconTypeChange = (iconType: 'default' | 'custom') => {
-    setChatbotConfig({
-      ...chatbotConfig,
-      iconType
-    });
-  };
-
-  const generateMessagesInAllLanguages = async () => {
-    setIsLoading(true);
-    try {
-      // Generate welcome messages for all languages based on the Italian one
-      const italianMessage = chatbotConfig.welcomeMessage.it || defaultWelcomeMessages.it;
-      
-      const languages = ['en', 'fr', 'es', 'de'] as const;
-      const textsToTranslate = [italianMessage];
-      
-      // Correggo la chiamata - translateBulk accetta solo un parametro
-      const results = await Promise.all(
-        languages.map(async (lang) => {
-          try {
-            // CORREZIONE: Passa solo un argomento a translateBulk
-            const translated = await translateBulk(textsToTranslate);
-            return { lang, message: translated[0] };
-          } catch (error) {
-            console.error(`Error translating to ${lang}:`, error);
-            return { lang, message: defaultWelcomeMessages[lang] };
-          }
-        })
-      );
-      
-      const newWelcomeMessages = {
-        it: italianMessage,
-        ...Object.fromEntries(results.map(({ lang, message }) => [lang, message]))
-      };
-      
-      setChatbotConfig({
-        ...chatbotConfig,
-        welcomeMessage: newWelcomeMessages
-      });
-      
-      setWelcomeMessage(newWelcomeMessages[activeLanguage]);
-      
-      toast.success("Messaggi di benvenuto generati in tutte le lingue");
-    } catch (error) {
-      console.error("Error generating welcome messages:", error);
-      toast.error("Errore nella generazione dei messaggi di benvenuto");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const updatePageContent = async () => {
-    setIsLoading(true);
-    try {
-      // Fetch all pages to create a knowledge base for the chatbot
-      const { data: pages, error } = await supabase
-        .from('custom_pages')
-        .select('*')
-        .eq('published', true);
-
-      if (error) throw error;
-
-      if (!pages || pages.length === 0) {
-        toast.warning("Nessuna pagina trovata per creare la base di conoscenza del chatbot");
-        return;
-      }
-
-      toast.info(`Elaborazione di ${pages.length} pagine per la base di conoscenza...`);
-
-      // Miglioramento: suddividi i contenuti in frammenti più piccoli per una knowledge base migliore
-      const contentChunks = [];
-      
-      for (const page of pages) {
-        // Pulisci il contenuto HTML
-        const cleanContent = (page.content || "").replace(/<[^>]*>/g, " ").trim();
-        
-        // Dividi il contenuto in paragrafi e poi in frammenti più piccoli
-        const paragraphs = cleanContent.split(/\n\n+/);
-        for (let i = 0; i < paragraphs.length; i++) {
-          const paragraph = paragraphs[i].trim();
-          if (paragraph.length < 50) continue; // Salta paragrafi troppo brevi
-          
-          // Crea un chunk con contesto e metadati
-          contentChunks.push({
-            id: page.id,
-            title: page.title,
-            content: `${page.title}: ${paragraph}`,
-            path: page.path,
-            list_items: page.list_items
-          });
-        }
-        
-        // Aggiungi anche un chunk con il contenuto completo della pagina
-        contentChunks.push({
-          id: page.id,
-          title: page.title,
-          content: `Riepilogo completo: ${page.title}\n${cleanContent}`,
-          path: page.path,
-          list_items: page.list_items
-        });
-      }
-
-      // Send to embedding function
-      const { data, error: embedError } = await supabase.functions.invoke(
-        'create-chatbot-knowledge',
-        {
-          body: { pages: contentChunks }
-        }
-      );
-
-      if (embedError) {
-        console.error("Embedding function error:", embedError);
-        throw embedError;
-      }
-
-      if (data && data.success) {
-        toast.success(`Base di conoscenza del chatbot aggiornata con ${data.message}`);
-      } else {
-        const errorMessage = data ? data.error : "Errore sconosciuto";
-        console.error("Embedding function returned error:", errorMessage);
-        toast.error(`Errore: ${errorMessage}`);
-      }
-    } catch (error) {
-      console.error("Error updating chatbot knowledge base:", error);
-      toast.error("Errore nell'aggiornamento della base di conoscenza del chatbot");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const previewConfig = {
-    ...chatbotConfig,
-    welcomeMessage: {
-      ...chatbotConfig.welcomeMessage,
-      [activeLanguage]: welcomeMessage
-    }
+  
+  const handleSave = async () => {
+    await saveChatbotConfig(chatbotConfig);
   };
 
   return (
@@ -282,279 +30,40 @@ const ChatbotSettings: React.FC = () => {
           <h2 className="text-xl font-medium text-emerald-600">Impostazioni Chatbot</h2>
         </div>
         
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button
-              onClick={() => setShowPreview(true)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-            >
-              <MessageSquare className="mr-2 h-4 w-4" />
-              Anteprima Chatbot
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-full sm:max-w-lg md:max-w-xl">
-            <div className="h-full flex flex-col">
-              <h3 className="text-lg font-medium my-4">Anteprima Chatbot</h3>
-              <div className="flex-1 bg-gray-100 rounded-lg p-4 relative overflow-hidden">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <p className="text-gray-500 italic">
-                    Questa è un'anteprima del chatbot con le impostazioni attuali
-                  </p>
-                </div>
-                <Chatbot previewConfig={previewConfig} />
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
+        <ChatbotPreviewDialog config={chatbotConfig} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <h3 className="text-lg font-medium">Attiva Chatbot</h3>
-              <p className="text-sm text-gray-500">
-                Abilita o disabilita il chatbot sul tuo sito
-              </p>
-            </div>
-            <Switch
-              checked={chatbotConfig.enabled}
-              onCheckedChange={handleSwitchChange}
-            />
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Impostazioni Generali</h3>
-            
-            <div className="space-y-2">
-              <Label htmlFor="botName">Nome del Bot</Label>
-              <Input
-                id="botName"
-                value={chatbotConfig.botName}
-                onChange={(e) =>
-                  setChatbotConfig({
-                    ...chatbotConfig,
-                    botName: e.target.value
-                  })
-                }
-                placeholder="Assistente Virtuale"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="primaryColor">Colore Principale</Label>
-              <div className="flex items-center space-x-2">
-                <Input
-                  id="primaryColor"
-                  type="color"
-                  value={chatbotConfig.primaryColor}
-                  onChange={(e) =>
-                    setChatbotConfig({
-                      ...chatbotConfig,
-                      primaryColor: e.target.value
-                    })
-                  }
-                  className="w-16 h-10 p-1"
-                />
-                <Input
-                  value={chatbotConfig.primaryColor}
-                  onChange={(e) =>
-                    setChatbotConfig({
-                      ...chatbotConfig,
-                      primaryColor: e.target.value
-                    })
-                  }
-                  placeholder="#4ade80"
-                  className="flex-1"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="secondaryColor">Colore Secondario</Label>
-              <div className="flex items-center space-x-2">
-                <Input
-                  id="secondaryColor"
-                  type="color"
-                  value={chatbotConfig.secondaryColor}
-                  onChange={(e) =>
-                    setChatbotConfig({
-                      ...chatbotConfig,
-                      secondaryColor: e.target.value
-                    })
-                  }
-                  className="w-16 h-10 p-1"
-                />
-                <Input
-                  value={chatbotConfig.secondaryColor}
-                  onChange={(e) =>
-                    setChatbotConfig({
-                      ...chatbotConfig,
-                      secondaryColor: e.target.value
-                    })
-                  }
-                  placeholder="#ffffff"
-                  className="flex-1"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Posizione del Chatbot</Label>
-              <div className="flex space-x-2">
-                <Button
-                  type="button"
-                  variant={chatbotConfig.position === 'right' ? 'default' : 'outline'}
-                  onClick={() => handlePositionChange('right')}
-                  className={chatbotConfig.position === 'right' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}
-                >
-                  Destra
-                </Button>
-                <Button
-                  type="button"
-                  variant={chatbotConfig.position === 'left' ? 'default' : 'outline'}
-                  onClick={() => handlePositionChange('left')}
-                  className={chatbotConfig.position === 'left' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}
-                >
-                  Sinistra
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Tipo di Icona</Label>
-              <div className="flex space-x-2">
-                <Button
-                  type="button"
-                  variant={chatbotConfig.iconType === 'default' ? 'default' : 'outline'}
-                  onClick={() => handleIconTypeChange('default')}
-                  className={chatbotConfig.iconType === 'default' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}
-                >
-                  Predefinita
-                </Button>
-                <Button
-                  type="button"
-                  variant={chatbotConfig.iconType === 'custom' ? 'default' : 'outline'}
-                  onClick={() => handleIconTypeChange('custom')}
-                  className={chatbotConfig.iconType === 'custom' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}
-                >
-                  Personalizzata
-                </Button>
-              </div>
-            </div>
-
-            {chatbotConfig.iconType === 'custom' && (
-              <div className="space-y-2">
-                <Label htmlFor="customIconUrl">URL Icona Personalizzata</Label>
-                <Input
-                  id="customIconUrl"
-                  value={chatbotConfig.customIconUrl || ''}
-                  onChange={(e) =>
-                    setChatbotConfig({
-                      ...chatbotConfig,
-                      customIconUrl: e.target.value
-                    })
-                  }
-                  placeholder="https://example.com/icon.png"
-                />
-              </div>
-            )}
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Azioni</h3>
-            
-            <div className="space-y-2">
-              <Button
-                onClick={updatePageContent}
-                disabled={isLoading}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white"
-              >
-                <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                Aggiorna Base di Conoscenza del Chatbot
-              </Button>
-              <p className="text-xs text-gray-500">
-                Aggiorna la base di conoscenza del chatbot con i contenuti più recenti delle pagine del sito.
-              </p>
-            </div>
-          </div>
+          <GeneralSettings 
+            config={chatbotConfig} 
+            onConfigChange={setChatbotConfig} 
+          />
+          
+          <KnowledgeBaseUpdater 
+            isLoading={isLoading} 
+            setIsLoading={(loading) => setChatbotConfig(prev => ({ ...prev }))} 
+          />
         </div>
 
         <div className="space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium flex items-center">
-                <MessageSquare className="h-5 w-5 mr-2 text-emerald-600" />
-                Messaggio di Benvenuto
-              </h3>
-              
-              <div className="flex items-center">
-                <Button
-                  onClick={generateMessagesInAllLanguages}
-                  disabled={isLoading}
-                  variant="outline"
-                  size="sm"
-                  className="text-xs"
-                >
-                  <Globe className="mr-1 h-3 w-3" />
-                  Genera in Tutte le Lingue
-                </Button>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Label className="flex-shrink-0">Lingua:</Label>
-                <div className="bg-gray-100 rounded p-2 flex items-center space-x-2 overflow-x-auto w-full">
-                  {['it', 'en', 'fr', 'es', 'de'].map((lang) => (
-                    <Button
-                      key={lang}
-                      variant={activeLanguage === lang ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setActiveLanguage(lang as 'it' | 'en' | 'fr' | 'es' | 'de')}
-                      className={activeLanguage === lang ? 'bg-emerald-500 hover:bg-emerald-600' : 'text-xs'}
-                    >
-                      {lang.toUpperCase()}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-              
-              <Textarea
-                value={welcomeMessage}
-                onChange={(e) => setWelcomeMessage(e.target.value)}
-                placeholder="Inserisci il messaggio di benvenuto per questa lingua..."
-                className="min-h-[120px]"
-              />
-            </div>
-          </div>
+          <WelcomeMessageEditor 
+            config={chatbotConfig}
+            onConfigChange={setChatbotConfig}
+            isLoading={isLoading}
+            setIsLoading={(loading) => setChatbotConfig(prev => ({ ...prev }))}
+          />
 
-          <div className="space-y-4 bg-gray-50 border rounded-lg p-4">
-            <h3 className="text-lg font-medium">Anteprima</h3>
-            <div className="relative p-5 border rounded-lg bg-white shadow-sm min-h-[250px]">
-              <div className="absolute bottom-4 right-4 bg-emerald-500 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-md" 
-                   style={{ backgroundColor: chatbotConfig.primaryColor }}>
-                <Bot className="h-6 w-6" />
-              </div>
-              <div className="absolute bottom-20 right-4 max-w-xs bg-white rounded-lg shadow-md p-3 border-l-4" 
-                   style={{ borderColor: chatbotConfig.primaryColor }}>
-                <div className="text-xs font-medium mb-1" style={{ color: chatbotConfig.primaryColor }}>
-                  {chatbotConfig.botName}
-                </div>
-                <p className="text-sm text-gray-700">{welcomeMessage}</p>
-              </div>
-            </div>
-          </div>
+          <ChatbotPreview 
+            config={chatbotConfig} 
+            welcomeMessage={chatbotConfig.welcomeMessage[activeLanguage] || ''} 
+          />
         </div>
       </div>
 
       <div className="mt-8 flex justify-end">
         <Button
-          onClick={saveChatbotConfig}
+          onClick={handleSave}
           disabled={isSaving || isLoading}
           className="bg-emerald-500 hover:bg-emerald-600 text-white"
         >
