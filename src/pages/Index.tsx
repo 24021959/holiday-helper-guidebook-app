@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import TranslatedText from "@/components/TranslatedText";
 import { useTranslation } from "@/context/TranslationContext";
+import MainNavigation from "@/components/MainNavigation";
 
 interface HeaderSettings {
   logoUrl?: string | null;
@@ -91,6 +92,9 @@ const Index: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-gray-100">
+      {/* Aggiunta del componente di navigazione principale */}
+      <MainNavigation />
+      
       {/* Header with settings from database */}
       <Header 
         backgroundColor={headerSettings.headerColor || "bg-white"}
