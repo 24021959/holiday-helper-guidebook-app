@@ -152,12 +152,12 @@ const ChatbotSettings: React.FC = () => {
       const languages = ['en', 'fr', 'es', 'de'] as const;
       const textsToTranslate = [italianMessage];
       
-      // Utilizziamo translateBulk con un solo parametro per la lingua di destinazione
+      // Correggo la chiamata - translateBulk accetta solo un parametro
       const results = await Promise.all(
         languages.map(async (lang) => {
           try {
-            // Fix: Pass only one argument to translateBulk as expected by the function
-            const translated = await translateBulk(textsToTranslate, lang);
+            // CORREZIONE: Passa solo un argomento a translateBulk
+            const translated = await translateBulk(textsToTranslate);
             return { lang, message: translated[0] };
           } catch (error) {
             console.error(`Error translating to ${lang}:`, error);
