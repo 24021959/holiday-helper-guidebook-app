@@ -1,22 +1,13 @@
 
 import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
-import Chatbot from "./Chatbot";
+import { Suspense, lazy } from "react";
 
-// Define a simple configuration type
-interface ChatbotConfigType {
-  enabled: boolean;
-  primaryColor: string;
-  secondaryColor: string;
-  botName: string;
-  position: 'right' | 'left';
-  welcomeMessage: Record<string, string>;
-  iconType: 'default' | 'custom';
-  customIconUrl?: string;
-}
+// Importiamo Chatbot in modo lazy per evitare errori di rendering
+const Chatbot = lazy(() => import("./Chatbot"));
 
-// Default configuration
-const defaultConfig: ChatbotConfigType = {
+// Configurazione di default
+const defaultConfig = {
   enabled: true,
   primaryColor: "#4ade80",
   secondaryColor: "#ffffff",
@@ -34,23 +25,47 @@ const defaultConfig: ChatbotConfigType = {
 
 const ChatbotBubble: React.FC = () => {
   const location = useLocation();
-  const [chatbotConfig] = useState<ChatbotConfigType>(defaultConfig);
   
-  // Hide the chatbot on admin and login pages
+  // Nascondi il chatbot nelle pagine di admin e login
   const isAdminPage = location.pathname.includes('/admin') || 
                      location.pathname.includes('/login');
   
-  // Don't show on admin pages
   if (isAdminPage) {
     return null;
   }
   
-  try {
-    return <Chatbot previewConfig={chatbotConfig} />;
-  } catch (error) {
-    console.error("Error rendering Chatbot:", error);
-    return null;
-  }
+  // Utilizziamo Suspense anche qui per gestire il caricamento del chatbot
+  return (
+    <Suspense fallback={null}>
+      <ErrorBoundary>
+        <Chatbot previewConfig={defaultConfig} />
+      </ErrorBoundary>
+    </Suspense>
+  );
 };
+
+// Componente di gestione degli errori per evitare che gli errori del chatbot causino problemi all'app
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
+  constructor(props: {children: React.ReactNode}) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("Chatbot error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return null;
+    }
+
+    return this.props.children;
+  }
+}
 
 export default ChatbotBubble;

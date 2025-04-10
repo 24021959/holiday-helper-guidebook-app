@@ -15,7 +15,9 @@ import { TranslationProvider } from "./context/TranslationContext";
 import { Toaster } from "sonner";
 import DevNavigation from "@/components/DevNavigation";
 import { Suspense, lazy } from "react";
-import ChatbotBubble from "./components/ChatbotBubble";
+
+// Importiamo il chatbot in modo lazy per evitare problemi di rendering
+const ChatbotBubble = lazy(() => import('./components/ChatbotBubble'));
 
 function App() {
   return (
@@ -66,6 +68,11 @@ function App() {
               {/* Catch-all for unmatched routes */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+          </Suspense>
+          
+          {/* Il ChatbotBubble viene caricato in modo lazy e con fallback vuoto */}
+          <Suspense fallback={null}>
+            <ChatbotBubble />
           </Suspense>
           
           <Toaster position="top-right" richColors />
