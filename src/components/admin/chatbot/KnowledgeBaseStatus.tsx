@@ -27,15 +27,20 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
   onUpdateKnowledgeBase
 }) => {
   const [showError, setShowError] = useState<boolean>(!!errorMessage);
+  const [isUpdating, setIsUpdating] = useState<boolean>(false);
   
   const handleUpdateKnowledgeBase = async () => {
     try {
       setShowError(false);
+      setIsUpdating(true);
+      toast.info("Avvio aggiornamento base di conoscenza...");
       await onUpdateKnowledgeBase();
     } catch (error) {
       console.error("Error in knowledge base update:", error);
       toast.error("Si è verificato un errore durante l'aggiornamento della base di conoscenza");
       setShowError(true);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -125,11 +130,11 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
       
       <Button
         onClick={handleUpdateKnowledgeBase}
-        disabled={isProcessing}
+        disabled={isProcessing || isUpdating}
         className="w-full bg-blue-500 hover:bg-blue-600 text-white"
       >
-        <RefreshCw className={`mr-2 h-4 w-4 ${isProcessing ? 'animate-spin' : ''}`} />
-        {isProcessing ? 'Aggiornamento in corso...' : 'Aggiorna Base di Conoscenza'}
+        <RefreshCw className={`mr-2 h-4 w-4 ${isProcessing || isUpdating ? 'animate-spin' : ''}`} />
+        {isProcessing || isUpdating ? 'Aggiornamento in corso...' : 'Aggiorna Base di Conoscenza'}
       </Button>
       
       {showError && errorMessage && (
@@ -139,7 +144,7 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
             <li>Verifica che l'API key di OpenAI sia valida</li>
             <li>Controlla che ci siano pagine pubblicate sul sito</li>
             <li>Prova ad aggiornare di nuovo tra qualche minuto</li>
-            <li>Controlla i log delle funzioni Edge su Supabase</li>
+            <li>Se il problema persiste dopo più tentativi, contatta l'assistenza</li>
           </ul>
         </div>
       )}
