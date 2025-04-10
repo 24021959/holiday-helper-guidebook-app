@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -151,7 +152,7 @@ const ChatbotSettings: React.FC = () => {
       const languages = ['en', 'fr', 'es', 'de'] as const;
       const textsToTranslate = [italianMessage];
       
-      // Corrected translation call with only the language parameter
+      // Correzione della chiamata a translateBulk con un solo parametro
       const results = await Promise.all(
         languages.map(async (lang) => {
           try {
@@ -203,20 +204,44 @@ const ChatbotSettings: React.FC = () => {
 
       toast.info(`Elaborazione di ${pages.length} pagine per la base di conoscenza...`);
 
-      // Create knowledge base for embedding
-      const formattedContent = pages.map(page => ({
-        id: page.id,
-        title: page.title,
-        content: page.content,
-        path: page.path,
-        list_items: page.list_items
-      }));
+      // Miglioramento: suddividi i contenuti in frammenti più piccoli per una knowledge base migliore
+      const contentChunks = [];
+      
+      for (const page of pages) {
+        // Pulisci il contenuto HTML
+        const cleanContent = (page.content || "").replace(/<[^>]*>/g, " ").trim();
+        
+        // Dividi il contenuto in paragrafi e poi in frammenti più piccoli
+        const paragraphs = cleanContent.split(/\n\n+/);
+        for (let i = 0; i < paragraphs.length; i++) {
+          const paragraph = paragraphs[i].trim();
+          if (paragraph.length < 50) continue; // Salta paragrafi troppo brevi
+          
+          // Crea un chunk con contesto e metadati
+          contentChunks.push({
+            id: page.id,
+            title: page.title,
+            content: `${page.title}: ${paragraph}`,
+            path: page.path,
+            list_items: page.list_items
+          });
+        }
+        
+        // Aggiungi anche un chunk con il contenuto completo della pagina
+        contentChunks.push({
+          id: page.id,
+          title: page.title,
+          content: `Riepilogo completo: ${page.title}\n${cleanContent}`,
+          path: page.path,
+          list_items: page.list_items
+        });
+      }
 
       // Send to embedding function
       const { data, error: embedError } = await supabase.functions.invoke(
         'create-chatbot-knowledge',
         {
-          body: { pages: formattedContent }
+          body: { pages: contentChunks }
         }
       );
 

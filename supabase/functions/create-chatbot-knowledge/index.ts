@@ -12,73 +12,57 @@ const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-// Add utility functions to check database status
-async function checkExtension(client: any, extension: string): Promise<boolean> {
+// Migliorata la funzione per verificare e configurare il database
+async function setupDatabase(client: any): Promise<{ success: boolean; error?: string }> {
   try {
-    const { data, error } = await client.from('pg_extension')
-      .select('extname')
-      .eq('extname', extension)
-      .maybeSingle();
+    console.log("Inizializzazione setup del database...");
     
-    if (error) {
-      console.error(`Error checking if extension ${extension} exists:`, error);
-      return false;
-    }
-    
-    return !!data;
-  } catch (e) {
-    console.error(`Exception checking extension ${extension}:`, e);
-    return false;
-  }
-}
-
-async function ensureDatabaseSetup(client: any): Promise<{ success: boolean; error?: string }> {
-  try {
-    // Create utility functions for checking database state
+    // Verifica se l'estensione vector esiste
     try {
-      await client.rpc('create_utility_functions', {});
-      console.log("Created utility functions successfully");
-    } catch (error) {
-      console.log("Error creating utility functions or they already exist:", error);
-      // Continue as these might already exist
-    }
-    
-    // Check if vector extension exists, create if not
-    const hasVectorExtension = await checkExtension(client, 'vector');
-    console.log("Vector extension exists:", hasVectorExtension);
-    
-    if (!hasVectorExtension) {
-      try {
-        // Try to create the extension directly
-        await client.rpc('execute_sql', {
-          sql_command: "CREATE EXTENSION IF NOT EXISTS vector;"
-        });
-        console.log("Vector extension created successfully");
-      } catch (error) {
-        console.error("Error creating vector extension:", error);
-        return { 
-          success: false, 
-          error: `Failed to create vector extension: ${error.message || JSON.stringify(error)}` 
-        };
+      const { data: hasVectorExtension, error: extensionError } = await client.rpc('check_vector_extension');
+      
+      if (extensionError) {
+        console.error("Errore nel controllo dell'estensione vector:", extensionError);
+        // Continuiamo comunque, potrebbe essere che la funzione non esista ancora
+      } else {
+        console.log("L'estensione vector esiste:", hasVectorExtension);
+        
+        if (!hasVectorExtension) {
+          // Prova a creare l'estensione vector se non esiste
+          try {
+            await client.rpc('execute_sql', {
+              sql_command: "CREATE EXTENSION IF NOT EXISTS vector;"
+            });
+            console.log("Estensione vector creata con successo");
+          } catch (createExtError) {
+            console.error("Errore nella creazione dell'estensione vector:", createExtError);
+            return { 
+              success: false, 
+              error: `Impossibile creare l'estensione vector: ${createExtError.message || JSON.stringify(createExtError)}` 
+            };
+          }
+        }
       }
+    } catch (e) {
+      console.error("Eccezione nel controllo dell'estensione vector:", e);
+      // Continuiamo comunque, potrebbe essere che la funzione non esista ancora
     }
     
-    // Check if the chatbot_knowledge table exists, create if not
+    // Verifica se la tabella chatbot_knowledge esiste
     try {
       const { data: tableExists, error: tableCheckError } = await client.rpc('table_exists', {
         table_name: 'chatbot_knowledge'
       });
       
       if (tableCheckError) {
-        console.error("Error checking if table exists:", tableCheckError);
-        return { 
-          success: false, 
-          error: `Failed to check if table exists: ${tableCheckError.message}` 
-        };
+        console.error("Errore nel controllo dell'esistenza della tabella:", tableCheckError);
+        console.log("Tentativo di creazione della tabella comunque...");
+      } else {
+        console.log("La tabella chatbot_knowledge esiste:", tableExists);
       }
       
-      if (!tableExists) {
-        // Create the table
+      // Crea la tabella se non esiste o se abbiamo avuto un errore nel controllo
+      try {
         await client.rpc('execute_sql', {
           sql_command: `
             CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
@@ -93,65 +77,77 @@ async function ensureDatabaseSetup(client: any): Promise<{ success: boolean; err
             );
           `
         });
-        console.log("chatbot_knowledge table created successfully");
-      } else {
-        console.log("chatbot_knowledge table already exists");
+        console.log("Tabella chatbot_knowledge creata o già esistente");
+      } catch (createTableError) {
+        console.error("Errore nella creazione della tabella:", createTableError);
+        return { 
+          success: false, 
+          error: `Impossibile creare la tabella chatbot_knowledge: ${createTableError.message || JSON.stringify(createTableError)}` 
+        };
       }
       
-      // Create the match_documents function
-      await client.rpc('execute_sql', {
-        sql_command: `
-          CREATE OR REPLACE FUNCTION public.match_documents(
-            query_embedding vector(1536),
-            match_threshold float,
-            match_count int
-          )
-          RETURNS TABLE(
-            id uuid,
-            page_id uuid,
-            title text,
-            content text,
-            path text,
-            similarity float
-          )
-          LANGUAGE plpgsql
-          AS $$
-          BEGIN
-            RETURN QUERY
-            SELECT
-              "chatbot_knowledge"."id",
-              "chatbot_knowledge"."page_id",
-              "chatbot_knowledge"."title",
-              "chatbot_knowledge"."content",
-              "chatbot_knowledge"."path",
-              1 - ("chatbot_knowledge"."embedding" <=> query_embedding) AS "similarity"
-            FROM
-              "chatbot_knowledge"
-            WHERE
-              1 - ("chatbot_knowledge"."embedding" <=> query_embedding) > match_threshold
-            ORDER BY
-              "chatbot_knowledge"."embedding" <=> query_embedding
-            LIMIT
-              match_count;
-          END;
-          $$;
-        `
-      });
-      console.log("match_documents function created or updated successfully");
+      // Crea o aggiorna la funzione match_documents
+      try {
+        await client.rpc('execute_sql', {
+          sql_command: `
+            CREATE OR REPLACE FUNCTION public.match_documents(
+              query_embedding vector(1536),
+              match_threshold float,
+              match_count int
+            )
+            RETURNS TABLE(
+              id uuid,
+              page_id uuid,
+              title text,
+              content text,
+              path text,
+              similarity float
+            )
+            LANGUAGE plpgsql
+            AS $$
+            BEGIN
+              RETURN QUERY
+              SELECT
+                "chatbot_knowledge"."id",
+                "chatbot_knowledge"."page_id",
+                "chatbot_knowledge"."title",
+                "chatbot_knowledge"."content",
+                "chatbot_knowledge"."path",
+                1 - ("chatbot_knowledge"."embedding" <=> query_embedding) AS "similarity"
+              FROM
+                "chatbot_knowledge"
+              WHERE
+                1 - ("chatbot_knowledge"."embedding" <=> query_embedding) > match_threshold
+              ORDER BY
+                "chatbot_knowledge"."embedding" <=> query_embedding
+              LIMIT
+                match_count;
+            END;
+            $$;
+          `
+        });
+        console.log("Funzione match_documents creata o aggiornata con successo");
+      } catch (createFuncError) {
+        console.error("Errore nella creazione della funzione match_documents:", createFuncError);
+        return { 
+          success: false, 
+          error: `Impossibile creare la funzione match_documents: ${createFuncError.message || JSON.stringify(createFuncError)}` 
+        };
+      }
       
       return { success: true };
     } catch (error) {
-      console.error("Error setting up database objects:", error);
+      console.error("Errore nella configurazione degli oggetti del database:", error);
       return { 
         success: false, 
-        error: `Failed to set up database objects: ${error.message || JSON.stringify(error)}` 
+        error: `Errore generale nella configurazione del database: ${error.message || JSON.stringify(error)}` 
       };
     }
   } catch (error) {
-    console.error("Error in database setup:", error);
+    console.error("Errore nel setup del database:", error);
     return { 
       success: false, 
-      error: `General error in database setup: ${error.message || JSON.stringify(error)}` 
+      error: `Errore generale nel setup del database: ${error.message || JSON.stringify(error)}` 
     };
   }
 }
@@ -167,168 +163,65 @@ serve(async (req) => {
 
     if (!pages || !Array.isArray(pages) || pages.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'No pages provided or invalid format' }),
+        JSON.stringify({ error: 'Nessuna pagina fornita o formato non valido' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Processing ${pages.length} pages for chatbot knowledge base`);
+    console.log(`Elaborazione di ${pages.length} elementi per la knowledge base del chatbot`);
 
-    // Initialize Supabase client
+    // Inizializza il client Supabase
     const supabaseClient = createClient(
       supabaseUrl || '',
       supabaseKey || ''
     );
 
-    // First create the necessary database functions
-    try {
-      await supabaseClient.rpc('execute_sql', {
-        sql_command: `
-          CREATE OR REPLACE FUNCTION public.table_exists(table_name text)
-          RETURNS boolean
-          LANGUAGE plpgsql
-          AS $$
-          DECLARE
-            found boolean;
-          BEGIN
-            SELECT EXISTS (
-              SELECT FROM pg_tables
-              WHERE schemaname = 'public'
-              AND tablename = table_name
-            ) INTO found;
-            
-            RETURN found;
-          END;
-          $$;
-        `
-      });
-
-      await supabaseClient.rpc('execute_sql', {
-        sql_command: `
-          CREATE OR REPLACE FUNCTION public.execute_sql(sql_command text)
-          RETURNS void
-          LANGUAGE plpgsql
-          AS $$
-          BEGIN
-            EXECUTE sql_command;
-          END;
-          $$;
-        `
-      });
-
-      await supabaseClient.rpc('execute_sql', {
-        sql_command: `
-          CREATE OR REPLACE FUNCTION public.check_vector_extension()
-          RETURNS boolean
-          LANGUAGE plpgsql
-          AS $$
-          DECLARE
-            found boolean;
-          BEGIN
-            SELECT EXISTS (
-              SELECT 1
-              FROM pg_extension
-              WHERE extname = 'vector'
-            ) INTO found;
-            
-            RETURN found;
-          END;
-          $$;
-        `
-      });
-
-      await supabaseClient.rpc('execute_sql', {
-        sql_command: `
-          CREATE OR REPLACE FUNCTION public.create_utility_functions()
-          RETURNS void
-          LANGUAGE plpgsql
-          AS $$
-          BEGIN
-            -- Add any additional utility functions here
-            NULL;
-          END;
-          $$;
-        `
-      });
-      
-      console.log("Created database utility functions");
-    } catch (error) {
-      console.error("Error creating database functions, they might already exist:", error);
-      // Continue as these might already exist
-    }
-
-    // Ensure database is set up correctly
-    const dbSetupResult = await ensureDatabaseSetup(supabaseClient);
+    // Assicurati che il database sia configurato correttamente
+    const dbSetupResult = await setupDatabase(supabaseClient);
     if (!dbSetupResult.success) {
       return new Response(
         JSON.stringify({ 
-          error: dbSetupResult.error || "Failed to set up database properly" 
+          error: dbSetupResult.error || "Impossibile configurare correttamente il database" 
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Prepare data for embeddings, processing and formatting content from each page
-    const pageContents = pages.map(page => {
-      // Clean HTML tags and format content
-      const cleanContent = (page.content || "").replace(/<[^>]*>/g, " ").trim();
-      
-      // Extract any list items if present
-      let listItemsText = "";
-      if (page.list_items && Array.isArray(page.list_items) && page.list_items.length > 0) {
-        listItemsText = "\n\nItems in this page:\n" + 
-          page.list_items.map((item: any, index: number) => 
-            `${index + 1}. ${item.name || ""} - ${item.description || ""}`
-          ).join("\n");
-      }
-
-      // Format the content in a way that's useful for the chatbot
-      const formattedContent = `
-Page Title: ${page.title || "Untitled"}
-URL Path: ${page.path || ""}
-Content: ${cleanContent}${listItemsText}
-      `.trim();
-
-      return {
-        id: page.id,
-        title: page.title || "Untitled",
-        content: formattedContent,
-        path: page.path || ""
-      };
-    });
-
-    // Clear existing knowledge
+    // Pulisci la knowledge base esistente
     try {
       const { error: deleteError } = await supabaseClient
         .from('chatbot_knowledge')
         .delete()
-        .is('id', 'not.null'); // This will delete all records
+        .is('id', 'not.null'); // Questo eliminerà tutti i record
           
       if (deleteError) {
-        console.error('Error deleting existing knowledge:', deleteError);
+        console.error('Errore nell\'eliminazione della knowledge base esistente:', deleteError);
         return new Response(
-          JSON.stringify({ error: "Failed to clear existing knowledge: " + deleteError.message }),
+          JSON.stringify({ error: "Impossibile cancellare la knowledge base esistente: " + deleteError.message }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      console.log("Existing knowledge cleared successfully");
+      console.log("Knowledge base esistente cancellata con successo");
     } catch (deleteError) {
-      console.error('Error deleting existing knowledge:', deleteError);
+      console.error('Errore nell\'eliminazione della knowledge base esistente:', deleteError);
       return new Response(
-        JSON.stringify({ error: "Failed to clear existing knowledge: " + deleteError.message }),
+        JSON.stringify({ error: "Impossibile cancellare la knowledge base esistente: " + deleteError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Insert new knowledge with embeddings
-    console.log("Creating new embeddings and inserting knowledge");
+    // Inserisci la nuova knowledge base con gli embedding
+    console.log("Creazione di nuovi embedding e inserimento nella knowledge base");
     let successCount = 0;
     let errorCount = 0;
     
-    for (const page of pageContents) {
-      // Create embeddings using OpenAI
+    for (const page of pages) {
       try {
-        const embedding = await createEmbedding(page.content);
+        // Pulisci e prepara il contenuto
+        const cleanContent = page.content.replace(/\s+/g, ' ').trim();
+        
+        // Crea gli embedding usando OpenAI
+        const embedding = await createEmbedding(cleanContent);
         
         if (embedding) {
           try {
@@ -337,55 +230,58 @@ Content: ${cleanContent}${listItemsText}
               .insert({
                 page_id: page.id,
                 title: page.title,
-                content: page.content,
+                content: cleanContent,
                 path: page.path,
                 embedding: embedding
               });
               
             if (insertError) {
-              console.error(`Error inserting knowledge for page ${page.id}:`, insertError);
+              console.error(`Errore nell'inserimento della pagina ${page.id}:`, insertError);
               errorCount++;
             } else {
               successCount++;
-              console.log(`Successfully processed page: ${page.title}`);
+              console.log(`Pagina elaborata con successo: ${page.title}`);
             }
           } catch (insertError) {
-            console.error(`Error inserting knowledge for page ${page.id}:`, insertError);
+            console.error(`Errore nell'inserimento della pagina ${page.id}:`, insertError);
             errorCount++;
           }
         } else {
-          console.error(`Failed to create embedding for page ${page.id}`);
+          console.error(`Impossibile creare l'embedding per la pagina ${page.id}`);
           errorCount++;
         }
       } catch (error) {
-        console.error(`Error processing page ${page.id}:`, error);
+        console.error(`Errore nell'elaborazione della pagina ${page.id}:`, error);
         errorCount++;
       }
     }
 
-    console.log(`Knowledge base update complete. Success: ${successCount}, Errors: ${errorCount}`);
+    console.log(`Aggiornamento della knowledge base completato. Successo: ${successCount}, Errori: ${errorCount}`);
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: `Successfully processed ${successCount} out of ${pageContents.length} pages for chatbot knowledge base`,
+        message: `Elaborati con successo ${successCount} su ${pages.length} elementi per la knowledge base del chatbot`,
         errors: errorCount 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error in create-chatbot-knowledge function:', error);
+    console.error('Errore nella funzione create-chatbot-knowledge:', error);
     
     return new Response(
-      JSON.stringify({ error: error.message || "Unknown error occurred" }),
+      JSON.stringify({ error: error.message || "Si è verificato un errore sconosciuto" }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
 
-// Helper function to create embeddings using OpenAI
+// Funzione migliorata per creare embedding usando OpenAI
 async function createEmbedding(text: string): Promise<number[] | null> {
   try {
+    // Ottimizzazione: limita la dimensione del testo a 8000 caratteri per l'efficienza
+    const trimmedText = text.slice(0, 8000);
+    
     const response = await fetch('https://api.openai.com/v1/embeddings', {
       method: 'POST',
       headers: {
@@ -394,20 +290,20 @@ async function createEmbedding(text: string): Promise<number[] | null> {
       },
       body: JSON.stringify({
         model: 'text-embedding-3-small',
-        input: text.slice(0, 8000) // Limit to 8000 characters
+        input: trimmedText
       }),
     });
 
     const data = await response.json();
     
     if (!response.ok) {
-      console.error('OpenAI embedding API error:', data);
-      throw new Error(`OpenAI embedding API error: ${data.error?.message || 'Unknown error'}`);
+      console.error('Errore API OpenAI embedding:', data);
+      throw new Error(`Errore API OpenAI embedding: ${data.error?.message || 'Errore sconosciuto'}`);
     }
     
     return data.data[0].embedding;
   } catch (error) {
-    console.error('Error creating embedding:', error);
+    console.error('Errore nella creazione dell\'embedding:', error);
     return null;
   }
 }
