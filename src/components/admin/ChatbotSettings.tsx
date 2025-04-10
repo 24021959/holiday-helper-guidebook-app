@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -8,9 +9,11 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "@/context/TranslationContext";
-import { Bot, RefreshCw, Settings2, MessageSquare, Globe } from "lucide-react";
+import { Bot, RefreshCw, Settings2, MessageSquare, Globe, BookOpen, AlertCircle } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Chatbot from "@/components/Chatbot";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 interface ChatbotConfig {
   enabled: boolean;
@@ -34,6 +37,17 @@ const defaultWelcomeMessages = {
 const ChatbotSettings: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingProgress, setProcessingProgress] = useState(0);
+  const [knowledgeStatus, setKnowledgeStatus] = useState<{
+    exists: boolean;
+    count: number;
+    lastUpdated: string | null;
+  }>({
+    exists: false,
+    count: 0,
+    lastUpdated: null
+  });
   const [chatbotConfig, setChatbotConfig] = useState<ChatbotConfig>({
     enabled: true,
     welcomeMessage: { ...defaultWelcomeMessages },
@@ -50,6 +64,7 @@ const ChatbotSettings: React.FC = () => {
 
   useEffect(() => {
     loadChatbotConfig();
+    checkKnowledgeBase();
   }, []);
 
   useEffect(() => {
@@ -82,10 +97,40 @@ const ChatbotSettings: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error("Error loading chatbot config:", error);
+      console.error("Errore nel caricamento della configurazione del chatbot:", error);
       toast.error("Errore nel caricamento della configurazione del chatbot");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const checkKnowledgeBase = async () => {
+    try {
+      // Verifica l'esistenza della knowledge base
+      const { data, error } = await supabase
+        .from('chatbot_knowledge')
+        .select('id, updated_at', { count: 'exact' });
+
+      if (error) {
+        console.error("Errore nel controllare la knowledge base:", error);
+        return;
+      }
+
+      // Trova l'ultima data di aggiornamento
+      let lastUpdated = null;
+      if (data && data.length > 0) {
+        const dates = data.map(item => new Date(item.updated_at).getTime());
+        const maxDate = new Date(Math.max(...dates));
+        lastUpdated = maxDate.toLocaleString('it-IT');
+      }
+
+      setKnowledgeStatus({
+        exists: data && data.length > 0,
+        count: data ? data.length : 0,
+        lastUpdated
+      });
+    } catch (error) {
+      console.error("Errore nel controllare la knowledge base:", error);
     }
   };
 
@@ -114,7 +159,7 @@ const ChatbotSettings: React.FC = () => {
 
       toast.success("Configurazione del chatbot salvata con successo");
     } catch (error) {
-      console.error("Error saving chatbot config:", error);
+      console.error("Errore nel salvataggio della configurazione del chatbot:", error);
       toast.error("Errore nel salvataggio della configurazione del chatbot");
     } finally {
       setIsSaving(false);
@@ -172,7 +217,7 @@ const ChatbotSettings: React.FC = () => {
       
       toast.success("Messaggi di benvenuto generati in tutte le lingue");
     } catch (error) {
-      console.error("Error generating welcome messages:", error);
+      console.error("Errore nella generazione dei messaggi di benvenuto:", error);
       toast.error("Errore nella generazione dei messaggi di benvenuto");
     } finally {
       setIsLoading(false);
@@ -180,7 +225,8 @@ const ChatbotSettings: React.FC = () => {
   };
 
   const updatePageContent = async () => {
-    setIsLoading(true);
+    setIsProcessing(true);
+    setProcessingProgress(10);
     try {
       // Fetch all pages to create a knowledge base for the chatbot
       const { data: pages, error } = await supabase
@@ -196,6 +242,7 @@ const ChatbotSettings: React.FC = () => {
       }
 
       toast.info(`Elaborazione di ${pages.length} pagine per la base di conoscenza...`);
+      setProcessingProgress(30);
 
       // Create knowledge base for embedding
       const formattedContent = pages.map(page => ({
@@ -206,6 +253,8 @@ const ChatbotSettings: React.FC = () => {
         list_items: page.list_items
       }));
 
+      setProcessingProgress(50);
+      
       // Send to embedding function
       const { data, error: embedError } = await supabase.functions.invoke(
         'create-chatbot-knowledge',
@@ -214,23 +263,32 @@ const ChatbotSettings: React.FC = () => {
         }
       );
 
+      setProcessingProgress(90);
+
       if (embedError) {
-        console.error("Embedding function error:", embedError);
+        console.error("Errore nella funzione di embedding:", embedError);
         throw embedError;
       }
 
       if (data && data.success) {
         toast.success(`Base di conoscenza del chatbot aggiornata con ${data.message}`);
+        await checkKnowledgeBase(); // Aggiorna lo stato della knowledge base
+        setProcessingProgress(100);
       } else {
         const errorMessage = data ? data.error : "Errore sconosciuto";
-        console.error("Embedding function returned error:", errorMessage);
+        console.error("La funzione di embedding ha restituito un errore:", errorMessage);
         toast.error(`Errore: ${errorMessage}`);
+        setProcessingProgress(0);
       }
     } catch (error) {
-      console.error("Error updating chatbot knowledge base:", error);
+      console.error("Errore nell'aggiornamento della base di conoscenza del chatbot:", error);
       toast.error("Errore nell'aggiornamento della base di conoscenza del chatbot");
+      setProcessingProgress(0);
     } finally {
-      setIsLoading(false);
+      setIsProcessing(false);
+      setTimeout(() => {
+        setProcessingProgress(0);
+      }, 1000);
     }
   };
 
@@ -433,23 +491,78 @@ const ChatbotSettings: React.FC = () => {
 
           <Separator />
 
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Azioni</h3>
-            
-            <div className="space-y-2">
-              <Button
-                onClick={updatePageContent}
-                disabled={isLoading}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white"
-              >
-                <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                Aggiorna Base di Conoscenza del Chatbot
-              </Button>
-              <p className="text-xs text-gray-500">
-                Aggiorna la base di conoscenza del chatbot con i contenuti più recenti delle pagine del sito.
-              </p>
-            </div>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <BookOpen className="h-5 w-5 text-emerald-600" />
+                <span>Base di conoscenza</span>
+              </CardTitle>
+              <CardDescription>
+                Crea una base di conoscenza per il chatbot utilizzando i contenuti delle pagine del sito
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Stato base di conoscenza:</span>
+                  <span className={`text-sm font-medium ${knowledgeStatus.exists ? 'text-green-600' : 'text-amber-600'}`}>
+                    {knowledgeStatus.exists ? 'Attiva' : 'Non configurata'}
+                  </span>
+                </div>
+                
+                {knowledgeStatus.exists && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Elementi presenti:</span>
+                      <span className="text-sm">{knowledgeStatus.count}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Ultimo aggiornamento:</span>
+                      <span className="text-sm">{knowledgeStatus.lastUpdated}</span>
+                    </div>
+                  </>
+                )}
+                
+                {!knowledgeStatus.exists && (
+                  <div className="px-4 py-3 bg-amber-50 border border-amber-200 rounded-md my-2">
+                    <div className="flex">
+                      <AlertCircle className="h-5 w-5 text-amber-500 mr-2 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm text-amber-800">
+                          La base di conoscenza non è stata ancora creata. Il chatbot funzionerà, ma non avrà 
+                          informazioni sulle pagine del tuo sito.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {processingProgress > 0 && (
+                  <div className="space-y-2 mt-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Elaborazione in corso...</span>
+                      <span className="text-sm">{processingProgress}%</span>
+                    </div>
+                    <Progress value={processingProgress} className="w-full" />
+                  </div>
+                )}
+                
+                <Button
+                  onClick={updatePageContent}
+                  disabled={isLoading || isProcessing}
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white mt-2"
+                >
+                  <RefreshCw className={`mr-2 h-4 w-4 ${isProcessing ? 'animate-spin' : ''}`} />
+                  {isProcessing ? 'Aggiornamento in corso...' : 'Aggiorna Base di Conoscenza'}
+                </Button>
+                
+                <p className="text-xs text-gray-500 mt-1">
+                  Questo processo aggiorna la base di conoscenza del chatbot con i contenuti delle pagine pubblicate sul sito.
+                  L'aggiornamento potrebbe richiedere alcuni minuti.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="space-y-6">
@@ -517,6 +630,35 @@ const ChatbotSettings: React.FC = () => {
               </div>
             </div>
           </div>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Settings2 className="h-5 w-5 text-emerald-600" />
+                <span>Comportamento del Chatbot</span>
+              </CardTitle>
+              <CardDescription>
+                Il chatbot è configurato per rispondere utilizzando informazioni provenienti dalle pagine del tuo sito.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm space-y-2 text-gray-700">
+                <p>
+                  L'assistente virtuale è programmato per:
+                </p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Rispondere a domande sulla struttura (orari, servizi, regole)</li>
+                  <li>Fornire informazioni sugli spazi comuni (piscina, ristorante, ecc.)</li>
+                  <li>Suggerire opzioni gastronomiche e attrazioni turistiche</li>
+                  <li>Offrire supporto logistico (indicazioni, trasporti, ecc.)</li>
+                </ul>
+                <p className="mt-3 text-gray-600 italic">
+                  Il chatbot utilizzerà solo le informazioni trovate nelle pagine del sito, senza inventare dettagli.
+                  Se una domanda va oltre le informazioni disponibili, consiglierà di contattare direttamente la struttura.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 

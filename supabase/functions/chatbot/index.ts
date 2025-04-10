@@ -28,13 +28,13 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Received message in ${language}: ${message}`);
+    console.log(`Ricevuto messaggio in ${language}: ${message}`);
 
     // Get the embedding for the question
     const questionEmbedding = await createEmbedding(message);
     
     if (!questionEmbedding) {
-      throw new Error('Failed to create embedding for question');
+      throw new Error('Impossibile creare embedding per la domanda');
     }
 
     // Get relevant content from the knowledge base
@@ -51,7 +51,7 @@ serve(async (req) => {
       .single();
 
     if (settingsError && settingsError.code !== 'PGRST116') {
-      console.error("Error fetching chatbot settings:", settingsError);
+      console.error("Errore nel recupero delle impostazioni del chatbot:", settingsError);
     }
 
     const chatbotConfig = settingsData?.value || {
@@ -66,42 +66,46 @@ serve(async (req) => {
     };
 
     // Try to fetch relevant information from the knowledge base
-    let contextText = "No relevant information found.";
+    let contextText = "Nessuna informazione rilevante trovata.";
     let knowledgeFound = false;
     
     try {
-      console.log("Performing vector search with embedding of length:", questionEmbedding.length);
+      console.log("Esecuzione ricerca vettoriale con embedding di lunghezza:", questionEmbedding.length);
       
       // Check if the vector extension exists
       let hasVectorExtension = false;
       try {
         const { data: extensionData, error: extensionError } = await supabaseClient
-          .rpc('check_vector_extension');
+          .rpc('run_sql', {
+            sql: "SELECT 1 FROM pg_extension WHERE extname = 'vector'"
+          });
           
         if (extensionError) {
-          console.error("Error checking vector extension:", extensionError);
+          console.error("Errore nel controllo dell'estensione vector:", extensionError);
         } else {
-          hasVectorExtension = extensionData;
-          console.log("Vector extension exists:", hasVectorExtension);
+          hasVectorExtension = extensionData && extensionData.length > 0;
+          console.log("Estensione vettoriale esiste:", hasVectorExtension);
         }
       } catch (e) {
-        console.error("Error checking vector extension:", e);
+        console.error("Errore nel controllo dell'estensione vector:", e);
       }
 
       // Check if the chatbot_knowledge table exists
       let hasKnowledgeTable = false;
       try {
         const { data: tableData, error: tableError } = await supabaseClient
-          .rpc('table_exists', { table_name: 'chatbot_knowledge' });
+          .rpc('run_sql', {
+            sql: "SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'chatbot_knowledge'"
+          });
           
         if (tableError) {
-          console.error("Error checking if table exists:", tableError);
+          console.error("Errore nel controllo della tabella:", tableError);
         } else {
-          hasKnowledgeTable = tableData;
-          console.log("Chatbot knowledge table exists:", hasKnowledgeTable);
+          hasKnowledgeTable = tableData && tableData.length > 0;
+          console.log("Tabella chatbot_knowledge esiste:", hasKnowledgeTable);
         }
       } catch (e) {
-        console.error("Error checking if table exists:", e);
+        console.error("Errore nel controllo della tabella:", e);
       }
       
       // Try direct query first
@@ -112,14 +116,14 @@ serve(async (req) => {
           .limit(5);
           
         if (directQueryError) {
-          console.error("Error in direct query:", directQueryError);
+          console.error("Errore nella query diretta:", directQueryError);
         } else if (directQueryData && directQueryData.length > 0) {
-          console.log(`Found ${directQueryData.length} knowledge entries via direct query`);
+          console.log(`Trovati ${directQueryData.length} elementi di conoscenza tramite query diretta`);
           contextText = directQueryData.map((item: any) => item.content).join("\n\n");
           knowledgeFound = true;
         }
       } catch (directQueryError) {
-        console.error("Exception in direct query:", directQueryError);
+        console.error("Eccezione nella query diretta:", directQueryError);
       }
         
       // Try the vector search if available
@@ -135,30 +139,30 @@ serve(async (req) => {
           );
 
           if (matchError) {
-            console.error("Error in vector search:", matchError);
-            console.log("Proceeding with direct query results or default response");
+            console.error("Errore nella ricerca vettoriale:", matchError);
+            console.log("Procedendo con i risultati della query diretta o risposta predefinita");
           } else if (matchingContent && matchingContent.length > 0) {
             contextText = matchingContent.map((item: any) => item.content).join("\n\n");
             knowledgeFound = true;
-            console.log(`Found ${matchingContent.length} matching documents via vector search`);
+            console.log(`Trovati ${matchingContent.length} documenti corrispondenti tramite ricerca vettoriale`);
           } else {
-            console.log("No matching content found via vector search");
+            console.log("Nessun contenuto corrispondente trovato tramite ricerca vettoriale");
           }
         } catch (vectorError) {
-          console.error("Exception in vector search:", vectorError);
+          console.error("Eccezione nella ricerca vettoriale:", vectorError);
         }
       } else {
-        console.log("Vector search not available. Vector extension exists:", hasVectorExtension, 
-                    "Knowledge table exists:", hasKnowledgeTable);
+        console.log("Ricerca vettoriale non disponibile. Estensione vector:", hasVectorExtension, 
+                    "Tabella knowledge:", hasKnowledgeTable);
       }
     } catch (e) {
-      console.error("Error in knowledge base search:", e);
-      console.log("Proceeding without knowledge base match.");
+      console.error("Errore nella ricerca della knowledge base:", e);
+      console.log("Procedendo senza riscontri dalla knowledge base.");
     }
 
     // Add context about knowledge base status to debug any issues
     if (!knowledgeFound) {
-      contextText += "\n\nNote: The knowledge base may not be properly set up yet or may not contain relevant information for this query.";
+      contextText += "\n\nNota: La knowledge base potrebbe non essere configurata correttamente o potrebbe non contenere informazioni rilevanti per questa domanda.";
     }
 
     // Build system message based on the language
@@ -166,46 +170,106 @@ serve(async (req) => {
     
     switch (language) {
       case 'it':
-        systemPrompt = `Sei ${chatbotConfig.botName}, un assistente AI che aiuta i visitatori di un sito web. 
-          Rispondi a domande basate sui contenuti del sito. Rispondi SEMPRE in italiano.
-          Se non conosci la risposta, sii onesto e suggerisci di contattare direttamente la struttura.
-          Non inventare informazioni non presenti nel contesto fornito.`;
+        systemPrompt = `Sei ${chatbotConfig.botName}, un assistente virtuale intelligente progettato per supportare gli ospiti di una struttura ricettiva. Il tuo compito principale è fornire informazioni dettagliate, accurate e tempestive che facilitino e migliorino l'esperienza di soggiorno degli ospiti.
+
+Obiettivi principali:
+- Rispondere a domande sulla struttura (orari, servizi, regole)
+- Fornire informazioni sugli spazi comuni (piscina, ristorante, ecc.)
+- Suggerire opzioni gastronomiche e attrazioni turistiche
+- Offrire supporto logistico (indicazioni, trasporti, ecc.)
+
+Regole da seguire:
+- Utilizza SOLO le informazioni fornite nel contesto, non inventare dettagli
+- Se non conosci la risposta, suggerisci di contattare direttamente la struttura
+- Per richieste specifiche, suggerisci di rivolgersi alla reception
+
+Sii cordiale, professionale e fornisci risposte brevi e chiare.`;
         break;
       case 'en':
-        systemPrompt = `You are ${chatbotConfig.botName}, an AI assistant helping website visitors.
-          Answer questions based on the website content. ALWAYS answer in English.
-          If you don't know the answer, be honest and suggest contacting the establishment directly.
-          Don't make up information not present in the provided context.`;
+        systemPrompt = `You are ${chatbotConfig.botName}, an intelligent virtual assistant designed to support guests of an accommodation facility. Your main task is to provide detailed, accurate, and timely information that facilitates and enhances the guests' stay experience.
+
+Main objectives:
+- Answer questions about the facility (hours, services, rules)
+- Provide information about common areas (pool, restaurant, etc.)
+- Suggest dining options and tourist attractions
+- Offer logistical support (directions, transportation, etc.)
+
+Rules to follow:
+- Use ONLY the information provided in the context, do not make up details
+- If you don't know the answer, suggest contacting the facility directly
+- For specific requests, suggest speaking to the reception
+
+Be cordial, professional and provide brief, clear responses. ALWAYS answer in English.`;
         break;
       case 'fr':
-        systemPrompt = `Vous êtes ${chatbotConfig.botName}, un assistant IA qui aide les visiteurs du site web.
-          Répondez aux questions basées sur le contenu du site. Répondez TOUJOURS en français.
-          Si vous ne connaissez pas la réponse, soyez honnête et suggérez de contacter directement l'établissement.
-          N'inventez pas d'informations qui ne sont pas présentes dans le contexte fourni.`;
+        systemPrompt = `Vous êtes ${chatbotConfig.botName}, un assistant virtuel intelligent conçu pour soutenir les clients d'un établissement d'hébergement. Votre tâche principale est de fournir des informations détaillées, précises et opportunes qui facilitent et améliorent l'expérience de séjour des clients.
+
+Objectifs principaux:
+- Répondre aux questions sur l'établissement (horaires, services, règles)
+- Fournir des informations sur les espaces communs (piscine, restaurant, etc.)
+- Suggérer des options gastronomiques et des attractions touristiques
+- Offrir un soutien logistique (directions, transports, etc.)
+
+Règles à suivre:
+- Utilisez UNIQUEMENT les informations fournies dans le contexte, n'inventez pas de détails
+- Si vous ne connaissez pas la réponse, suggérez de contacter directement l'établissement
+- Pour des demandes spécifiques, suggérez de s'adresser à la réception
+
+Soyez cordial, professionnel et fournissez des réponses brèves et claires. Répondez TOUJOURS en français.`;
         break;
       case 'es':
-        systemPrompt = `Eres ${chatbotConfig.botName}, un asistente de IA que ayuda a los visitantes del sitio web.
-          Responde preguntas basadas en el contenido del sitio. Responde SIEMPRE en español.
-          Si no conoces la respuesta, sé honesto y sugiere contactar directamente con el establecimiento.
-          No inventes información que no esté presente en el contexto proporcionado.`;
+        systemPrompt = `Eres ${chatbotConfig.botName}, un asistente virtual inteligente diseñado para apoyar a los huéspedes de un establecimiento de alojamiento. Tu tarea principal es proporcionar información detallada, precisa y oportuna que facilite y mejore la experiencia de estancia de los huéspedes.
+
+Objetivos principales:
+- Responder a preguntas sobre el establecimiento (horarios, servicios, reglas)
+- Proporcionar información sobre áreas comunes (piscina, restaurante, etc.)
+- Sugerir opciones gastronómicas y atracciones turísticas
+- Ofrecer apoyo logístico (direcciones, transporte, etc.)
+
+Reglas a seguir:
+- Utiliza SOLO la información proporcionada en el contexto, no inventes detalles
+- Si no conoces la respuesta, sugiere contactar directamente con el establecimiento
+- Para solicitudes específicas, sugiere hablar con la recepción
+
+Sé cordial, profesional y proporciona respuestas breves y claras. Responde SIEMPRE en español.`;
         break;
       case 'de':
-        systemPrompt = `Sie sind ${chatbotConfig.botName}, ein KI-Assistent, der Webseitenbesuchern hilft.
-          Beantworten Sie Fragen basierend auf dem Inhalt der Website. Antworten Sie IMMER auf Deutsch.
-          Wenn Sie die Antwort nicht kennen, seien Sie ehrlich und schlagen Sie vor, das Unternehmen direkt zu kontaktieren.
-          Erfinden Sie keine Informationen, die nicht im bereitgestellten Kontext enthalten sind.`;
+        systemPrompt = `Sie sind ${chatbotConfig.botName}, ein intelligenter virtueller Assistent, der entwickelt wurde, um Gäste einer Unterkunftseinrichtung zu unterstützen. Ihre Hauptaufgabe ist es, detaillierte, genaue und zeitnahe Informationen zu liefern, die den Aufenthalt der Gäste erleichtern und verbessern.
+
+Hauptziele:
+- Beantworten Sie Fragen zur Einrichtung (Öffnungszeiten, Dienstleistungen, Regeln)
+- Informationen über Gemeinschaftsbereiche (Pool, Restaurant usw.) bereitstellen
+- Gastronomische Optionen und touristische Attraktionen vorschlagen
+- Logistische Unterstützung anbieten (Wegbeschreibungen, Transport usw.)
+
+Zu befolgende Regeln:
+- Verwenden Sie NUR die im Kontext bereitgestellten Informationen, erfinden Sie keine Details
+- Wenn Sie die Antwort nicht kennen, schlagen Sie vor, die Einrichtung direkt zu kontaktieren
+- Bei spezifischen Anfragen empfehlen Sie, sich an die Rezeption zu wenden
+
+Seien Sie herzlich, professionell und geben Sie kurze, klare Antworten. Antworten Sie IMMER auf Deutsch.`;
         break;
       default:
-        systemPrompt = `You are ${chatbotConfig.botName}, an AI assistant helping website visitors.
-          Answer questions based on the website content. Identify the language of the question and respond in the same language.
-          If you don't know the answer, be honest and suggest contacting the establishment directly.
-          Don't make up information not present in the provided context.`;
+        systemPrompt = `You are ${chatbotConfig.botName}, an intelligent virtual assistant designed to support guests of an accommodation facility. Your main task is to provide detailed, accurate, and timely information that facilitates and enhances the guests' stay experience.
+
+Main objectives:
+- Answer questions about the facility (hours, services, rules)
+- Provide information about common areas (pool, restaurant, etc.)
+- Suggest dining options and tourist attractions
+- Offer logistical support (directions, transportation, etc.)
+
+Rules to follow:
+- Use ONLY the information provided in the context, do not make up details
+- If you don't know the answer, suggest contacting the facility directly
+- For specific requests, suggest speaking to the reception
+
+Be cordial, professional and provide brief, clear responses. Identify the language of the question and respond in the same language.`;
     }
 
     // Prepare conversation history for the API call
     const conversationHistory = [
       { role: "system", content: systemPrompt },
-      { role: "system", content: `Here is relevant information from the website: ${contextText}` }
+      { role: "system", content: `Ecco le informazioni rilevanti dal sito della struttura: ${contextText}` }
     ];
 
     // Add chat history
@@ -220,7 +284,7 @@ serve(async (req) => {
     conversationHistory.push({ role: "user", content: message });
 
     // Log the conversation for debugging
-    console.log("Conversation history:", JSON.stringify(conversationHistory));
+    console.log("Cronologia conversazione:", JSON.stringify(conversationHistory));
 
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -240,8 +304,8 @@ serve(async (req) => {
     const data = await response.json();
     
     if (!response.ok) {
-      console.error('OpenAI API error:', data);
-      throw new Error(`OpenAI API error: ${data.error?.message || 'Unknown error'}`);
+      console.error('Errore API OpenAI:', data);
+      throw new Error(`Errore API OpenAI: ${data.error?.message || 'Errore sconosciuto'}`);
     }
     
     const botResponse = data.choices[0].message.content;
@@ -251,7 +315,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error in chatbot function:', error);
+    console.error('Errore nella funzione chatbot:', error);
     
     return new Response(
       JSON.stringify({ error: error.message }),
@@ -278,13 +342,13 @@ async function createEmbedding(text: string): Promise<number[] | null> {
     const data = await response.json();
     
     if (!response.ok) {
-      console.error('OpenAI embedding API error:', data);
-      throw new Error(`OpenAI embedding API error: ${data.error?.message || 'Unknown error'}`);
+      console.error('Errore API embedding OpenAI:', data);
+      throw new Error(`Errore API embedding OpenAI: ${data.error?.message || 'Errore sconosciuto'}`);
     }
     
     return data.data[0].embedding;
   } catch (error) {
-    console.error('Error creating embedding:', error);
+    console.error('Errore nella creazione dell\'embedding:', error);
     return null;
   }
 }
