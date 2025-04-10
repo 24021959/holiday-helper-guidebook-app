@@ -276,48 +276,183 @@ const ChatbotSettings: React.FC = () => {
       toast.info(`Elaborazione di ${pages.length} pagine per la base di conoscenza...`);
       setProcessingProgress(30);
 
-      // Create knowledge base for embedding
-      const formattedContent = pages.map(page => ({
-        id: page.id,
-        title: page.title,
-        content: page.content,
-        path: page.path,
-        list_items: page.list_items
-      }));
+      // First, ensure the table exists
+      try {
+        // Use the RPC function to run SQL directly
+        const { error: tableError } = await supabase.rpc('run_sql', {
+          sql: `
+            CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
+              id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+              page_id uuid NOT NULL,
+              title text NOT NULL,
+              content text NOT NULL, 
+              path text NOT NULL,
+              embedding vector(1536),
+              created_at timestamp with time zone DEFAULT now(),
+              updated_at timestamp with time zone DEFAULT now()
+            );
+          `
+        });
+        
+        if (tableError) {
+          console.error("Error creating table:", tableError);
+          throw new Error(`Errore nella creazione della tabella: ${tableError.message}`);
+        }
+        
+        // Also create the search function if it doesn't exist
+        await supabase.rpc('run_sql', {
+          sql: `
+            CREATE OR REPLACE FUNCTION public.match_documents(
+              query_embedding vector(1536),
+              match_threshold float,
+              match_count int
+            )
+            RETURNS TABLE(
+              id uuid,
+              page_id uuid,
+              title text,
+              content text,
+              path text,
+              similarity float
+            )
+            LANGUAGE plpgsql
+            AS $$
+            BEGIN
+              RETURN QUERY
+              SELECT
+                chatbot_knowledge.id,
+                chatbot_knowledge.page_id,
+                chatbot_knowledge.title,
+                chatbot_knowledge.content,
+                chatbot_knowledge.path,
+                1 - (chatbot_knowledge.embedding <=> query_embedding) AS similarity
+              FROM
+                chatbot_knowledge
+              WHERE
+                chatbot_knowledge.embedding IS NOT NULL AND
+                1 - (chatbot_knowledge.embedding <=> query_embedding) > match_threshold
+              ORDER BY
+                chatbot_knowledge.embedding <=> query_embedding
+              LIMIT
+                match_count;
+            END;
+            $$;
+          `
+        });
+      } catch (dbError) {
+        console.error("Database setup error:", dbError);
+        // Continue anyway - the edge function will handle it
+      }
 
       setProcessingProgress(50);
       
-      // Send to embedding function
-      const { data, error: embedError } = await supabase.functions.invoke(
-        'create-chatbot-knowledge',
-        {
-          body: { pages: formattedContent }
+      // Clear existing knowledge base
+      try {
+        await supabase.rpc('run_sql', {
+          sql: "DELETE FROM public.chatbot_knowledge;"
+        });
+      } catch (clearError) {
+        console.error("Error clearing existing data:", clearError);
+        // Continue anyway - we'll try to insert new data
+      }
+      
+      // Instead of batch processing in the edge function, process the pages here
+      const batchSize = 5;
+      let successCount = 0;
+      let errorCount = 0;
+      
+      setProcessingProgress(70);
+      
+      // Create a simplified version of page content to store directly
+      for (let i = 0; i < pages.length; i += batchSize) {
+        const batch = pages.slice(i, i + batchSize);
+        
+        for (const page of batch) {
+          try {
+            // Clean HTML tags and format content
+            const cleanContent = (page.content || "")
+              .replace(/<[^>]*>/g, " ")
+              .replace(/<!--.*?-->/g, "")
+              .replace(/\s+/g, " ")
+              .trim();
+            
+            // Extract list items if present
+            let listItemsText = "";
+            if (page.list_items && Array.isArray(page.list_items) && page.list_items.length > 0) {
+              listItemsText = "\n\nItems in this page:\n" + 
+                page.list_items.map((item: any, index: number) => 
+                  `${index + 1}. ${item.name || ""} - ${item.description || ""}`
+                ).join("\n");
+            }
+
+            // Format the content in a way that's useful for the chatbot
+            const formattedContent = `
+Page Title: ${page.title || "Untitled"}
+URL Path: ${page.path || ""}
+Content: ${cleanContent}${listItemsText}
+            `.trim();
+
+            // Insert directly into the database
+            const { error: insertError } = await supabase
+              .from('chatbot_knowledge')
+              .insert({
+                page_id: page.id,
+                title: page.title || "Untitled",
+                content: formattedContent,
+                path: page.path || ""
+                // embedding will be NULL initially
+              });
+              
+            if (insertError) {
+              console.error(`Error inserting knowledge for page ${page.id}:`, insertError);
+              errorCount++;
+            } else {
+              successCount++;
+            }
+          } catch (pageError) {
+            console.error(`Error processing page ${page.id}:`, pageError);
+            errorCount++;
+          }
         }
-      );
-
-      setProcessingProgress(90);
-
-      if (embedError) {
-        console.error("Errore nella funzione di embedding:", embedError);
-        throw new Error(`Errore nella funzione di embedding: ${embedError.message}`);
+      }
+      
+      // Generate embeddings in the background using the edge function
+      try {
+        const { error: embedError } = await supabase.functions.invoke(
+          'generate-embeddings',
+          { body: { generate: true } }
+        );
+        
+        if (embedError) {
+          console.warn("Background embedding generation started with errors:", embedError);
+        }
+      } catch (embedError) {
+        console.warn("Error starting background embedding generation:", embedError);
+        // This is a background task, so we continue regardless
       }
 
-      if (data && data.success) {
-        toast.success(`Base di conoscenza del chatbot aggiornata con ${data.message}`);
-        await checkKnowledgeBase(); // Aggiorna lo stato della knowledge base
-        setProcessingProgress(100);
+      setProcessingProgress(100);
+      
+      if (successCount > 0) {
+        toast.success(`Base di conoscenza aggiornata con ${successCount} pagine`);
+        
+        if (errorCount > 0) {
+          toast.warning(`${errorCount} pagine non sono state elaborate correttamente`);
+        }
+        
+        // Update the knowledge base status
+        await checkKnowledgeBase();
+      } else if (errorCount > 0) {
+        setProcessingError(`Errore: nessuna pagina è stata elaborata correttamente (${errorCount} errori)`);
+        toast.error("Nessuna pagina è stata elaborata correttamente");
       } else {
-        const errorMessage = data ? data.error : "Errore sconosciuto";
-        console.error("La funzione di embedding ha restituito un errore:", errorMessage);
-        setProcessingError(`Errore: ${errorMessage}`);
-        toast.error(`Errore: ${errorMessage}`);
-        setProcessingProgress(0);
+        setProcessingError("Errore sconosciuto nell'aggiornamento della base di conoscenza");
+        toast.error("Errore nell'aggiornamento della base di conoscenza");
       }
     } catch (error) {
       console.error("Errore nell'aggiornamento della base di conoscenza del chatbot:", error);
       setProcessingError(`Errore nell'aggiornamento della base di conoscenza: ${error.message}`);
       toast.error("Errore nell'aggiornamento della base di conoscenza del chatbot");
-      setProcessingProgress(0);
     } finally {
       setIsProcessing(false);
       setTimeout(() => {

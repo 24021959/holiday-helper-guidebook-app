@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
@@ -41,13 +40,18 @@ serve(async (req) => {
     try {
       // First check if the table exists
       const { data: tableCheck, error: tableCheckError } = await supabaseClient.rpc('run_sql', {
-        sql: "SELECT to_regclass('public.chatbot_knowledge')"
+        sql: "SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'chatbot_knowledge')"
       });
       
-      if (tableCheckError || !tableCheck || tableCheck.length === 0 || !tableCheck[0].to_regclass) {
+      if (tableCheckError) {
+        console.error("Error checking if table exists:", tableCheckError);
+        tableExists = false;
+      } else if (tableCheck && tableCheck.length > 0 && tableCheck[0].exists === false) {
         console.log("Chatbot knowledge table doesn't exist");
         tableExists = false;
-      } else if (tableExists) {
+      }
+      
+      if (tableExists) {
         // Try to get relevant documents with vector search first
         if (queryEmbedding) {
           try {
@@ -90,7 +94,6 @@ serve(async (req) => {
             const { data: directDocuments, error: directError } = await supabaseClient
               .from('chatbot_knowledge')
               .select('content')
-              .order('created_at', { ascending: false })
               .limit(10);
 
             if (directError) {
