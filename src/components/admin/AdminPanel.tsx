@@ -70,7 +70,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
       </TabsList>
       
       <div className="admin-tab-content bg-white shadow-md rounded-md p-6 border">
-        <TabsContent value="manage-pages" className="space-y-4 mt-0">
+        <TabsContent value="manage-pages" className="mt-0">
           <ManagePagesView 
             pages={pages} 
             onPagesUpdate={handlePagesUpdate}
@@ -79,7 +79,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           />
         </TabsContent>
 
-        <TabsContent value="create-page" className="space-y-4 mt-0">
+        <TabsContent value="create-page" className="mt-0">
           <CreatePageForm
             parentPages={parentPages}
             onPageCreated={handlePageCreated}
@@ -87,7 +87,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           />
         </TabsContent>
 
-        <TabsContent value="header-settings" className="space-y-4 mt-0">
+        <TabsContent value="header-settings" className="mt-0">
           <HeaderSettingsView 
             uploadedLogo={uploadedLogo}
             setUploadedLogo={setUploadedLogo}
@@ -96,11 +96,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           />
         </TabsContent>
 
-        <TabsContent value="translations" className="space-y-4 mt-0">
+        <TabsContent value="translations" className="mt-0">
           <MenuTranslationManager />
         </TabsContent>
         
-        <TabsContent value="chatbot-settings" className="space-y-4 mt-0">
+        <TabsContent value="chatbot-settings" className="mt-0">
           <ChatbotSettings />
         </TabsContent>
       </div>
