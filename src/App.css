@@ -1,4 +1,3 @@
-
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -61,38 +60,34 @@
 [id*="support-chat"] {
   z-index: 9999 !important;
   position: fixed !important;
-  bottom: 20px !important;
-  right: 20px !important;
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
   pointer-events: auto !important;
   transform: none !important;
   transition: none !important;
-  max-width: 90vw !important; /* Limitiamo la larghezza a 90% della viewport */
-  max-height: 80vh !important; /* Limitiamo l'altezza a 80% della viewport */
   overflow: visible !important;
 }
 
-/* Correzioni specifiche per il nostro chatbot */
+/* Specific positioning for chatbot container */
 .chatbot-container {
   position: fixed !important;
-  bottom: 0 !important;
-  right: 0 !important;
+  bottom: 20px !important;
+  right: 20px !important;
   z-index: 9999 !important;
   width: auto !important;
   height: auto !important;
 }
 
-/* Posizionamento del chatbot nella pagina */
+/* Chatbot window size constraints */
 .chatbot-container .chat-window {
-  max-width: 90vw;
+  max-width: 340px;
   max-height: 80vh;
   overflow: hidden;
   margin-bottom: 20px;
 }
 
-/* Rendere il chatbot responsive su dispositivi mobili */
+/* Mobile responsiveness */
 @media (max-width: 768px) {
   .chatbot-container .chat-window {
     width: 90vw !important;
@@ -119,58 +114,7 @@
   }
   
   /* Enhanced chatbot visibility on mobile */
-  #chat-widget-container,
-  .chat-widget,
-  .chatbot-container,
-  .tiledesk-chat,
-  .crisp-client,
-  .intercom-lightweight-app,
-  .tidio-chat-container,
-  #tidio-chat,
-  #jvlabelWrap,
-  #userlike-container,
-  .botpress-webchat,
-  .drift-widget,
-  .freshchat-container,
-  .zalo-chat-widget,
-  .fb_dialog,
-  .fb-customerchat,
-  .tawk-min-container,
-  .ev-ai-widget,
-  .ev-ai-bubble,
-  .ev-ai-chat,
-  .ev-ai-container,
-  /* ChatBot.com specifics */
-  #chatbot-container,
-  .chatbot-bubble,
-  .chatbot_bubble,
-  .chatbot-icon,
-  .chatbot-button,
-  #botxo-chat,
-  .botxo-chat,
-  .botxo-bubble,
-  /* WhatsApp style integrations */
-  .whatsapp-widget,
-  .wa-widget,
-  .wa-chat,
-  .whatsapp-chat,
-  /* Landbot style */
-  .landbot-container,
-  .landbot-bubble,
-  /* Botsonic */
-  .botsonic-container,
-  .botsonic-bubble,
-  /* Generic selectors to catch others */
-  [class*="chat-widget"],
-  [class*="chatbot"],
-  [id*="chat-widget"],
-  [id*="chatbot"],
-  [class*="chat-bubble"],
-  [id*="chat-bubble"],
-  [class*="messenger"],
-  [id*="messenger"],
-  [class*="support-chat"],
-  [id*="support-chat"] {
+  .chatbot-container {
     z-index: 9999 !important;
     max-width: 90% !important;
     right: 10px !important;

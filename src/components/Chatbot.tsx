@@ -38,7 +38,7 @@ const defaultConfig: ChatbotConfig = {
   primaryColor: "#4ade80",
   secondaryColor: "#ffffff",
   botName: "Assistente Virtuale",
-  position: 'right', // Assicuriamoci che sia sempre 'right' o 'left'
+  position: 'right',
   iconType: 'default'
 };
 
@@ -68,7 +68,7 @@ export const Chatbot: React.FC = () => {
           }
           // Use default config
         } else if (data) {
-          // Assicuriamoci che la posizione sia valida
+          // Ensure position is valid
           const configValue = data.value as Partial<ChatbotConfig>;
           const position = configValue.position === 'left' ? 'left' : 'right';
           
@@ -178,9 +178,6 @@ export const Chatbot: React.FC = () => {
   const getCustomStyles = () => {
     const position = config.position || 'right';
     return {
-      container: {
-        [position]: '20px',
-      },
       bubbleButton: {
         backgroundColor: config.primaryColor,
       },
@@ -194,11 +191,8 @@ export const Chatbot: React.FC = () => {
 
   return (
     <>
-      {/* Chatbot Bubble */}
-      <div 
-        className={`fixed bottom-6 z-50 ${config.position === 'left' ? 'left-6' : 'right-6'}`}
-        style={styles.container}
-      >
+      {/* Chatbot UI */}
+      <div className="chatbot-wrapper">
         {/* Chat Window */}
         <AnimatePresence>
           {isOpen && (
