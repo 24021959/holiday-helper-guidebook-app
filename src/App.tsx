@@ -60,6 +60,7 @@ function App() {
           {/* Catch-all for unmatched routes */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        {/* ChatbotBubble is outside of Routes to ensure it doesn't interfere with admin panel tabs */}
         <ChatbotBubble />
       </Router>
     </TranslationProvider>

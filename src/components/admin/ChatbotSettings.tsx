@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -223,7 +222,7 @@ const ChatbotSettings: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-full">
+    <div className="w-full max-w-full chatbot-settings">
       <div className="flex items-center space-x-2 mb-6">
         <Bot className="h-6 w-6 text-emerald-600" />
         <h2 className="text-xl font-medium text-emerald-600">Impostazioni Chatbot</h2>

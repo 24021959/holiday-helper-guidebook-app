@@ -44,6 +44,7 @@ const defaultConfig: ChatbotConfig = {
 
 export const Chatbot: React.FC = () => {
   const location = useLocation();
+  
   const isAdminOrLoginPage = location.pathname.includes('/admin') || 
                            location.pathname.includes('/login');
                            
