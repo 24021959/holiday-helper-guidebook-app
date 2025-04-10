@@ -1,3 +1,4 @@
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -6,70 +7,6 @@
 }
 
 /* Enhanced chatbot visibility for ALL types of chatbot widgets */
-#chat-widget-container,
-.chat-widget,
-.chatbot-container,
-.tiledesk-chat,
-.crisp-client,
-.intercom-lightweight-app,
-.tidio-chat-container,
-#tidio-chat,
-#jvlabelWrap,
-#userlike-container,
-.botpress-webchat,
-.drift-widget,
-.freshchat-container,
-.zalo-chat-widget,
-.fb_dialog,
-.fb-customerchat,
-.tawk-min-container,
-.ev-ai-widget,
-.ev-ai-bubble,
-.ev-ai-chat,
-.ev-ai-container,
-/* ChatBot.com specifics */
-#chatbot-container,
-.chatbot-bubble,
-.chatbot_bubble,
-.chatbot-icon,
-.chatbot-button,
-#botxo-chat,
-.botxo-chat,
-.botxo-bubble,
-/* WhatsApp style integrations */
-.whatsapp-widget,
-.wa-widget,
-.wa-chat,
-.whatsapp-chat,
-/* Landbot style */
-.landbot-container,
-.landbot-bubble,
-/* Botsonic */
-.botsonic-container,
-.botsonic-bubble,
-/* Catch-all classes for various chatbot implementations */
-[class*="chat-widget"],
-[class*="chatbot"],
-[id*="chat-widget"],
-[id*="chatbot"],
-[class*="chat-bubble"],
-[id*="chat-bubble"],
-[class*="messenger"],
-[id*="messenger"],
-[class*="support-chat"],
-[id*="support-chat"] {
-  z-index: 9999 !important;
-  position: fixed !important;
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  pointer-events: auto !important;
-  transform: none !important;
-  transition: none !important;
-  overflow: visible !important;
-}
-
-/* Specific positioning for chatbot container */
 .chatbot-container {
   position: fixed !important;
   bottom: 20px !important;
