@@ -134,6 +134,9 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
         content: msg.content
       }));
       
+      console.log("Sending message to chatbot function:", message);
+      console.log("Chat history:", chatHistory);
+      
       const { data, error } = await supabase.functions.invoke('chatbot', {
         body: { 
           message, 
@@ -145,6 +148,12 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
       if (error) {
         console.error("Supabase function error:", error);
         throw error;
+      }
+
+      console.log("Response received from chatbot function:", data);
+
+      if (!data || !data.response) {
+        throw new Error("No response received from chatbot function");
       }
 
       const botResponse: Message = {

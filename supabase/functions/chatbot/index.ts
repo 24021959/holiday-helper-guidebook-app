@@ -34,6 +34,10 @@ serve(async (req) => {
       );
     }
 
+    console.log("Received message:", message);
+    console.log("Language:", language);
+    console.log("Chat history length:", chatHistory?.length || 0);
+
     // Initialize Supabase client
     const supabaseClient = createClient(
       supabaseUrl || '',
@@ -43,42 +47,42 @@ serve(async (req) => {
     // Get relevant documents from the knowledge base
     let relevantContent = [];
     try {
-      try {
-        const { data: tableExists, error: tableCheckError } = await supabaseClient
-          .from('information_schema.tables')
-          .select('table_name')
-          .eq('table_schema', 'public')
-          .eq('table_name', 'chatbot_knowledge')
-          .single();
-          
-        if (tableCheckError || !tableExists) {
-          throw new Error('Knowledge base table does not exist');
-        }
-      } catch (tableError) {
-        console.error("Error checking if table exists:", tableError);
-        // Continue with empty relevant content
-      }
+      console.log("Checking if table exists...");
       
-      // Query the knowledge base
-      const { data: knowledgeData, error: knowledgeError } = await supabaseClient
+      const { data: tableData, error: tableError } = await supabaseClient
         .from('chatbot_knowledge')
-        .select('*')
-        .limit(10);
-      
-      if (knowledgeError) {
-        throw knowledgeError;
-      }
-      
-      if (knowledgeData && knowledgeData.length > 0) {
-        // Simple text search to find most relevant documents
-        const normalizedQuery = message.toLowerCase();
-        relevantContent = knowledgeData
-          .map(item => ({
-            ...item,
-            relevance: calculateRelevance(item.content, normalizedQuery)
-          }))
-          .sort((a, b) => b.relevance - a.relevance)
-          .slice(0, 3); // Get top 3 most relevant documents
+        .select('count(*)', { count: 'exact', head: true });
+        
+      if (tableError) {
+        console.error("Error checking table:", tableError);
+      } else {
+        console.log("Table exists, proceeding with query");
+        
+        // Query the knowledge base
+        const { data: knowledgeData, error: knowledgeError } = await supabaseClient
+          .from('chatbot_knowledge')
+          .select('*')
+          .limit(10);
+        
+        if (knowledgeError) {
+          console.error("Knowledge base query error:", knowledgeError);
+        } else {
+          console.log(`Found ${knowledgeData?.length || 0} documents in knowledge base`);
+          
+          if (knowledgeData && knowledgeData.length > 0) {
+            // Simple text search to find most relevant documents
+            const normalizedQuery = message.toLowerCase();
+            relevantContent = knowledgeData
+              .map(item => ({
+                ...item,
+                relevance: calculateRelevance(item.content, normalizedQuery)
+              }))
+              .sort((a, b) => b.relevance - a.relevance)
+              .slice(0, 3); // Get top 3 most relevant documents
+              
+            console.log(`Selected ${relevantContent.length} most relevant documents`);
+          }
+        }
       }
     } catch (error) {
       console.error("Error retrieving knowledge base content:", error);
@@ -86,6 +90,7 @@ serve(async (req) => {
     }
 
     if (!openAIApiKey) {
+      console.error("OpenAI API key not found");
       return new Response(
         JSON.stringify({ 
           response: "Mi dispiace, il servizio di assistenza non è disponibile al momento. Riprova più tardi o contatta direttamente la struttura." 
@@ -105,12 +110,16 @@ serve(async (req) => {
     if (relevantContent.length > 0) {
       knowledgeContext = "### Informazioni dalla base di conoscenza:\n\n" + 
         relevantContent.map(doc => doc.content).join("\n\n---\n\n");
+      console.log("Knowledge context created from relevant documents");
     } else {
       knowledgeContext = "Non ci sono informazioni specifiche nella base di conoscenza per questa richiesta.";
+      console.log("No relevant documents found");
     }
 
     const promptWithContext = `${knowledgeContext}\n\nDomanda dell'utente: ${message}\n\nRispondi alla domanda dell'utente nella lingua "${language}" utilizzando le informazioni fornite sopra.`;
 
+    console.log("Calling OpenAI API...");
+    
     // Call OpenAI for a response
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -132,17 +141,12 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("OpenAI API error:", errorText);
-      
-      return new Response(
-        JSON.stringify({ 
-          response: `Mi dispiace, ho avuto un problema nel generare una risposta. Riprova più tardi o contatta direttamente la struttura.` 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error(`OpenAI API error: ${errorText}`);
     }
 
     const data = await response.json();
     const chatbotResponse = data.choices[0].message.content;
+    console.log("Received response from OpenAI");
 
     return new Response(
       JSON.stringify({ response: chatbotResponse }),
