@@ -25,6 +25,18 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
   onUpdateKnowledgeBase,
   onCheckStatus,
 }) => {
+  const handleCheckStatus = (e: React.MouseEvent) => {
+    e.preventDefault();
+    console.log("Verifica Stato button clicked");
+    onCheckStatus();
+  };
+
+  const handleUpdateKnowledge = (e: React.MouseEvent) => {
+    e.preventDefault();
+    console.log("Aggiorna Base di Conoscenza button clicked");
+    onUpdateKnowledgeBase();
+  };
+
   return (
     <div className="flex flex-col space-y-2">
       <div className="flex items-center justify-between">
@@ -79,7 +91,7 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
       
       <div className="flex space-x-2">
         <Button
-          onClick={onUpdateKnowledgeBase}
+          onClick={handleUpdateKnowledge}
           disabled={isProcessing}
           className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
         >
@@ -88,7 +100,7 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
         </Button>
         
         <Button
-          onClick={onCheckStatus}
+          onClick={handleCheckStatus}
           disabled={isProcessing}
           variant="outline"
           className="px-3"

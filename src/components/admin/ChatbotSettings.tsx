@@ -450,10 +450,7 @@ Contenuto: ${cleanContent}${listItemsText}
         
         <Sheet>
           <SheetTrigger asChild>
-            <Button
-              onClick={() => setShowPreview(true)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-            >
+            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
               <MessageSquare className="mr-2 h-4 w-4" />
               Anteprima Chatbot
             </Button>
