@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { z } from "zod";
 import { PageData } from "@/context/AdminContext";
@@ -27,7 +28,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { IconPicker } from "@/components/admin/IconPicker";
-import { IconRenderer } from "@/components/IconRenderer";
+import IconRenderer from "@/components/IconRenderer";
 import { PageTypeSection } from "@/components/admin/form/PageTypeSection";
 import { ListItemsEditor } from "@/components/admin/form/ListItemsEditor";
 import { ImageUploader } from "@/components/admin/form/ImageUploader";
@@ -72,6 +73,10 @@ const EditPageForm: React.FC<EditPageFormProps> = ({ page, parentPages, keywordT
   const [imageUrl, setImageUrl] = useState<string | undefined>(page.imageUrl);
   const [listItems, setListItems] = useState(page.listItems || []);
   const [listType, setListType] = useState<"locations" | "activities" | "restaurants" | undefined>(page.listType);
+  const [pageType, setPageType] = useState<"normal" | "submenu" | "parent">(
+    page.is_parent ? "parent" : page.isSubmenu ? "submenu" : "normal"
+  );
+  const [parentPath, setParentPath] = useState<string>(page.parentPath || "");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -208,49 +213,12 @@ const EditPageForm: React.FC<EditPageFormProps> = ({ page, parentPages, keywordT
 
         <ImageUploader imageUrl={imageUrl} setImageUrl={setImageUrl} />
 
-        <div className="flex items-center space-x-2">
-          <Label htmlFor="isSubmenu">È un sottomenu?</Label>
-          <Switch
-            id="isSubmenu"
-            checked={isSubmenu}
-            onCheckedChange={(checked) => {
-              setIsSubmenu(checked);
-              form.setValue("isSubmenu", checked);
-            }}
-          />
-        </div>
-
-        {isSubmenu && (
-          <FormField
-            control={form.control}
-            name="parentPath"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Pagina Genitore</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={page.parentPath || ""}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleziona una pagina genitore" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {parentPages.map((parentPage) => (
-                      <SelectItem key={parentPage.id} value={parentPage.path}>
-                        {parentPage.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-
         <PageTypeSection
-          form={form}
-          listType={listType}
-          setListType={setListType}
+          pageType={pageType}
+          setPageType={setPageType}
+          parentPath={parentPath}
+          setParentPath={setParentPath}
+          parentPages={parentPages}
         />
 
         {listType && (
@@ -265,18 +233,6 @@ const EditPageForm: React.FC<EditPageFormProps> = ({ page, parentPages, keywordT
             onCheckedChange={(checked) => {
               setPublished(checked);
               form.setValue("published", checked);
-            }}
-          />
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Label htmlFor="is_parent">È una pagina genitore?</Label>
-          <Switch
-            id="is_parent"
-            checked={isParent}
-            onCheckedChange={(checked) => {
-              setIsParent(checked);
-              form.setValue("is_parent", checked);
             }}
           />
         </div>

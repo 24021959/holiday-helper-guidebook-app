@@ -7,7 +7,7 @@ import HeaderSettingsView from "./HeaderSettingsView";
 import FooterSettingsView from "./FooterSettingsView";
 import UserManagementView from "./UserManagementView";
 import ChatbotSettings from "./ChatbotSettings";
-import { PageData } from "@/context/AdminContext"; // Updated import path
+import { PageData } from "@/context/AdminContext";
 
 const AdminPanel: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);

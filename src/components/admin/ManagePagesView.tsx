@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Plus } from "lucide-react";
 import { PageData } from "@/context/AdminContext";
@@ -51,13 +52,13 @@ const ManagePagesView: React.FC<ManagePagesViewProps> = ({
             <PageListItem
               key={page.id}
               page={page}
-              onPageUpdate={(updatedPage: PageData) => {
+              onUpdate={(updatedPage: PageData) => {
                 const updatedPages = pages.map((p) =>
                   p.id === updatedPage.id ? updatedPage : p
                 );
                 onPagesUpdate(updatedPages);
               }}
-              onPageDelete={(id: string) => {
+              onDelete={(id: string) => {
                 const updatedPages = pages.filter((p) => p.id !== id);
                 onPagesUpdate(updatedPages);
               }}

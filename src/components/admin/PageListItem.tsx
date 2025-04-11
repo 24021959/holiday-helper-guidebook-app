@@ -1,9 +1,10 @@
+
 import React, { useState } from "react";
 import { FileText, Pencil, Trash2, Eye, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { PageData } from "@/context/AdminContext";
-import { IconRenderer } from "@/components/IconRenderer";
+import IconRenderer from "@/components/IconRenderer";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -11,10 +12,11 @@ interface PageListItemProps {
   page: PageData;
   onDelete: (id: string) => void;
   onUpdate: (updatedPage: PageData) => void;
+  parentPages: PageData[];
   keywordToIconMap: Record<string, string>;
 }
 
-const PageListItem: React.FC<PageListItemProps> = ({ page, onDelete, onUpdate, keywordToIconMap }) => {
+const PageListItem: React.FC<PageListItemProps> = ({ page, onDelete, onUpdate, parentPages, keywordToIconMap }) => {
   const [isPublished, setIsPublished] = useState(page.published);
   const navigate = useNavigate();
 

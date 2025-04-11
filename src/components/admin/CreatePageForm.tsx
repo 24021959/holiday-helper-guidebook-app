@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -23,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Icons } from "@/components/Icons";
 import ImageUploader from "./ImageUploader";
 import { PageTypeSection } from "./form/PageTypeSection";
+import { Label } from "@/components/ui/label";
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -44,12 +46,15 @@ const formSchema = z.object({
 interface CreatePageFormProps {
   onPageCreate: (newPage: PageData) => void;
   parentPages: PageData[];
+  keywordToIconMap: Record<string, string>;
 }
 
-const CreatePageForm: React.FC<CreatePageFormProps> = ({ onPageCreate, parentPages }) => {
+const CreatePageForm: React.FC<CreatePageFormProps> = ({ onPageCreate, parentPages, keywordToIconMap }) => {
   const [isCreating, setIsCreating] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const navigate = useNavigate();
+  const [pageType, setPageType] = useState<"normal" | "submenu" | "parent">("normal");
+  const [parentPath, setParentPath] = useState<string>("");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -154,7 +159,13 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({ onPageCreate, parentPag
           />
         </div>
 
-        <PageTypeSection form={form} parentPages={parentPages} />
+        <PageTypeSection 
+          pageType={pageType}
+          setPageType={setPageType}
+          parentPath={parentPath}
+          setParentPath={setParentPath}
+          parentPages={parentPages}
+        />
 
         <FormField
           control={form.control}
