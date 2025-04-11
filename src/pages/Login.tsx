@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,9 +25,10 @@ const Login: React.FC = () => {
   useEffect(() => {
     const checkConnection = async () => {
       try {
+        setConfigError(false);
         const { error } = await supabase.from('header_settings').select('count').single();
         if (error && error.code === '42P01') {
-          console.error("Table does not exist, but connection works");
+          console.log("Table does not exist, but connection works");
           setConfigError(false);
         } else if (error) {
           console.error("Error checking Supabase connection:", error);
@@ -36,7 +38,7 @@ const Login: React.FC = () => {
         }
       } catch (err) {
         console.error("Error connecting to Supabase:", err);
-        setConfigError(false);
+        setConfigError(true);
       }
     };
     
@@ -49,10 +51,11 @@ const Login: React.FC = () => {
     
     try {
       if (adminUsername === "admin" && adminPassword === "password") {
+        // Demo login
         localStorage.setItem("admin_token", "demo_token");
         localStorage.setItem("admin_user", "admin");
         localStorage.setItem("isAuthenticated", "true");
-        toast.success("Login effettuato con successo");
+        toast.success("Login effettuato con successo (modalità demo)");
         navigate("/admin");
         return;
       } 
@@ -69,11 +72,11 @@ const Login: React.FC = () => {
     }
   };
   
-  const handleMasterLogin = (e: React.FormEvent) => {
+  const handleMasterLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    setTimeout(() => {
+    try {
       if (masterUsername === "master" && masterPassword === "master123") {
         localStorage.setItem("admin_token", "master_token");
         localStorage.setItem("admin_user", "master");
@@ -81,28 +84,67 @@ const Login: React.FC = () => {
         localStorage.setItem("isAuthenticated", "true");
         toast.success("Login come Master effettuato con successo");
         navigate("/admin?tab=user-management");
-      } else {
+        return;
+      }
+      
+      // Check DB login if not using demo credentials
+      const success = await checkDbLogin(masterUsername, masterPassword, "master");
+      if (!success) {
         toast.error("Credenziali Master non valide");
       }
+    } catch (error) {
+      console.error("Master login error:", error);
+      toast.error("Errore durante il login. Riprova più tardi.");
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
   const checkDbLogin = async (email: string, password: string, role: string): Promise<boolean> => {
     try {
       console.log("Checking DB login for:", email);
-      const { data, error } = await supabase.functions.invoke("admin_users_helpers", {
-        body: { 
-          action: "check_login",
-          email,
-          password_hash: md5(password)
+      
+      // Try to call the Edge Function
+      try {
+        const { data, error } = await supabase.functions.invoke("admin_users_helpers", {
+          body: { 
+            action: "check_login",
+            email,
+            password_hash: md5(password)
+          }
+        });
+
+        console.log("Login check response:", data, error);
+
+        if (error) {
+          console.error("Error checking login:", error);
+          // Fall back to demo login if function call fails
+          if (email === "admin" && password === "password") {
+            localStorage.setItem("admin_token", "demo_token");
+            localStorage.setItem("admin_user", "admin");
+            localStorage.setItem("isAuthenticated", "true");
+            toast.success("Login effettuato con successo (modalità demo)");
+            navigate("/admin");
+            return true;
+          }
+          return false;
         }
-      });
-
-      console.log("Login check response:", data, error);
-
-      if (error) {
-        console.error("Error checking login:", error);
+        
+        if (data && data.success) {
+          localStorage.setItem("admin_token", "user_token");
+          localStorage.setItem("admin_user", email);
+          localStorage.setItem("user_role", role);
+          localStorage.setItem("isAuthenticated", "true");
+          toast.success("Login effettuato con successo");
+          navigate("/admin");
+          return true;
+        }
+        
+        return false;
+      } catch (error) {
+        console.error("Error invoking function:", error);
+        
+        // Fall back to demo login
         if (email === "admin" && password === "password") {
           localStorage.setItem("admin_token", "demo_token");
           localStorage.setItem("admin_user", "admin");
@@ -111,23 +153,23 @@ const Login: React.FC = () => {
           navigate("/admin");
           return true;
         }
+        
+        if (email === "master" && password === "master123" && role === "master") {
+          localStorage.setItem("admin_token", "master_token");
+          localStorage.setItem("admin_user", "master");
+          localStorage.setItem("user_role", "master");
+          localStorage.setItem("isAuthenticated", "true");
+          toast.success("Login come Master effettuato con successo");
+          navigate("/admin?tab=user-management");
+          return true;
+        }
+        
         return false;
       }
-      
-      if (data && data.success) {
-        localStorage.setItem("admin_token", "user_token");
-        localStorage.setItem("admin_user", email);
-        localStorage.setItem("user_role", role);
-        localStorage.setItem("isAuthenticated", "true");
-        toast.success("Login effettuato con successo");
-        navigate("/admin");
-        return true;
-      }
-      
-      return false;
     } catch (error) {
       console.error("Login check error:", error);
       
+      // Final fallback for demo login
       if (email === "admin" && password === "password") {
         localStorage.setItem("admin_token", "demo_token");
         localStorage.setItem("admin_user", "admin");
@@ -137,16 +179,29 @@ const Login: React.FC = () => {
         return true;
       }
       
+      if (email === "master" && password === "master123" && role === "master") {
+        localStorage.setItem("admin_token", "master_token");
+        localStorage.setItem("admin_user", "master");
+        localStorage.setItem("user_role", "master");
+        localStorage.setItem("isAuthenticated", "true");
+        toast.success("Login come Master effettuato con successo");
+        navigate("/admin?tab=user-management");
+        return true;
+      }
+      
       return false;
     }
   };
 
-  if (configError) {
-    toast.error("Problemi di connessione al database. Usando modalità demo.", {
-      duration: 5000,
-      id: "config-error"
-    });
-  }
+  // Show a configuration error notification if we have issues connecting to Supabase
+  useEffect(() => {
+    if (configError) {
+      toast.error("Problemi di connessione al database. Usando modalità demo.", {
+        duration: 5000,
+        id: "config-error"
+      });
+    }
+  }, [configError]);
 
   return (
     <div className="min-h-screen bg-white p-6 pt-20">

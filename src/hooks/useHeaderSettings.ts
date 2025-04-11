@@ -166,10 +166,6 @@ export const useHeaderSettings = () => {
       // If we already have local settings, don't show error toast
       const savedHeaderSettings = localStorage.getItem("headerSettings");
       if (!savedHeaderSettings) {
-        toast.error("Si è verificato un errore nel caricamento delle impostazioni. Usando la modalità demo.", {
-          id: "header-settings-error"
-        });
-        
         // Set default values as fallback
         const defaultSettings = {
           headerColor: "bg-gradient-to-r from-teal-500 to-emerald-600",

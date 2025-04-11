@@ -22,64 +22,56 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setIsUploading(true);
-      setError(null);
-      
-      try {
-        // In a real implementation, we would upload the file to a server
-        // For demo purposes, we'll check if we have Supabase storage access
-        let imageUrl: string;
-        
-        try {
-          // Try to check if we have storage access by checking for buckets
-          const { error: storageError } = await supabase.storage.getBucket('images');
-          
-          if (storageError) {
-            // If there's an error (no bucket or connection issue), use demo mode
-            console.log("Using demo mode for image upload");
-            
-            // Create a data URL from the file for client-side preview
-            const reader = new FileReader();
-            
-            const result = await new Promise<string>((resolve) => {
-              reader.onload = (e) => resolve(e.target?.result as string || '');
-              reader.readAsDataURL(file);
-            });
-            
-            imageUrl = result;
-          } else {
-            // If we have storage access, we could upload to Supabase
-            // This is just a placeholder for now
-            imageUrl = 'https://example.com/image.jpg';
-          }
-        } catch (err) {
-          console.error("Error checking storage:", err);
-          // Fallback to demo mode with data URL
-          const reader = new FileReader();
-          
-          const result = await new Promise<string>((resolve) => {
-            reader.onload = (e) => resolve(e.target?.result as string || '');
-            reader.readAsDataURL(file);
-          });
-          
-          imageUrl = result;
-        }
-        
-        setImageUrl(imageUrl);
-        
-        if (onImageUpload) {
-          onImageUpload(imageUrl);
-        }
-        
-        toast.success("Immagine caricata con successo");
-      } catch (error) {
-        console.error("Error uploading image:", error);
-        setError("Si è verificato un errore durante il caricamento dell'immagine");
-        toast.error("Errore durante il caricamento dell'immagine");
-      } finally {
+    if (!file) return;
+    
+    setIsUploading(true);
+    setError(null);
+    
+    try {
+      // Verify file type
+      if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
+        setError('Solo file JPG, PNG e GIF sono supportati');
+        toast.error('Solo file JPG, PNG e GIF sono supportati');
         setIsUploading(false);
+        return;
       }
+
+      // Verify file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('L\'immagine non può superare i 5MB');
+        toast.error('L\'immagine non può superare i 5MB');
+        setIsUploading(false);
+        return;
+      }
+      
+      // Create a data URL from the file for client-side preview
+      const reader = new FileReader();
+      
+      const imageDataUrl = await new Promise<string>((resolve, reject) => {
+        reader.onload = (e) => {
+          if (e.target?.result) {
+            resolve(e.target.result as string);
+          } else {
+            reject('Errore nella lettura del file');
+          }
+        };
+        reader.onerror = () => reject('Errore nella lettura del file');
+        reader.readAsDataURL(file);
+      });
+      
+      setImageUrl(imageDataUrl);
+      
+      if (onImageUpload) {
+        onImageUpload(imageDataUrl);
+      }
+      
+      toast.success("Immagine caricata con successo");
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      setError("Si è verificato un errore durante il caricamento dell'immagine");
+      toast.error("Errore durante il caricamento dell'immagine");
+    } finally {
+      setIsUploading(false);
     }
   };
   
