@@ -604,6 +604,7 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
                       ref={textareaRef}
                       className="min-h-[350px] font-medium leading-relaxed p-4 resize-none"
                       style={{ lineHeight: "1.8" }}
+                      onFormatText={handleTextFormat}
                     />
                   </FormControl>
                 </div>

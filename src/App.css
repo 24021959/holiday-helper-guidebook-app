@@ -69,6 +69,19 @@
   text-align: left;
 }
 
+/* Text alignment classes */
+.text-align-left {
+  text-align: left !important;
+}
+
+.text-align-center {
+  text-align: center !important;
+}
+
+.text-align-right {
+  text-align: right !important;
+}
+
 /* Mobile responsive styles */
 @media (max-width: 768px) {
   #root {
