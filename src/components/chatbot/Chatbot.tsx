@@ -16,7 +16,8 @@ const Chatbot: React.FC<{ previewConfig?: any }> = ({ previewConfig }) => {
     isLoading, 
     config, 
     closeChat,
-    knowledgeBaseExists
+    knowledgeBaseExists,
+    knowledgeBaseCount
   } = useChatbot(previewConfig);
   
   const [input, setInput] = useState('');

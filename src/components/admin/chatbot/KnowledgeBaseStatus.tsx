@@ -37,84 +37,106 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
   // Force re-check of the table existence when component mounts or after processing
   useEffect(() => {
     if (!isProcessing) {
-      createTable();
+      checkKnowledgeBase();
     }
   }, [isProcessing]);
 
-  const createTable = async () => {
+  const checkKnowledgeBase = async () => {
     try {
       setIsCheckingTable(true);
       
       // Check if the table exists
-      const { data: tableExists, error: tableError } = await supabase
-        .from('chatbot_knowledge')
-        .select('count(*)', { count: 'exact', head: true });
-      
-      if (!tableError) {
-        console.log("Knowledge base table exists");
-      }
-      
-      // If there was an error or we need to create the table
-      if (tableError) {
-        console.log("Attempting to create knowledge base table");
-        // Create the knowledge base table directly using SQL
-        const { error } = await supabase.rpc('run_sql', {
-          sql: `
-            CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
-              id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-              page_id uuid NOT NULL,
-              title text NOT NULL,
-              content text NOT NULL, 
-              path text NOT NULL,
-              created_at timestamp with time zone DEFAULT now(),
-              updated_at timestamp with time zone DEFAULT now()
-            );
-          `
-        });
-        
-        if (error) {
-          console.error("Error creating knowledge base table:", error);
-        } else {
-          console.log("Knowledge base table created or already exists");
-        }
-      }
-      
-      // Check if table has records and update local status
       const { count, error: countError } = await supabase
         .from('chatbot_knowledge')
         .select('*', { count: 'exact', head: true });
-        
-      if (!countError && count !== null) {
-        console.log(`Knowledge base contains ${count} records`);
-        
-        // Get the last updated date if records exist
-        let lastUpdated = null;
-        if (count > 0) {
-          const { data: latestRecord, error: latestError } = await supabase
-            .from('chatbot_knowledge')
-            .select('updated_at')
-            .order('updated_at', { ascending: false })
-            .limit(1)
-            .single();
-            
-          if (!latestError && latestRecord) {
-            lastUpdated = new Date(latestRecord.updated_at).toLocaleString('it-IT');
-          }
+      
+      if (countError) {
+        console.error("Error checking knowledge base:", countError);
+        // Create table if it doesn't exist
+        await createTable();
+        toast.warning("Creata tabella per la base di conoscenza, ora puoi aggiornarla");
+        setLocalStatus({
+          exists: false,
+          count: 0,
+          lastUpdated: null
+        });
+        return;
+      }
+      
+      if (count === null) {
+        console.log("Knowledge base query returned null count");
+        setLocalStatus({
+          exists: false,
+          count: 0,
+          lastUpdated: null
+        });
+        return;
+      }
+      
+      console.log(`Knowledge base contains ${count} records`);
+      
+      // Get the last updated date if records exist
+      let lastUpdated = null;
+      if (count > 0) {
+        const { data: latestRecord, error: latestError } = await supabase
+          .from('chatbot_knowledge')
+          .select('updated_at')
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .single();
           
-          toast.success(`Base di conoscenza verificata: ${count} elementi`);
+        if (!latestError && latestRecord) {
+          lastUpdated = new Date(latestRecord.updated_at).toLocaleString('it-IT');
         }
         
-        // Update local status
-        setLocalStatus({
-          exists: count > 0,
-          count: count,
-          lastUpdated: lastUpdated
-        });
+        toast.success(`Base di conoscenza verificata: ${count} elementi`);
+      }
+      
+      // Update local status
+      const newStatus = {
+        exists: count > 0,
+        count: count,
+        lastUpdated: lastUpdated
+      };
+      
+      setLocalStatus(newStatus);
+      
+      if (JSON.stringify(newStatus) !== JSON.stringify(status)) {
+        console.log("Knowledge base status changed, setting new status:", newStatus);
       }
     } catch (error) {
-      console.error("Error checking knowledge base table:", error);
+      console.error("Error checking knowledge base:", error);
+      toast.error("Errore nel verificare la base di conoscenza");
     } finally {
       setIsCheckingTable(false);
+    }
+  };
+
+  const createTable = async () => {
+    try {
+      console.log("Attempting to create knowledge base table");
+      // Create the knowledge base table directly using SQL
+      const { error } = await supabase.rpc('run_sql', {
+        sql: `
+          CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
+            id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+            page_id uuid NOT NULL,
+            title text NOT NULL,
+            content text NOT NULL, 
+            path text NOT NULL,
+            created_at timestamp with time zone DEFAULT now(),
+            updated_at timestamp with time zone DEFAULT now()
+          );
+        `
+      });
+      
+      if (error) {
+        console.error("Error creating knowledge base table:", error);
+      } else {
+        console.log("Knowledge base table created or already exists");
+      }
+    } catch (error) {
+      console.error("Error creating table:", error);
     }
   };
 
@@ -126,7 +148,7 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
   };
 
   const handleCheckStatus = async () => {
-    await createTable();
+    await checkKnowledgeBase();
     toast.info("Stato della base di conoscenza aggiornato");
   };
 

@@ -94,37 +94,32 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
         return;
       }
 
-      if (knowledgeBaseCheckedRef.current) {
-        return; // Only check once per session
-      }
-
       try {
         // Force a non-cached request with timestamp
         const timestamp = new Date().getTime();
         
-        const { count, error } = await supabase
-          .from('chatbot_knowledge')
-          .select('*', { count: 'exact', head: true })
-          .limit(1)
-          .order('created_at', { ascending: false });
-        
-        if (error) {
-          console.error("Error checking knowledge base:", error);
-          setKnowledgeBaseExists(false);
-          setKnowledgeBaseCount(0);
-        } else {
-          const knowledgeBaseHasContent = count !== null && count > 0;
-          setKnowledgeBaseExists(knowledgeBaseHasContent);
-          setKnowledgeBaseCount(count || 0);
-          console.log("Knowledge base check result:", count);
+        // Add a delay to ensure database operations have completed
+        setTimeout(async () => {
+          const { count, error } = await supabase
+            .from('chatbot_knowledge')
+            .select('*', { count: 'exact', head: true });
           
-          // Show confirmation toast if knowledge base exists
-          if (knowledgeBaseHasContent) {
-            toast.success(`Base di conoscenza configurata con ${count} elementi`);
+          if (error) {
+            console.error("Error checking knowledge base:", error);
+            setKnowledgeBaseExists(false);
+            setKnowledgeBaseCount(0);
+          } else {
+            const knowledgeBaseHasContent = count !== null && count > 0;
+            setKnowledgeBaseExists(knowledgeBaseHasContent);
+            setKnowledgeBaseCount(count || 0);
+            console.log("Knowledge base check result:", count);
+            
+            if (knowledgeBaseHasContent && !knowledgeBaseCheckedRef.current) {
+              toast.success(`Base di conoscenza configurata con ${count} elementi`);
+              knowledgeBaseCheckedRef.current = true;
+            }
           }
-          
-          knowledgeBaseCheckedRef.current = true;
-        }
+        }, 500);
       } catch (error) {
         console.error("Error checking knowledge base:", error);
         setKnowledgeBaseExists(false);
@@ -186,6 +181,9 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
         }, 1500);
         return;
       }
+
+      // Recheck knowledge base existence before sending
+      await refreshKnowledgeBase();
 
       // If we've checked knowledge base and it doesn't exist, warn user
       if (knowledgeBaseExists === false) {
@@ -276,7 +274,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
   const openChat = useCallback(() => setIsOpen(true), []);
 
   const refreshKnowledgeBase = useCallback(async () => {
-    if (previewConfig) return;
+    if (previewConfig) return true;
     
     try {
       // Force a direct, non-cached check
@@ -284,8 +282,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
       
       const { count, error } = await supabase
         .from('chatbot_knowledge')
-        .select('*', { count: 'exact', head: true })
-        .limit(1);
+        .select('*', { count: 'exact', head: true });
       
       if (error) {
         console.error("Error refreshing knowledge base status:", error);
@@ -298,13 +295,14 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
       setKnowledgeBaseExists(hasContent);
       setKnowledgeBaseCount(count || 0);
       
-      if (hasContent) {
+      if (hasContent && !knowledgeBaseCheckedRef.current) {
         toast.success(`Base di conoscenza verificata: ${count} elementi`);
-      } else if (count === 0) {
+        knowledgeBaseCheckedRef.current = true;
+      } else if (count === 0 && !knowledgeBaseCheckedRef.current) {
         toast.warning("La base di conoscenza è vuota");
+        knowledgeBaseCheckedRef.current = true;
       }
       
-      knowledgeBaseCheckedRef.current = true;
       return hasContent;
     } catch (error) {
       console.error("Error refreshing knowledge base status:", error);
