@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { motion } from 'framer-motion';
 import ChatHeader from './ChatHeader';
 import ChatMessages from './ChatMessages';
@@ -38,6 +38,8 @@ const ChatBox: React.FC<ChatBoxProps> = ({
   onSendMessage, 
   onClose 
 }) => {
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: 20, scale: 0.9 }}
@@ -60,6 +62,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({
         messages={messages}
         isLoading={isLoading}
         primaryColor={config.primaryColor}
+        messagesEndRef={messagesEndRef}
       />
 
       <ChatInput 

@@ -16,7 +16,7 @@ interface ChatMessagesProps {
   messages: Message[];
   isLoading: boolean;
   primaryColor: string;
-  messagesEndRef: React.RefObject<HTMLDivElement>;
+  messagesEndRef?: React.RefObject<HTMLDivElement>; // Make messagesEndRef optional
 }
 
 const ChatMessages: React.FC<ChatMessagesProps> = ({ 
@@ -49,7 +49,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
         </div>
       )}
       
-      <div ref={messagesEndRef} />
+      {messagesEndRef && <div ref={messagesEndRef} />}
     </div>
   );
 };

@@ -1,9 +1,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useChatbot } from '@/hooks/useChatbot';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import ChatMessages from './ChatMessages';
 import ChatHeader from './ChatHeader';
 import { toast } from "sonner";
@@ -14,7 +15,8 @@ const Chatbot: React.FC<{ previewConfig?: any }> = ({ previewConfig }) => {
     sendMessage, 
     isLoading, 
     config, 
-    closeChat 
+    closeChat,
+    knowledgeBaseExists
   } = useChatbot(previewConfig);
   
   const [input, setInput] = useState('');
@@ -68,6 +70,15 @@ const Chatbot: React.FC<{ previewConfig?: any }> = ({ previewConfig }) => {
         primaryColor={config.primaryColor}
         onClose={closeChat}
       />
+      
+      {knowledgeBaseExists === false && !previewConfig && (
+        <Alert variant="warning" className="m-2 bg-amber-50 border-amber-200">
+          <AlertTriangle className="h-4 w-4 text-amber-500" />
+          <AlertDescription className="text-xs text-amber-800">
+            La base di conoscenza del chatbot è vuota. Assicurati di averla aggiornata dalle impostazioni del chatbot.
+          </AlertDescription>
+        </Alert>
+      )}
       
       <ChatMessages 
         messages={messages}

@@ -44,8 +44,10 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
   const [isLoading, setIsLoading] = useState(false);
   const [config, setConfig] = useState<ChatbotConfig>(previewConfig || defaultConfig);
   const [initializing, setInitializing] = useState(true);
+  const [knowledgeBaseExists, setKnowledgeBaseExists] = useState<boolean | null>(null);
   const { language } = useTranslation();
 
+  // Load chatbot configuration
   useEffect(() => {
     if (previewConfig) {
       setConfig(previewConfig);
@@ -81,12 +83,39 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
     loadConfig();
   }, [previewConfig]);
 
+  // Check if knowledge base exists
+  useEffect(() => {
+    const checkKnowledgeBase = async () => {
+      try {
+        const { count, error } = await supabase
+          .from('chatbot_knowledge')
+          .select('*', { count: 'exact', head: true });
+        
+        if (error) {
+          console.error("Error checking knowledge base:", error);
+          setKnowledgeBaseExists(false);
+        } else {
+          setKnowledgeBaseExists(count !== null && count > 0);
+          console.log("Knowledge base check result:", count);
+        }
+      } catch (error) {
+        console.error("Error checking knowledge base:", error);
+        setKnowledgeBaseExists(false);
+      }
+    };
+    
+    if (!previewConfig && !initializing) {
+      checkKnowledgeBase();
+    }
+  }, [previewConfig, initializing]);
+
   useEffect(() => {
     if (previewConfig) {
       setConfig(previewConfig);
     }
   }, [previewConfig]);
 
+  // Set welcome message
   useEffect(() => {
     if (!initializing && !messages.length) {
       const welcomeMessage = config.welcomeMessage[language] || config.welcomeMessage.en || "Hi! How can I help you today?";
@@ -130,6 +159,20 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
         return;
       }
 
+      // If we've checked knowledge base and it doesn't exist, warn user
+      if (knowledgeBaseExists === false) {
+        console.warn("Knowledge base is empty");
+        const warningResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          content: "La base di conoscenza del chatbot è vuota. Per favore, aggiorna la base di conoscenza dalle impostazioni del chatbot per permettermi di rispondere alle tue domande usando le informazioni del sito.",
+          role: 'assistant',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, warningResponse]);
+        setIsLoading(false);
+        return;
+      }
+
       const chatHistory = messages.map(msg => ({
         role: msg.role,
         content: msg.content
@@ -138,22 +181,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
       console.log("Sending message to chatbot function:", message);
       
       try {
-        // Check for knowledge base existence first
-        const { count, error: knowledgeError } = await supabase
-          .from('chatbot_knowledge')
-          .select('*', { count: 'exact', head: true });
-
-        if (knowledgeError) {
-          console.warn("Could not check knowledge base:", knowledgeError);
-          // Continue anyway, the edge function will handle this
-        } else if (count === 0) {
-          console.warn("Knowledge base is empty");
-          toast.warning("La base di conoscenza del chatbot è vuota. Alcune risposte potrebbero essere limitate.", {
-            duration: 5000,
-            position: "bottom-center"
-          });
-        }
-        
+        // Call the chatbot edge function
         const { data, error } = await supabase.functions.invoke('chatbot', {
           body: { 
             message, 
@@ -189,7 +217,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
         
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
-          content: "Mi dispiace, ho avuto un problema nel rispondere. Riprova più tardi o contatta direttamente la struttura.",
+          content: "Mi dispiace, ho avuto un problema nel rispondere. Se hai appena aggiornato la base di conoscenza, potrebbe essere necessario attendere qualche minuto prima che le modifiche siano disponibili. Prova a ricontrollare le impostazioni del chatbot per assicurarti che la base di conoscenza sia stata aggiornata correttamente.",
           role: 'assistant',
           timestamp: new Date()
         };
@@ -204,7 +232,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
       
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: "Mi dispiace, ho avuto un problema nel rispondere. Riprova più tardi o contatta direttamente la struttura.",
+        content: "Mi dispiace, ho avuto un problema nel rispondere. Riprova più tardi o contatta l'amministratore del sito.",
         role: 'assistant',
         timestamp: new Date()
       };
@@ -213,7 +241,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, language, previewConfig]);
+  }, [messages, language, previewConfig, knowledgeBaseExists]);
 
   const toggleChat = useCallback(() => setIsOpen(prev => !prev), []);
   const closeChat = useCallback(() => setIsOpen(false), []);
@@ -228,6 +256,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
     toggleChat,
     closeChat,
     openChat,
-    initializing
+    initializing,
+    knowledgeBaseExists
   };
 };
