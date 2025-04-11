@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { Loader2 } from 'lucide-react';
 import ChatMessage from './ChatMessage';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -16,15 +16,15 @@ interface ChatMessagesProps {
   messages: Message[];
   isLoading: boolean;
   primaryColor: string;
+  messagesEndRef: React.RefObject<HTMLDivElement>;
 }
 
-const ChatMessages: React.FC<ChatMessagesProps> = ({ messages, isLoading, primaryColor }) => {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading]);
-
+const ChatMessages: React.FC<ChatMessagesProps> = ({ 
+  messages, 
+  isLoading, 
+  primaryColor,
+  messagesEndRef 
+}) => {
   return (
     <div className="flex-1 overflow-y-auto p-3 bg-gray-50">
       {messages.map((msg) => (

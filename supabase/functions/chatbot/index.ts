@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
@@ -82,21 +83,29 @@ serve(async (req) => {
       
       console.log(`Found ${count} documents in knowledge base`);
       
-      // Extract meaningful keywords from the user's message
-      const searchTerms = message.toLowerCase().split(/\s+/)
+      // Improved search algorithm - use multiple approaches
+      
+      // 1. Extract meaningful keywords from the user's message
+      const cleanedMessage = message.toLowerCase()
+        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, " ")
+        .replace(/\s{2,}/g, " ")
+        .trim();
+        
+      const searchTerms = cleanedMessage.split(/\s+/)
         .filter((term) => term.length > 3)  // Only terms with 4+ chars
-        .slice(0, 6);  // Limit to 6 keywords
+        .slice(0, 8);  // Increased from 6 to 8 keywords
         
       console.log("Search terms:", searchTerms);
       
+      // If no good search terms, try to get most relevant documents
       if (searchTerms.length === 0) {
-        // If no good search terms, get most recently updated documents
+        // Try to get most recently updated documents
         console.log("No good search terms found, retrieving recent documents");
         const { data: recentDocs, error: recentError } = await supabaseClient
           .from('chatbot_knowledge')
           .select('*')
           .order('updated_at', { ascending: false })
-          .limit(2); // Reduced from 3 to 2 to limit token count
+          .limit(3); // Increased from 2 to 3
           
         if (recentError) {
           console.error("Error fetching recent documents:", recentError);
@@ -105,7 +114,28 @@ serve(async (req) => {
           console.log(`Selected ${relevantContent.length} recent documents`);
         }
       } else {
-        // Build a search query for each keyword with full text search
+        // 2. Try full-text search first for exact matches
+        const exactMatches = [];
+        
+        // Try an exact phrase match first
+        if (cleanedMessage.length >= 5) {
+          const { data: exactResults, error: exactError } = await supabaseClient
+            .from('chatbot_knowledge')
+            .select('*')
+            .textSearch('content', `'${cleanedMessage}'`, { 
+              type: 'plain',
+              config: 'italian' 
+            })
+            .limit(2);
+            
+          if (!exactError && exactResults && exactResults.length > 0) {
+            console.log(`Found ${exactResults.length} exact phrase matches`);
+            exactMatches.push(...exactResults);
+          }
+        }
+        
+        // 3. Then try keyword search as fallback
+        const keywordMatches = [];
         let queries = [];
         
         for (const term of searchTerms) {
@@ -115,7 +145,7 @@ serve(async (req) => {
               .from('chatbot_knowledge')
               .select('*')
               .or(`title.ilike.%${term}%,content.ilike.%${term}%`)
-              .limit(5); // Reduced from 10 to 5
+              .limit(3);
               
             queries.push(query);
           }
@@ -148,12 +178,28 @@ serve(async (req) => {
           return { ...doc, relevance_score: score };
         });
         
-        // Sort by relevance score and take the top 2 (reduced from 3)
-        relevantContent = scoredDocs
+        // Sort by relevance score and take the top results
+        keywordMatches.push(...scoredDocs
           .sort((a, b) => b.relevance_score - a.relevance_score)
-          .slice(0, 2);
+          .slice(0, 3));
           
-        console.log(`Selected ${relevantContent.length} most relevant documents`);
+        console.log(`Found ${keywordMatches.length} keyword matches`);
+        
+        // 4. Combine both search approaches, prioritizing exact matches
+        const combinedResults = [...exactMatches];
+        
+        // Add keyword matches that aren't already in the exact matches
+        const exactIds = new Set(exactMatches.map(doc => doc.id));
+        for (const doc of keywordMatches) {
+          if (!exactIds.has(doc.id)) {
+            combinedResults.push(doc);
+          }
+        }
+        
+        // Limit to top 3 most relevant documents
+        relevantContent = combinedResults.slice(0, 3);
+        
+        console.log(`Selected ${relevantContent.length} most relevant documents in total`);
       }
       
       // If we still have no content, get some documents as last resort
@@ -162,7 +208,7 @@ serve(async (req) => {
         const { data: allDocs, error: allError } = await supabaseClient
           .from('chatbot_knowledge')
           .select('*')
-          .limit(2); // Reduced from 3 to 2
+          .limit(3);
           
         if (allError) {
           console.error("Error fetching documents:", allError);

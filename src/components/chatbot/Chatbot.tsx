@@ -14,7 +14,7 @@ const Chatbot: React.FC<{ previewConfig?: any }> = ({ previewConfig }) => {
     sendMessage, 
     isLoading, 
     config, 
-    closeChat
+    closeChat 
   } = useChatbot(previewConfig);
   
   const [input, setInput] = useState('');
@@ -73,6 +73,7 @@ const Chatbot: React.FC<{ previewConfig?: any }> = ({ previewConfig }) => {
         messages={messages}
         isLoading={isLoading}
         primaryColor={config.primaryColor}
+        messagesEndRef={messagesEndRef}
       />
       
       {/* Input form */}

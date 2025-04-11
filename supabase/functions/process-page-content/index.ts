@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
@@ -8,6 +9,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Improved HTML to plain text function with better content extraction
 const htmlToPlainText = (html) => {
   try {
     if (!html) return "";
@@ -15,14 +17,54 @@ const htmlToPlainText = (html) => {
     const doc = new DOMParser().parseFromString(html, "text/html");
     if (!doc) return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
     
-    const scriptsAndStyles = doc.querySelectorAll("script, style, [hidden], .hidden, meta, link, head");
-    scriptsAndStyles.forEach(el => el.remove());
+    // Remove scripts, styles, and hidden elements
+    const elementsToRemove = doc.querySelectorAll("script, style, [hidden], .hidden, meta, link, head");
+    elementsToRemove.forEach(el => el.remove());
     
-    let text = doc.textContent || html;
+    // Extract meaningful content
+    const headings = Array.from(doc.querySelectorAll('h1, h2, h3, h4, h5, h6'))
+      .map(h => h.textContent?.trim())
+      .filter(Boolean);
+      
+    const paragraphs = Array.from(doc.querySelectorAll('p'))
+      .map(p => p.textContent?.trim())
+      .filter(Boolean);
+      
+    const lists = Array.from(doc.querySelectorAll('ul, ol'))
+      .map(list => {
+        const items = Array.from(list.querySelectorAll('li'))
+          .map(li => li.textContent?.trim())
+          .filter(Boolean);
+        return items.join("\n- ");
+      })
+      .filter(Boolean)
+      .map(list => "- " + list);
     
-    text = text.replace(/\s+/g, " ").trim();
+    // Get all text for backup
+    let allText = doc.textContent || html;
+    allText = allText.replace(/\s+/g, " ").trim();
     
-    return text;
+    // Combine all extracted content
+    let structuredContent = "";
+    
+    if (headings.length > 0) {
+      structuredContent += "# Headings:\n" + headings.join("\n") + "\n\n";
+    }
+    
+    if (paragraphs.length > 0) {
+      structuredContent += "# Main Content:\n" + paragraphs.join("\n\n") + "\n\n";
+    }
+    
+    if (lists.length > 0) {
+      structuredContent += "# Lists:\n" + lists.join("\n\n") + "\n\n";
+    }
+    
+    // If we couldn't extract structured content, use the full text
+    if (!structuredContent.trim() && allText) {
+      return allText;
+    }
+    
+    return structuredContent || allText;
   } catch (e) {
     console.error("Error parsing HTML:", e);
     return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
@@ -47,7 +89,7 @@ const extractStructuredContent = (page) => {
     if (page.list_items && Array.isArray(page.list_items) && page.list_items.length > 0) {
       structuredContent += "Elementi della lista:\n";
       
-      const limitedItems = page.list_items.slice(0, 10);
+      const limitedItems = page.list_items.slice(0, 15); // Increased from 10 to 15
       
       limitedItems.forEach((item, index) => {
         structuredContent += `${index + 1}. `;
@@ -55,8 +97,8 @@ const extractStructuredContent = (page) => {
         if (item.name) structuredContent += `${item.name}`;
         if (item.name && item.description) structuredContent += " - ";
         if (item.description) {
-          const desc = item.description.length > 200 
-            ? item.description.substring(0, 200) + "..."
+          const desc = item.description.length > 250 
+            ? item.description.substring(0, 250) + "..."
             : item.description;
           structuredContent += desc;
         }
@@ -64,10 +106,13 @@ const extractStructuredContent = (page) => {
         structuredContent += "\n";
         
         if (item.price) structuredContent += `   Prezzo: ${item.price}\n`;
+        if (item.description && item.description.length > 250) {
+          structuredContent += `   Descrizione completa: ${item.description}\n`;
+        }
       });
       
-      if (page.list_items.length > 10) {
-        structuredContent += `... e altri ${page.list_items.length - 10} elementi\n`;
+      if (page.list_items.length > 15) {
+        structuredContent += `... e altri ${page.list_items.length - 15} elementi\n`;
       }
     }
     

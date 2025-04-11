@@ -138,6 +138,22 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
       console.log("Sending message to chatbot function:", message);
       
       try {
+        // Check for knowledge base existence first
+        const { count, error: knowledgeError } = await supabase
+          .from('chatbot_knowledge')
+          .select('*', { count: 'exact', head: true });
+
+        if (knowledgeError) {
+          console.warn("Could not check knowledge base:", knowledgeError);
+          // Continue anyway, the edge function will handle this
+        } else if (count === 0) {
+          console.warn("Knowledge base is empty");
+          toast.warning("La base di conoscenza del chatbot è vuota. Alcune risposte potrebbero essere limitate.", {
+            duration: 5000,
+            position: "bottom-center"
+          });
+        }
+        
         const { data, error } = await supabase.functions.invoke('chatbot', {
           body: { 
             message, 
