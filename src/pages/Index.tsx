@@ -9,56 +9,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import TranslatedText from "@/components/TranslatedText";
 import { useTranslation } from "@/context/TranslationContext";
-
-interface HeaderSettings {
-  logoUrl?: string | null;
-  headerColor?: string;
-  establishmentName?: string | null;
-}
+import { useHeaderSettings, HeaderSettings } from "@/hooks/useHeaderSettings";
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
-  const [headerSettings, setHeaderSettings] = useState<HeaderSettings>({});
-  const [loading, setLoading] = useState(true);
+  const { headerSettings, loading } = useHeaderSettings();
   const { language, setLanguage } = useTranslation();
   
   useEffect(() => {
-    const fetchHeaderSettings = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('header_settings')
-          .select('*')
-          .limit(1)
-          .single();
-          
-        if (error) throw error;
-        
-        if (data) {
-          setHeaderSettings({
-            logoUrl: data.logo_url,
-            headerColor: data.header_color,
-            establishmentName: data.establishment_name
-          });
-        }
-      } catch (error) {
-        console.error("Error loading header settings:", error);
-        
-        // Fallback to localStorage if Supabase fails
-        const savedHeaderSettings = localStorage.getItem("headerSettings");
-        if (savedHeaderSettings) {
-          try {
-            setHeaderSettings(JSON.parse(savedHeaderSettings));
-          } catch (err) {
-            console.error("Error parsing settings from localStorage:", err);
-          }
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchHeaderSettings();
-    
     // Reset language to default to ensure proper selection
     setLanguage('it');
   }, [setLanguage]);
@@ -96,6 +54,8 @@ const Index: React.FC = () => {
         backgroundColor={headerSettings.headerColor || "bg-white"}
         logoUrl={headerSettings.logoUrl || undefined}
         establishmentName={headerSettings.establishmentName || undefined}
+        logoPosition={headerSettings.logoPosition as "left" | "center" | "right" || "left"}
+        logoSize={headerSettings.logoSize as "small" | "medium" | "large" || "medium"}
         showAdminButton={false}
       />
       

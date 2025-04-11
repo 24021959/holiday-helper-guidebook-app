@@ -12,11 +12,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagementView } from "./UserManagementView";
 import ChatbotSettings from "./ChatbotSettings";
 import FooterSettingsView from "./FooterSettingsView";
+import { HeaderSettingsView } from "./HeaderSettingsView";
 
 interface MasterPanelProps {}
 
 const MasterPanel: React.FC<MasterPanelProps> = () => {
   const [activeTab, setActiveTab] = useState<string>("user-management");
+  const [uploadedLogo, setUploadedLogo] = useState<string | null>(null);
+  const [headerColor, setHeaderColor] = useState<string>("bg-gradient-to-r from-teal-500 to-emerald-600");
   
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -32,6 +35,12 @@ const MasterPanel: React.FC<MasterPanelProps> = () => {
           className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
         >
           Impostazioni Sito
+        </TabsTrigger>
+        <TabsTrigger
+          value="header-settings"
+          className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
+        >
+          Impostazioni Header
         </TabsTrigger>
         <TabsTrigger
           value="chatbot-settings"
@@ -62,6 +71,15 @@ const MasterPanel: React.FC<MasterPanelProps> = () => {
               del sito, la lingua predefinita, ecc.
             </p>
           </div>
+        </TabsContent>
+        
+        <TabsContent value="header-settings" className="mt-0">
+          <HeaderSettingsView
+            uploadedLogo={uploadedLogo}
+            setUploadedLogo={setUploadedLogo}
+            headerColor={headerColor}
+            setHeaderColor={setHeaderColor}
+          />
         </TabsContent>
         
         <TabsContent value="chatbot-settings" className="mt-0">

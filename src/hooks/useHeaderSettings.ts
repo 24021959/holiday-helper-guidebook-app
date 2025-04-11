@@ -4,10 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface HeaderSettings {
   logoUrl?: string | null;
-  headerColor?: string;
+  headerColor?: string | null;
   establishmentName?: string | null;
-  logoPosition?: "left" | "center" | "right";
-  logoSize?: "small" | "medium" | "large"; 
+  logoPosition?: string | null;
+  logoSize?: string | null; 
 }
 
 export const useHeaderSettings = () => {
