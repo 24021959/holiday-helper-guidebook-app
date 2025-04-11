@@ -6,6 +6,8 @@ export interface HeaderSettings {
   logoUrl?: string | null;
   headerColor?: string;
   establishmentName?: string | null;
+  logoPosition?: "left" | "center" | "right";
+  logoSize?: "small" | "medium" | "large"; 
 }
 
 export const useHeaderSettings = () => {
@@ -50,7 +52,9 @@ export const useHeaderSettings = () => {
         const newSettings = {
           logoUrl: data.logo_url,
           headerColor: data.header_color,
-          establishmentName: data.establishment_name
+          establishmentName: data.establishment_name,
+          logoPosition: data.logo_position || "left",
+          logoSize: data.logo_size || "medium"
         };
         
         setHeaderSettings(newSettings);

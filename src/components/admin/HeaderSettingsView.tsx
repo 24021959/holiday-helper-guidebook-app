@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import ImageUploader from "@/components/ImageUploader";
 import Header from "@/components/Header";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { FormItem, FormLabel } from "@/components/ui/form";
 
 interface HeaderSettingsViewProps {
   uploadedLogo: string | null;
@@ -35,6 +38,8 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
   const [establishmentName, setEstablishmentName] = useState<string>("");
   const [localLogo, setLocalLogo] = useState<string | null>(uploadedLogo);
   const [localColor, setLocalColor] = useState<string>(headerColor);
+  const [logoPosition, setLogoPosition] = useState<"left" | "center" | "right">("left");
+  const [logoSize, setLogoSize] = useState<"small" | "medium" | "large">("medium");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   
   // Fetch header settings on component mount
@@ -59,6 +64,12 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
           if (data[0].header_color) {
             setLocalColor(data[0].header_color);
             setHeaderColor(data[0].header_color);
+          }
+          if (data[0].logo_position) {
+            setLogoPosition(data[0].logo_position);
+          }
+          if (data[0].logo_size) {
+            setLogoSize(data[0].logo_size);
           }
         }
       } catch (error) {
@@ -96,7 +107,9 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
       const headerData = { 
         logo_url: localLogo, 
         header_color: localColor,
-        establishment_name: establishmentName || null
+        establishment_name: establishmentName || null,
+        logo_position: logoPosition,
+        logo_size: logoSize
       };
       
       console.log("Saving header settings:", headerData);
@@ -126,7 +139,9 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
       const headerSettings = {
         logoUrl: localLogo,
         headerColor: localColor,
-        establishmentName: establishmentName || null
+        establishmentName: establishmentName || null,
+        logoPosition: logoPosition,
+        logoSize: logoSize
       };
       localStorage.setItem("headerSettings", JSON.stringify(headerSettings));
       
@@ -182,6 +197,54 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
           <p className="text-xs text-gray-500 mt-2">Inserisci un logo o rimuovilo per non mostrarlo nell'header</p>
         </div>
         
+        {localLogo && (
+          <>
+            <div className="p-4 border rounded-lg bg-gray-50">
+              <h3 className="text-md font-medium text-emerald-700 mb-4">Posizione del logo</h3>
+              <RadioGroup 
+                value={logoPosition} 
+                onValueChange={(value) => setLogoPosition(value as "left" | "center" | "right")}
+                className="flex flex-col space-y-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="left" id="logo-left" />
+                  <Label htmlFor="logo-left">Sinistra</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="center" id="logo-center" />
+                  <Label htmlFor="logo-center">Centro (Logo sopra, Testo sotto)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="right" id="logo-right" />
+                  <Label htmlFor="logo-right">Destra</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            
+            <div className="p-4 border rounded-lg bg-gray-50">
+              <h3 className="text-md font-medium text-emerald-700 mb-4">Dimensione del logo</h3>
+              <RadioGroup 
+                value={logoSize} 
+                onValueChange={(value) => setLogoSize(value as "small" | "medium" | "large")}
+                className="flex flex-col space-y-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="small" id="logo-small" />
+                  <Label htmlFor="logo-small">Piccolo</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="medium" id="logo-medium" />
+                  <Label htmlFor="logo-medium">Medio (Default)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="large" id="logo-large" />
+                  <Label htmlFor="logo-large">Grande</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </>
+        )}
+        
         <div className="p-4 border rounded-lg bg-gray-50">
           <h3 className="text-md font-medium text-emerald-700 mb-4">Colore dell'header</h3>
           
@@ -218,6 +281,8 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
             <Header 
               backgroundColor={localColor} 
               logoUrl={localLogo || undefined}
+              logoPosition={logoPosition}
+              logoSize={logoSize}
               showAdminButton={false}
               establishmentName={establishmentName || undefined}
             />

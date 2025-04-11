@@ -5,6 +5,8 @@ interface HeaderProps {
   backgroundImage?: string;
   backgroundColor?: string;
   logoUrl?: string;
+  logoSize?: "small" | "medium" | "large";
+  logoPosition?: "left" | "center" | "right";
   establishmentName?: string;
   showAdminButton?: boolean;
 }
@@ -13,6 +15,8 @@ const Header: React.FC<HeaderProps> = ({
   backgroundImage, 
   backgroundColor = "bg-white",
   logoUrl,
+  logoSize = "medium",
+  logoPosition = "left",
   establishmentName,
   showAdminButton = false
 }) => {
@@ -22,6 +26,23 @@ const Header: React.FC<HeaderProps> = ({
     backgroundColor === "bg-gradient-to-r from-amber-400 to-yellow-500";
   
   const textColorClass = isLightBackground ? "text-gray-800" : "text-white";
+
+  // Calculate logo size
+  const logoSizeClass = {
+    small: "h-12 md:h-14",
+    medium: "h-16 md:h-20",
+    large: "h-20 md:h-24"
+  }[logoSize];
+
+  // Determine layout based on logo position
+  const layoutClass = {
+    left: "sm:flex-row sm:justify-between",
+    center: "flex-col items-center",
+    right: "sm:flex-row-reverse sm:justify-between"
+  }[logoPosition];
+
+  // Additional margin for centered layout (logo above, name below)
+  const nameMarginClass = logoPosition === "center" && logoUrl ? "mt-2" : "mt-0";
 
   return (
     <div
@@ -42,21 +63,21 @@ const Header: React.FC<HeaderProps> = ({
       )}
       
       {/* Logo and Title - responsive layout */}
-      <div className="relative z-10 flex flex-col sm:flex-row items-center sm:justify-between">
-        {/* Logo - only show if provided, with increased size */}
+      <div className={`relative z-10 flex ${layoutClass}`}>
+        {/* Logo - only show if provided */}
         {logoUrl && (
           <div className="flex-shrink-0 mb-2 sm:mb-0">
             <img 
               src={logoUrl} 
               alt="Logo" 
-              className="h-16 md:h-20 object-contain" 
+              className={`${logoSizeClass} object-contain`} 
             />
           </div>
         )}
         
         {/* Title - only show if provided */}
         {establishmentName && (
-          <div className="mt-2 sm:mt-0">
+          <div className={nameMarginClass}>
             <h1 className={`text-xl md:text-2xl font-bold ${textColorClass}`}>{establishmentName}</h1>
           </div>
         )}
