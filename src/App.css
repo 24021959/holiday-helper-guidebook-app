@@ -1,4 +1,3 @@
-
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -331,4 +330,14 @@
   .editor-controls button {
     margin-bottom: 4px;
   }
+}
+
+/* Fix for AspectRatio component background */
+.bg-gray-100 {
+  background-color: transparent !important;
+}
+
+/* Preview image fixes */
+.object-cover {
+  object-fit: contain;
 }

@@ -20,7 +20,7 @@ const PageFullscreenPreview: React.FC<PageFullscreenPreviewProps> = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-6xl w-[90vw] h-[90vh] p-0 overflow-hidden">
+      <DialogContent className="max-w-6xl w-[95vw] h-[95vh] p-0 overflow-hidden">
         <div className="flex flex-col h-full">
           <div className="flex justify-between items-center p-4 border-b">
             <h2 className="text-lg font-medium">
@@ -31,7 +31,7 @@ const PageFullscreenPreview: React.FC<PageFullscreenPreviewProps> = ({
             </Button>
           </div>
           
-          <div className="flex-1 overflow-auto p-0">
+          <div className="flex-1 overflow-auto p-6 bg-white">
             {content}
           </div>
         </div>
