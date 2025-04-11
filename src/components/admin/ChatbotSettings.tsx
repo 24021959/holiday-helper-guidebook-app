@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -14,6 +13,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Chatbot from "@/components/Chatbot";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import KnowledgeBaseStatus from "./chatbot/KnowledgeBaseStatus";
 
 interface ChatbotConfig {
   enabled: boolean;
@@ -39,6 +39,7 @@ const ChatbotSettings: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
+  const [processingError, setProcessingError] = useState<string | null>(null);
   const [knowledgeStatus, setKnowledgeStatus] = useState<{
     exists: boolean;
     count: number;
@@ -59,7 +60,6 @@ const ChatbotSettings: React.FC = () => {
   });
   const [activeLanguage, setActiveLanguage] = useState<'it' | 'en' | 'fr' | 'es' | 'de'>('it');
   const [welcomeMessage, setWelcomeMessage] = useState(defaultWelcomeMessages.it);
-  const [showPreview, setShowPreview] = useState(false);
   const { translateBulk } = useTranslation();
 
   useEffect(() => {
@@ -106,31 +106,79 @@ const ChatbotSettings: React.FC = () => {
 
   const checkKnowledgeBase = async () => {
     try {
-      // Verifica l'esistenza della knowledge base
-      const { data, error } = await supabase
-        .from('chatbot_knowledge')
-        .select('id, updated_at', { count: 'exact' });
+      setProcessingError(null);
+      console.log("Verifico stato della base di conoscenza...");
+      
+      // Verifica l'esistenza della tabella
+      try {
+        const { error: tableError } = await supabase.rpc('run_sql', {
+          sql: `
+            CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
+              id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+              page_id uuid NOT NULL,
+              title text NOT NULL,
+              content text NOT NULL, 
+              path text NOT NULL,
+              created_at timestamp with time zone DEFAULT now(),
+              updated_at timestamp with time zone DEFAULT now()
+            );
+          `
+        });
+        
+        if (tableError && tableError.message !== "function run_sql does not exist") {
+          console.error("Errore nella creazione della tabella:", tableError);
+        }
+      } catch (tableError) {
+        console.error("Errore nella creazione della tabella:", tableError);
+      }
 
-      if (error) {
-        console.error("Errore nel controllare la knowledge base:", error);
+      // Verifica la presenza di dati
+      const { count, error: countError } = await supabase
+        .from('chatbot_knowledge')
+        .select('*', { count: 'exact', head: true });
+        
+      if (countError) {
+        console.error("Errore nella verifica dei dati:", countError);
+        setKnowledgeStatus({
+          exists: false,
+          count: 0,
+          lastUpdated: null
+        });
+        setProcessingError("Errore nella verifica della base di conoscenza");
         return;
       }
-
-      // Trova l'ultima data di aggiornamento
+      
       let lastUpdated = null;
-      if (data && data.length > 0) {
-        const dates = data.map(item => new Date(item.updated_at).getTime());
-        const maxDate = new Date(Math.max(...dates));
-        lastUpdated = maxDate.toLocaleString('it-IT');
+      
+      if (count && count > 0) {
+        // Ottieni la data dell'ultimo aggiornamento
+        const { data: latestRecord, error: latestError } = await supabase
+          .from('chatbot_knowledge')
+          .select('updated_at')
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .single();
+          
+        if (!latestError && latestRecord) {
+          lastUpdated = new Date(latestRecord.updated_at).toLocaleString('it-IT');
+        }
+        
+        console.log("Base di conoscenza trovata con", count, "elementi. Ultimo aggiornamento:", lastUpdated);
+        toast.success(`Base di conoscenza verificata: ${count} elementi`);
+      } else {
+        console.log("Base di conoscenza vuota o inesistente");
       }
-
+      
       setKnowledgeStatus({
-        exists: data && data.length > 0,
-        count: data ? data.length : 0,
+        exists: count ? count > 0 : false,
+        count: count || 0,
         lastUpdated
       });
+      
     } catch (error) {
-      console.error("Errore nel controllare la knowledge base:", error);
+      console.error("Errore nella verifica della base di conoscenza:", error);
+      setProcessingError("Errore nella verifica della base di conoscenza");
+      toast.error("Errore nella verifica della base di conoscenza");
     }
   };
 
@@ -227,68 +275,160 @@ const ChatbotSettings: React.FC = () => {
   const updatePageContent = async () => {
     setIsProcessing(true);
     setProcessingProgress(10);
+    setProcessingError(null);
+    
     try {
-      // Fetch all pages to create a knowledge base for the chatbot
-      const { data: pages, error } = await supabase
+      // Prima assicuriamoci che la tabella esista
+      try {
+        const { error: tableError } = await supabase.rpc('run_sql', {
+          sql: `
+            CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
+              id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+              page_id uuid NOT NULL,
+              title text NOT NULL,
+              content text NOT NULL, 
+              path text NOT NULL,
+              created_at timestamp with time zone DEFAULT now(),
+              updated_at timestamp with time zone DEFAULT now()
+            );
+          `
+        });
+        
+        if (tableError && tableError.message !== "function run_sql does not exist") {
+          console.error("Errore nella creazione della tabella:", tableError);
+        } else {
+          console.log("Tabella chatbot_knowledge creata o già esistente");
+        }
+      } catch (tableError) {
+        console.error("Errore nella creazione della tabella:", tableError);
+      }
+
+      // Cancella i dati esistenti per un aggiornamento completo
+      try {
+        const { error: deleteError } = await supabase
+          .from('chatbot_knowledge')
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000');
+          
+        if (deleteError) {
+          console.error("Errore nella cancellazione dei dati esistenti:", deleteError);
+        } else {
+          console.log("Dati esistenti cancellati con successo");
+        }
+      } catch (clearError) {
+        console.error("Errore nella cancellazione dei dati esistenti:", clearError);
+      }
+
+      setProcessingProgress(20);
+
+      // Recupera tutte le pagine pubblicate
+      const { data: pages, error: pagesError } = await supabase
         .from('custom_pages')
         .select('*')
         .eq('published', true);
 
-      if (error) throw error;
+      if (pagesError) throw pagesError;
 
       if (!pages || pages.length === 0) {
         toast.warning("Nessuna pagina trovata per creare la base di conoscenza del chatbot");
+        setProcessingError("Nessuna pagina pubblicata trovata per creare la base di conoscenza");
+        setIsProcessing(false);
+        setProcessingProgress(0);
         return;
       }
 
       toast.info(`Elaborazione di ${pages.length} pagine per la base di conoscenza...`);
-      setProcessingProgress(30);
-
-      // Create knowledge base for embedding
-      const formattedContent = pages.map(page => ({
-        id: page.id,
-        title: page.title,
-        content: page.content,
-        path: page.path,
-        list_items: page.list_items
-      }));
-
-      setProcessingProgress(50);
       
-      // Send to embedding function
-      const { data, error: embedError } = await supabase.functions.invoke(
-        'create-chatbot-knowledge',
-        {
-          body: { pages: formattedContent }
-        }
-      );
-
-      setProcessingProgress(90);
-
-      if (embedError) {
-        console.error("Errore nella funzione di embedding:", embedError);
-        throw embedError;
+      // Elabora le pagine in batch più piccoli per evitare timeout
+      const batchSize = 3;
+      let processedCount = 0;
+      let successCount = 0;
+      let failureCount = 0;
+      
+      setProcessingProgress(30);
+      
+      for (let i = 0; i < pages.length; i += batchSize) {
+        const batch = pages.slice(i, Math.min(i + batchSize, pages.length));
+        const batchPromises = batch.map(async (page) => {
+          try {
+            console.log(`Elaborazione della pagina ${page.id}: ${page.title}`);
+            
+            // Approccio semplificato: inserimento diretto nel database con estrazione base del contenuto
+            const cleanContent = (page.content || "")
+              .replace(/<[^>]*>/g, " ")
+              .replace(/<!--.*?-->/g, "")
+              .replace(/\s+/g, " ")
+              .trim();
+            
+            let listItemsText = "";
+            if (page.list_items && Array.isArray(page.list_items) && page.list_items.length > 0) {
+              listItemsText = "\n\nElementi in questa pagina:\n" + 
+                page.list_items.map((item: any, index: number) => 
+                  `${index + 1}. ${item.name || ""} - ${item.description || ""}`
+                ).join("\n");
+            }
+            
+            const formattedContent = `
+Titolo: ${page.title || "Senza titolo"}
+Percorso: ${page.path || ""}
+Contenuto: ${cleanContent}${listItemsText}
+            `.trim();
+            
+            const { error: insertError } = await supabase
+              .from("chatbot_knowledge")
+              .insert({
+                page_id: page.id,
+                title: page.title || "Senza titolo",
+                content: formattedContent,
+                path: page.path || ""
+              });
+              
+            if (insertError) {
+              throw insertError;
+            }
+            
+            console.log(`Pagina ${page.id} elaborata con successo`);
+            return true;
+          } catch (error) {
+            console.error(`Errore nell'elaborazione della pagina ${page.id}:`, error);
+            return false;
+          }
+        });
+        
+        const batchResults = await Promise.all(batchPromises);
+        
+        processedCount += batch.length;
+        successCount += batchResults.filter(result => result).length;
+        failureCount += batchResults.filter(result => !result).length;
+        
+        const progressPercentage = Math.round((processedCount / pages.length) * 70) + 30;
+        setProcessingProgress(progressPercentage);
       }
-
-      if (data && data.success) {
-        toast.success(`Base di conoscenza del chatbot aggiornata con ${data.message}`);
-        await checkKnowledgeBase(); // Aggiorna lo stato della knowledge base
-        setProcessingProgress(100);
+      
+      setProcessingProgress(100);
+      
+      if (successCount > 0) {
+        toast.success(`Base di conoscenza aggiornata con ${successCount} pagine`);
+        
+        if (failureCount > 0) {
+          toast.warning(`${failureCount} pagine non sono state elaborate correttamente`);
+        }
+        
+        // Aggiorna lo stato della knowledge base
+        await checkKnowledgeBase();
       } else {
-        const errorMessage = data ? data.error : "Errore sconosciuto";
-        console.error("La funzione di embedding ha restituito un errore:", errorMessage);
-        toast.error(`Errore: ${errorMessage}`);
-        setProcessingProgress(0);
+        setProcessingError(`Nessuna pagina è stata elaborata correttamente. Riprova più tardi.`);
+        toast.error("Errore nell'aggiornamento della base di conoscenza");
       }
     } catch (error) {
-      console.error("Errore nell'aggiornamento della base di conoscenza del chatbot:", error);
-      toast.error("Errore nell'aggiornamento della base di conoscenza del chatbot");
-      setProcessingProgress(0);
+      console.error("Errore nell'aggiornamento della base di conoscenza:", error);
+      setProcessingError(`Errore nell'aggiornamento della base di conoscenza: ${error.message}`);
+      toast.error("Errore nell'aggiornamento della base di conoscenza");
     } finally {
       setIsProcessing(false);
       setTimeout(() => {
         setProcessingProgress(0);
-      }, 1000);
+      }, 1500);
     }
   };
 
@@ -502,65 +642,14 @@ const ChatbotSettings: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex flex-col space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Stato base di conoscenza:</span>
-                  <span className={`text-sm font-medium ${knowledgeStatus.exists ? 'text-green-600' : 'text-amber-600'}`}>
-                    {knowledgeStatus.exists ? 'Attiva' : 'Non configurata'}
-                  </span>
-                </div>
-                
-                {knowledgeStatus.exists && (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Elementi presenti:</span>
-                      <span className="text-sm">{knowledgeStatus.count}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Ultimo aggiornamento:</span>
-                      <span className="text-sm">{knowledgeStatus.lastUpdated}</span>
-                    </div>
-                  </>
-                )}
-                
-                {!knowledgeStatus.exists && (
-                  <div className="px-4 py-3 bg-amber-50 border border-amber-200 rounded-md my-2">
-                    <div className="flex">
-                      <AlertCircle className="h-5 w-5 text-amber-500 mr-2 flex-shrink-0" />
-                      <div>
-                        <p className="text-sm text-amber-800">
-                          La base di conoscenza non è stata ancora creata. Il chatbot funzionerà, ma non avrà 
-                          informazioni sulle pagine del tuo sito.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {processingProgress > 0 && (
-                  <div className="space-y-2 mt-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Elaborazione in corso...</span>
-                      <span className="text-sm">{processingProgress}%</span>
-                    </div>
-                    <Progress value={processingProgress} className="w-full" />
-                  </div>
-                )}
-                
-                <Button
-                  onClick={updatePageContent}
-                  disabled={isLoading || isProcessing}
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white mt-2"
-                >
-                  <RefreshCw className={`mr-2 h-4 w-4 ${isProcessing ? 'animate-spin' : ''}`} />
-                  {isProcessing ? 'Aggiornamento in corso...' : 'Aggiorna Base di Conoscenza'}
-                </Button>
-                
-                <p className="text-xs text-gray-500 mt-1">
-                  Questo processo aggiorna la base di conoscenza del chatbot con i contenuti delle pagine pubblicate sul sito.
-                  L'aggiornamento potrebbe richiedere alcuni minuti.
-                </p>
-              </div>
+              <KnowledgeBaseStatus 
+                status={knowledgeStatus}
+                isProcessing={isProcessing}
+                processingProgress={processingProgress}
+                errorMessage={processingError}
+                onUpdateKnowledgeBase={updatePageContent}
+                onCheckStatus={checkKnowledgeBase}
+              />
             </CardContent>
           </Card>
         </div>
