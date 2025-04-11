@@ -1,7 +1,7 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { Maximize2, Minimize2, Eye, Code, RotateCcw } from "lucide-react"
+import { Maximize2, Minimize2, Eye, Code, RotateCcw, RotateCw } from "lucide-react"
 
 export interface TextareaProps
   extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
@@ -10,10 +10,11 @@ export interface TextareaProps
   viewMode?: "visual" | "code";
   onViewModeChange?: (mode: "visual" | "code") => void;
   onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, onFormatText, expandable = false, viewMode = "visual", onViewModeChange, onUndo, ...props }, ref) => {
+  ({ className, onFormatText, expandable = false, viewMode = "visual", onViewModeChange, onUndo, onRedo, ...props }, ref) => {
     const [isExpanded, setIsExpanded] = React.useState(false);
 
     return (
@@ -37,6 +38,17 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
               title="Annulla ultima modifica"
             >
               <RotateCcw className="h-4 w-4" />
+            </button>
+          )}
+          
+          {onRedo && (
+            <button
+              type="button"
+              onClick={onRedo}
+              className="p-1 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700"
+              title="Ripristina modifica"
+            >
+              <RotateCw className="h-4 w-4" />
             </button>
           )}
           

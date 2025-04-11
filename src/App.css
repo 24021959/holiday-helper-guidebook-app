@@ -1,3 +1,4 @@
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -156,6 +157,58 @@
   display: none;
 }
 
+/* Editor controls always visible */
+.editor-controls {
+  position: sticky;
+  bottom: 0;
+  background-color: white;
+  padding: 8px 0;
+  border-top: 1px solid #e5e7eb;
+  z-index: 10;
+  margin-top: 8px;
+}
+
+/* Editor preview styles */
+.editor-preview {
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 16px;
+  margin-top: 16px;
+  background-color: white;
+}
+
+.editor-preview img {
+  max-width: 100%;
+  height: auto;
+}
+
+.editor-preview-image-left {
+  float: left;
+  margin-right: 16px;
+  margin-bottom: 16px;
+  max-width: 45%;
+}
+
+.editor-preview-image-right {
+  float: right;
+  margin-left: 16px;
+  margin-bottom: 16px;
+  max-width: 45%;
+}
+
+.editor-preview-image-center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 16px;
+  max-width: 70%;
+}
+
+.editor-preview-image-full {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
 /* Mobile responsive styles */
 @media (max-width: 768px) {
   #root {
@@ -175,5 +228,14 @@
   .prose p {
     padding-left: 12px;
     padding-right: 12px;
+  }
+  
+  .editor-controls {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .editor-controls button {
+    margin-bottom: 4px;
   }
 }

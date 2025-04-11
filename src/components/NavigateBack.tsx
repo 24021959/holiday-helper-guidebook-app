@@ -1,16 +1,22 @@
 
 import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import TranslatedText from "./TranslatedText";
 import { useTranslation } from "@/context/TranslationContext";
 
 interface NavigateBackProps {
   parentPath?: string | null;
+  onNavigateForward?: () => void;
+  canNavigateForward?: boolean;
 }
 
-const NavigateBack: React.FC<NavigateBackProps> = ({ parentPath }) => {
+const NavigateBack: React.FC<NavigateBackProps> = ({ 
+  parentPath, 
+  onNavigateForward,
+  canNavigateForward = false
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { parentPath: urlParentPath } = useParams<{ parentPath: string }>();
@@ -110,14 +116,28 @@ const NavigateBack: React.FC<NavigateBackProps> = ({ parentPath }) => {
   };
 
   return (
-    <Button
-      variant="ghost"
-      className="p-2 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
-      onClick={handleBack}
-    >
-      <ArrowLeft className="mr-2 h-4 w-4" />
-      <TranslatedText text="Back" />
-    </Button>
+    <div className="flex space-x-2">
+      <Button
+        variant="ghost"
+        className="p-2 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
+        onClick={handleBack}
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        <TranslatedText text="Back" />
+      </Button>
+      
+      {onNavigateForward && (
+        <Button
+          variant="ghost"
+          className="p-2 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
+          onClick={onNavigateForward}
+          disabled={!canNavigateForward}
+        >
+          <TranslatedText text="Forward" />
+          <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
+      )}
+    </div>
   );
 };
 

@@ -18,6 +18,7 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
 }) => {
   const [selectedPosition, setSelectedPosition] = useState<"left" | "center" | "right" | "full">("center");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [caption, setCaption] = useState<string>("");
 
   const handleImageSelected = (imageUrl: string) => {
     setSelectedImage(imageUrl);
@@ -27,6 +28,8 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
     if (selectedImage) {
       onImageUpload(selectedImage, selectedPosition);
       onClose();
+      setSelectedImage(null);
+      setCaption("");
     }
   };
 
@@ -88,12 +91,30 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
           
           {selectedImage ? (
             <div className="relative">
-              <img 
-                src={selectedImage} 
-                alt="Anteprima immagine" 
-                className="w-full h-auto max-h-64 object-contain border rounded-md"
-              />
-              <div className="mt-2 flex justify-end">
+              <div className={`preview-container ${
+                selectedPosition === "left" ? "editor-preview-image-left" : 
+                selectedPosition === "right" ? "editor-preview-image-right" : 
+                selectedPosition === "center" ? "editor-preview-image-center" : 
+                "editor-preview-image-full"
+              }`}>
+                <img 
+                  src={selectedImage} 
+                  alt="Anteprima immagine" 
+                  className="w-full h-auto rounded-md"
+                />
+              </div>
+              <div className="clear-both"></div>
+              <div className="mt-4">
+                <label className="block text-sm font-medium mb-2">Didascalia (opzionale):</label>
+                <input 
+                  type="text" 
+                  value={caption}
+                  onChange={(e) => setCaption(e.target.value)}
+                  className="w-full p-2 border rounded-md"
+                  placeholder="Inserisci una didascalia"
+                />
+              </div>
+              <div className="mt-4 flex justify-end">
                 <Button
                   variant="outline"
                   size="sm"
