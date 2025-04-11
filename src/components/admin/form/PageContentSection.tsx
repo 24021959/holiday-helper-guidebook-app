@@ -73,10 +73,10 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
     
     const imageRegex = /<!-- IMAGE: (.*?) POSITION: (.*?) -->\n\[Immagine: (.*?)\]\n/g;
     formattedContent = formattedContent.replace(imageRegex, (match, url, position, name) => {
-      const positionClass = position === "left" ? "image-placeholder-left" : 
-                          position === "right" ? "image-placeholder-right" : 
-                          position === "full" ? "image-placeholder-full" : 
-                          "image-placeholder-center";
+      const positionClass = position === "left" ? "editor-preview-image-left" : 
+                          position === "right" ? "editor-preview-image-right" : 
+                          position === "full" ? "editor-preview-image-full" : 
+                          "editor-preview-image-center";
                           
       return `<div class="image-placeholder ${positionClass}">
         <img src="${url}" alt="${name}" class="image-preview" />
@@ -161,7 +161,7 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
     
     formattedContent = formattedContent.replace(
       /<!-- MAP: (.*?) -->\n\[📍 (.*?)\]\n/g,
-      '<div class="bg-blue-50 border border-blue-200 rounded p-2 my-2 flex items-center"><span class="text-blue-700">📍 $2</span></div>'
+      '<div class="bg-blue-50 border border-blue-200 rounded p-2 my-2 flex items-center gap-2"><span class="text-blue-700">📍</span><a href="$1" target="_blank" class="text-blue-600 hover:underline">$2</a></div>'
     );
     
     formattedContent = formattedContent.replace(
@@ -198,6 +198,20 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
         /(<!-- IMAGE: (.*?) -->\n\[Immagine: (.*?)\]\n)/g,
         (match, fullMatch, url, name) => {
           return `[📷 ⏺️ ${name}]\n`;
+        }
+      );
+      
+      formattedContent = formattedContent.replace(
+        /<!-- MAP: (.*?) -->\n\[📍 (.*?)\]\n/g,
+        (match, url, placeName) => {
+          return `[📍 Luogo: ${placeName}]\n`;
+        }
+      );
+      
+      formattedContent = formattedContent.replace(
+        /<!-- PHONE: (.*?) -->\n\[📞 (.*?)\]\n/g,
+        (match, number, label) => {
+          return `[📞 ${label}]\n`;
         }
       );
       
