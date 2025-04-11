@@ -54,7 +54,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
   const [currentTab, setCurrentTab] = useState<string>("content");
   const [isCreating, setIsCreating] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
-  const [autoTranslate, setAutoTranslate] = useState(false);
+  const [autoTranslate, setAutoTranslate] = useState(true);
   const { translateSequential } = useTranslation();
 
   const form = useForm<z.infer<typeof formSchema>>({

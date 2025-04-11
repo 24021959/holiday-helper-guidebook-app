@@ -11,6 +11,7 @@ import Welcome from "./pages/Welcome";
 import Storia from "./pages/Storia";
 import NotFound from "./pages/NotFound";
 import PreviewPage from "./pages/PreviewPage";
+import AutoTranslatePage from "./pages/AutoTranslatePage";
 import { TranslationProvider } from "./context/TranslationContext";
 import { Toaster } from "sonner";
 import ChatbotBubble from "./components/ChatbotBubble";
@@ -28,6 +29,7 @@ function App() {
           <Route path="/admin" element={<Admin />} />
           <Route path="/welcome" element={<Welcome />} />
           <Route path="/storia" element={<Storia />} />
+          <Route path="/auto-translate" element={<AutoTranslatePage />} />
           
           {/* Main menu routes with language support */}
           <Route path="/menu" element={<Menu />} />

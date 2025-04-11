@@ -1,285 +1,229 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
-
-import AdminPanel from "@/components/admin/AdminPanel";
-import MasterPanel from "@/components/admin/MasterPanel";
-import AdminHeader from "@/components/admin/AdminHeader";
-import AdminLoader from "@/components/admin/AdminLoader";
-
-export interface ImageItem {
-  url: string;
-  position: "left" | "center" | "right" | "full";
-  caption?: string;
-  type: "image";
-}
+import { PlusCircle, Settings, Users, FileText, Globe } from "lucide-react";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import { useHeaderSettings } from "@/hooks/useHeaderSettings";
+import ManagePagesView from "@/components/admin/ManagePagesView";
+import ErrorView from "@/components/ErrorView";
+import MenuTranslationManager from "@/components/admin/MenuTranslationManager";
 
 export interface PageData {
   id: string;
   title: string;
   content: string;
   path: string;
-  imageUrl?: string;
+  imageUrl?: string | null;
   icon?: string;
-  isSubmenu?: boolean;
+  listType?: "locations" | "activities" | "restaurants" | undefined;
+  listItems?: { name: string; description?: string; phoneNumber?: string; mapsUrl?: string; }[] | undefined;
+  isSubmenu: boolean;
   parentPath?: string | null;
-  listItems?: any[];
-  listType?: 'restaurants' | 'activities' | 'locations';
-  pageImages?: ImageItem[];
-  published?: boolean;
-  is_parent?: boolean;
-}
-
-export interface UserData {
-  id: string;
-  email: string;
-  isActive: boolean;
-  role: string;
-  createdAt: string;
-}
-
-export interface LocationItem {
-  name: string;
-  description: string;
-  imageUrl?: string;
+  pageImages: any[];
+  published: boolean;
+  is_parent: boolean;
 }
 
 const Admin: React.FC = () => {
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [pages, setPages] = useState<PageData[]>([]);
-  const [uploadedLogo, setUploadedLogo] = useState<string | null>(null);
-  const [headerColor, setHeaderColor] = useState<string>("bg-gradient-to-r from-teal-500 to-emerald-600");
-  const [activeTab, setActiveTab] = useState<string>("create-page");
-  const [loadError, setLoadError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const location = useLocation();
-  const keywordToIconMap = useKeywordToIconMap();
-  const isMaster = localStorage.getItem("user_role") === "master";
-  
+  const { headerSettings, loading: headerLoading } = useHeaderSettings();
+  const [activeTab, setActiveTab] = useState<string>("pages");
+  const [pages, setPages] = useState<PageData[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [keywordToIconMap, setKeywordToIconMap] = useState<Record<string, string>>({});
+  const [parentPages, setParentPages] = useState<PageData[]>([]);
+
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const tabParam = params.get('tab');
-    
-    if (tabParam) {
-      setActiveTab(tabParam);
-    } else if (isMaster) {
-      setActiveTab("user-management");
-    }
-  }, [location.search, isMaster]);
-  
-  const safelyStorePagesInLocalStorage = (pagesData: PageData[]): boolean => {
-    try {
-      const pagesString = JSON.stringify(pagesData);
-      const sizeInMB = (pagesString.length * 2) / (1024 * 1024);
-      
-      if (sizeInMB > 4) {
-        console.warn("Pages data too large for localStorage (approx " + sizeInMB.toFixed(2) + "MB)");
-        return false;
-      }
-      
-      localStorage.setItem('cached_pages', pagesString);
-      return true;
-    } catch (e) {
-      console.warn("Failed to cache pages in localStorage:", e);
-      return false;
-    }
-  };
-  
+    fetchPages();
+    fetchKeywordToIconMap();
+  }, []);
+
   const fetchPages = async () => {
+    setIsLoading(true);
     try {
-      setLoadError(null);
-      console.log("Admin - Fetching pages from database");
-      
-      try {
-        const cachedPagesString = localStorage.getItem('cached_pages');
-        if (cachedPagesString) {
-          const cachedPages = JSON.parse(cachedPagesString);
-          console.log("Admin - Using cached pages temporarily:", cachedPages.length);
-          setPages(cachedPages);
-        }
-      } catch (err) {
-        console.error("Error parsing cached pages:", err);
-      }
-      
       const { data, error } = await supabase
         .from('custom_pages')
         .select('*');
-        
+
       if (error) {
-        throw error;
+        console.error("Errore nel recupero delle pagine:", error);
+        setError(error.message);
+        return;
       }
-      
+
       if (data) {
-        const formattedPages: PageData[] = data.map(page => {
-          let pageImages: ImageItem[] = [];
-          
-          try {
-            if (page.content && page.content.includes('<!-- IMAGES -->')) {
-              const contentParts = page.content.split('<!-- IMAGES -->');
-              
-              if (contentParts.length > 1) {
-                const imagesSection = contentParts[1].trim();
-                const imageStringList = imagesSection.split('\n').filter(line => line.trim() !== '');
-                
-                pageImages = imageStringList.map(img => {
-                  try {
-                    return JSON.parse(img.trim());
-                  } catch (e) {
-                    return null;
-                  }
-                }).filter(img => img !== null);
-              }
-            }
-          } catch (e) {
-            console.error("Error parsing page images:", e);
-          }
-          
-          return {
-            id: page.id,
-            title: page.title,
-            content: page.content,
-            path: page.path,
-            imageUrl: page.image_url,
-            icon: page.icon,
-            isSubmenu: page.is_submenu,
-            parentPath: page.parent_path,
-            listItems: Array.isArray(page.list_items) ? page.list_items : [],
-            listType: page.list_type as 'restaurants' | 'activities' | 'locations',
-            pageImages: pageImages,
-            published: page.published || false,
-            is_parent: false
-          };
-        });
+        const formattedPages = data.map(page => ({
+          id: page.id,
+          title: page.title,
+          content: page.content,
+          path: page.path,
+          imageUrl: page.image_url,
+          icon: page.icon,
+          listType: page.list_type as "locations" | "activities" | "restaurants" | undefined,
+          listItems: page.list_items as { name: string; description?: string; phoneNumber?: string; mapsUrl?: string; }[] | undefined,
+          isSubmenu: page.is_submenu || false,
+          parentPath: page.parent_path || undefined,
+          pageImages: [],
+          published: page.published || false,
+          is_parent: false
+        }));
         
-        for (let i = 0; i < formattedPages.length; i++) {
-          const page = formattedPages[i];
-          const hasChildren = formattedPages.some(p => p.parentPath === page.path);
-          
-          if (hasChildren) {
-            formattedPages[i] = { ...page, is_parent: true };
-            console.log(`Admin - Pagina ${page.path} ha figli, contrassegnata come parent`);
-          }
-        }
-        
-        console.log("Admin - Pages loaded from database:", formattedPages.length);
         setPages(formattedPages);
         
-        safelyStorePagesInLocalStorage(formattedPages);
-      } else {
-        console.log("Admin - No pages data returned from database");
-        setPages([]);
+        // Filtra le pagine "parent"
+        const parents = formattedPages.filter(page => page.content === "" && page.imageUrl === null);
+        setParentPages(parents);
+        
+        console.log("Pagine caricate:", formattedPages.length);
       }
-    } catch (error) {
-      console.error("Error fetching pages:", error);
-      setLoadError("Errore nel recupero delle pagine. Prova ad aggiornare la pagina.");
-      toast.error("Errore nel recupero delle pagine");
-      
-      try {
-        const cachedPagesString = localStorage.getItem('cached_pages');
-        if (cachedPagesString) {
-          const cachedPages = JSON.parse(cachedPagesString);
-          console.log("Admin - Using cached pages as fallback after error:", cachedPages.length);
-          setPages(cachedPages);
-        }
-      } catch (err) {
-        console.error("Error parsing cached pages for fallback:", err);
-      }
+    } catch (err: any) {
+      console.error("Errore durante il recupero delle pagine:", err);
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
     }
   };
-  
-  useEffect(() => {
-    if (isAuthenticated && !isMaster) {
-      fetchPages();
-    }
-  }, [isAuthenticated, isMaster]);
-  
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const adminToken = localStorage.getItem("admin_token");
-        
-        if (!adminToken) {
-          navigate("/login");
-          return;
-        }
-        
-        setIsAuthenticated(true);
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Auth check failed:", error);
-        navigate("/login");
+
+  const fetchKeywordToIconMap = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('keyword_to_icon')
+        .select('*');
+
+      if (error) {
+        console.error("Errore nel recupero della mappa keyword-icon:", error);
+        toast.error("Errore nel caricamento della configurazione");
+        return;
       }
-    };
-    
-    checkAuth();
-  }, [navigate]);
-  
-  const handlePageCreated = (newPages: PageData[]) => {
-    console.log("Admin - Page created, new pages count:", newPages.length);
-    setPages(newPages);
-    safelyStorePagesInLocalStorage(newPages);
+
+      if (data) {
+        const map: Record<string, string> = {};
+        data.forEach(item => {
+          map[item.keyword] = item.icon;
+        });
+        setKeywordToIconMap(map);
+        console.log("Mappa keyword-icon caricata:", Object.keys(map).length);
+      }
+    } catch (err: any) {
+      console.error("Errore durante il recupero della mappa keyword-icon:", err);
+      toast.error("Errore nel caricamento della configurazione");
+    }
   };
-  
+
   const handlePagesUpdate = (updatedPages: PageData[]) => {
-    console.log("Admin - Pages updated, count:", updatedPages.length);
     setPages(updatedPages);
-    safelyStorePagesInLocalStorage(updatedPages);
+    
+    // Aggiorna anche le parent pages
+    const parents = updatedPages.filter(page => page.content === "" && page.imageUrl === null);
+    setParentPages(parents);
   };
-  
-  if (isLoading) {
-    return <AdminLoader />;
-  }
-  
-  if (!isAuthenticated) {
-    return null;
+
+  const leftColTabs = [
+    {
+      value: "pages",
+      label: "Pagine",
+      icon: <FileText className="h-5 w-5" />,
+      component: (
+        <ManagePagesView
+          pages={pages}
+          onPagesUpdate={handlePagesUpdate}
+          parentPages={parentPages}
+          keywordToIconMap={keywordToIconMap}
+        />
+      )
+    },
+    {
+      value: "translation",
+      label: "Traduzioni",
+      icon: <Globe className="h-5 w-5" />,
+      component: <MenuTranslationManager />
+    },
+  ];
+
+  if (headerLoading) {
+    return (
+      <div className="flex flex-col h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100">
+        <svg className="animate-spin h-12 w-12 text-emerald-600" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p className="mt-4 text-emerald-700">Caricamento in corso...</p>
+      </div>
+    );
   }
 
-  const parentPages = pages.filter(page => !page.isSubmenu);
+  if (error) {
+    return (
+      <ErrorView
+        message={error}
+        onRefresh={fetchPages}
+      />
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminHeader isMaster={isMaster} />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {loadError && (
-          <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-            <p className="text-red-600">{loadError}</p>
-            <Button 
-              onClick={() => {
-                setIsLoading(true);
-                fetchPages().finally(() => setIsLoading(false));
-              }}
-              className="mt-2 bg-red-600 hover:bg-red-700 text-white"
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Riprova
-            </Button>
-          </div>
-        )}
-        
-        {isMaster ? (
-          <MasterPanel />
-        ) : (
-          <AdminPanel 
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            pages={pages}
-            parentPages={parentPages}
-            uploadedLogo={uploadedLogo}
-            setUploadedLogo={setUploadedLogo}
-            headerColor={headerColor}
-            setHeaderColor={setHeaderColor}
-            handlePageCreated={handlePageCreated}
-            handlePagesUpdate={handlePagesUpdate}
-            keywordToIconMap={keywordToIconMap}
-          />
-        )}
-      </div>
+    <div className="flex flex-col min-h-screen">
+      <Header
+        backgroundColor={headerSettings.headerColor || "bg-white"}
+        logoUrl={headerSettings.logoUrl || undefined}
+        establishmentName={headerSettings.establishmentName || undefined}
+        logoPosition={headerSettings.logoPosition as "left" | "center" | "right" || "left"}
+        logoSize={headerSettings.logoSize as "small" | "medium" | "large" || "medium"}
+        showAdminButton={false}
+      />
+
+      <main className="container mx-auto flex flex-col md:flex-row flex-grow p-4">
+        {/* Left Column / Tabs */}
+        <aside className="md:w-1/4 pr-4">
+          <Card className="shadow-md border-0">
+            <CardHeader className="py-2">
+              <CardTitle className="text-lg font-semibold">Gestione</CardTitle>
+              <CardDescription>
+                Seleziona la sezione da gestire
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-2">
+              <Tabs defaultValue={activeTab} className="flex flex-col h-full">
+                <TabsList className="flex flex-col space-y-1 border-r-2 border-gray-200 pr-4">
+                  {leftColTabs.map((tab) => (
+                    <TabsTrigger
+                      key={tab.value}
+                      value={tab.value}
+                      className={`flex items-center space-x-2 py-2 px-3 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground hover:bg-muted hover:text-muted-foreground ${activeTab === tab.value ? 'bg-secondary text-secondary-foreground' : ''}`}
+                    >
+                      {tab.icon}
+                      <span>{tab.label}</span>
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </aside>
+
+        {/* Right Column / Content */}
+        <div className="md:w-3/4 pl-4">
+          {leftColTabs.map((tab) => (
+            <TabsContent key={tab.value} value={tab.value} className="mt-2">
+              {tab.component}
+            </TabsContent>
+          ))}
+        </div>
+      </main>
+
+      <Footer />
     </div>
   );
 };
