@@ -13,6 +13,8 @@ const AdminPanel: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("header");
+  const [uploadedLogo, setUploadedLogo] = useState<string | null>(null);
+  const [headerColor, setHeaderColor] = useState<string>("bg-gradient-to-r from-teal-500 to-emerald-600");
 
   const handleSettingsUpdate = (message: string, isError: boolean = false) => {
     if (isError) {
@@ -56,7 +58,12 @@ const AdminPanel: React.FC = () => {
         </TabsList>
         
         <TabsContent value="header">
-          <HeaderSettingsView />
+          <HeaderSettingsView 
+            uploadedLogo={uploadedLogo}
+            setUploadedLogo={setUploadedLogo}
+            headerColor={headerColor}
+            setHeaderColor={setHeaderColor}
+          />
         </TabsContent>
         
         <TabsContent value="footer">
