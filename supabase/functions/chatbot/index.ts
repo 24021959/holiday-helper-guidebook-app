@@ -44,6 +44,26 @@ serve(async (req) => {
       supabaseKey || ''
     );
 
+    // Ensure the chatbot_knowledge table exists
+    try {
+      await supabaseClient.rpc("run_sql", {
+        sql: `
+          CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
+            id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+            page_id uuid NOT NULL,
+            title text NOT NULL,
+            content text NOT NULL,
+            path text NOT NULL,
+            created_at timestamp with time zone DEFAULT now(),
+            updated_at timestamp with time zone DEFAULT now()
+          )
+        `
+      });
+    } catch (error) {
+      console.error("Error ensuring table exists (continuing anyway):", error);
+      // Continue execution - the table might already exist
+    }
+
     // Get relevant documents from the knowledge base using better semantic search
     let relevantContent = [];
     try {
@@ -64,7 +84,7 @@ serve(async (req) => {
       
       console.log(`Found ${count} documents in knowledge base`);
       
-      // Full-text search using ILIKE for multiple keywords
+      // Extract meaningful keywords from the user's message
       const searchTerms = message.toLowerCase().split(/\s+/)
         .filter((term: string) => term.length > 3)  // Only terms with 4+ chars
         .slice(0, 6);  // Limit to 6 keywords
@@ -87,55 +107,55 @@ serve(async (req) => {
           console.log(`Selected ${relevantContent.length} recent documents`);
         }
       } else {
-        // Build a query with OR conditions for each search term
-        let orConditions = [];
+        // Build a search query for each keyword with full text search
+        let queries = [];
         
         for (const term of searchTerms) {
           if (term.length >= 3) {
-            orConditions.push(`content.ilike.%${term}%`);
-            orConditions.push(`title.ilike.%${term}%`);
+            // Search in both title and content with weights
+            const query = supabaseClient
+              .from('chatbot_knowledge')
+              .select('*')
+              .or(`title.ilike.%${term}%,content.ilike.%${term}%`)
+              .limit(10);
+              
+            queries.push(query);
           }
         }
         
-        const orQuery = orConditions.join(',');
-        console.log("OR query:", orQuery);
+        // Execute all queries in parallel
+        const results = await Promise.all(queries.map(q => q));
         
-        const { data: searchData, error: searchError } = await supabaseClient
-          .from('chatbot_knowledge')
-          .select('*')
-          .or(orQuery)
-          .limit(5);
-          
-        if (searchError) {
-          console.error("Error in search query:", searchError);
-          
-          // Fallback to simple title search if OR query fails
-          const { data: fallbackData, error: fallbackError } = await supabaseClient
-            .from('chatbot_knowledge')
-            .select('*')
-            .ilike('title', `%${searchTerms[0] || ''}%`)
-            .limit(3);
-            
-          if (fallbackError) {
-            console.error("Error in fallback search:", fallbackError);
-          } else if (fallbackData && fallbackData.length > 0) {
-            relevantContent = fallbackData;
-            console.log(`Selected ${relevantContent.length} documents via fallback search`);
+        // Collect all unique documents
+        const allDocs = [];
+        const seenIds = new Set();
+        
+        for (const result of results) {
+          if (result.data) {
+            for (const doc of result.data) {
+              if (!seenIds.has(doc.id)) {
+                seenIds.add(doc.id);
+                allDocs.push(doc);
+              }
+            }
           }
-        } else if (searchData && searchData.length > 0) {
-          // Score documents by number of term matches
-          relevantContent = searchData.map(doc => {
-            const docText = (doc.title + ' ' + doc.content).toLowerCase();
-            const score = searchTerms.reduce((count, term) => {
-              return count + (docText.includes(term) ? 1 : 0);
-            }, 0);
-            return { ...doc, relevance_score: score };
-          })
+        }
+        
+        // Score documents by keyword matches
+        const scoredDocs = allDocs.map(doc => {
+          const docText = (doc.title + ' ' + doc.content).toLowerCase();
+          const score = searchTerms.reduce((count, term) => {
+            return count + (docText.includes(term) ? 1 : 0);
+          }, 0);
+          return { ...doc, relevance_score: score };
+        });
+        
+        // Sort by relevance score and take the top 3
+        relevantContent = scoredDocs
           .sort((a, b) => b.relevance_score - a.relevance_score)
           .slice(0, 3);
           
-          console.log(`Selected ${relevantContent.length} most relevant documents`);
-        }
+        console.log(`Selected ${relevantContent.length} most relevant documents`);
       }
       
       // If we still have no content, get all documents as last resort

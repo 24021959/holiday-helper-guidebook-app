@@ -137,33 +137,49 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
       
       console.log("Sending message to chatbot function:", message);
       
-      const { data, error } = await supabase.functions.invoke('chatbot', {
-        body: { 
-          message, 
-          language,
-          chatHistory
+      try {
+        const { data, error } = await supabase.functions.invoke('chatbot', {
+          body: { 
+            message, 
+            language,
+            chatHistory
+          }
+        });
+
+        if (error) {
+          console.error("Supabase function error:", error);
+          throw new Error(`Errore nella funzione chatbot: ${error.message}`);
         }
-      });
 
-      if (error) {
-        console.error("Supabase function error:", error);
-        throw new Error(`Errore nella funzione chatbot: ${error.message}`);
+        console.log("Response received from chatbot function:", data);
+
+        if (!data || !data.response) {
+          throw new Error("Nessuna risposta ricevuta dalla funzione chatbot");
+        }
+
+        const botResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          content: data.response,
+          role: 'assistant',
+          timestamp: new Date()
+        };
+
+        setMessages(prev => [...prev, botResponse]);
+      } catch (apiError) {
+        console.error("API error:", apiError);
+        
+        // Show toast with error message
+        toast.error("Errore nella comunicazione con il chatbot");
+        
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: "Mi dispiace, ho avuto un problema nel rispondere. Riprova più tardi o contatta direttamente la struttura.",
+          role: 'assistant',
+          timestamp: new Date()
+        };
+
+        setMessages(prev => [...prev, errorMessage]);
       }
-
-      console.log("Response received from chatbot function:", data);
-
-      if (!data || !data.response) {
-        throw new Error("Nessuna risposta ricevuta dalla funzione chatbot");
-      }
-
-      const botResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        content: data.response,
-        role: 'assistant',
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, botResponse]);
     } catch (error) {
       console.error("Error sending message to chatbot:", error);
       
