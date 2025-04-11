@@ -1,10 +1,11 @@
+
 import React, { useState, useRef } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { useFormContext } from "react-hook-form";
 import ImageInsertionDialog from "./ImageInsertionDialog";
 import { Button } from "@/components/ui/button";
-import { ImageIcon, Info, Rows3, PanelRight, PanelLeft, MapPin, Phone } from "lucide-react";
+import { ImageIcon, Info, Rows3, PanelRight, PanelLeft, AlignCenter, MapPin, Phone } from "lucide-react";
 import { ImageItem } from "./PageMultiImageSection";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -21,13 +22,49 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
   pageImages = [],
   onInsertImage
 }) => {
-  const { control, setValue, getValues } = useFormContext();
+  const { control, setValue, getValues, watch } = useFormContext();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [clickPosition, setClickPosition] = useState<number | null>(null);
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [showGalleryDialog, setShowGalleryDialog] = useState(false);
   const [showMapDialog, setShowMapDialog] = useState(false);
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
+  const [previewContent, setPreviewContent] = useState<string>("");
+  
+  // Watch for content changes to update preview
+  const contentValue = watch(name);
+  
+  React.useEffect(() => {
+    setPreviewContent(formatContentForPreview(contentValue || ""));
+  }, [contentValue]);
+
+  const formatContentForPreview = (content: string): string => {
+    if (!content) return "";
+    
+    let formattedContent = content;
+    
+    // Convert alignment tags to inline styles
+    formattedContent = formattedContent.replace(
+      /<!-- FORMAT:LEFT -->\n(.*?)(?=<!-- FORMAT:|$)/gs, 
+      '<div style="text-align: left;">$1</div>'
+    );
+    
+    formattedContent = formattedContent.replace(
+      /<!-- FORMAT:CENTER -->\n(.*?)(?=<!-- FORMAT:|$)/gs, 
+      '<div style="text-align: center;">$1</div>'
+    );
+    
+    formattedContent = formattedContent.replace(
+      /<!-- FORMAT:RIGHT -->\n(.*?)(?=<!-- FORMAT:|$)/gs, 
+      '<div style="text-align: right;">$1</div>'
+    );
+    
+    // Convert newlines to <br> tags
+    formattedContent = formattedContent.replace(/\n\n/g, '<br><br>');
+    formattedContent = formattedContent.replace(/\n/g, '<br>');
+    
+    return formattedContent;
+  };
 
   const handleInsertImageClick = () => {
     if (textareaRef.current) {
@@ -82,7 +119,7 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
       case 'left':
       case 'right':
       case 'center':
-        formattedText = `<!-- FORMAT:${format.toUpperCase()} -->\n${selectedText}`;
+        formattedText = `<!-- FORMAT:${format.toUpperCase()} -->\n${selectedText}\n`;
         break;
     }
     
@@ -251,7 +288,7 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
                         onClick={() => handleFormatClick('center')}
                         className="text-xs"
                       >
-                        <Rows3 className="h-4 w-4 mr-1" />
+                        <AlignCenter className="h-4 w-4 mr-1" />
                         Centra
                       </Button>
                     </TooltipTrigger>
@@ -282,14 +319,28 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
                 </TooltipProvider>
               </div>
               
-              <FormControl>
-                <Textarea
-                  {...field}
-                  ref={textareaRef}
-                  className="min-h-[350px] font-medium leading-relaxed p-4"
-                  style={{ lineHeight: "1.8" }}
-                />
-              </FormControl>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      ref={textareaRef}
+                      className="min-h-[350px] font-medium leading-relaxed p-4 resize-none"
+                      style={{ lineHeight: "1.8" }}
+                    />
+                  </FormControl>
+                </div>
+                <div>
+                  <div className="border rounded-md p-4 min-h-[350px] bg-white overflow-auto">
+                    <div 
+                      className="prose prose-sm max-w-none" 
+                      dangerouslySetInnerHTML={{ __html: previewContent }} 
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1 text-center">Anteprima della formattazione</p>
+                </div>
+              </div>
+              
               <div className="flex flex-wrap gap-2">
                 <Button 
                   type="button" 
