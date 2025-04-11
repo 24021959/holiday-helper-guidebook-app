@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export interface HeaderSettings {
   logoUrl?: string | null;
@@ -14,6 +15,7 @@ export const useHeaderSettings = () => {
   const [headerSettings, setHeaderSettings] = useState<HeaderSettings>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDemo, setIsDemo] = useState<boolean>(false);
 
   const fetchHeaderSettings = useCallback(async () => {
     try {
@@ -29,6 +31,27 @@ export const useHeaderSettings = () => {
         } catch (err) {
           console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
         }
+      }
+      
+      // Check if we're in demo mode (logged in with admin/password)
+      const isLoggedInAsDemo = localStorage.getItem("admin_token") === "demo_token";
+      if (isLoggedInAsDemo) {
+        setIsDemo(true);
+        const defaultSettings = {
+          headerColor: "bg-gradient-to-r from-teal-500 to-emerald-600",
+          logoPosition: "left",
+          logoSize: "medium",
+          establishmentName: "Locanda dell'Angelo"
+        };
+        
+        // Only use default settings if we don't have cached settings
+        if (!localSettings) {
+          setHeaderSettings(defaultSettings);
+          localStorage.setItem("headerSettings", JSON.stringify(defaultSettings));
+        }
+        
+        setLoading(false);
+        return;
       }
       
       // Poi prova a ottenere da Supabase
@@ -52,12 +75,14 @@ export const useHeaderSettings = () => {
           const defaultSettings = {
             headerColor: "bg-gradient-to-r from-teal-500 to-emerald-600",
             logoPosition: "left",
-            logoSize: "medium"
+            logoSize: "medium",
+            establishmentName: "EV-AI Guest"
           };
           
           setHeaderSettings(defaultSettings);
           localStorage.setItem("headerSettings", JSON.stringify(defaultSettings));
           setLoading(false);
+          setIsDemo(true);
           return;
         }
         
@@ -87,9 +112,42 @@ export const useHeaderSettings = () => {
         
         // Salva in localStorage come backup
         localStorage.setItem("headerSettings", JSON.stringify(newSettings));
+      } else if (!localSettings) {
+        // If no data from server and no local settings, use defaults
+        const defaultSettings = {
+          headerColor: "bg-gradient-to-r from-teal-500 to-emerald-600",
+          logoPosition: "left",
+          logoSize: "medium",
+          establishmentName: "EV-AI Guest"
+        };
+        
+        setHeaderSettings(defaultSettings);
+        localStorage.setItem("headerSettings", JSON.stringify(defaultSettings));
+        setIsDemo(true);
       }
     } catch (error) {
       console.error("Errore nel caricamento delle impostazioni header:", error);
+      
+      // If we already have local settings, don't show error toast
+      const savedHeaderSettings = localStorage.getItem("headerSettings");
+      if (!savedHeaderSettings) {
+        toast.error("Si è verificato un errore nel caricamento delle impostazioni. Usando la modalità demo.", {
+          id: "header-settings-error"
+        });
+        
+        // Set default values as fallback
+        const defaultSettings = {
+          headerColor: "bg-gradient-to-r from-teal-500 to-emerald-600",
+          logoPosition: "left",
+          logoSize: "medium",
+          establishmentName: "EV-AI Guest"
+        };
+        
+        setHeaderSettings(defaultSettings);
+        localStorage.setItem("headerSettings", JSON.stringify(defaultSettings));
+        setIsDemo(true);
+      }
+      
       setError("Si è verificato un errore imprevisto. Riprova più tardi.");
     } finally {
       setLoading(false);
@@ -102,8 +160,9 @@ export const useHeaderSettings = () => {
 
   return {
     headerSettings,
-    loading: loading,
+    loading,
     error,
+    isDemo,
     refreshHeaderSettings: fetchHeaderSettings
   };
 };

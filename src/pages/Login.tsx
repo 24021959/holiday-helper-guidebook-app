@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertCircle, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { md5 } from "js-md5";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle as AlertCircleIcon } from "lucide-react";
 
 const Login: React.FC = () => {
   const [adminUsername, setAdminUsername] = useState<string>("");
@@ -44,28 +45,32 @@ const Login: React.FC = () => {
     checkConnection();
   }, []);
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simple demo authentication
-    setTimeout(() => {
+    try {
+      // Simple demo authentication
       if (adminUsername === "admin" && adminPassword === "password") {
         localStorage.setItem("admin_token", "demo_token");
         localStorage.setItem("admin_user", "admin");
         localStorage.setItem("isAuthenticated", "true");
         toast.success("Login effettuato con successo");
         navigate("/admin");
-      } else {
-        // Try to authenticate with Supabase data
-        checkDbLogin(adminUsername, adminPassword, "user").then(success => {
-          if (!success) {
-            toast.error("Credenziali non valide");
-          }
-        });
+        return;
+      } 
+      
+      // Try to authenticate with Supabase data
+      const success = await checkDbLogin(adminUsername, adminPassword, "user");
+      if (!success) {
+        toast.error("Credenziali non valide");
       }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Errore durante il login. Riprova più tardi.");
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
   
   const handleMasterLogin = (e: React.FormEvent) => {
@@ -90,6 +95,7 @@ const Login: React.FC = () => {
 
   const checkDbLogin = async (email: string, password: string, role: string): Promise<boolean> => {
     try {
+      console.log("Checking DB login for:", email);
       // Call the admin_users_helpers function to check login
       const { data, error } = await supabase.functions.invoke("admin_users_helpers", {
         body: { 
@@ -99,8 +105,19 @@ const Login: React.FC = () => {
         }
       });
 
+      console.log("Login check response:", data, error);
+
       if (error) {
         console.error("Error checking login:", error);
+        // In case of connection errors, fall back to demo mode
+        if (email === "admin" && password === "password") {
+          localStorage.setItem("admin_token", "demo_token");
+          localStorage.setItem("admin_user", "admin");
+          localStorage.setItem("isAuthenticated", "true");
+          toast.success("Login effettuato con successo (modalità demo)");
+          navigate("/admin");
+          return true;
+        }
         return false;
       }
       
@@ -118,6 +135,17 @@ const Login: React.FC = () => {
       return false;
     } catch (error) {
       console.error("Login check error:", error);
+      
+      // Fallback to demo credentials if there's an error
+      if (email === "admin" && password === "password") {
+        localStorage.setItem("admin_token", "demo_token");
+        localStorage.setItem("admin_user", "admin");
+        localStorage.setItem("isAuthenticated", "true");
+        toast.success("Login effettuato con successo (modalità demo)");
+        navigate("/admin");
+        return true;
+      }
+      
       return false;
     }
   };
@@ -145,7 +173,7 @@ const Login: React.FC = () => {
 
         {configError && (
           <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
+            <AlertCircleIcon className="h-4 w-4" />
             <AlertTitle>Errore di configurazione</AlertTitle>
             <AlertDescription>
               Impossibile connettersi al database. Utilizzando la modalità demo. Usare username "admin" e password "password".
