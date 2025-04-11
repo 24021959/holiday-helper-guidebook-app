@@ -37,6 +37,7 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
   const [showPreview, setShowPreview] = useState(false);
   const [isEditorExpanded, setIsEditorExpanded] = useState(false);
   const [viewMode, setViewMode] = useState<"visual" | "code">("visual");
+  const [showFullscreenPreview, setShowFullscreenPreview] = useState(false);
   
   const contentValue = watch(name);
   const editHistory = useEditHistory<string>(contentValue || "");
@@ -436,7 +437,7 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
   };
 
   const togglePreview = () => {
-    setShowPreview(!showPreview);
+    setShowFullscreenPreview(true);
   };
 
   const toggleEditorExpansion = () => {
@@ -522,11 +523,11 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
                         onClick={togglePreview} 
                         className="h-8 w-8"
                       >
-                        {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        <Eye className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>{showPreview ? "Nascondi anteprima" : "Mostra anteprima"}</p>
+                      <p>Anteprima a schermo intero</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -824,7 +825,7 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
                 </TooltipProvider>
               </div>
               
-              <div className={`${showPreview ? "grid grid-cols-1 md:grid-cols-2 gap-4" : ""}`}>
+              <div className={`${showFullscreenPreview ? "grid grid-cols-1 md:grid-cols-2 gap-4" : ""}`}>
                 <div className={`${isEditorExpanded ? "h-[65vh]" : ""} ${viewMode === "visual" ? "editor-visual-mode" : "editor-code-mode"}`}>
                   <FormControl>
                     <Textarea
@@ -848,7 +849,7 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
                   </FormControl>
                 </div>
                 
-                {showPreview && (
+                {showFullscreenPreview && (
                   <div>
                     <div className="border rounded-md p-4 min-h-[350px] bg-white overflow-auto">
                       <div 
