@@ -119,6 +119,13 @@
   margin-right: 8px;
 }
 
+/* Editor expanded styles */
+.editor-expanded {
+  height: 65vh;
+  max-height: 800px;
+  overflow-y: auto;
+}
+
 /* Mobile responsive styles */
 @media (max-width: 768px) {
   #root {
@@ -140,3 +147,4 @@
     padding-right: 12px;
   }
 }
+
