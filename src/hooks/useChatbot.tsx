@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from '@/context/TranslationContext';
 import { supabase } from "@/integrations/supabase/client";
@@ -138,9 +139,13 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
         return;
       }
 
-      refreshKnowledgeBase().catch(err => {
+      try {
+        // Ensure we have the latest knowledge base status
+        await refreshKnowledgeBase();
+      } catch (err) {
         console.warn("Failed to refresh knowledge base before sending message:", err);
-      });
+        // Continue anyway to not block the user message
+      }
 
       const chatHistory = messages.map(msg => ({
         role: msg.role,
@@ -183,9 +188,14 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
         
         toast.error("Errore nella comunicazione con il chatbot");
         
+        const errorResponse = 
+          "Mi dispiace, ho avuto un problema nel rispondere. " +
+          "Se hai appena aggiornato la base di conoscenza, potrebbe essere necessario attendere qualche minuto prima che le modifiche siano disponibili. " +
+          "Assicurati che la base di conoscenza sia stata creata correttamente dalle impostazioni del chatbot.";
+        
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
-          content: "Mi dispiace, ho avuto un problema nel rispondere. Se hai appena aggiornato la base di conoscenza, potrebbe essere necessario attendere qualche minuto prima che le modifiche siano disponibili. Prova a ricontrollare le impostazioni del chatbot per assicurarti che la base di conoscenza sia stata aggiornata correttamente.",
+          content: errorResponse,
           role: 'assistant',
           timestamp: new Date()
         };
@@ -224,15 +234,67 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
     try {
       console.log("Refreshing knowledge base status...");
       
+      // Add a short delay to ensure any recent updates are picked up
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       try {
-        const { count, error } = await supabase
+        // First check if the table exists to avoid errors
+        const { data: tableExists, error: tableExistsError } = await supabase.rpc(
+          'table_exists',
+          { table_name: 'chatbot_knowledge' }
+        ).maybeSingle();
+        
+        if (tableExistsError) {
+          console.error("Error checking if table exists:", tableExistsError);
+          // Try a different approach - direct count
+          const { count, error: directCountError } = await supabase
+            .from('chatbot_knowledge')
+            .select('*', { count: 'exact', head: true });
+            
+          if (directCountError) {
+            console.error("Error checking knowledge base via direct count:", directCountError);
+            setKnowledgeBaseExists(false);
+            setKnowledgeBaseCount(0);
+            return false;
+          }
+          
+          const hasContent = count !== null && count > 0;
+          setKnowledgeBaseExists(hasContent);
+          setKnowledgeBaseCount(count || 0);
+          
+          console.log(`Knowledge base direct count check result: ${count}`);
+          
+          if (hasContent && !knowledgeBaseCheckedRef.current) {
+            toast.success(`Base di conoscenza verificata: ${count} elementi`);
+            knowledgeBaseCheckedRef.current = true;
+          } else if (!hasContent && !knowledgeBaseCheckedRef.current) {
+            toast.warning("La base di conoscenza è vuota");
+            knowledgeBaseCheckedRef.current = true;
+          }
+          
+          return hasContent;
+        }
+        
+        if (!tableExists) {
+          console.log("Table doesn't exist");
+          setKnowledgeBaseExists(false);
+          setKnowledgeBaseCount(0);
+          
+          if (!knowledgeBaseCheckedRef.current) {
+            toast.warning("La tabella della base di conoscenza non esiste");
+            knowledgeBaseCheckedRef.current = true;
+          }
+          
+          return false;
+        }
+        
+        // Now check the count
+        const { count, error: countError } = await supabase
           .from('chatbot_knowledge')
           .select('*', { count: 'exact', head: true });
         
-        if (error) {
-          console.error("Error refreshing knowledge base status:", error);
+        if (countError) {
+          console.error("Error checking knowledge base count:", countError);
           setKnowledgeBaseExists(false);
           setKnowledgeBaseCount(0);
           return false;
