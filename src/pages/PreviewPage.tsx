@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -246,12 +245,12 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
 
   const renderImage = (image: ImageItem, index: number) => {
     const positionClass = image.position === "left" 
-      ? "image-left" 
+      ? "float-left mr-4 mb-4 w-1/2" 
       : image.position === "right" 
-        ? "image-right" 
+        ? "float-right ml-4 mb-4 w-1/2" 
         : image.position === "center" 
-          ? "image-center" 
-          : "image-full";
+          ? "mx-auto mb-4 w-2/3" 
+          : "w-full mb-4";
     
     return (
       <figure key={`img-${index}`} className={`${positionClass} my-6`}>

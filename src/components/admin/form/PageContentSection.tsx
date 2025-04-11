@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useCallback } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { 
   ImageIcon, Info, Rows3, PanelRight, PanelLeft, AlignCenter, MapPin, Phone,
   Bold, Italic, List, ListOrdered, Heading1, Heading2, Link as LinkIcon, Quote,
-  Eye, EyeOff, Maximize2, Minimize2, Trash2, Edit2, Code
+  Eye, EyeOff, Maximize2, Minimize2, Trash2, Edit2, Code, RotateCcw
 } from "lucide-react";
 import { ImageItem } from "./PageMultiImageSection";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -37,6 +36,7 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
   const [showPreview, setShowPreview] = useState(false);
   const [isEditorExpanded, setIsEditorExpanded] = useState(false);
   const [viewMode, setViewMode] = useState<"visual" | "code">("visual");
+  const [undoHistory, setUndoHistory] = useState<string[]>([]);
   
   const contentValue = watch(name);
   
@@ -44,67 +44,53 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
     setPreviewContent(formatContentForPreview(contentValue || ""));
   }, [contentValue]);
 
+  React.useEffect(() => {
+    if (contentValue && undoHistory.length === 0) {
+      setUndoHistory([contentValue]);
+    }
+  }, []);
+
+  const handleContentChange = (value: string) => {
+    if (contentValue && contentValue !== value) {
+      setUndoHistory(prev => [...prev, contentValue].slice(-10));
+    }
+    setValue(name, value, { shouldDirty: true });
+  };
+
+  const handleUndo = () => {
+    if (undoHistory.length > 0) {
+      const previousContent = undoHistory[undoHistory.length - 1];
+      setValue(name, previousContent, { shouldDirty: true });
+      setUndoHistory(prev => prev.slice(0, -1));
+    }
+  };
+
   const formatContentForPreview = (content: string): string => {
     if (!content) return "";
     
     let formattedContent = content;
     
-    // Replace image tags with visual image preview
     const imageRegex = /<!-- IMAGE: (.*?) POSITION: (.*?) -->\n\[Immagine: (.*?)\]\n/g;
     formattedContent = formattedContent.replace(imageRegex, (match, url, position, name) => {
       const positionClass = position === "left" ? "image-placeholder-left" : 
-                            position === "right" ? "image-placeholder-right" : 
-                            position === "full" ? "image-placeholder-full" : 
-                            "image-placeholder-center";
-                            
+                          position === "right" ? "image-placeholder-right" : 
+                          position === "full" ? "image-placeholder-full" : 
+                          "image-placeholder-center";
+                          
       return `<div class="image-placeholder ${positionClass}">
         <img src="${url}" alt="${name}" class="image-preview" />
-        <div class="image-actions">
-          <button class="p-1 bg-white rounded shadow-sm text-gray-600 hover:text-gray-900">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-          </button>
-          <button class="p-1 bg-white rounded shadow-sm text-gray-600 hover:text-red-600">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3 6 5 6 21 6"></polyline>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              <line x1="10" y1="11" x2="10" y2="17"></line>
-              <line x1="14" y1="11" x2="14" y2="17"></line>
-            </svg>
-          </button>
-        </div>
       </div>`;
     });
     
-    // Replace simple image tags
     formattedContent = formattedContent.replace(
       /<!-- IMAGE: (.*?) -->\n\[Immagine: (.*?)\]\n/g,
       (match, url, name) => {
         return `<div class="image-placeholder image-placeholder-center">
           <img src="${url}" alt="${name}" class="image-preview" />
-          <div class="image-actions">
-            <button class="p-1 bg-white rounded shadow-sm text-gray-600 hover:text-gray-900">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-              </svg>
-            </button>
-            <button class="p-1 bg-white rounded shadow-sm text-gray-600 hover:text-red-600">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                <line x1="10" y1="11" x2="10" y2="17"></line>
-                <line x1="14" y1="11" x2="14" y2="17"></line>
-              </svg>
-            </button>
-          </div>
         </div>`;
       }
     );
     
-    // Process text alignment
     formattedContent = formattedContent.replace(
       /<!-- FORMAT:LEFT -->\n(.*?)(?=<!-- FORMAT:|$)/gs, 
       '<div style="text-align: left;">$1</div>'
@@ -120,7 +106,6 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
       '<div style="text-align: right;">$1</div>'
     );
     
-    // Process text formatting
     formattedContent = formattedContent.replace(
       /\*\*(.*?)\*\*/g,
       '<strong>$1</strong>'
@@ -131,7 +116,6 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
       '<em>$1</em>'
     );
     
-    // Process lists
     formattedContent = formattedContent.replace(
       /<!-- LIST:BULLET -->\n((?:- .*?\n?)+)/gs,
       (match, list) => {
@@ -154,7 +138,6 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
       }
     );
     
-    // Process headings
     formattedContent = formattedContent.replace(
       /<!-- HEADING:1 -->\n(.*?)(?=\n|$)/g,
       '<h1 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem;">$1</h1>'
@@ -165,19 +148,16 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
       '<h2 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 0.5rem;">$1</h2>'
     );
     
-    // Process quotes
     formattedContent = formattedContent.replace(
       /<!-- QUOTE -->\n(.*?)(?=<!-- QUOTE|$)/gs,
       '<blockquote style="border-left: 3px solid #e5e7eb; padding-left: 1rem; font-style: italic; margin: 1rem 0;">$1</blockquote>'
     );
     
-    // Process links
     formattedContent = formattedContent.replace(
       /\[([^\]]+)\]\(([^)]+)\)/g,
       '<a href="$2" style="color: #3b82f6; text-decoration: underline;">$1</a>'
     );
     
-    // Process maps and phone numbers
     formattedContent = formattedContent.replace(
       /<!-- MAP: (.*?) -->\n\[📍 (.*?)\]\n/g,
       '<div class="bg-blue-50 border border-blue-200 rounded p-2 my-2 flex items-center"><span class="text-blue-700">📍 $2</span></div>'
@@ -188,7 +168,6 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
       '<div class="bg-green-50 border border-green-200 rounded p-2 my-2 flex items-center"><span class="text-green-700">📞 $2</span></div>'
     );
     
-    // Handle line breaks
     formattedContent = formattedContent.replace(/\n\n/g, '<br><br>');
     formattedContent = formattedContent.replace(/\n/g, '<br>');
     
@@ -198,7 +177,6 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
   const formatTextareaContent = (content: string): string => {
     if (!content) return "";
     
-    // Per la visualizzazione visuale, sostituisci i tag dell'immagine con dei placeholder visuali
     if (viewMode === "visual") {
       let formattedContent = content.replace(
         /(<!-- IMAGE: (.*?) POSITION: (.*?) -->\n\[Immagine: (.*?)\]\n)/g,
@@ -211,7 +189,6 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
             return `[📷 ${posText} ${name}]\n`;
           }
           
-          // Restituisci un'anteprima dell'immagine
           return `[📷 ${posText} ${name}]\n`;
         }
       );
@@ -226,7 +203,6 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
       return formattedContent;
     }
     
-    // Per la visualizzazione codice, ritorna il contenuto originale
     return content;
   };
 
@@ -373,6 +349,8 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
     try {
       const content = getValues(name) as string;
       if (clickPosition !== null) {
+        setUndoHistory(prev => [...prev, content].slice(-10));
+        
         let imageName = "Immagine";
         if (imageUrl.startsWith('data:image')) {
           imageName = "Immagine caricata";
@@ -455,9 +433,10 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
   };
 
   const handleDeleteImage = (imageUrl: string, position: number) => {
-    // Implementazione per eliminare un'immagine dal contenuto
     try {
       const content = getValues(name) as string;
+      setUndoHistory(prev => [...prev, content].slice(-10));
+      
       const imageMarkupRegex = new RegExp(`<!-- IMAGE: ${imageUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} POSITION: .*? -->\n\\[Immagine: .*?\\]\n`, 'g');
       const newContent = content.replace(imageMarkupRegex, '');
       setValue(name, newContent, { shouldDirty: true });
@@ -467,8 +446,6 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
   };
 
   const handleEditImage = (imageUrl: string, position: number) => {
-    // Implementazione per modificare un'immagine nel contenuto
-    // Per ora semplicemente apre il dialogo di inserimento dell'immagine
     setClickPosition(position);
     setShowImageDialog(true);
   };
@@ -483,6 +460,25 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
             <div className="flex items-center justify-between">
               <FormLabel>{label}</FormLabel>
               <div className="flex items-center gap-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={handleUndo}
+                        className="h-8 w-8"
+                        disabled={undoHistory.length === 0}
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Annulla ultima modifica</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -805,10 +801,14 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
                       value={formatTextareaContent(field.value || "")}
                       onChange={(e) => {
                         field.onChange(e.target.value);
+                        if (e.target.value.length > 0 && e.target.value !== field.value) {
+                          setUndoHistory(prev => [...prev, field.value || ""].slice(-10));
+                        }
                       }}
                       expandable={true}
                       viewMode={viewMode}
                       onViewModeChange={handleViewModeChange}
+                      onUndo={handleUndo}
                     />
                   </FormControl>
                 </div>
