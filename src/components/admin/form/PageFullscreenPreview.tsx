@@ -166,54 +166,92 @@ const PageFullscreenPreview: React.FC<PageFullscreenPreviewProps> = ({
           <script>
             // Elabora i segnaposto di immagine per renderli correttamente
             document.addEventListener('DOMContentLoaded', function() {
-              const imagePlaceholders = document.querySelectorAll('.prose *');
-              imagePlaceholders.forEach(el => {
-                if (el.textContent && el.textContent.match(/^\[📷 [⏺️▶️◀️⬛] Immagine.*\]$/)) {
-                  const text = el.textContent;
-                  const matches = text.match(/^\[📷 ([⏺️▶️◀️⬛]) (.*)\]$/);
-                  if (matches) {
-                    const position = matches[1];
-                    const caption = matches[2];
+              function processImagePlaceholders() {
+                const imagePlaceholders = document.querySelectorAll('.prose *');
+                
+                imagePlaceholders.forEach(el => {
+                  if (el.textContent && el.textContent.match(/^\[📷 [⏺️▶️◀️⬛] .*\]$/)) {
+                    const text = el.textContent;
+                    const matches = text.match(/^\[📷 ([⏺️▶️◀️⬛]) (.*)\]$/);
                     
-                    // Trova l'URL dell'immagine nel documento originale
-                    // Questa è solo una soluzione temporanea - nella realtà dovremmo passare i dati reali
-                    const posClass = position === '◀️' ? 'editor-preview-image-left' : 
-                                    position === '▶️' ? 'editor-preview-image-right' : 
-                                    position === '⬛' ? 'editor-preview-image-full' : 
-                                    'editor-preview-image-center';
-                                    
-                    // Trova la prima immagine con questo caption nel documento originale
-                    const images = window.opener.document.querySelectorAll('img');
-                    let imageUrl = '';
-                    
-                    for (let img of images) {
-                      if ((img.alt === caption || img.alt.includes(caption)) && img.src) {
-                        imageUrl = img.src;
-                        break;
+                    if (matches) {
+                      const position = matches[1];
+                      const caption = matches[2];
+                      
+                      // Mappa posizione a classe CSS
+                      const posClass = position === '◀️' ? 'editor-preview-image-left' : 
+                                      position === '▶️' ? 'editor-preview-image-right' : 
+                                      position === '⬛' ? 'editor-preview-image-full' : 
+                                      'editor-preview-image-center';
+                      
+                      // Recupera gli URL delle immagini dalla finestra originale
+                      let imageUrl = '';
+                      
+                      try {
+                        // Cerca nelle immagini delle miniature
+                        if (window.opener && !window.opener.closed) {
+                          const images = window.opener.document.querySelectorAll('img');
+                          
+                          for (let img of images) {
+                            if ((img.alt === caption || img.alt.includes(caption)) && img.src) {
+                              imageUrl = img.src;
+                              break;
+                            }
+                          }
+                          
+                          // Se non troviamo l'immagine nelle miniature, cerchiamo nell'editor
+                          if (!imageUrl) {
+                            const originalContent = window.opener.document.querySelector('.prose')?.innerHTML || '';
+                            const imgMatch = originalContent.match(new RegExp('src="([^"]+)".*?' + caption.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'));
+                            if (imgMatch && imgMatch[1]) {
+                              imageUrl = imgMatch[1];
+                            }
+                          }
+                          
+                          // Cerca anche immagini nella preview della galleria
+                          if (!imageUrl) {
+                            const previewImages = window.opener.document.querySelectorAll('.image-preview');
+                            for (let img of previewImages) {
+                              if (img.alt === caption || img.alt.includes(caption)) {
+                                imageUrl = img.src;
+                                break;
+                              }
+                            }
+                          }
+                        }
+                      } catch (err) {
+                        console.error("Errore nel recupero dell'immagine:", err);
                       }
-                    }
-                    
-                    if (!imageUrl) {
-                      // Se non troviamo l'immagine, proviamo a cercarla nell'innerHTML
-                      const originalContent = window.opener.document.querySelector('.prose')?.innerHTML || '';
-                      const imgMatch = originalContent.match(new RegExp('src="([^"]+)".*?' + caption, 'i'));
-                      if (imgMatch && imgMatch[1]) {
-                        imageUrl = imgMatch[1];
+                      
+                      // Se abbiamo trovato un URL, mostra l'immagine
+                      if (imageUrl) {
+                        const imgElement = document.createElement('div');
+                        imgElement.className = 'image-placeholder ' + posClass;
+                        imgElement.innerHTML = \`
+                          <img src="\${imageUrl}" alt="\${caption}" class="image-preview" />
+                          <figcaption class="text-sm text-gray-600 text-center mt-2 italic">\${caption}</figcaption>
+                        \`;
+                        el.parentNode.replaceChild(imgElement, el);
+                      } else {
+                        // Se non troviamo un URL, aggiungiamo un data attribute per elaborazioni future
+                        el.setAttribute('data-image-caption', caption);
+                        el.setAttribute('data-image-position', position);
                       }
-                    }
-                    
-                    if (imageUrl) {
-                      const imgElement = document.createElement('div');
-                      imgElement.className = 'image-placeholder ' + posClass;
-                      imgElement.innerHTML = \`
-                        <img src="\${imageUrl}" alt="\${caption}" class="image-preview" />
-                        <figcaption class="text-sm text-gray-600 text-center mt-2 italic">\${caption}</figcaption>
-                      \`;
-                      el.parentNode.replaceChild(imgElement, el);
                     }
                   }
+                });
+              }
+              
+              // Processa i segnaposto immediatamente
+              processImagePlaceholders();
+              
+              // Imposta un timer per riprovare a caricare immagini non trovate
+              setTimeout(function() {
+                const unprocessedImages = document.querySelectorAll('[data-image-caption]');
+                if (unprocessedImages.length > 0) {
+                  processImagePlaceholders();
                 }
-              });
+              }, 1000);
             });
             
             document.getElementById('closeButton').addEventListener('click', function() {
