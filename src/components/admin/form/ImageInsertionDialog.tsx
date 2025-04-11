@@ -3,36 +3,24 @@ import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ImageUploader from "@/components/ImageUploader";
 import { Button } from "@/components/ui/button";
-import { AlignCenter, AlignLeft, AlignRight, Maximize } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, Maximize, Image } from "lucide-react";
 
 interface ImageInsertionDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onImageUpload: (imageDataUrl: string) => void;
-  onPositionChange?: (position: "left" | "center" | "right" | "full") => void;
+  onImageUpload: (imageDataUrl: string, position: "left" | "center" | "right" | "full") => void;
 }
 
 const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
   isOpen,
   onClose,
-  onImageUpload,
-  onPositionChange
+  onImageUpload
 }) => {
   const [selectedPosition, setSelectedPosition] = useState<"left" | "center" | "right" | "full">("center");
 
   const handleImageUploaded = (imageUrl: string) => {
-    if (onPositionChange) {
-      onPositionChange(selectedPosition);
-    }
-    onImageUpload(imageUrl);
+    onImageUpload(imageUrl, selectedPosition);
     onClose();
-  };
-
-  const handlePositionChange = (position: "left" | "center" | "right" | "full") => {
-    setSelectedPosition(position);
-    if (onPositionChange) {
-      onPositionChange(position);
-    }
   };
 
   return (
@@ -52,7 +40,7 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
                 type="button"
                 variant={selectedPosition === "left" ? "default" : "outline"}
                 size="sm"
-                onClick={() => handlePositionChange("left")}
+                onClick={() => setSelectedPosition("left")}
                 className="flex items-center"
               >
                 <AlignLeft className="h-4 w-4 mr-2" />
@@ -62,7 +50,7 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
                 type="button"
                 variant={selectedPosition === "center" ? "default" : "outline"}
                 size="sm"
-                onClick={() => handlePositionChange("center")}
+                onClick={() => setSelectedPosition("center")}
                 className="flex items-center"
               >
                 <AlignCenter className="h-4 w-4 mr-2" />
@@ -72,7 +60,7 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
                 type="button"
                 variant={selectedPosition === "right" ? "default" : "outline"}
                 size="sm"
-                onClick={() => handlePositionChange("right")}
+                onClick={() => setSelectedPosition("right")}
                 className="flex items-center"
               >
                 <AlignRight className="h-4 w-4 mr-2" />
@@ -82,7 +70,7 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
                 type="button"
                 variant={selectedPosition === "full" ? "default" : "outline"}
                 size="sm"
-                onClick={() => handlePositionChange("full")}
+                onClick={() => setSelectedPosition("full")}
                 className="flex items-center"
               >
                 <Maximize className="h-4 w-4 mr-2" />

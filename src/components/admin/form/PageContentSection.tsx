@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useCallback } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,7 +33,6 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
   const [showMapDialog, setShowMapDialog] = useState(false);
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
   const [previewContent, setPreviewContent] = useState<string>("");
-  const [imagePosition, setImagePosition] = useState<"left" | "center" | "right" | "full">("center");
   
   const contentValue = watch(name);
   
@@ -45,15 +45,34 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
     
     let formattedContent = content;
     
+    // Formatta placeholder immagini
     formattedContent = formattedContent.replace(
-      /<!-- IMAGE: (.*?) -->\n\[Immagine: (.*?)\]\n/g,
-      (match, url, name) => {
-        return `<div class="bg-gray-100 border border-gray-300 rounded p-2 my-2 flex items-center">
-          <span class="text-gray-700"><span class="text-emerald-600">📷</span> ${name}</span>
+      /<!-- IMAGE: (.*?) POSITION: (.*?) -->\n\[Immagine: (.*?)\]\n/g,
+      (match, url, position, name) => {
+        const positionClass = position === "left" ? "image-placeholder-left" : 
+                              position === "right" ? "image-placeholder-right" : 
+                              position === "full" ? "image-placeholder-full" : 
+                              "image-placeholder-center";
+                              
+        return `<div class="image-placeholder ${positionClass}">
+          <span class="image-placeholder-icon">📷</span>
+          <span>${name}</span>
         </div>`;
       }
     );
     
+    // Formatta le vecchie immagini che non hanno POSITION
+    formattedContent = formattedContent.replace(
+      /<!-- IMAGE: (.*?) -->\n\[Immagine: (.*?)\]\n/g,
+      (match, url, name) => {
+        return `<div class="image-placeholder image-placeholder-center">
+          <span class="image-placeholder-icon">📷</span>
+          <span>${name}</span>
+        </div>`;
+      }
+    );
+    
+    // Formatta allineamento
     formattedContent = formattedContent.replace(
       /<!-- FORMAT:LEFT -->\n(.*?)(?=<!-- FORMAT:|$)/gs, 
       '<div style="text-align: left;">$1</div>'
@@ -69,6 +88,7 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
       '<div style="text-align: right;">$1</div>'
     );
     
+    // Formatta testo in grassetto e corsivo
     formattedContent = formattedContent.replace(
       /\*\*(.*?)\*\*/g,
       '<strong>$1</strong>'
@@ -79,28 +99,31 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
       '<em>$1</em>'
     );
     
+    // Formatta elenchi puntati
     formattedContent = formattedContent.replace(
-      /<!-- LIST:BULLET -->\n((?:- .*?\n)+)(?=<!-- LIST|$)/gs,
+      /<!-- LIST:BULLET -->\n((?:- .*?\n?)+)/gs,
       (match, list) => {
         const items = list.split('\n')
           .filter(item => item.trim().startsWith('- '))
           .map(item => `<li>${item.substring(2).trim()}</li>`)
           .join('');
-        return `<ul>${items}</ul>`;
+        return `<ul style="list-style-type: disc; padding-left: 2rem;">${items}</ul>`;
       }
     );
     
+    // Formatta elenchi numerati
     formattedContent = formattedContent.replace(
-      /<!-- LIST:NUMBERED -->\n((?:\d+\. .*?\n)+)(?=<!-- LIST|$)/gs,
+      /<!-- LIST:NUMBERED -->\n((?:\d+\. .*?\n?)+)/gs,
       (match, list) => {
         const items = list.split('\n')
           .filter(item => /^\d+\.\s/.test(item.trim()))
           .map(item => `<li>${item.replace(/^\d+\.\s/, '').trim()}</li>`)
           .join('');
-        return `<ol>${items}</ol>`;
+        return `<ol style="list-style-type: decimal; padding-left: 2rem;">${items}</ol>`;
       }
     );
     
+    // Formatta titoli
     formattedContent = formattedContent.replace(
       /<!-- HEADING:1 -->\n(.*?)(?=\n|$)/g,
       '<h1 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem;">$1</h1>'
@@ -111,16 +134,19 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
       '<h2 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 0.5rem;">$1</h2>'
     );
     
+    // Formatta citazioni
     formattedContent = formattedContent.replace(
       /<!-- QUOTE -->\n(.*?)(?=<!-- QUOTE|$)/gs,
       '<blockquote style="border-left: 3px solid #e5e7eb; padding-left: 1rem; font-style: italic; margin: 1rem 0;">$1</blockquote>'
     );
     
+    // Formatta link
     formattedContent = formattedContent.replace(
       /\[([^\]]+)\]\(([^)]+)\)/g,
       '<a href="$2" style="color: #3b82f6; text-decoration: underline;">$1</a>'
     );
     
+    // Formatta mappe e telefoni
     formattedContent = formattedContent.replace(
       /<!-- MAP: (.*?) -->\n\[📍 (.*?)\]\n/g,
       '<div class="bg-blue-50 border border-blue-200 rounded p-2 my-2 flex items-center"><span class="text-blue-700">📍 $2</span></div>'
@@ -131,6 +157,7 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
       '<div class="bg-green-50 border border-green-200 rounded p-2 my-2 flex items-center"><span class="text-green-700">📞 $2</span></div>'
     );
     
+    // Gestione paragrafi
     formattedContent = formattedContent.replace(/\n\n/g, '<br><br>');
     formattedContent = formattedContent.replace(/\n/g, '<br>');
     
@@ -159,7 +186,7 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
         
       case 'bulletList':
         if (selectedText.includes('\n')) {
-          formattedText = `<!-- LIST:BULLET -->\n${selectedText.split('\n').map(line => `- ${line.trim()}`).join('\n')}\n`;
+          formattedText = `<!-- LIST:BULLET -->\n${selectedText.split('\n').filter(line => line.trim()).map(line => `- ${line.trim()}`).join('\n')}\n`;
         } else {
           formattedText = `<!-- LIST:BULLET -->\n- ${selectedText}\n`;
         }
@@ -167,7 +194,7 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
         
       case 'numberedList':
         if (selectedText.includes('\n')) {
-          formattedText = `<!-- LIST:NUMBERED -->\n${selectedText.split('\n').map((line, i) => `${i + 1}. ${line.trim()}`).join('\n')}\n`;
+          formattedText = `<!-- LIST:NUMBERED -->\n${selectedText.split('\n').filter(line => line.trim()).map((line, i) => `${i + 1}. ${line.trim()}`).join('\n')}\n`;
         } else {
           formattedText = `<!-- LIST:NUMBERED -->\n1. ${selectedText}\n`;
         }
@@ -293,7 +320,7 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
           }
         }
         
-        const imageMarkup = `\n<!-- IMAGE: ${imageUrl} -->\n[Immagine: ${imageName}]\n`;
+        const imageMarkup = `\n<!-- IMAGE: ${imageUrl} POSITION: ${position} -->\n[Immagine: ${imageName}]\n`;
         const newContent = content.substring(0, clickPosition) + imageMarkup + content.substring(clickPosition);
         setValue(name, newContent, { shouldDirty: true });
         
@@ -624,7 +651,6 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
                       ref={textareaRef}
                       className="min-h-[350px] font-medium leading-relaxed p-4 resize-none"
                       style={{ lineHeight: "1.8" }}
-                      onFormatText={handleTextFormat}
                     />
                   </FormControl>
                 </div>
@@ -691,8 +717,7 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
       <ImageInsertionDialog
         isOpen={showImageDialog}
         onClose={() => setShowImageDialog(false)}
-        onImageUpload={(imageUrl) => handleInsertImage(imageUrl, imagePosition)}
-        onPositionChange={setImagePosition}
+        onImageUpload={handleInsertImage}
       />
 
       {showGalleryDialog && (
