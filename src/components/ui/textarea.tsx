@@ -11,10 +11,11 @@ export interface TextareaProps
   onViewModeChange?: (mode: "visual" | "code") => void;
   onUndo?: () => void;
   onRedo?: () => void;
+  onFullscreen?: () => void;
 }
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, onFormatText, expandable = false, viewMode = "visual", onViewModeChange, onUndo, onRedo, ...props }, ref) => {
+  ({ className, onFormatText, expandable = false, viewMode = "visual", onViewModeChange, onUndo, onRedo, onFullscreen, ...props }, ref) => {
     const [isExpanded, setIsExpanded] = React.useState(false);
 
     return (
@@ -38,6 +39,17 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
               title={isExpanded ? "Riduci editor" : "Espandi editor"}
             >
               {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </button>
+          )}
+          
+          {onFullscreen && (
+            <button
+              type="button"
+              onClick={onFullscreen}
+              className="p-1 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700"
+              title="Anteprima a schermo intero"
+            >
+              <Maximize2 className="h-4 w-4" />
             </button>
           )}
           

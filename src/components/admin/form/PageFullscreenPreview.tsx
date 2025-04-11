@@ -20,9 +20,9 @@ const PageFullscreenPreview: React.FC<PageFullscreenPreviewProps> = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] p-0 overflow-hidden">
+      <DialogContent className="max-w-full w-full h-full p-0 overflow-hidden inset-0 m-0 rounded-none">
         <div className="flex flex-col h-full">
-          <div className="flex justify-between items-center p-3 border-b bg-white">
+          <div className="flex justify-between items-center p-3 border-b bg-white z-10">
             <h2 className="text-lg font-medium flex items-center">
               <Maximize2 className="h-4 w-4 mr-2" />
               <TranslatedText text={`Anteprima: ${title}`} />
@@ -33,8 +33,10 @@ const PageFullscreenPreview: React.FC<PageFullscreenPreviewProps> = ({
           </div>
           
           <div className="flex-1 overflow-auto bg-white">
-            <div className="p-6">
-              {content}
+            <div className="fullscreen-preview-container">
+              <div className="fullscreen-preview-content">
+                {content}
+              </div>
             </div>
           </div>
         </div>

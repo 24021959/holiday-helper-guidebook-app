@@ -7,6 +7,14 @@ export interface HistoryState<T> {
   future: T[];
 }
 
+export interface ImageItem {
+  url: string;
+  position: "left" | "center" | "right" | "full";
+  caption?: string;
+  type: "image";
+  contentImage?: boolean;
+}
+
 /**
  * Custom hook for managing edit history with undo and redo functionality
  * @param initialPresent The initial state
