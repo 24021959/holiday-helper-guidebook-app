@@ -1,11 +1,13 @@
-
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { useFormContext } from "react-hook-form";
 import ImageInsertionDialog from "./ImageInsertionDialog";
 import { Button } from "@/components/ui/button";
-import { ImageIcon, Info, Rows3, PanelRight, PanelLeft, AlignCenter, MapPin, Phone } from "lucide-react";
+import { 
+  ImageIcon, Info, Rows3, PanelRight, PanelLeft, AlignCenter, MapPin, Phone,
+  Bold, Italic, List, ListOrdered, Heading1, Heading2, Link as LinkIcon, Quote
+} from "lucide-react";
 import { ImageItem } from "./PageMultiImageSection";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -31,7 +33,6 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
   const [previewContent, setPreviewContent] = useState<string>("");
   
-  // Watch for content changes to update preview
   const contentValue = watch(name);
   
   React.useEffect(() => {
@@ -43,7 +44,6 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
     
     let formattedContent = content;
     
-    // Convert alignment tags to inline styles
     formattedContent = formattedContent.replace(
       /<!-- FORMAT:LEFT -->\n(.*?)(?=<!-- FORMAT:|$)/gs, 
       '<div style="text-align: left;">$1</div>'
@@ -59,12 +59,135 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
       '<div style="text-align: right;">$1</div>'
     );
     
-    // Convert newlines to <br> tags
+    formattedContent = formattedContent.replace(
+      /\*\*(.*?)\*\*/g,
+      '<strong>$1</strong>'
+    );
+    
+    formattedContent = formattedContent.replace(
+      /\*(.*?)\*/g,
+      '<em>$1</em>'
+    );
+    
+    formattedContent = formattedContent.replace(
+      /<!-- LIST:BULLET -->\n((?:- .*?\n)+)(?=<!-- LIST|$)/gs,
+      (match, list) => {
+        const items = list.split('\n')
+          .filter(item => item.trim().startsWith('- '))
+          .map(item => `<li>${item.substring(2).trim()}</li>`)
+          .join('');
+        return `<ul>${items}</ul>`;
+      }
+    );
+    
+    formattedContent = formattedContent.replace(
+      /<!-- LIST:NUMBERED -->\n((?:\d+\. .*?\n)+)(?=<!-- LIST|$)/gs,
+      (match, list) => {
+        const items = list.split('\n')
+          .filter(item => /^\d+\.\s/.test(item.trim()))
+          .map(item => `<li>${item.replace(/^\d+\.\s/, '').trim()}</li>`)
+          .join('');
+        return `<ol>${items}</ol>`;
+      }
+    );
+    
+    formattedContent = formattedContent.replace(
+      /<!-- HEADING:1 -->\n(.*?)(?=\n|$)/g,
+      '<h1 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem;">$1</h1>'
+    );
+    
+    formattedContent = formattedContent.replace(
+      /<!-- HEADING:2 -->\n(.*?)(?=\n|$)/g,
+      '<h2 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 0.5rem;">$1</h2>'
+    );
+    
+    formattedContent = formattedContent.replace(
+      /<!-- QUOTE -->\n(.*?)(?=<!-- QUOTE|$)/gs,
+      '<blockquote style="border-left: 3px solid #e5e7eb; padding-left: 1rem; font-style: italic; margin: 1rem 0;">$1</blockquote>'
+    );
+    
+    formattedContent = formattedContent.replace(
+      /\[([^\]]+)\]\(([^)]+)\)/g,
+      '<a href="$2" style="color: #3b82f6; text-decoration: underline;">$1</a>'
+    );
+    
     formattedContent = formattedContent.replace(/\n\n/g, '<br><br>');
     formattedContent = formattedContent.replace(/\n/g, '<br>');
     
     return formattedContent;
   };
+
+  const handleTextFormat = useCallback((command: string) => {
+    if (!textareaRef.current) return;
+    
+    const textarea = textareaRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    const content = getValues(name) as string;
+    
+    let formattedText = '';
+    
+    switch (command) {
+      case 'bold':
+        formattedText = `**${selectedText}**`;
+        break;
+        
+      case 'italic':
+        formattedText = `*${selectedText}*`;
+        break;
+        
+      case 'bulletList':
+        if (selectedText.includes('\n')) {
+          formattedText = `<!-- LIST:BULLET -->\n${selectedText.split('\n').map(line => `- ${line.trim()}`).join('\n')}\n`;
+        } else {
+          formattedText = `<!-- LIST:BULLET -->\n- ${selectedText}\n`;
+        }
+        break;
+        
+      case 'numberedList':
+        if (selectedText.includes('\n')) {
+          formattedText = `<!-- LIST:NUMBERED -->\n${selectedText.split('\n').map((line, i) => `${i + 1}. ${line.trim()}`).join('\n')}\n`;
+        } else {
+          formattedText = `<!-- LIST:NUMBERED -->\n1. ${selectedText}\n`;
+        }
+        break;
+        
+      case 'heading1':
+        formattedText = `<!-- HEADING:1 -->\n${selectedText}\n`;
+        break;
+        
+      case 'heading2':
+        formattedText = `<!-- HEADING:2 -->\n${selectedText}\n`;
+        break;
+        
+      case 'link':
+        const url = window.prompt('Inserisci URL:', 'https://');
+        if (url) {
+          formattedText = `[${selectedText || 'Link'}](${url})`;
+        } else {
+          return;
+        }
+        break;
+        
+      case 'quote':
+        formattedText = `<!-- QUOTE -->\n${selectedText}\n`;
+        break;
+        
+      default:
+        return;
+    }
+    
+    const newContent = content.substring(0, start) + formattedText + content.substring(end);
+    setValue(name, newContent, { shouldDirty: true });
+    
+    setTimeout(() => {
+      textarea.focus();
+      const newPosition = start + formattedText.length;
+      textarea.selectionStart = newPosition;
+      textarea.selectionEnd = newPosition;
+    }, 0);
+  }, [getValues, setValue, name]);
 
   const handleInsertImageClick = () => {
     if (textareaRef.current) {
@@ -238,6 +361,160 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
             </div>
             <div className="space-y-2">
               <div className="flex flex-wrap gap-2 mb-2">
+                <div className="flex flex-wrap gap-2 mb-2 w-full border-b pb-2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleTextFormat('bold')}
+                          className="text-xs"
+                        >
+                          <Bold className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Grassetto</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleTextFormat('italic')}
+                          className="text-xs"
+                        >
+                          <Italic className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Corsivo</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleTextFormat('bulletList')}
+                          className="text-xs"
+                        >
+                          <List className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Elenco puntato</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleTextFormat('numberedList')}
+                          className="text-xs"
+                        >
+                          <ListOrdered className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Elenco numerato</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleTextFormat('heading1')}
+                          className="text-xs"
+                        >
+                          <Heading1 className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Titolo principale</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleTextFormat('heading2')}
+                          className="text-xs"
+                        >
+                          <Heading2 className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Sottotitolo</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleTextFormat('link')}
+                          className="text-xs"
+                        >
+                          <LinkIcon className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Inserisci link</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleTextFormat('quote')}
+                          className="text-xs"
+                        >
+                          <Quote className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Citazione</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
