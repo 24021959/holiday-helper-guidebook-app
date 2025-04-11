@@ -6,7 +6,7 @@ import Menu from "./pages/Menu";
 import Home from "./pages/Home";
 import SubMenu from "./pages/SubMenu";
 import Login from "./pages/Login";
-import Admin from "./pages/Admin";
+import AdminPage from "./pages/AdminPage";
 import Welcome from "./pages/Welcome";
 import Storia from "./pages/Storia";
 import NotFound from "./pages/NotFound";
@@ -26,7 +26,7 @@ function App() {
           <Route path="/" element={<Index />} />
           <Route path="/home" element={<Home />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin" element={<AdminPage />} />
           <Route path="/welcome" element={<Welcome />} />
           <Route path="/storia" element={<Storia />} />
           <Route path="/auto-translate" element={<AutoTranslatePage />} />
