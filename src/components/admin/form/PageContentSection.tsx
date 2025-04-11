@@ -12,6 +12,7 @@ import {
 import { ImageItem } from "./PageMultiImageSection";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEditHistory } from "@/hooks/useEditHistory";
+import PageFullscreenPreview from "./PageFullscreenPreview";
 
 interface PageContentSectionProps {
   name: string;
@@ -1072,6 +1073,19 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
           </div>
         </div>
       )}
+
+      <PageFullscreenPreview
+        isOpen={showFullscreenPreview}
+        onClose={() => setShowFullscreenPreview(false)}
+        content={
+          <div 
+            className="prose prose-sm max-w-none" 
+            dangerouslySetInnerHTML={{ __html: previewContent }} 
+          />
+        }
+        title="Anteprima Contenuto"
+        openInNewWindow={true}
+      />
     </>
   );
 };
