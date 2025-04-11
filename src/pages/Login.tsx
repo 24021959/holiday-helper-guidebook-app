@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -6,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertCircle, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { md5 } from "js-md5";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, AlertCircle as AlertCircleIcon } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 
 const Login: React.FC = () => {
   const [adminUsername, setAdminUsername] = useState<string>("");
@@ -23,13 +22,12 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if the Supabase connection is working
     const checkConnection = async () => {
       try {
         const { error } = await supabase.from('header_settings').select('count').single();
         if (error && error.code === '42P01') {
           console.error("Table does not exist, but connection works");
-          setConfigError(false); // Connection works, just table missing
+          setConfigError(false);
         } else if (error) {
           console.error("Error checking Supabase connection:", error);
           setConfigError(true);
@@ -38,7 +36,7 @@ const Login: React.FC = () => {
         }
       } catch (err) {
         console.error("Error connecting to Supabase:", err);
-        setConfigError(false); // Don't show error on login page, just proceed with local demo
+        setConfigError(false);
       }
     };
     
@@ -50,7 +48,6 @@ const Login: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Simple demo authentication
       if (adminUsername === "admin" && adminPassword === "password") {
         localStorage.setItem("admin_token", "demo_token");
         localStorage.setItem("admin_user", "admin");
@@ -60,7 +57,6 @@ const Login: React.FC = () => {
         return;
       } 
       
-      // Try to authenticate with Supabase data
       const success = await checkDbLogin(adminUsername, adminPassword, "user");
       if (!success) {
         toast.error("Credenziali non valide");
@@ -77,7 +73,6 @@ const Login: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Master authentication
     setTimeout(() => {
       if (masterUsername === "master" && masterPassword === "master123") {
         localStorage.setItem("admin_token", "master_token");
@@ -96,7 +91,6 @@ const Login: React.FC = () => {
   const checkDbLogin = async (email: string, password: string, role: string): Promise<boolean> => {
     try {
       console.log("Checking DB login for:", email);
-      // Call the admin_users_helpers function to check login
       const { data, error } = await supabase.functions.invoke("admin_users_helpers", {
         body: { 
           action: "check_login",
@@ -109,7 +103,6 @@ const Login: React.FC = () => {
 
       if (error) {
         console.error("Error checking login:", error);
-        // In case of connection errors, fall back to demo mode
         if (email === "admin" && password === "password") {
           localStorage.setItem("admin_token", "demo_token");
           localStorage.setItem("admin_user", "admin");
@@ -122,7 +115,6 @@ const Login: React.FC = () => {
       }
       
       if (data && data.success) {
-        // Save user data in localStorage
         localStorage.setItem("admin_token", "user_token");
         localStorage.setItem("admin_user", email);
         localStorage.setItem("user_role", role);
@@ -136,7 +128,6 @@ const Login: React.FC = () => {
     } catch (error) {
       console.error("Login check error:", error);
       
-      // Fallback to demo credentials if there's an error
       if (email === "admin" && password === "password") {
         localStorage.setItem("admin_token", "demo_token");
         localStorage.setItem("admin_user", "admin");
@@ -150,11 +141,10 @@ const Login: React.FC = () => {
     }
   };
 
-  // If we have a configuration error, still show the form but with a warning
   if (configError) {
     toast.error("Problemi di connessione al database. Usando modalità demo.", {
       duration: 5000,
-      id: "config-error" // Prevent duplicate toasts
+      id: "config-error"
     });
   }
 
@@ -173,7 +163,7 @@ const Login: React.FC = () => {
 
         {configError && (
           <Alert variant="destructive" className="mb-6">
-            <AlertCircleIcon className="h-4 w-4" />
+            <AlertCircle className="h-4 w-4" />
             <AlertTitle>Errore di configurazione</AlertTitle>
             <AlertDescription>
               Impossibile connettersi al database. Utilizzando la modalità demo. Usare username "admin" e password "password".

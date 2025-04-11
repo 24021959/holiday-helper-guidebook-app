@@ -19,7 +19,9 @@ export const useHeaderSettings = () => {
 
   const fetchHeaderSettings = useCallback(async () => {
     try {
-      // Prima prova a ottenere da localStorage come fallback immediato
+      setError(null);
+      
+      // First try to get from localStorage as immediate fallback
       const savedHeaderSettings = localStorage.getItem("headerSettings");
       let localSettings = null;
       
@@ -27,9 +29,9 @@ export const useHeaderSettings = () => {
         try {
           localSettings = JSON.parse(savedHeaderSettings);
           setHeaderSettings(localSettings);
-          console.log("Utilizzo impostazioni header in cache:", localSettings);
+          console.log("Using cached header settings:", localSettings);
         } catch (err) {
-          console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
+          console.error("Error parsing settings from localStorage:", err);
         }
       }
       
@@ -54,24 +56,50 @@ export const useHeaderSettings = () => {
         return;
       }
       
-      // Poi prova a ottenere da Supabase
-      const { data, error } = await supabase
-        .from('header_settings')
-        .select('*')
-        .limit(1)
-        .maybeSingle();
-        
-      if (error) {
-        // If the table doesn't exist, that's OK in demo mode
-        if (error.code === '42P01') {
-          console.warn("Header settings table does not exist. Using defaults or localStorage.");
-          // If we already have local settings, don't show error
+      // Then try to get from Supabase
+      try {
+        const { data, error } = await supabase
+          .from('header_settings')
+          .select('*')
+          .limit(1)
+          .maybeSingle();
+          
+        if (error) {
+          // If the table doesn't exist, that's OK in demo mode
+          if (error.code === '42P01') {
+            console.warn("Header settings table does not exist. Using defaults or localStorage.");
+            // If we already have local settings, don't show error
+            if (localSettings) {
+              setLoading(false);
+              return;
+            }
+            
+            // Set default values
+            const defaultSettings = {
+              headerColor: "bg-gradient-to-r from-teal-500 to-emerald-600",
+              logoPosition: "left",
+              logoSize: "medium",
+              establishmentName: "EV-AI Guest"
+            };
+            
+            setHeaderSettings(defaultSettings);
+            localStorage.setItem("headerSettings", JSON.stringify(defaultSettings));
+            setLoading(false);
+            setIsDemo(true);
+            return;
+          }
+          
+          console.warn("Error loading header settings:", error);
+          
+          // If we already set from localStorage, don't show error
           if (localSettings) {
             setLoading(false);
             return;
           }
           
-          // Set default values
+          setError("Impossibile connettersi al database. Controlla la tua connessione e riprova.");
+          
+          // Set default values as fallback
           const defaultSettings = {
             headerColor: "bg-gradient-to-r from-teal-500 to-emerald-600",
             logoPosition: "left",
@@ -81,52 +109,59 @@ export const useHeaderSettings = () => {
           
           setHeaderSettings(defaultSettings);
           localStorage.setItem("headerSettings", JSON.stringify(defaultSettings));
-          setLoading(false);
           setIsDemo(true);
-          return;
-        }
-        
-        console.warn("Errore nel caricamento delle impostazioni header:", error);
-        
-        // Se abbiamo già impostato da localStorage, non mostrare errore
-        if (localSettings) {
           setLoading(false);
           return;
         }
         
-        setError("Impossibile connettersi al database. Controlla la tua connessione e riprova.");
-        setLoading(false);
-        return;
-      }
-      
-      if (data) {
-        const newSettings = {
-          logoUrl: data.logo_url,
-          headerColor: data.header_color,
-          establishmentName: data.establishment_name,
-          logoPosition: data.logo_position || "left",
-          logoSize: data.logo_size || "medium"
-        };
+        if (data) {
+          const newSettings = {
+            logoUrl: data.logo_url,
+            headerColor: data.header_color,
+            establishmentName: data.establishment_name,
+            logoPosition: data.logo_position || "left",
+            logoSize: data.logo_size || "medium"
+          };
+          
+          setHeaderSettings(newSettings);
+          
+          // Save in localStorage as backup
+          localStorage.setItem("headerSettings", JSON.stringify(newSettings));
+        } else if (!localSettings) {
+          // If no data from server and no local settings, use defaults
+          const defaultSettings = {
+            headerColor: "bg-gradient-to-r from-teal-500 to-emerald-600",
+            logoPosition: "left",
+            logoSize: "medium",
+            establishmentName: "EV-AI Guest"
+          };
+          
+          setHeaderSettings(defaultSettings);
+          localStorage.setItem("headerSettings", JSON.stringify(defaultSettings));
+          setIsDemo(true);
+        }
+      } catch (dbError) {
+        console.error("Database connection error:", dbError);
         
-        setHeaderSettings(newSettings);
-        
-        // Salva in localStorage come backup
-        localStorage.setItem("headerSettings", JSON.stringify(newSettings));
-      } else if (!localSettings) {
-        // If no data from server and no local settings, use defaults
-        const defaultSettings = {
-          headerColor: "bg-gradient-to-r from-teal-500 to-emerald-600",
-          logoPosition: "left",
-          logoSize: "medium",
-          establishmentName: "EV-AI Guest"
-        };
-        
-        setHeaderSettings(defaultSettings);
-        localStorage.setItem("headerSettings", JSON.stringify(defaultSettings));
-        setIsDemo(true);
+        // If we already have local settings, don't show error toast
+        if (!localSettings) {
+          // Set default values as fallback
+          const defaultSettings = {
+            headerColor: "bg-gradient-to-r from-teal-500 to-emerald-600",
+            logoPosition: "left",
+            logoSize: "medium",
+            establishmentName: "EV-AI Guest"
+          };
+          
+          setHeaderSettings(defaultSettings);
+          localStorage.setItem("headerSettings", JSON.stringify(defaultSettings));
+          setIsDemo(true);
+          
+          setError("Impossibile connettersi al database. Utilizzando valori predefiniti.");
+        }
       }
     } catch (error) {
-      console.error("Errore nel caricamento delle impostazioni header:", error);
+      console.error("Error loading header settings:", error);
       
       // If we already have local settings, don't show error toast
       const savedHeaderSettings = localStorage.getItem("headerSettings");
