@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from '@/context/TranslationContext';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useLocation } from 'react-router-dom';
 
 interface Message {
   id: string;
@@ -48,11 +49,17 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
   const [knowledgeBaseCount, setKnowledgeBaseCount] = useState<number>(0);
   const knowledgeBaseCheckedRef = useRef(false);
   const { language } = useTranslation();
+  const location = useLocation();
 
   // Determine if we're in the admin area
   const isAdminArea = useCallback(() => {
-    return window.location.pathname.includes('/admin');
-  }, []);
+    return location.pathname.includes('/admin');
+  }, [location]);
+
+  // Check if we're on the home page
+  const isHomePage = useCallback(() => {
+    return location.pathname === '/' || location.pathname === '';
+  }, [location]);
 
   useEffect(() => {
     if (previewConfig) {
@@ -223,7 +230,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, language, previewConfig]);
+  }, [messages, language, previewConfig, refreshKnowledgeBase]);
 
   const toggleChat = useCallback(() => setIsOpen(prev => !prev), []);
   const closeChat = useCallback(() => setIsOpen(false), []);
@@ -233,6 +240,13 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
     if (previewConfig) {
       setKnowledgeBaseExists(true);
       setKnowledgeBaseCount(10);
+      return true;
+    }
+    
+    // Never show knowledge base notifications on the home page
+    if (isHomePage()) {
+      setKnowledgeBaseExists(true);
+      setKnowledgeBaseCount(0);
       return true;
     }
     
@@ -269,12 +283,12 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
           
           console.log(`Knowledge base direct count check result: ${count}`);
           
-          // Only show toast notifications in admin area
-          if (isAdminArea()) {
-            if (hasContent && !knowledgeBaseCheckedRef.current) {
+          // Only show toast notifications in admin area and never on home page
+          if (isAdminArea() && !isHomePage() && !knowledgeBaseCheckedRef.current) {
+            if (hasContent) {
               toast.success(`Base di conoscenza verificata: ${count} elementi`);
               knowledgeBaseCheckedRef.current = true;
-            } else if (!hasContent && !knowledgeBaseCheckedRef.current) {
+            } else {
               toast.warning("La base di conoscenza è vuota");
               knowledgeBaseCheckedRef.current = true;
             }
@@ -288,8 +302,8 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
           setKnowledgeBaseExists(false);
           setKnowledgeBaseCount(0);
           
-          // Only show toast notifications in admin area
-          if (isAdminArea() && !knowledgeBaseCheckedRef.current) {
+          // Only show toast notifications in admin area and never on home page
+          if (isAdminArea() && !isHomePage() && !knowledgeBaseCheckedRef.current) {
             toast.warning("La tabella della base di conoscenza non esiste");
             knowledgeBaseCheckedRef.current = true;
           }
@@ -315,12 +329,12 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
         setKnowledgeBaseExists(hasContent);
         setKnowledgeBaseCount(count || 0);
         
-        // Only show toast notifications in admin area
-        if (isAdminArea()) {
-          if (hasContent && !knowledgeBaseCheckedRef.current) {
+        // Only show toast notifications in admin area and never on home page
+        if (isAdminArea() && !isHomePage() && !knowledgeBaseCheckedRef.current) {
+          if (hasContent) {
             toast.success(`Base di conoscenza verificata: ${count} elementi`);
             knowledgeBaseCheckedRef.current = true;
-          } else if (!hasContent && !knowledgeBaseCheckedRef.current) {
+          } else {
             toast.warning("La base di conoscenza è vuota");
             knowledgeBaseCheckedRef.current = true;
           }
@@ -339,7 +353,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
       setKnowledgeBaseCount(0);
       return false;
     }
-  }, [previewConfig, isAdminArea]);
+  }, [previewConfig, isAdminArea, isHomePage]);
 
   return {
     isOpen,
