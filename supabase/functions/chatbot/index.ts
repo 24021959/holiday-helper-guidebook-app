@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
@@ -8,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const SYSTEM_PROMPT = `Sei un assistente virtuale per una struttura ricettiva. Usa le informazioni fornite dalla base di conoscenza per rispondere alle domande degli utenti in modo preciso e cordiale. Rispondi sempre nella lingua dell'utente.
+const SYSTEM_PROMPT = `Sei un assistente virtuale per una struttura ricettiva chiamata "Locanda dell'Angelo". Usa le informazioni fornite dalla base di conoscenza per rispondere alle domande degli utenti in modo preciso e cordiale. Rispondi sempre nella lingua dell'utente.
 
 Se non trovi informazioni sufficienti nella base di conoscenza, rispondi in modo educato dicendo che non hai abbastanza informazioni, e suggerisci di contattare direttamente la struttura. Non inventare mai informazioni che non sono presenti nella base di conoscenza.
 
@@ -44,6 +43,7 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Chatbot function called");
     const { message, language, chatHistory } = await req.json();
 
     if (!message) {
@@ -62,163 +62,135 @@ serve(async (req) => {
       supabaseUrl || '',
       supabaseKey || ''
     );
+    
+    console.log("Supabase client initialized");
 
-    // Get relevant documents from the knowledge base using better semantic search
+    // Get relevant documents from the knowledge base
     let relevantContent = [];
+    let knowledgeBaseEmpty = false;
+    
     try {
       // Check if the table exists and has records
+      console.log("Checking if knowledge base exists and has content");
+      
+      // First try to get the count of records
       const { count, error: countError } = await supabaseClient
         .from('chatbot_knowledge')
         .select('*', { count: 'exact', head: true });
         
       if (countError) {
-        console.error("Error checking knowledge base:", countError);
-        throw new Error("Knowledge base unavailable");
+        console.error("Error checking knowledge base count:", countError);
+        throw new Error("Knowledge base count error: " + countError.message);
       }
+      
+      console.log(`Knowledge base count: ${count}`);
       
       if (!count || count === 0) {
         console.log("Knowledge base is empty");
-        throw new Error("Knowledge base is empty");
-      }
-      
-      console.log(`Found ${count} documents in knowledge base`);
-      
-      // Improved search algorithm - use multiple approaches
-      
-      // 1. Extract meaningful keywords from the user's message
-      const cleanedMessage = message.toLowerCase()
-        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, " ")
-        .replace(/\s{2,}/g, " ")
-        .trim();
-        
-      const searchTerms = cleanedMessage.split(/\s+/)
-        .filter((term) => term.length > 3)  // Only terms with 4+ chars
-        .slice(0, 8);  // Increased from 6 to 8 keywords
-        
-      console.log("Search terms:", searchTerms);
-      
-      // If no good search terms, try to get most relevant documents
-      if (searchTerms.length === 0) {
-        // Try to get most recently updated documents
-        console.log("No good search terms found, retrieving recent documents");
-        const { data: recentDocs, error: recentError } = await supabaseClient
-          .from('chatbot_knowledge')
-          .select('*')
-          .order('updated_at', { ascending: false })
-          .limit(3); // Increased from 2 to 3
-          
-        if (recentError) {
-          console.error("Error fetching recent documents:", recentError);
-        } else if (recentDocs && recentDocs.length > 0) {
-          relevantContent = recentDocs;
-          console.log(`Selected ${relevantContent.length} recent documents`);
-        }
+        knowledgeBaseEmpty = true;
       } else {
-        // 2. Try full-text search first for exact matches
-        const exactMatches = [];
+        console.log(`Found ${count} documents in knowledge base`);
         
-        // Try an exact phrase match first
-        if (cleanedMessage.length >= 5) {
-          const { data: exactResults, error: exactError } = await supabaseClient
+        // Extract search terms from message
+        const cleanedMessage = message.toLowerCase()
+          .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, " ")
+          .replace(/\s{2,}/g, " ")
+          .trim();
+          
+        const searchTerms = cleanedMessage.split(/\s+/)
+          .filter((term) => term.length > 2)
+          .slice(0, 10);
+          
+        console.log("Search terms:", searchTerms);
+
+        // Perform multiple search queries in parallel
+        if (searchTerms.length > 0) {
+          // First try exact phrase search
+          const { data: exactMatches, error: exactError } = await supabaseClient
             .from('chatbot_knowledge')
             .select('*')
             .textSearch('content', `'${cleanedMessage}'`, { 
               type: 'plain',
               config: 'italian' 
             })
-            .limit(2);
+            .limit(3);
             
-          if (!exactError && exactResults && exactResults.length > 0) {
-            console.log(`Found ${exactResults.length} exact phrase matches`);
-            exactMatches.push(...exactResults);
-          }
-        }
-        
-        // 3. Then try keyword search as fallback
-        const keywordMatches = [];
-        let queries = [];
-        
-        for (const term of searchTerms) {
-          if (term.length >= 3) {
-            // Search in both title and content with weights
-            const query = supabaseClient
-              .from('chatbot_knowledge')
-              .select('*')
-              .or(`title.ilike.%${term}%,content.ilike.%${term}%`)
-              .limit(3);
-              
-            queries.push(query);
-          }
-        }
-        
-        // Execute all queries in parallel
-        const results = await Promise.all(queries.map(q => q));
-        
-        // Collect all unique documents
-        const allDocs = [];
-        const seenIds = new Set();
-        
-        for (const result of results) {
-          if (result.data) {
-            for (const doc of result.data) {
-              if (!seenIds.has(doc.id)) {
-                seenIds.add(doc.id);
-                allDocs.push(doc);
+          if (exactError) {
+            console.error("Error in exact search:", exactError);
+          } else if (exactMatches && exactMatches.length > 0) {
+            console.log(`Found ${exactMatches.length} exact phrase matches`);
+            relevantContent.push(...exactMatches);
+          } else {
+            console.log("No exact matches found, trying keyword search");
+            
+            // Try individual keyword searches
+            let allKeywordResults = [];
+            
+            for (const term of searchTerms) {
+              if (term.length >= 3) {
+                console.log(`Searching for keyword: ${term}`);
+                const { data: results, error: keywordError } = await supabaseClient
+                  .from('chatbot_knowledge')
+                  .select('*')
+                  .or(`title.ilike.%${term}%,content.ilike.%${term}%`)
+                  .limit(5);
+                  
+                if (keywordError) {
+                  console.error(`Error searching for keyword ${term}:`, keywordError);
+                } else if (results && results.length > 0) {
+                  console.log(`Found ${results.length} results for keyword ${term}`);
+                  allKeywordResults = [...allKeywordResults, ...results];
+                }
               }
             }
+            
+            // Deduplicate results
+            const seen = new Set();
+            const uniqueResults = allKeywordResults.filter(item => {
+              const duplicate = seen.has(item.id);
+              seen.add(item.id);
+              return !duplicate;
+            });
+            
+            console.log(`Found ${uniqueResults.length} unique keyword matches`);
+            
+            // Score results by number of matching terms
+            const scoredResults = uniqueResults.map(doc => {
+              const docText = (doc.title + ' ' + doc.content).toLowerCase();
+              const score = searchTerms.filter(term => docText.includes(term)).length;
+              return { ...doc, score };
+            });
+            
+            // Sort by score and take top results
+            const topResults = scoredResults
+              .sort((a, b) => b.score - a.score)
+              .slice(0, 5);
+              
+            console.log(`Selected top ${topResults.length} results by relevance score`);
+            relevantContent.push(...topResults);
           }
         }
         
-        // Score documents by keyword matches
-        const scoredDocs = allDocs.map(doc => {
-          const docText = (doc.title + ' ' + doc.content).toLowerCase();
-          const score = searchTerms.reduce((count, term) => {
-            return count + (docText.includes(term) ? 1 : 0);
-          }, 0);
-          return { ...doc, relevance_score: score };
-        });
-        
-        // Sort by relevance score and take the top results
-        keywordMatches.push(...scoredDocs
-          .sort((a, b) => b.relevance_score - a.relevance_score)
-          .slice(0, 3));
-          
-        console.log(`Found ${keywordMatches.length} keyword matches`);
-        
-        // 4. Combine both search approaches, prioritizing exact matches
-        const combinedResults = [...exactMatches];
-        
-        // Add keyword matches that aren't already in the exact matches
-        const exactIds = new Set(exactMatches.map(doc => doc.id));
-        for (const doc of keywordMatches) {
-          if (!exactIds.has(doc.id)) {
-            combinedResults.push(doc);
+        // If we still don't have relevant content, get the most recent documents
+        if (relevantContent.length === 0) {
+          console.log("No relevant content found from keyword search, fetching recent documents");
+          const { data: recentDocs, error: recentError } = await supabaseClient
+            .from('chatbot_knowledge')
+            .select('*')
+            .order('updated_at', { ascending: false })
+            .limit(5);
+            
+          if (recentError) {
+            console.error("Error fetching recent documents:", recentError);
+          } else if (recentDocs && recentDocs.length > 0) {
+            console.log(`Retrieved ${recentDocs.length} recent documents`);
+            relevantContent = recentDocs;
           }
-        }
-        
-        // Limit to top 3 most relevant documents
-        relevantContent = combinedResults.slice(0, 3);
-        
-        console.log(`Selected ${relevantContent.length} most relevant documents in total`);
-      }
-      
-      // If we still have no content, get some documents as last resort
-      if (relevantContent.length === 0) {
-        console.log("No relevant content found, retrieving a sample of documents");
-        const { data: allDocs, error: allError } = await supabaseClient
-          .from('chatbot_knowledge')
-          .select('*')
-          .limit(3);
-          
-        if (allError) {
-          console.error("Error fetching documents:", allError);
-        } else if (allDocs) {
-          relevantContent = allDocs;
-          console.log(`Retrieved ${relevantContent.length} documents as fallback`);
         }
       }
     } catch (error) {
-      console.error("Error retrieving knowledge base content:", error);
+      console.error("Error accessing knowledge base:", error);
+      // Continue with empty relevant content
       relevantContent = [];
     }
 
@@ -232,39 +204,36 @@ serve(async (req) => {
       );
     }
 
-    // Format the chat history for the OpenAI API - limit to only last 2 messages to save tokens
+    // Format the chat history for the OpenAI API (limit to last few messages to save tokens)
     const formattedHistory = chatHistory ? chatHistory.map(msg => ({
       role: msg.role,
       content: msg.content
-    })).slice(-2) : [];  // Only include last 2 messages for context
+    })).slice(-4) : [];  // Include last 4 messages for better context
 
-    // Create context from knowledge base - TRUNCATE content to avoid token limits
+    // Create context from knowledge base
     let knowledgeContext = "";
-    if (relevantContent.length > 0) {
+    if (knowledgeBaseEmpty) {
+      knowledgeContext = "La base di conoscenza è vuota. Non ci sono informazioni specifiche sulla struttura.";
+      console.log("Knowledge base is empty, using empty context");
+    } else if (relevantContent.length > 0) {
       knowledgeContext = "### Informazioni dalla base di conoscenza:\n\n" + 
         relevantContent.map(doc => {
           // Truncate each document's content to avoid token limits
-          return `Titolo: ${doc.title}\nURL: ${doc.path}\n${truncateContent(doc.content, 3000)}`;
+          const truncatedContent = truncateContent(doc.content, 2000);
+          return `Titolo: ${doc.title}\nURL: ${doc.path}\n${truncatedContent}`;
         }).join("\n\n---\n\n");
       
       // Final safety check - truncate the entire context if still too large
       knowledgeContext = truncateContent(knowledgeContext, 7000);
-      console.log("Knowledge context created (estimated tokens: " + estimateTokenCount(knowledgeContext) + ")");
+      console.log("Knowledge context created, estimated tokens:", estimateTokenCount(knowledgeContext));
     } else {
       knowledgeContext = "Non ci sono informazioni specifiche nella base di conoscenza per questa richiesta.";
-      console.log("No relevant documents found");
+      console.log("No relevant documents found, using empty context");
     }
 
     const promptWithContext = `${knowledgeContext}\n\nDomanda dell'utente: ${message}\n\nRispondi alla domanda dell'utente nella lingua "${language}" utilizzando le informazioni fornite sopra.`;
     
-    // Estimate total token usage
-    const estimatedSystemTokens = estimateTokenCount(SYSTEM_PROMPT);
-    const estimatedHistoryTokens = formattedHistory.reduce((acc, msg) => acc + estimateTokenCount(msg.content), 0);
-    const estimatedPromptTokens = estimateTokenCount(promptWithContext);
-    const totalEstimatedTokens = estimatedSystemTokens + estimatedHistoryTokens + estimatedPromptTokens;
-    
-    console.log(`Estimated tokens: System=${estimatedSystemTokens}, History=${estimatedHistoryTokens}, Prompt=${estimatedPromptTokens}, Total=${totalEstimatedTokens}`);
-    console.log("Calling OpenAI API...");
+    console.log("Calling OpenAI API with prompt and context");
     
     // Call OpenAI for a response with better error handling
     try {
@@ -282,7 +251,6 @@ serve(async (req) => {
             { role: 'user', content: promptWithContext }
           ],
           temperature: 0.7,
-          // Set a reasonable max_tokens to prevent exceeding limits
           max_tokens: 1000,
         }),
       });

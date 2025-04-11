@@ -138,20 +138,9 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
         return;
       }
 
-      await refreshKnowledgeBase();
-
-      if (knowledgeBaseExists === false) {
-        console.warn("Knowledge base is empty");
-        const warningResponse: Message = {
-          id: (Date.now() + 1).toString(),
-          content: "La base di conoscenza del chatbot è vuota. Per favore, aggiorna la base di conoscenza dalle impostazioni del chatbot per permettermi di rispondere alle tue domande usando le informazioni del sito.",
-          role: 'assistant',
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, warningResponse]);
-        setIsLoading(false);
-        return;
-      }
+      refreshKnowledgeBase().catch(err => {
+        console.warn("Failed to refresh knowledge base before sending message:", err);
+      });
 
       const chatHistory = messages.map(msg => ({
         role: msg.role,
@@ -159,6 +148,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
       }));
       
       console.log("Sending message to chatbot function:", message);
+      console.log("Chat history:", chatHistory);
       
       try {
         const { data, error } = await supabase.functions.invoke('chatbot', {
@@ -218,7 +208,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, language, previewConfig, knowledgeBaseExists]);
+  }, [messages, language, previewConfig]);
 
   const toggleChat = useCallback(() => setIsOpen(prev => !prev), []);
   const closeChat = useCallback(() => setIsOpen(false), []);
@@ -235,23 +225,6 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
       console.log("Refreshing knowledge base status...");
       
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      try {
-        const { data: tableExists, error: tableExistsError } = await supabase.rpc('table_exists', {
-          table_name: 'chatbot_knowledge'
-        });
-        
-        if (tableExistsError) {
-          console.error("Error checking if table exists:", tableExistsError);
-        } else if (!tableExists) {
-          console.log("chatbot_knowledge table doesn't exist");
-          setKnowledgeBaseExists(false);
-          setKnowledgeBaseCount(0);
-          return false;
-        }
-      } catch (tableError) {
-        console.error("Error checking if table exists:", tableError);
-      }
       
       try {
         const { count, error } = await supabase
@@ -281,7 +254,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
         
         return hasContent;
       } catch (error) {
-        console.error("Error refreshing knowledge base status:", error);
+        console.error("Error checking knowledge base count:", error);
         setKnowledgeBaseExists(false);
         setKnowledgeBaseCount(0);
         return false;
@@ -292,7 +265,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
       setKnowledgeBaseCount(0);
       return false;
     }
-  }, [previewConfig, toast]);
+  }, [previewConfig]);
 
   return {
     isOpen,
