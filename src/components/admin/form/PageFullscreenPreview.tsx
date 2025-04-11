@@ -218,7 +218,7 @@ const PageFullscreenPreview: React.FC<PageFullscreenPreviewProps> = ({
                           if (!imageUrl) {
                             const originalContent = window.opener.document.querySelector('.prose')?.innerHTML || '';
                             try {
-                              const escapedCaption = caption.replace(/[.*+?^${}()|[\\]\\]/g, '\\\\$&');
+                              const escapedCaption = caption.replace(/[.*+?^${}()|[\\\]\\]/g, '\\\\$&');
                               const imgMatch = originalContent.match(new RegExp('src="([^"]+)".*?' + escapedCaption, 'i'));
                               if (imgMatch && imgMatch[1]) {
                                 imageUrl = imgMatch[1];
