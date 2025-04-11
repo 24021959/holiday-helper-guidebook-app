@@ -4,23 +4,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { Facebook, Instagram, Twitter } from "lucide-react";
 
 interface FooterSettings {
-  copyright_text: string;
+  custom_text: string;
   show_social_links: boolean;
   facebook_url: string;
   instagram_url: string;
   twitter_url: string;
-  custom_text: string;
   background_color: string;
   text_alignment: "left" | "center" | "right";
 }
 
 const defaultFooterSettings: FooterSettings = {
-  copyright_text: "© 2025 Powered by EV-AI Technologies",
+  custom_text: "© 2025 Powered by EV-AI Technologies",
   show_social_links: false,
   facebook_url: "",
   instagram_url: "",
   twitter_url: "",
-  custom_text: "",
   background_color: "bg-gradient-to-r from-teal-50 to-emerald-50",
   text_alignment: "left"
 };
@@ -73,7 +71,7 @@ const Footer: React.FC = () => {
     return (
       <div className={`w-full ${defaultFooterSettings.background_color} py-3 border-t border-gray-200`}>
         <div className="text-left ml-4 text-gray-500 text-xs">
-          {defaultFooterSettings.copyright_text}
+          {defaultFooterSettings.custom_text}
         </div>
       </div>
     );
@@ -83,15 +81,9 @@ const Footer: React.FC = () => {
     <div className={`w-full ${settings.background_color} py-3 border-t border-gray-200`}>
       <div className="container mx-auto px-4">
         <div className={`flex flex-col md:flex-row justify-between items-start md:items-center ${getTextAlignClass()}`}>
-          <div className="text-gray-500 text-xs md:text-sm">
-            {settings.copyright_text}
+          <div className="text-gray-500 text-xs md:text-sm w-full">
+            {settings.custom_text}
           </div>
-          
-          {settings.custom_text && (
-            <div className="text-gray-500 text-xs mt-2 md:mt-0 md:text-sm">
-              {settings.custom_text}
-            </div>
-          )}
           
           {settings.show_social_links && (
             <div className="flex space-x-4 mt-2 md:mt-0">

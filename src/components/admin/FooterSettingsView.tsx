@@ -10,32 +10,29 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
-import { CheckIcon, Edit, Save } from "lucide-react";
+import { CheckIcon, Save } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
 
 interface FooterSettings {
-  copyright_text: string;
+  custom_text: string;
   show_social_links: boolean;
   facebook_url: string;
   instagram_url: string;
   twitter_url: string;
-  custom_text: string;
   background_color: string;
   text_alignment: "left" | "center" | "right";
 }
 
 const defaultFooterSettings: FooterSettings = {
-  copyright_text: "© 2025 Powered by EV-AI Technologies",
+  custom_text: "© 2025 Powered by EV-AI Technologies",
   show_social_links: false,
   facebook_url: "",
   instagram_url: "",
   twitter_url: "",
-  custom_text: "",
   background_color: "bg-gradient-to-r from-teal-50 to-emerald-50",
   text_alignment: "left"
 };
@@ -134,41 +131,22 @@ const FooterSettingsView: React.FC = () => {
             <CardHeader>
               <CardTitle>Impostazioni Generali</CardTitle>
               <CardDescription>
-                Configura le informazioni di base del footer
+                Configura il testo e l'aspetto del footer
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <FormField
                 control={form.control}
-                name="copyright_text"
+                name="custom_text"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Testo Copyright</FormLabel>
+                    <FormLabel>Testo Personalizzato</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="© 2025 Company Name" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="background_color"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Colore di sfondo</FormLabel>
-                    <FormControl>
-                      <select
-                        className="w-full p-2 border rounded-md"
-                        {...field}
-                      >
-                        {backgroundOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
+                      <Textarea 
+                        {...field} 
+                        placeholder="© 2025 Company Name - Inserisci testo per il footer"
+                        className="min-h-[80px]"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -215,15 +193,21 @@ const FooterSettingsView: React.FC = () => {
               
               <FormField
                 control={form.control}
-                name="custom_text"
+                name="background_color"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Testo Personalizzato (opzionale)</FormLabel>
+                    <FormLabel>Colore di sfondo</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        {...field} 
-                        placeholder="Inserisci testo aggiuntivo per il footer"
-                      />
+                      <select
+                        className="w-full p-2 border rounded-md"
+                        {...field}
+                      >
+                        {backgroundOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -267,7 +251,11 @@ const FooterSettingsView: React.FC = () => {
                       <FormItem>
                         <FormLabel>URL Facebook</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="https://facebook.com/yourbusiness" />
+                          <input 
+                            className="w-full p-2 border rounded-md" 
+                            {...field} 
+                            placeholder="https://facebook.com/yourbusiness" 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -281,7 +269,11 @@ const FooterSettingsView: React.FC = () => {
                       <FormItem>
                         <FormLabel>URL Instagram</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="https://instagram.com/yourbusiness" />
+                          <input 
+                            className="w-full p-2 border rounded-md" 
+                            {...field} 
+                            placeholder="https://instagram.com/yourbusiness" 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -295,7 +287,11 @@ const FooterSettingsView: React.FC = () => {
                       <FormItem>
                         <FormLabel>URL Twitter</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="https://twitter.com/yourbusiness" />
+                          <input 
+                            className="w-full p-2 border rounded-md" 
+                            {...field} 
+                            placeholder="https://twitter.com/yourbusiness" 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
