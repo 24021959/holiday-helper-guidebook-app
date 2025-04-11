@@ -170,9 +170,9 @@ const PageFullscreenPreview: React.FC<PageFullscreenPreviewProps> = ({
                 const imagePlaceholders = document.querySelectorAll('.prose *');
                 
                 imagePlaceholders.forEach(el => {
-                  if (el.textContent && el.textContent.match(/^\[📷 [⏺️▶️◀️⬛] .*\]$/)) {
+                  if (el.textContent && el.textContent.match(/^\\[📷 [⏺️▶️◀️⬛] .*\\]$/)) {
                     const text = el.textContent;
-                    const matches = text.match(/^\[📷 ([⏺️▶️◀️⬛]) (.*)\]$/);
+                    const matches = text.match(/^\\[📷 ([⏺️▶️◀️⬛]) (.*)\\]$/);
                     
                     if (matches) {
                       const position = matches[1];
@@ -202,7 +202,7 @@ const PageFullscreenPreview: React.FC<PageFullscreenPreviewProps> = ({
                           // Se non troviamo l'immagine nelle miniature, cerchiamo nell'editor
                           if (!imageUrl) {
                             const originalContent = window.opener.document.querySelector('.prose')?.innerHTML || '';
-                            const imgMatch = originalContent.match(new RegExp('src="([^"]+)".*?' + caption.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'));
+                            const imgMatch = originalContent.match(new RegExp('src="([^"]+)".*?' + caption.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'), 'i'));
                             if (imgMatch && imgMatch[1]) {
                               imageUrl = imgMatch[1];
                             }
