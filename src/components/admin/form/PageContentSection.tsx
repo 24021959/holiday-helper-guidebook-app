@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { 
   ImageIcon, Info, Rows3, PanelRight, PanelLeft, AlignCenter, MapPin, Phone,
   Bold, Italic, List, ListOrdered, Heading1, Heading2, Link as LinkIcon, Quote,
-  Eye, EyeOff, Maximize2, Minimize2, Trash2, Edit2, Code, RotateCcw
+  Eye, EyeOff, Maximize2, Minimize2, Trash2, Edit2, Code, RotateCcw, RotateCw
 } from "lucide-react";
 import { ImageItem } from "./PageMultiImageSection";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useEditHistory } from "@/hooks/useEditHistory";
 
 interface PageContentSectionProps {
   name: string;
@@ -36,32 +37,32 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
   const [showPreview, setShowPreview] = useState(false);
   const [isEditorExpanded, setIsEditorExpanded] = useState(false);
   const [viewMode, setViewMode] = useState<"visual" | "code">("visual");
-  const [undoHistory, setUndoHistory] = useState<string[]>([]);
   
   const contentValue = watch(name);
+  const editHistory = useEditHistory<string>(contentValue || "");
   
   React.useEffect(() => {
     setPreviewContent(formatContentForPreview(contentValue || ""));
   }, [contentValue]);
 
-  React.useEffect(() => {
-    if (contentValue && undoHistory.length === 0) {
-      setUndoHistory([contentValue]);
-    }
-  }, []);
-
   const handleContentChange = (value: string) => {
-    if (contentValue && contentValue !== value) {
-      setUndoHistory(prev => [...prev, contentValue].slice(-10));
+    if (value !== contentValue) {
+      editHistory.update(value);
+      setValue(name, value, { shouldDirty: true });
     }
-    setValue(name, value, { shouldDirty: true });
   };
 
   const handleUndo = () => {
-    if (undoHistory.length > 0) {
-      const previousContent = undoHistory[undoHistory.length - 1];
-      setValue(name, previousContent, { shouldDirty: true });
-      setUndoHistory(prev => prev.slice(0, -1));
+    if (editHistory.canUndo) {
+      editHistory.undo();
+      setValue(name, editHistory.state, { shouldDirty: true });
+    }
+  };
+
+  const handleRedo = () => {
+    if (editHistory.canRedo) {
+      editHistory.redo();
+      setValue(name, editHistory.state, { shouldDirty: true });
     }
   };
 
@@ -349,7 +350,7 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
     try {
       const content = getValues(name) as string;
       if (clickPosition !== null) {
-        setUndoHistory(prev => [...prev, content].slice(-10));
+        editHistory.update(content);
         
         let imageName = "Immagine";
         if (imageUrl.startsWith('data:image')) {
@@ -435,7 +436,7 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
   const handleDeleteImage = (imageUrl: string, position: number) => {
     try {
       const content = getValues(name) as string;
-      setUndoHistory(prev => [...prev, content].slice(-10));
+      editHistory.update(content);
       
       const imageMarkupRegex = new RegExp(`<!-- IMAGE: ${imageUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} POSITION: .*? -->\n\\[Immagine: .*?\\]\n`, 'g');
       const newContent = content.replace(imageMarkupRegex, '');
@@ -468,13 +469,32 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
                         size="icon" 
                         onClick={handleUndo}
                         className="h-8 w-8"
-                        disabled={undoHistory.length === 0}
+                        disabled={!editHistory.canUndo}
                       >
                         <RotateCcw className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>Annulla ultima modifica</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={handleRedo}
+                        className="h-8 w-8"
+                        disabled={!editHistory.canRedo}
+                      >
+                        <RotateCw className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Ripristina modifica</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -802,13 +822,14 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
                       onChange={(e) => {
                         field.onChange(e.target.value);
                         if (e.target.value.length > 0 && e.target.value !== field.value) {
-                          setUndoHistory(prev => [...prev, field.value || ""].slice(-10));
+                          handleContentChange(e.target.value);
                         }
                       }}
                       expandable={true}
                       viewMode={viewMode}
                       onViewModeChange={handleViewModeChange}
                       onUndo={handleUndo}
+                      onRedo={handleRedo}
                     />
                   </FormControl>
                 </div>
@@ -826,7 +847,7 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
                 )}
               </div>
               
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 sticky bottom-0 bg-white z-10 py-2">
                 <Button 
                   type="button" 
                   variant="outline" 
