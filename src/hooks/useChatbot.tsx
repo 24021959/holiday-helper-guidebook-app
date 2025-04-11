@@ -61,6 +61,126 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
     return location.pathname === '/' || location.pathname === '';
   }, [location]);
 
+  // Define refreshKnowledgeBase first before using it
+  const refreshKnowledgeBase = useCallback(async () => {
+    if (previewConfig) {
+      setKnowledgeBaseExists(true);
+      setKnowledgeBaseCount(10);
+      return true;
+    }
+    
+    // Never show knowledge base notifications on the home page
+    if (isHomePage()) {
+      setKnowledgeBaseExists(true);
+      setKnowledgeBaseCount(0);
+      return true;
+    }
+    
+    try {
+      console.log("Refreshing knowledge base status...");
+      
+      // Add a short delay to ensure any recent updates are picked up
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      try {
+        // First check if the table exists to avoid errors
+        const { data: tableExists, error: tableExistsError } = await supabase.rpc(
+          'table_exists',
+          { table_name: 'chatbot_knowledge' }
+        ).maybeSingle();
+        
+        if (tableExistsError) {
+          console.error("Error checking if table exists:", tableExistsError);
+          // Try a different approach - direct count
+          const { count, error: directCountError } = await supabase
+            .from('chatbot_knowledge')
+            .select('*', { count: 'exact', head: true });
+            
+          if (directCountError) {
+            console.error("Error checking knowledge base via direct count:", directCountError);
+            setKnowledgeBaseExists(false);
+            setKnowledgeBaseCount(0);
+            return false;
+          }
+          
+          const hasContent = count !== null && count > 0;
+          setKnowledgeBaseExists(hasContent);
+          setKnowledgeBaseCount(count || 0);
+          
+          console.log(`Knowledge base direct count check result: ${count}`);
+          
+          // Only show toast notifications in admin area and never on home page
+          if (isAdminArea() && !isHomePage() && !knowledgeBaseCheckedRef.current) {
+            if (hasContent) {
+              toast.success(`Base di conoscenza verificata: ${count} elementi`);
+              knowledgeBaseCheckedRef.current = true;
+            } else {
+              toast.warning("La base di conoscenza è vuota");
+              knowledgeBaseCheckedRef.current = true;
+            }
+          }
+          
+          return hasContent;
+        }
+        
+        if (!tableExists) {
+          console.log("Table doesn't exist");
+          setKnowledgeBaseExists(false);
+          setKnowledgeBaseCount(0);
+          
+          // Only show toast notifications in admin area and never on home page
+          if (isAdminArea() && !isHomePage() && !knowledgeBaseCheckedRef.current) {
+            toast.warning("La tabella della base di conoscenza non esiste");
+            knowledgeBaseCheckedRef.current = true;
+          }
+          
+          return false;
+        }
+        
+        // Now check the count
+        const { count, error: countError } = await supabase
+          .from('chatbot_knowledge')
+          .select('*', { count: 'exact', head: true });
+        
+        if (countError) {
+          console.error("Error checking knowledge base count:", countError);
+          setKnowledgeBaseExists(false);
+          setKnowledgeBaseCount(0);
+          return false;
+        }
+        
+        console.log("Knowledge base check result:", count);
+        
+        const hasContent = count !== null && count > 0;
+        setKnowledgeBaseExists(hasContent);
+        setKnowledgeBaseCount(count || 0);
+        
+        // Only show toast notifications in admin area and never on home page
+        if (isAdminArea() && !isHomePage() && !knowledgeBaseCheckedRef.current) {
+          if (hasContent) {
+            toast.success(`Base di conoscenza verificata: ${count} elementi`);
+            knowledgeBaseCheckedRef.current = true;
+          } else {
+            toast.warning("La base di conoscenza è vuota");
+            knowledgeBaseCheckedRef.current = true;
+          }
+        }
+        
+        return hasContent;
+      } catch (error) {
+        console.error("Error checking knowledge base count:", error);
+        setKnowledgeBaseExists(false);
+        setKnowledgeBaseCount(0);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error refreshing knowledge base status:", error);
+      setKnowledgeBaseExists(false);
+      setKnowledgeBaseCount(0);
+      return false;
+    }
+  }, [previewConfig, isAdminArea, isHomePage]);
+
   useEffect(() => {
     if (previewConfig) {
       setConfig(previewConfig);
@@ -100,7 +220,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
     if (!initializing) {
       refreshKnowledgeBase();
     }
-  }, [initializing]);
+  }, [initializing, refreshKnowledgeBase]);
 
   useEffect(() => {
     if (previewConfig) {
@@ -235,125 +355,6 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
   const toggleChat = useCallback(() => setIsOpen(prev => !prev), []);
   const closeChat = useCallback(() => setIsOpen(false), []);
   const openChat = useCallback(() => setIsOpen(true), []);
-
-  const refreshKnowledgeBase = useCallback(async () => {
-    if (previewConfig) {
-      setKnowledgeBaseExists(true);
-      setKnowledgeBaseCount(10);
-      return true;
-    }
-    
-    // Never show knowledge base notifications on the home page
-    if (isHomePage()) {
-      setKnowledgeBaseExists(true);
-      setKnowledgeBaseCount(0);
-      return true;
-    }
-    
-    try {
-      console.log("Refreshing knowledge base status...");
-      
-      // Add a short delay to ensure any recent updates are picked up
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      try {
-        // First check if the table exists to avoid errors
-        const { data: tableExists, error: tableExistsError } = await supabase.rpc(
-          'table_exists',
-          { table_name: 'chatbot_knowledge' }
-        ).maybeSingle();
-        
-        if (tableExistsError) {
-          console.error("Error checking if table exists:", tableExistsError);
-          // Try a different approach - direct count
-          const { count, error: directCountError } = await supabase
-            .from('chatbot_knowledge')
-            .select('*', { count: 'exact', head: true });
-            
-          if (directCountError) {
-            console.error("Error checking knowledge base via direct count:", directCountError);
-            setKnowledgeBaseExists(false);
-            setKnowledgeBaseCount(0);
-            return false;
-          }
-          
-          const hasContent = count !== null && count > 0;
-          setKnowledgeBaseExists(hasContent);
-          setKnowledgeBaseCount(count || 0);
-          
-          console.log(`Knowledge base direct count check result: ${count}`);
-          
-          // Only show toast notifications in admin area and never on home page
-          if (isAdminArea() && !isHomePage() && !knowledgeBaseCheckedRef.current) {
-            if (hasContent) {
-              toast.success(`Base di conoscenza verificata: ${count} elementi`);
-              knowledgeBaseCheckedRef.current = true;
-            } else {
-              toast.warning("La base di conoscenza è vuota");
-              knowledgeBaseCheckedRef.current = true;
-            }
-          }
-          
-          return hasContent;
-        }
-        
-        if (!tableExists) {
-          console.log("Table doesn't exist");
-          setKnowledgeBaseExists(false);
-          setKnowledgeBaseCount(0);
-          
-          // Only show toast notifications in admin area and never on home page
-          if (isAdminArea() && !isHomePage() && !knowledgeBaseCheckedRef.current) {
-            toast.warning("La tabella della base di conoscenza non esiste");
-            knowledgeBaseCheckedRef.current = true;
-          }
-          
-          return false;
-        }
-        
-        // Now check the count
-        const { count, error: countError } = await supabase
-          .from('chatbot_knowledge')
-          .select('*', { count: 'exact', head: true });
-        
-        if (countError) {
-          console.error("Error checking knowledge base count:", countError);
-          setKnowledgeBaseExists(false);
-          setKnowledgeBaseCount(0);
-          return false;
-        }
-        
-        console.log("Knowledge base check result:", count);
-        
-        const hasContent = count !== null && count > 0;
-        setKnowledgeBaseExists(hasContent);
-        setKnowledgeBaseCount(count || 0);
-        
-        // Only show toast notifications in admin area and never on home page
-        if (isAdminArea() && !isHomePage() && !knowledgeBaseCheckedRef.current) {
-          if (hasContent) {
-            toast.success(`Base di conoscenza verificata: ${count} elementi`);
-            knowledgeBaseCheckedRef.current = true;
-          } else {
-            toast.warning("La base di conoscenza è vuota");
-            knowledgeBaseCheckedRef.current = true;
-          }
-        }
-        
-        return hasContent;
-      } catch (error) {
-        console.error("Error checking knowledge base count:", error);
-        setKnowledgeBaseExists(false);
-        setKnowledgeBaseCount(0);
-        return false;
-      }
-    } catch (error) {
-      console.error("Error refreshing knowledge base status:", error);
-      setKnowledgeBaseExists(false);
-      setKnowledgeBaseCount(0);
-      return false;
-    }
-  }, [previewConfig, isAdminArea, isHomePage]);
 
   return {
     isOpen,
