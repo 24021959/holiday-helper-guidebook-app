@@ -65,9 +65,7 @@ const Index: React.FC = () => {
         <div className="absolute bottom-10 right-10 w-40 h-40 rounded-full bg-emerald-100 opacity-50 blur-xl"></div>
         
         <div className="max-w-md w-full mb-4">
-          <h1 className="text-center text-2xl font-bold text-emerald-800 mb-6">
-            <TranslatedText text="Seleziona la tua lingua" />
-          </h1>
+          {/* Text header removed as requested */}
           <Card className="bg-white/90 backdrop-blur-sm shadow-xl border-0 rounded-2xl overflow-hidden">
             <CardContent className="p-6">
               <LanguageSelector onChange={handleLanguageSelect} />
