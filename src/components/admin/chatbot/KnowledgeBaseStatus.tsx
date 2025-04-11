@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -26,12 +26,20 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
   errorMessage,
   onUpdateKnowledgeBase
 }) => {
-  const [isCheckingTable, setIsCheckingTable] = React.useState(false);
+  const [isCheckingTable, setIsCheckingTable] = useState(false);
+  const [localStatus, setLocalStatus] = useState(status);
 
+  // Sync local status with props when they change
   useEffect(() => {
-    // Force re-check of the table existence when component mounts
-    createTable();
-  }, []);
+    setLocalStatus(status);
+  }, [status]);
+
+  // Force re-check of the table existence when component mounts or after processing
+  useEffect(() => {
+    if (!isProcessing) {
+      createTable();
+    }
+  }, [isProcessing]);
 
   const createTable = async () => {
     try {
@@ -71,16 +79,37 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
         }
       }
       
-      // Check if table has records
+      // Check if table has records and update local status
       const { count, error: countError } = await supabase
         .from('chatbot_knowledge')
         .select('*', { count: 'exact', head: true });
         
       if (!countError && count !== null) {
         console.log(`Knowledge base contains ${count} records`);
+        
+        // Get the last updated date if records exist
+        let lastUpdated = null;
         if (count > 0) {
+          const { data: latestRecord, error: latestError } = await supabase
+            .from('chatbot_knowledge')
+            .select('updated_at')
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .single();
+            
+          if (!latestError && latestRecord) {
+            lastUpdated = new Date(latestRecord.updated_at).toLocaleString('it-IT');
+          }
+          
           toast.success(`Base di conoscenza verificata: ${count} elementi`);
         }
+        
+        // Update local status
+        setLocalStatus({
+          exists: count > 0,
+          count: count,
+          lastUpdated: lastUpdated
+        });
       }
     } catch (error) {
       console.error("Error checking knowledge base table:", error);
@@ -96,6 +125,11 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
     onUpdateKnowledgeBase();
   };
 
+  const handleCheckStatus = async () => {
+    await createTable();
+    toast.info("Stato della base di conoscenza aggiornato");
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -103,29 +137,49 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
           <Database className="h-5 w-5 text-emerald-600" />
           <h3 className="font-medium">Stato della base di conoscenza</h3>
         </div>
-        <Button
-          size="sm"
-          onClick={handleUpdateClick}
-          disabled={isProcessing || isCheckingTable}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white"
-        >
-          {isProcessing ? (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              Elaborazione...
-            </>
-          ) : isCheckingTable ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Verifica...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Aggiorna Base di Conoscenza
-            </>
-          )}
-        </Button>
+        <div className="flex space-x-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleCheckStatus}
+            disabled={isProcessing || isCheckingTable}
+          >
+            {isCheckingTable ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Verifica...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Verifica Stato
+              </>
+            )}
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleUpdateClick}
+            disabled={isProcessing || isCheckingTable}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            {isProcessing ? (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                Elaborazione...
+              </>
+            ) : isCheckingTable ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Verifica...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Aggiorna Base di Conoscenza
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {isProcessing && (
@@ -152,29 +206,29 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
       {!isProcessing && (
         <div className="rounded-lg border p-4 bg-gray-50 space-y-3">
           <div className="flex items-center space-x-2">
-            {status.exists ? (
+            {localStatus.exists ? (
               <CheckCircle className="h-5 w-5 text-green-500" />
             ) : (
               <AlertTriangle className="h-5 w-5 text-amber-500" />
             )}
             <span className="font-medium">
-              {status.exists
+              {localStatus.exists
                 ? "Base di conoscenza creata"
                 : "Base di conoscenza non ancora creata"}
             </span>
           </div>
 
-          {status.exists && (
+          {localStatus.exists && (
             <>
               <div className="text-sm space-y-1">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Pagine indicizzate:</span>
-                  <span className="font-medium">{status.count}</span>
+                  <span className="font-medium">{localStatus.count}</span>
                 </div>
-                {status.lastUpdated && (
+                {localStatus.lastUpdated && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Ultimo aggiornamento:</span>
-                    <span className="font-medium">{status.lastUpdated}</span>
+                    <span className="font-medium">{localStatus.lastUpdated}</span>
                   </div>
                 )}
               </div>
@@ -184,7 +238,7 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
             </>
           )}
 
-          {!status.exists && (
+          {!localStatus.exists && (
             <p className="text-sm text-gray-500">
               Crea una base di conoscenza usando i contenuti delle pagine del tuo sito per permettere al chatbot
               di rispondere in modo specifico alle domande degli utenti.
