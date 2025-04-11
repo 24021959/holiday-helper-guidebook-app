@@ -1,13 +1,15 @@
+
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import ImageUploader from "@/components/ImageUploader";
-import Header from "@/components/Header";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { colorPalette } from "@/utils/colorPalette";
+import Header from "@/components/Header";
+import ImageUploader from "@/components/ImageUploader";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface HeaderSettingsViewProps {
   uploadedLogo: string | null;
@@ -40,38 +42,51 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
   const [logoPosition, setLogoPosition] = useState<"left" | "center" | "right">("left");
   const [logoSize, setLogoSize] = useState<"small" | "medium" | "large">("medium");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   
   useEffect(() => {
     const fetchHeaderSettings = async () => {
       try {
+        setLoadError(null);
         const { data, error } = await supabase
           .from('header_settings')
           .select('*')
-          .limit(1);
+          .limit(1)
+          .maybeSingle();
           
-        if (error) throw error;
+        if (error) {
+          if (error.code === '42P01') {
+            // Table doesn't exist, but that's okay - we're in demo mode
+            console.warn("Header settings table does not exist. Using defaults.");
+            return;
+          }
+          console.error("Error fetching header settings:", error);
+          setLoadError("Non è stato possibile caricare le impostazioni. Utilizzando valori predefiniti.");
+          return;
+        }
         
-        if (data && data.length > 0) {
-          if (data[0].establishment_name) {
-            setEstablishmentName(data[0].establishment_name);
+        if (data) {
+          if (data.establishment_name) {
+            setEstablishmentName(data.establishment_name);
           }
-          if (data[0].logo_url) {
-            setLocalLogo(data[0].logo_url);
-            setUploadedLogo(data[0].logo_url);
+          if (data.logo_url) {
+            setLocalLogo(data.logo_url);
+            setUploadedLogo(data.logo_url);
           }
-          if (data[0].header_color) {
-            setLocalColor(data[0].header_color);
-            setHeaderColor(data[0].header_color);
+          if (data.header_color) {
+            setLocalColor(data.header_color);
+            setHeaderColor(data.header_color);
           }
-          if (data[0].logo_position) {
-            setLogoPosition(data[0].logo_position);
+          if (data.logo_position) {
+            setLogoPosition(data.logo_position);
           }
-          if (data[0].logo_size) {
-            setLogoSize(data[0].logo_size);
+          if (data.logo_size) {
+            setLogoSize(data.logo_size);
           }
         }
       } catch (error) {
         console.error("Error fetching header settings:", error);
+        setLoadError("Non è stato possibile caricare le impostazioni. Utilizzando valori predefiniti.");
       }
     };
     
@@ -93,6 +108,34 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
   const saveAllSettings = async () => {
     setIsLoading(true);
     try {
+      // First check if table exists to avoid errors
+      const { error: tableCheckError } = await supabase
+        .from('header_settings')
+        .select('count')
+        .limit(1);
+      
+      if (tableCheckError && tableCheckError.code === '42P01') {
+        // Table doesn't exist, show a message but don't throw an error
+        toast.warning("Modalità demo attiva. Le impostazioni non vengono salvate nel database.");
+        
+        // Still update local state
+        setUploadedLogo(localLogo);
+        setHeaderColor(localColor);
+        
+        const headerSettings = {
+          logoUrl: localLogo,
+          headerColor: localColor,
+          establishmentName: establishmentName || null,
+          logoPosition: logoPosition,
+          logoSize: logoSize
+        };
+        localStorage.setItem("headerSettings", JSON.stringify(headerSettings));
+        
+        toast.success("Impostazioni header salvate localmente");
+        setIsLoading(false);
+        return;
+      }
+      
       const { data: existingData, error: fetchError } = await supabase
         .from('header_settings')
         .select('*')
@@ -149,6 +192,12 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
   return (
     <>
       <h2 className="text-xl font-medium text-emerald-600 mb-4">Personalizza Header</h2>
+      
+      {loadError && (
+        <Alert className="mb-4">
+          <AlertDescription>{loadError}</AlertDescription>
+        </Alert>
+      )}
       
       <div className="space-y-6">
         <div className="p-4 border rounded-lg bg-gray-50">

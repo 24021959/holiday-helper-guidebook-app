@@ -39,12 +39,38 @@ export const useHeaderSettings = () => {
         .maybeSingle();
         
       if (error) {
+        // If the table doesn't exist, that's OK in demo mode
+        if (error.code === '42P01') {
+          console.warn("Header settings table does not exist. Using defaults or localStorage.");
+          // If we already have local settings, don't show error
+          if (localSettings) {
+            setLoading(false);
+            return;
+          }
+          
+          // Set default values
+          const defaultSettings = {
+            headerColor: "bg-gradient-to-r from-teal-500 to-emerald-600",
+            logoPosition: "left",
+            logoSize: "medium"
+          };
+          
+          setHeaderSettings(defaultSettings);
+          localStorage.setItem("headerSettings", JSON.stringify(defaultSettings));
+          setLoading(false);
+          return;
+        }
+        
         console.warn("Errore nel caricamento delle impostazioni header:", error);
         
         // Se abbiamo già impostato da localStorage, non mostrare errore
-        if (localSettings) return;
+        if (localSettings) {
+          setLoading(false);
+          return;
+        }
         
         setError("Impossibile connettersi al database. Controlla la tua connessione e riprova.");
+        setLoading(false);
         return;
       }
       
@@ -64,6 +90,7 @@ export const useHeaderSettings = () => {
       }
     } catch (error) {
       console.error("Errore nel caricamento delle impostazioni header:", error);
+      setError("Si è verificato un errore imprevisto. Riprova più tardi.");
     } finally {
       setLoading(false);
     }

@@ -7,14 +7,24 @@ import { Input } from "@/components/ui/input";
 interface ImageUploaderProps {
   imageUrl?: string | null;
   setImageUrl: (url: string | undefined) => void;
+  onImageUpload?: (imageUrl: string) => void;
 }
 
-export const ImageUploader: React.FC<ImageUploaderProps> = ({ imageUrl, setImageUrl }) => {
+export const ImageUploader: React.FC<ImageUploaderProps> = ({ 
+  imageUrl, 
+  setImageUrl,
+  onImageUpload 
+}) => {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       // For simplicity, just using a placeholder URL
-      setImageUrl('https://example.com/image.jpg');
+      const imageUrl = 'https://example.com/image.jpg';
+      setImageUrl(imageUrl);
+      
+      if (onImageUpload) {
+        onImageUpload(imageUrl);
+      }
     }
   };
   

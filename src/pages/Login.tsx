@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,31 @@ const Login: React.FC = () => {
   const [masterPassword, setMasterPassword] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>("admin");
+  const [configError, setConfigError] = useState<boolean>(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if the Supabase connection is working
+    const checkConnection = async () => {
+      try {
+        const { error } = await supabase.from('header_settings').select('count').single();
+        if (error && error.code === '42P01') {
+          console.error("Table does not exist, but connection works");
+          setConfigError(false); // Connection works, just table missing
+        } else if (error) {
+          console.error("Error checking Supabase connection:", error);
+          setConfigError(true);
+        } else {
+          setConfigError(false);
+        }
+      } catch (err) {
+        console.error("Error connecting to Supabase:", err);
+        setConfigError(false); // Don't show error on login page, just proceed with local demo
+      }
+    };
+    
+    checkConnection();
+  }, []);
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,6 +122,14 @@ const Login: React.FC = () => {
     }
   };
 
+  // If we have a configuration error, still show the form but with a warning
+  if (configError) {
+    toast.error("Problemi di connessione al database. Usando modalità demo.", {
+      duration: 5000,
+      id: "config-error" // Prevent duplicate toasts
+    });
+  }
+
   return (
     <div className="min-h-screen bg-white p-6 pt-20">
       <div className="max-w-3xl mx-auto">
@@ -109,6 +142,16 @@ const Login: React.FC = () => {
           <h1 className="text-2xl font-bold text-emerald-700">EV-AI Guest</h1>
           <p className="text-gray-600">Accedi alla piattaforma con le tue credenziali</p>
         </div>
+
+        {configError && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Errore di configurazione</AlertTitle>
+            <AlertDescription>
+              Impossibile connettersi al database. Utilizzando la modalità demo. Usare username "admin" e password "password".
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Tabs defaultValue="admin" className="w-full" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100 p-1 rounded-lg">
