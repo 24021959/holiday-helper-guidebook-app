@@ -55,7 +55,9 @@ export function useEditHistory<T>(initialPresent: T, maxHistoryLength = 10) {
         future: [prevHistory.present, ...prevHistory.future]
       };
     });
-  }, [canUndo]);
+    
+    return history.past[history.past.length - 1];
+  }, [canUndo, history.past]);
 
   // Redo: move forward one step in history
   const redo = useCallback(() => {
@@ -70,7 +72,9 @@ export function useEditHistory<T>(initialPresent: T, maxHistoryLength = 10) {
         future: prevHistory.future.slice(1)
       };
     });
-  }, [canRedo]);
+    
+    return history.future[0];
+  }, [canRedo, history.future]);
 
   return {
     state: history.present,
