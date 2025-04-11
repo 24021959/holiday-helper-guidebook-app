@@ -376,7 +376,7 @@ Content: ${cleanContent}${listItemsText}
             `.trim();
             
             const { error: insertError } = await supabase
-              .from('chatbot_knowledge')
+              .from("chatbot_knowledge")
               .insert({
                 page_id: page.id,
                 title: page.title || "Untitled",
@@ -513,6 +513,7 @@ Content: ${cleanContent}${listItemsText}
                 processingProgress={processingProgress}
                 errorMessage={processingError}
                 onUpdateKnowledgeBase={updatePageContent}
+                onCheckStatus={checkKnowledgeBase}
               />
             </CardContent>
           </Card>
