@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from '@/context/TranslationContext';
 import { supabase } from "@/integrations/supabase/client";
@@ -49,7 +48,6 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
   const knowledgeBaseCheckedRef = useRef(false);
   const { language } = useTranslation();
 
-  // Load chatbot configuration
   useEffect(() => {
     if (previewConfig) {
       setConfig(previewConfig);
@@ -85,7 +83,6 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
     loadConfig();
   }, [previewConfig]);
 
-  // Check if knowledge base exists
   useEffect(() => {
     if (!initializing) {
       refreshKnowledgeBase();
@@ -98,7 +95,6 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
     }
   }, [previewConfig]);
 
-  // Set welcome message
   useEffect(() => {
     if (!initializing && !messages.length) {
       const welcomeMessage = config.welcomeMessage[language] || config.welcomeMessage.en || "Hi! How can I help you today?";
@@ -142,10 +138,8 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
         return;
       }
 
-      // Recheck knowledge base existence before sending
       await refreshKnowledgeBase();
 
-      // If we've checked knowledge base and it doesn't exist, warn user
       if (knowledgeBaseExists === false) {
         console.warn("Knowledge base is empty");
         const warningResponse: Message = {
@@ -167,7 +161,6 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
       console.log("Sending message to chatbot function:", message);
       
       try {
-        // Call the chatbot edge function
         const { data, error } = await supabase.functions.invoke('chatbot', {
           body: { 
             message, 
@@ -198,7 +191,6 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
       } catch (apiError) {
         console.error("API error:", apiError);
         
-        // Show toast with error message
         toast.error("Errore nella comunicazione con il chatbot");
         
         const errorMessage: Message = {
@@ -213,7 +205,6 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
     } catch (error) {
       console.error("Error sending message to chatbot:", error);
       
-      // Show toast with error message
       toast.error("Errore nella comunicazione con il chatbot");
       
       const errorMessage: Message = {
@@ -235,51 +226,73 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
 
   const refreshKnowledgeBase = useCallback(async () => {
     if (previewConfig) {
-      // In modalità anteprima, assumiamo che la base di conoscenza esista
       setKnowledgeBaseExists(true);
-      setKnowledgeBaseCount(10); // Valore fittizio per l'anteprima
+      setKnowledgeBaseCount(10);
       return true;
     }
     
     try {
       console.log("Refreshing knowledge base status...");
       
-      // Aggiungiamo un ritardo per garantire che le operazioni del database siano state completate
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const { count, error } = await supabase
-        .from('chatbot_knowledge')
-        .select('*', { count: 'exact', head: true });
+      try {
+        const { data: tableExists, error: tableExistsError } = await supabase.rpc('table_exists', {
+          table_name: 'chatbot_knowledge'
+        });
+        
+        if (tableExistsError) {
+          console.error("Error checking if table exists:", tableExistsError);
+        } else if (!tableExists) {
+          console.log("chatbot_knowledge table doesn't exist");
+          setKnowledgeBaseExists(false);
+          setKnowledgeBaseCount(0);
+          return false;
+        }
+      } catch (tableError) {
+        console.error("Error checking if table exists:", tableError);
+      }
       
-      if (error) {
+      try {
+        const { count, error } = await supabase
+          .from('chatbot_knowledge')
+          .select('*', { count: 'exact', head: true });
+        
+        if (error) {
+          console.error("Error refreshing knowledge base status:", error);
+          setKnowledgeBaseExists(false);
+          setKnowledgeBaseCount(0);
+          return false;
+        }
+        
+        console.log("Knowledge base check result:", count);
+        
+        const hasContent = count !== null && count > 0;
+        setKnowledgeBaseExists(hasContent);
+        setKnowledgeBaseCount(count || 0);
+        
+        if (hasContent && !knowledgeBaseCheckedRef.current) {
+          toast.success(`Base di conoscenza verificata: ${count} elementi`);
+          knowledgeBaseCheckedRef.current = true;
+        } else if (!hasContent && !knowledgeBaseCheckedRef.current) {
+          toast.warning("La base di conoscenza è vuota");
+          knowledgeBaseCheckedRef.current = true;
+        }
+        
+        return hasContent;
+      } catch (error) {
         console.error("Error refreshing knowledge base status:", error);
         setKnowledgeBaseExists(false);
         setKnowledgeBaseCount(0);
         return false;
       }
-      
-      console.log("Knowledge base check result:", count);
-      
-      const hasContent = count !== null && count > 0;
-      setKnowledgeBaseExists(hasContent);
-      setKnowledgeBaseCount(count || 0);
-      
-      if (hasContent && !knowledgeBaseCheckedRef.current) {
-        toast.success(`Base di conoscenza verificata: ${count} elementi`);
-        knowledgeBaseCheckedRef.current = true;
-      } else if (!hasContent && !knowledgeBaseCheckedRef.current) {
-        toast.warning("La base di conoscenza è vuota");
-        knowledgeBaseCheckedRef.current = true;
-      }
-      
-      return hasContent;
     } catch (error) {
       console.error("Error refreshing knowledge base status:", error);
       setKnowledgeBaseExists(false);
       setKnowledgeBaseCount(0);
       return false;
     }
-  }, [previewConfig]);
+  }, [previewConfig, toast]);
 
   return {
     isOpen,

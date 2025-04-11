@@ -25,16 +25,26 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
   onUpdateKnowledgeBase,
   onCheckStatus,
 }) => {
-  const handleCheckStatus = (e: React.MouseEvent) => {
+  const handleCheckStatus = async (e: React.MouseEvent) => {
     e.preventDefault();
     console.log("Verifica Stato button clicked");
-    onCheckStatus();
+    try {
+      await onCheckStatus();
+      console.log("Check status completed");
+    } catch (error) {
+      console.error("Error checking status:", error);
+    }
   };
 
-  const handleUpdateKnowledge = (e: React.MouseEvent) => {
+  const handleUpdateKnowledge = async (e: React.MouseEvent) => {
     e.preventDefault();
     console.log("Aggiorna Base di Conoscenza button clicked");
-    onUpdateKnowledgeBase();
+    try {
+      await onUpdateKnowledgeBase();
+      console.log("Update knowledge base completed");
+    } catch (error) {
+      console.error("Error updating knowledge base:", error);
+    }
   };
 
   return (

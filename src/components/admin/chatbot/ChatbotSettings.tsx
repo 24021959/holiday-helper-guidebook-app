@@ -103,44 +103,86 @@ const ChatbotSettings: React.FC = () => {
   const checkKnowledgeBase = async () => {
     try {
       setProcessingError(null);
+      console.log("Checking knowledge base status...");
       
+      // First, check if we need to create the vector extension
       try {
-        const { error: tableError } = await supabase.rpc('run_sql', {
-          sql: `
-            CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
-              id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-              page_id uuid NOT NULL,
-              title text NOT NULL,
-              content text NOT NULL, 
-              path text NOT NULL,
-              created_at timestamp with time zone DEFAULT now(),
-              updated_at timestamp with time zone DEFAULT now()
-            );
-          `
+        const { data: extensionExists, error: extensionError } = await supabase.rpc('check_vector_extension');
+        
+        if (extensionError) {
+          console.error("Error checking vector extension:", extensionError);
+        } else if (!extensionExists) {
+          console.log("Vector extension not found, attempting to create it");
+          const { error: createExtensionError } = await supabase.rpc('create_vector_extension');
+          
+          if (createExtensionError) {
+            console.error("Error creating vector extension:", createExtensionError);
+          } else {
+            console.log("Vector extension created successfully");
+          }
+        } else {
+          console.log("Vector extension already exists");
+        }
+      } catch (extensionErr) {
+        console.error("Error with vector extension operations:", extensionErr);
+      }
+      
+      // Check if the table exists
+      try {
+        const { data: tableExists, error: tableExistsError } = await supabase.rpc('table_exists', {
+          table_name: 'chatbot_knowledge'
         });
         
-        if (tableError && tableError.message !== "function run_sql does not exist") {
-          console.error("Error creating table:", tableError);
+        if (tableExistsError) {
+          console.error("Error checking if table exists:", tableExistsError);
+        } else if (!tableExists) {
+          console.log("Table doesn't exist, creating it now");
+          
+          const { error: createTableError } = await supabase.rpc('run_sql', {
+            sql: `
+              CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
+                id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+                page_id uuid NOT NULL,
+                title text NOT NULL,
+                content text NOT NULL, 
+                path text NOT NULL,
+                embedding vector(1536),
+                created_at timestamp with time zone DEFAULT now(),
+                updated_at timestamp with time zone DEFAULT now()
+              );
+              
+              ALTER TABLE public.chatbot_knowledge ENABLE ROW LEVEL SECURITY;
+              
+              DROP POLICY IF EXISTS "Allow chatbot_knowledge access to all users" ON public.chatbot_knowledge;
+              
+              CREATE POLICY "Allow chatbot_knowledge access to all users" 
+              ON public.chatbot_knowledge
+              FOR ALL
+              USING (true);
+            `
+          });
+          
+          if (createTableError) {
+            console.error("Error creating table:", createTableError);
+          } else {
+            console.log("Table created successfully");
+          }
+        } else {
+          console.log("Table already exists");
         }
       } catch (tableError) {
-        console.error("Error creating table:", tableError);
+        console.error("Error with table operations:", tableError);
       }
 
+      // Now check if there's data in the table
       try {
         const { count, error: countError } = await supabase
           .from('chatbot_knowledge')
-          .select('*', { count: 'exact', head: true })
-          .limit(1);
+          .select('*', { count: 'exact', head: true });
         
         if (countError) {
-          // Table likely doesn't exist or other error
           console.error("Error checking knowledge base:", countError);
-          setKnowledgeStatus({
-            exists: false,
-            count: 0,
-            lastUpdated: null
-          });
-          return;
+          throw new Error(`Database error: ${countError.message}`);
         }
         
         let lastUpdated = null;
@@ -164,6 +206,7 @@ const ChatbotSettings: React.FC = () => {
           toast.success(`Base di conoscenza verificata: ${count} elementi`);
         } else {
           console.log("Knowledge base is empty or doesn't exist");
+          toast.warning("La base di conoscenza è vuota");
         }
         
         setKnowledgeStatus({
@@ -178,10 +221,13 @@ const ChatbotSettings: React.FC = () => {
           count: 0,
           lastUpdated: null
         });
+        setProcessingError(`Errore nella verifica: ${error.message}`);
+        toast.error(`Errore nella verifica della base di conoscenza: ${error.message}`);
       }
     } catch (error) {
       console.error("Error checking knowledge base:", error);
-      setProcessingError("Errore nel controllare la base di conoscenza");
+      setProcessingError(`Errore nella verifica: ${error.message}`);
+      toast.error(`Errore nella verifica della base di conoscenza: ${error.message}`);
     }
   };
 
