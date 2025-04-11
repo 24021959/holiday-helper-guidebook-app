@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +19,7 @@ import { useHeaderSettings } from "@/hooks/useHeaderSettings";
 import ManagePagesView from "@/components/admin/ManagePagesView";
 import ErrorView from "@/components/ErrorView";
 import MenuTranslationManager from "@/components/admin/MenuTranslationManager";
+import MasterPanel from "@/components/admin/MasterPanel";
 
 export interface PageData {
   id: string;
@@ -48,15 +50,42 @@ const Admin: React.FC = () => {
   const { headerSettings, loading: headerLoading } = useHeaderSettings();
   const [activeTab, setActiveTab] = useState<string>("pages");
   const [pages, setPages] = useState<PageData[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [keywordToIconMap, setKeywordToIconMap] = useState<Record<string, string>>({});
   const [parentPages, setParentPages] = useState<PageData[]>([]);
+  const [showMasterPanel, setShowMasterPanel] = useState(false);
 
   useEffect(() => {
-    fetchPages();
-    fetchKeywordToIconMap();
+    try {
+      console.log("Admin page mounted");
+      checkAdminAccess();
+      fetchPages();
+      fetchKeywordToIconMap();
+    } catch (err: any) {
+      console.error("Error in Admin page initialization:", err);
+      setError(err.message || "An unexpected error occurred");
+      setIsLoading(false);
+    }
   }, []);
+
+  const checkAdminAccess = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("Accesso negato. Effettua il login");
+        navigate("/login");
+        return;
+      }
+      
+      console.log("User session verified");
+    } catch (err) {
+      console.error("Error checking admin access:", err);
+      toast.error("Errore nel controllo dell'accesso");
+      navigate("/login");
+    }
+  };
 
   const fetchPages = async () => {
     setIsLoading(true);
@@ -136,6 +165,11 @@ const Admin: React.FC = () => {
     setParentPages(parents);
   };
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    setShowMasterPanel(value === "users");
+  };
+
   const leftColTabs = [
     {
       value: "pages",
@@ -156,9 +190,15 @@ const Admin: React.FC = () => {
       icon: <Globe className="h-5 w-5" />,
       component: <MenuTranslationManager />
     },
+    {
+      value: "users",
+      label: "Utenti & Impostazioni",
+      icon: <Users className="h-5 w-5" />,
+      component: <MasterPanel />
+    },
   ];
 
-  if (headerLoading) {
+  if (headerLoading || isLoading) {
     return (
       <div className="flex flex-col h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100">
         <svg className="animate-spin h-12 w-12 text-emerald-600" fill="none" viewBox="0 0 24 24">
@@ -200,7 +240,7 @@ const Admin: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-2">
-              <Tabs defaultValue={activeTab} className="flex flex-col h-full">
+              <Tabs value={activeTab} onValueChange={handleTabChange} className="flex flex-col h-full">
                 <TabsList className="flex flex-col space-y-1 border-r-2 border-gray-200 pr-4">
                   {leftColTabs.map((tab) => (
                     <TabsTrigger
@@ -219,11 +259,15 @@ const Admin: React.FC = () => {
         </aside>
 
         <div className="md:w-3/4 pl-4">
-          {leftColTabs.map((tab) => (
-            <TabsContent key={tab.value} value={tab.value} className="mt-2">
-              {tab.component}
-            </TabsContent>
-          ))}
+          {showMasterPanel ? (
+            <MasterPanel />
+          ) : (
+            leftColTabs.filter(tab => tab.value !== "users").map((tab) => (
+              <TabsContent key={tab.value} value={tab.value} className="mt-2">
+                {tab.component}
+              </TabsContent>
+            ))
+          )}
         </div>
       </main>
 
