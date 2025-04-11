@@ -170,13 +170,28 @@ const PageFullscreenPreview: React.FC<PageFullscreenPreviewProps> = ({
                 const imagePlaceholders = document.querySelectorAll('.prose *');
                 
                 imagePlaceholders.forEach(el => {
-                  if (el.textContent && el.textContent.match(/^\\[📷 [⏺️▶️◀️⬛] .*\\]$/)) {
+                  if (el.textContent && el.textContent.match(/^\\[📷 [⏺️▶️◀️⬛] .*\\]$/) || el.textContent && el.textContent.match(/^\\[📷 [⏺️▶️◀️⬛].*\\]$/) || el.textContent && el.textContent.match(/^\\[📷.*\\]$/)) {
                     const text = el.textContent;
-                    const matches = text.match(/^\\[📷 ([⏺️▶️◀️⬛]) (.*)\\]$/);
+                    // Tentativo di rilevare diversi formati di segnaposto immagine
+                    let matches = text.match(/^\\[📷 ([⏺️▶️◀️⬛]) (.*)\\]$/);
+                    
+                    if (!matches) {
+                      matches = text.match(/^\\[📷 ([⏺️▶️◀️⬛])(.*)\\]$/);
+                    }
+                    
+                    if (!matches) {
+                      matches = text.match(/^\\[📷(.*)\\]$/);
+                    }
                     
                     if (matches) {
-                      const position = matches[1];
-                      const caption = matches[2];
+                      // Usiamo il secondo gruppo per il testo della didascalia
+                      let position = matches[1] || '⏺️'; // Usa centro come default
+                      let caption = matches[2] || 'Immagine';
+                      
+                      if (!matches[2]) {
+                        caption = matches[1] || 'Immagine';
+                        position = '⏺️'; // Default al centro
+                      }
                       
                       // Mappa posizione a classe CSS
                       const posClass = position === '◀️' ? 'editor-preview-image-left' : 
@@ -202,9 +217,14 @@ const PageFullscreenPreview: React.FC<PageFullscreenPreviewProps> = ({
                           // Se non troviamo l'immagine nelle miniature, cerchiamo nell'editor
                           if (!imageUrl) {
                             const originalContent = window.opener.document.querySelector('.prose')?.innerHTML || '';
-                            const imgMatch = originalContent.match(new RegExp('src="([^"]+)".*?' + caption.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'), 'i'));
-                            if (imgMatch && imgMatch[1]) {
-                              imageUrl = imgMatch[1];
+                            try {
+                              const escapedCaption = caption.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                              const imgMatch = originalContent.match(new RegExp('src="([^"]+)".*?' + escapedCaption, 'i'));
+                              if (imgMatch && imgMatch[1]) {
+                                imageUrl = imgMatch[1];
+                              }
+                            } catch (regexErr) {
+                              console.error("Errore nell'espressione regolare:", regexErr);
                             }
                           }
                           
@@ -216,6 +236,15 @@ const PageFullscreenPreview: React.FC<PageFullscreenPreviewProps> = ({
                                 imageUrl = img.src;
                                 break;
                               }
+                            }
+                          }
+                          
+                          // Ultima risorsa: cerca tutte le immagini
+                          if (!imageUrl) {
+                            const allImages = window.opener.document.querySelectorAll('img');
+                            if (allImages.length > 0) {
+                              // Prendi la prima immagine disponibile
+                              imageUrl = allImages[0].src;
                             }
                           }
                         }
@@ -252,6 +281,11 @@ const PageFullscreenPreview: React.FC<PageFullscreenPreviewProps> = ({
                   processImagePlaceholders();
                 }
               }, 1000);
+              
+              // Prova più volte a intervalli per caricare immagini
+              for (let i = 2; i <= 5; i++) {
+                setTimeout(processImagePlaceholders, i * 1000);
+              }
             });
             
             document.getElementById('closeButton').addEventListener('click', function() {
