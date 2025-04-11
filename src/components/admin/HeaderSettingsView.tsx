@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,6 @@ import ImageUploader from "@/components/ImageUploader";
 import Header from "@/components/Header";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { FormItem, FormLabel } from "@/components/ui/form";
 
 interface HeaderSettingsViewProps {
   uploadedLogo: string | null;
