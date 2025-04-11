@@ -16,6 +16,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { CheckIcon, Edit, Save } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface FooterSettings {
   copyright_text: string;
@@ -25,6 +26,7 @@ interface FooterSettings {
   twitter_url: string;
   custom_text: string;
   background_color: string;
+  text_alignment: "left" | "center" | "right";
 }
 
 const defaultFooterSettings: FooterSettings = {
@@ -34,7 +36,8 @@ const defaultFooterSettings: FooterSettings = {
   instagram_url: "",
   twitter_url: "",
   custom_text: "",
-  background_color: "bg-gradient-to-r from-teal-50 to-emerald-50"
+  background_color: "bg-gradient-to-r from-teal-50 to-emerald-50",
+  text_alignment: "left"
 };
 
 const FooterSettingsView: React.FC = () => {
@@ -166,6 +169,44 @@ const FooterSettingsView: React.FC = () => {
                           </option>
                         ))}
                       </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="text_alignment"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Allineamento testo</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex flex-row space-x-4"
+                        value={field.value}
+                      >
+                        <FormItem className="flex items-center space-x-2 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="left" />
+                          </FormControl>
+                          <FormLabel className="font-normal">Sinistra</FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-2 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="center" />
+                          </FormControl>
+                          <FormLabel className="font-normal">Centro</FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-2 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="right" />
+                          </FormControl>
+                          <FormLabel className="font-normal">Destra</FormLabel>
+                        </FormItem>
+                      </RadioGroup>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

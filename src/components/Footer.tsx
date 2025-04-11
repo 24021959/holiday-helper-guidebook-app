@@ -11,6 +11,7 @@ interface FooterSettings {
   twitter_url: string;
   custom_text: string;
   background_color: string;
+  text_alignment: "left" | "center" | "right";
 }
 
 const defaultFooterSettings: FooterSettings = {
@@ -20,7 +21,8 @@ const defaultFooterSettings: FooterSettings = {
   instagram_url: "",
   twitter_url: "",
   custom_text: "",
-  background_color: "bg-gradient-to-r from-teal-50 to-emerald-50"
+  background_color: "bg-gradient-to-r from-teal-50 to-emerald-50",
+  text_alignment: "left"
 };
 
 const Footer: React.FC = () => {
@@ -58,6 +60,15 @@ const Footer: React.FC = () => {
     fetchFooterSettings();
   }, []);
 
+  // Helper function to get text alignment class
+  const getTextAlignClass = () => {
+    switch (settings.text_alignment) {
+      case "center": return "text-center";
+      case "right": return "text-right";
+      default: return "text-left";
+    }
+  };
+
   if (isLoading) {
     return (
       <div className={`w-full ${defaultFooterSettings.background_color} py-3 border-t border-gray-200`}>
@@ -71,7 +82,7 @@ const Footer: React.FC = () => {
   return (
     <div className={`w-full ${settings.background_color} py-3 border-t border-gray-200`}>
       <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+        <div className={`flex flex-col md:flex-row justify-between items-start md:items-center ${getTextAlignClass()}`}>
           <div className="text-gray-500 text-xs md:text-sm">
             {settings.copyright_text}
           </div>
