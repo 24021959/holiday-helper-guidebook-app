@@ -301,6 +301,27 @@
   background-color: white;
 }
 
+.fullscreen-preview-container {
+  width: 100%;
+  height: 100%;
+  background-color: white;
+}
+
+.fullscreen-preview-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.fullscreen-preview img {
+  background-color: transparent !important;
+  object-fit: contain;
+}
+
+.aspect-ratio-container {
+  background-color: transparent !important;
+}
+
 /* Mobile responsive styles */
 @media (max-width: 768px) {
   #root {
