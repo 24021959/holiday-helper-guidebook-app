@@ -36,37 +36,54 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
   const createTable = async () => {
     try {
       setIsCheckingTable(true);
-      // Create the knowledge base table directly using SQL
-      const { error } = await supabase.rpc('run_sql', {
-        sql: `
-          CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
-            id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-            page_id uuid NOT NULL,
-            title text NOT NULL,
-            content text NOT NULL, 
-            path text NOT NULL,
-            created_at timestamp with time zone DEFAULT now(),
-            updated_at timestamp with time zone DEFAULT now()
-          );
-        `
-      });
       
-      if (error) {
-        console.error("Error creating knowledge base table:", error);
-      } else {
-        console.log("Knowledge base table created or already exists");
+      // Check if the table exists
+      const { data: tableExists, error: tableError } = await supabase
+        .from('chatbot_knowledge')
+        .select('count(*)', { count: 'exact', head: true });
+      
+      if (!tableError) {
+        console.log("Knowledge base table exists");
+      }
+      
+      // If there was an error or we need to create the table
+      if (tableError) {
+        console.log("Attempting to create knowledge base table");
+        // Create the knowledge base table directly using SQL
+        const { error } = await supabase.rpc('run_sql', {
+          sql: `
+            CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
+              id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+              page_id uuid NOT NULL,
+              title text NOT NULL,
+              content text NOT NULL, 
+              path text NOT NULL,
+              created_at timestamp with time zone DEFAULT now(),
+              updated_at timestamp with time zone DEFAULT now()
+            );
+          `
+        });
         
-        // Check if table has records
-        const { count, error: countError } = await supabase
-          .from('chatbot_knowledge')
-          .select('*', { count: 'exact', head: true });
-          
-        if (!countError && count && count > 0) {
+        if (error) {
+          console.error("Error creating knowledge base table:", error);
+        } else {
+          console.log("Knowledge base table created or already exists");
+        }
+      }
+      
+      // Check if table has records
+      const { count, error: countError } = await supabase
+        .from('chatbot_knowledge')
+        .select('*', { count: 'exact', head: true });
+        
+      if (!countError && count !== null) {
+        console.log(`Knowledge base contains ${count} records`);
+        if (count > 0) {
           toast.success(`Base di conoscenza verificata: ${count} elementi`);
         }
       }
     } catch (error) {
-      console.error("Error creating knowledge base table:", error);
+      console.error("Error checking knowledge base table:", error);
     } finally {
       setIsCheckingTable(false);
     }
@@ -180,4 +197,3 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
 };
 
 export default KnowledgeBaseStatus;
-

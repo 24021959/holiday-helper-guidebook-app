@@ -354,83 +354,42 @@ const ChatbotSettings: React.FC = () => {
           try {
             console.log(`Processing page ${page.id}: ${page.title}`);
             
-            try {
-              // Try to use the edge function first
-              const response = await supabase.functions.invoke('process-page-content', {
-                body: { page }
-              });
-              
-              if (response.error) {
-                throw new Error(response.error);
-              }
-              
-              console.log(`Page ${page.id} processed successfully using edge function`);
-              return true;
-            } catch (edgeFunctionError) {
-              console.error(`Edge function error for page ${page.id}:`, edgeFunctionError);
-              
-              // Fallback: Insert directly to database with basic content extraction
-              try {
-                const cleanContent = (page.content || "")
-                  .replace(/<[^>]*>/g, " ")
-                  .replace(/<!--.*?-->/g, "")
-                  .replace(/\s+/g, " ")
-                  .trim();
-                
-                let listItemsText = "";
-                if (page.list_items && Array.isArray(page.list_items) && page.list_items.length > 0) {
-                  listItemsText = "\n\nItems in this page:\n" + 
-                    page.list_items.map((item: any, index: number) => 
-                      `${index + 1}. ${item.name || ""} - ${item.description || ""}`
-                    ).join("\n");
-                }
-                
-                const formattedContent = `
+            // Simplified approach: Insert directly to database with basic content extraction
+            const cleanContent = (page.content || "")
+              .replace(/<[^>]*>/g, " ")
+              .replace(/<!--.*?-->/g, "")
+              .replace(/\s+/g, " ")
+              .trim();
+            
+            let listItemsText = "";
+            if (page.list_items && Array.isArray(page.list_items) && page.list_items.length > 0) {
+              listItemsText = "\n\nItems in this page:\n" + 
+                page.list_items.map((item: any, index: number) => 
+                  `${index + 1}. ${item.name || ""} - ${item.description || ""}`
+                ).join("\n");
+            }
+            
+            const formattedContent = `
 Page Title: ${page.title || "Untitled"}
 URL Path: ${page.path || ""}
 Content: ${cleanContent}${listItemsText}
-                `.trim();
-                
-                const { error: insertError } = await supabase
-                  .from('chatbot_knowledge')
-                  .insert({
-                    page_id: page.id,
-                    title: page.title || "Untitled",
-                    content: formattedContent,
-                    path: page.path || ""
-                  });
-                  
-                if (insertError) {
-                  throw insertError;
-                }
-                
-                console.log(`Page ${page.id} processed successfully using direct database insert`);
-                return true;
-              } catch (insertError) {
-                console.error(`Direct insert error for page ${page.id}:`, insertError);
-                
-                // Last resort: Insert minimal content using SQL
-                try {
-                  const { error: sqlError } = await supabase.rpc('run_sql', {
-                    sql: `
-                      INSERT INTO public.chatbot_knowledge (page_id, title, content, path)
-                      VALUES ('${page.id}', '${(page.title || "Untitled").replace(/'/g, "''")}', 'Content from page: ${page.path}', '${(page.path || "").replace(/'/g, "''")}')
-                      ON CONFLICT (page_id) DO NOTHING;
-                    `
-                  });
-                  
-                  if (sqlError) {
-                    throw sqlError;
-                  }
-                  
-                  console.log(`Page ${page.id} processed with minimal content using SQL`);
-                  return true;
-                } catch (sqlError) {
-                  console.error(`SQL fallback error for page ${page.id}:`, sqlError);
-                  throw sqlError;
-                }
-              }
+            `.trim();
+            
+            const { error: insertError } = await supabase
+              .from('chatbot_knowledge')
+              .insert({
+                page_id: page.id,
+                title: page.title || "Untitled",
+                content: formattedContent,
+                path: page.path || ""
+              });
+              
+            if (insertError) {
+              throw insertError;
             }
+            
+            console.log(`Page ${page.id} processed successfully with direct database insert`);
+            return true;
           } catch (error) {
             console.error(`Failed to process page ${page.id}:`, error);
             return false;
