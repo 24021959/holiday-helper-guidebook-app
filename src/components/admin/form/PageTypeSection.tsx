@@ -1,10 +1,11 @@
-
 import React from "react";
+import { FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { PageData } from "@/context/AdminContext";
 import { Label } from "@/components/ui/label";
 import { PageData } from "@/pages/Admin";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Info } from "lucide-react";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface PageTypeSectionProps {
   pageType: "normal" | "submenu" | "parent";
