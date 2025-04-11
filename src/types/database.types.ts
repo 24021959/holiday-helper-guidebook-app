@@ -34,8 +34,8 @@ export type Table = {
     logo_url: string | null;
     header_color: string;
     establishment_name: string;
-    logo_position?: "left" | "center" | "right";
-    logo_size?: "small" | "medium" | "large";
+    logo_position: "left" | "center" | "right";
+    logo_size: "small" | "medium" | "large";
     created_at?: string;
     updated_at?: string;
   };
