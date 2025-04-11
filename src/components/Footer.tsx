@@ -2,6 +2,8 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Facebook, Instagram, Twitter } from "lucide-react";
+import { colorPalette, getMatchingFooterColor } from "@/utils/colorPalette";
+import { useHeaderSettings } from "@/hooks/useHeaderSettings";
 
 interface FooterSettings {
   custom_text: string;
@@ -19,13 +21,14 @@ const defaultFooterSettings: FooterSettings = {
   facebook_url: "",
   instagram_url: "",
   twitter_url: "",
-  background_color: "bg-gradient-to-r from-teal-50 to-emerald-50",
+  background_color: colorPalette.lightGradients.tealEmerald,
   text_alignment: "left"
 };
 
 const Footer: React.FC = () => {
   const [settings, setSettings] = useState<FooterSettings>(defaultFooterSettings);
   const [isLoading, setIsLoading] = useState(true);
+  const { headerSettings } = useHeaderSettings();
 
   useEffect(() => {
     const fetchFooterSettings = async () => {
@@ -40,12 +43,31 @@ const Footer: React.FC = () => {
           if (error.code !== 'PGRST116') { // Not found error
             console.error('Error loading footer settings:', error);
           }
-          // If settings not found, use defaults
-          setSettings(defaultFooterSettings);
+          // If settings not found, use defaults with matching header color
+          const defaultWithMatching = {
+            ...defaultFooterSettings,
+            background_color: headerSettings?.headerColor 
+              ? getMatchingFooterColor(headerSettings.headerColor) 
+              : defaultFooterSettings.background_color
+          };
+          setSettings(defaultWithMatching);
         } else if (data && data.value) {
-          setSettings(data.value as FooterSettings);
+          // If we have saved footer settings but want to match with header
+          const savedSettings = data.value as FooterSettings;
+          setSettings({
+            ...savedSettings,
+            background_color: headerSettings?.headerColor 
+              ? getMatchingFooterColor(headerSettings.headerColor) 
+              : savedSettings.background_color
+          });
         } else {
-          setSettings(defaultFooterSettings);
+          const defaultWithMatching = {
+            ...defaultFooterSettings,
+            background_color: headerSettings?.headerColor 
+              ? getMatchingFooterColor(headerSettings.headerColor) 
+              : defaultFooterSettings.background_color
+          };
+          setSettings(defaultWithMatching);
         }
       } catch (error) {
         console.error('Error:', error);
@@ -56,7 +78,7 @@ const Footer: React.FC = () => {
     };
 
     fetchFooterSettings();
-  }, []);
+  }, [headerSettings]);
 
   // Helper function to get text alignment class
   const getTextAlignClass = () => {

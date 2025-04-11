@@ -12,10 +12,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
-import { CheckIcon, Save } from "lucide-react";
+import { CheckIcon, Save, InfoIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { colorPalette } from "@/utils/colorPalette";
 
 interface FooterSettings {
   custom_text: string;
@@ -33,7 +35,7 @@ const defaultFooterSettings: FooterSettings = {
   facebook_url: "",
   instagram_url: "",
   twitter_url: "",
-  background_color: "bg-gradient-to-r from-teal-50 to-emerald-50",
+  background_color: colorPalette.lightGradients.tealEmerald,
   text_alignment: "left"
 };
 
@@ -108,15 +110,15 @@ const FooterSettingsView: React.FC = () => {
   };
 
   const backgroundOptions = [
-    { value: "bg-gradient-to-r from-teal-50 to-emerald-50", label: "Verde Chiaro", color: "from-teal-50 to-emerald-50" },
-    { value: "bg-gradient-to-r from-blue-50 to-indigo-50", label: "Blu Chiaro", color: "from-blue-50 to-indigo-50" },
-    { value: "bg-gradient-to-r from-gray-50 to-slate-100", label: "Grigio Chiaro", color: "from-gray-50 to-slate-100" },
-    { value: "bg-gradient-to-r from-amber-50 to-yellow-50", label: "Giallo Chiaro", color: "from-amber-50 to-yellow-50" },
-    { value: "bg-white", label: "Bianco", color: "bg-white" },
-    { value: "bg-gray-100", label: "Grigio", color: "bg-gray-100" },
-    { value: "bg-emerald-700 text-white", label: "Verde Scuro", color: "bg-emerald-700" },
-    { value: "bg-indigo-700 text-white", label: "Blu Scuro", color: "bg-indigo-700" },
-    { value: "bg-gray-800 text-white", label: "Grigio Scuro", color: "bg-gray-800" }
+    { value: colorPalette.lightGradients.tealEmerald, label: "Verde Chiaro", color: "from-teal-50 to-emerald-50" },
+    { value: colorPalette.lightGradients.blueIndigo, label: "Blu Chiaro", color: "from-blue-50 to-indigo-50" },
+    { value: colorPalette.lightGradients.graySlate, label: "Grigio Chiaro", color: "from-gray-50 to-slate-100" },
+    { value: colorPalette.lightGradients.amberYellow, label: "Giallo Chiaro", color: "from-amber-50 to-yellow-50" },
+    { value: colorPalette.solid.white, label: "Bianco", color: "bg-white" },
+    { value: colorPalette.solid.grayLight, label: "Grigio", color: "bg-gray-100" },
+    { value: colorPalette.solid.emeraldDark, label: "Verde Scuro", color: "bg-emerald-700" },
+    { value: colorPalette.solid.indigoDark, label: "Blu Scuro", color: "bg-indigo-700" },
+    { value: colorPalette.solid.grayDark, label: "Grigio Scuro", color: "bg-gray-800" }
   ];
 
   return (
@@ -124,6 +126,13 @@ const FooterSettingsView: React.FC = () => {
       <h2 className="text-xl font-medium text-emerald-600 mb-4">
         Impostazioni Footer
       </h2>
+      
+      <Alert className="mb-6 bg-amber-50 border-amber-200">
+        <InfoIcon className="h-4 w-4 text-amber-500" />
+        <AlertDescription className="text-amber-700">
+          Nota: Il colore del footer verrà automaticamente abbinato al colore dell'header. Le impostazioni sottostanti verranno utilizzate solo se non viene selezionato un colore dell'header.
+        </AlertDescription>
+      </Alert>
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -196,7 +205,8 @@ const FooterSettingsView: React.FC = () => {
                 name="background_color"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Colore di sfondo</FormLabel>
+                    <FormLabel>Colore di sfondo (fallback)</FormLabel>
+                    <p className="text-xs text-gray-500 mb-2">Questo colore verrà usato solo se non c'è un colore dell'header abbinato</p>
                     <FormControl>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                         {backgroundOptions.map((option) => (
