@@ -329,7 +329,13 @@ const PageFullscreenPreview: React.FC<PageFullscreenPreviewProps> = ({
               <Maximize2 className="h-4 w-4 mr-2" />
               <TranslatedText text={`Anteprima: ${title}`} />
             </h2>
-            <Button variant="ghost" size="sm" onClick={onClose} className="hover:bg-gray-100">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => onClose()} 
+              className="hover:bg-gray-100"
+              aria-label="Chiudi"
+            >
               <X className="h-5 w-5" />
             </Button>
           </div>
