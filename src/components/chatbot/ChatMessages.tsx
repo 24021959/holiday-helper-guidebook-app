@@ -39,7 +39,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
                 <Bot size={16} className="text-white" />
               </AvatarFallback>
             </Avatar>
-            <div className="bg-white border border-gray-200 rounded-lg p-3">
+            <div className="bg-white border border-gray-200 rounded-lg p-3 text-left">
               <div className="flex items-center space-x-2">
                 <Loader2 size={16} className="animate-spin text-gray-400" />
                 <span className="text-sm text-gray-500">Scrivendo...</span>

@@ -31,7 +31,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, botColor }) => {
           </Avatar>
         )}
         <div
-          className={`rounded-lg p-3 ${
+          className={`rounded-lg p-3 text-left ${
             message.role === 'user'
               ? 'bg-gray-200 text-gray-800'
               : 'bg-white border border-gray-200'
