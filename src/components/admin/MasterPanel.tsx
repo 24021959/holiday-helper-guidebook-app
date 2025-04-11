@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import UserManagementView from "./UserManagementView";
+import { UserManagementView } from "./UserManagementView";
 import ChatbotSettings from "./ChatbotSettings";
 import FooterSettingsView from "./FooterSettingsView";
 import { HeaderSettingsView } from "./HeaderSettingsView";
