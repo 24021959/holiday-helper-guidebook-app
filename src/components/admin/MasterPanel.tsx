@@ -11,6 +11,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagementView } from "./UserManagementView";
 import ChatbotSettings from "./ChatbotSettings";
+import FooterSettingsView from "./FooterSettingsView";
 
 interface MasterPanelProps {}
 
@@ -38,6 +39,12 @@ const MasterPanel: React.FC<MasterPanelProps> = () => {
         >
           Chatbot
         </TabsTrigger>
+        <TabsTrigger
+          value="footer-settings"
+          className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
+        >
+          Footer
+        </TabsTrigger>
       </TabsList>
       
       <div className="admin-tab-content bg-white shadow-md rounded-md p-6 border">
@@ -59,6 +66,10 @@ const MasterPanel: React.FC<MasterPanelProps> = () => {
         
         <TabsContent value="chatbot-settings" className="mt-0">
           <ChatbotSettings />
+        </TabsContent>
+        
+        <TabsContent value="footer-settings" className="mt-0">
+          <FooterSettingsView />
         </TabsContent>
       </div>
     </Tabs>

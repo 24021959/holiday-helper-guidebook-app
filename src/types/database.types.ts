@@ -44,6 +44,14 @@ export type Table = {
     created_at?: string;
     updated_at?: string;
   };
+  
+  site_settings: {
+    id: number;
+    key: string;
+    value: any;
+    created_at?: string;
+    updated_at?: string;
+  };
 };
 
 export type Tables = {
