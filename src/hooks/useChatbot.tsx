@@ -49,6 +49,11 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
   const knowledgeBaseCheckedRef = useRef(false);
   const { language } = useTranslation();
 
+  // Determine if we're in the admin area
+  const isAdminArea = useCallback(() => {
+    return window.location.pathname.includes('/admin');
+  }, []);
+
   useEffect(() => {
     if (previewConfig) {
       setConfig(previewConfig);
@@ -264,12 +269,15 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
           
           console.log(`Knowledge base direct count check result: ${count}`);
           
-          if (hasContent && !knowledgeBaseCheckedRef.current) {
-            toast.success(`Base di conoscenza verificata: ${count} elementi`);
-            knowledgeBaseCheckedRef.current = true;
-          } else if (!hasContent && !knowledgeBaseCheckedRef.current) {
-            toast.warning("La base di conoscenza è vuota");
-            knowledgeBaseCheckedRef.current = true;
+          // Only show toast notifications in admin area
+          if (isAdminArea()) {
+            if (hasContent && !knowledgeBaseCheckedRef.current) {
+              toast.success(`Base di conoscenza verificata: ${count} elementi`);
+              knowledgeBaseCheckedRef.current = true;
+            } else if (!hasContent && !knowledgeBaseCheckedRef.current) {
+              toast.warning("La base di conoscenza è vuota");
+              knowledgeBaseCheckedRef.current = true;
+            }
           }
           
           return hasContent;
@@ -280,7 +288,8 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
           setKnowledgeBaseExists(false);
           setKnowledgeBaseCount(0);
           
-          if (!knowledgeBaseCheckedRef.current) {
+          // Only show toast notifications in admin area
+          if (isAdminArea() && !knowledgeBaseCheckedRef.current) {
             toast.warning("La tabella della base di conoscenza non esiste");
             knowledgeBaseCheckedRef.current = true;
           }
@@ -306,12 +315,15 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
         setKnowledgeBaseExists(hasContent);
         setKnowledgeBaseCount(count || 0);
         
-        if (hasContent && !knowledgeBaseCheckedRef.current) {
-          toast.success(`Base di conoscenza verificata: ${count} elementi`);
-          knowledgeBaseCheckedRef.current = true;
-        } else if (!hasContent && !knowledgeBaseCheckedRef.current) {
-          toast.warning("La base di conoscenza è vuota");
-          knowledgeBaseCheckedRef.current = true;
+        // Only show toast notifications in admin area
+        if (isAdminArea()) {
+          if (hasContent && !knowledgeBaseCheckedRef.current) {
+            toast.success(`Base di conoscenza verificata: ${count} elementi`);
+            knowledgeBaseCheckedRef.current = true;
+          } else if (!hasContent && !knowledgeBaseCheckedRef.current) {
+            toast.warning("La base di conoscenza è vuota");
+            knowledgeBaseCheckedRef.current = true;
+          }
         }
         
         return hasContent;
@@ -327,7 +339,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
       setKnowledgeBaseCount(0);
       return false;
     }
-  }, [previewConfig]);
+  }, [previewConfig, isAdminArea]);
 
   return {
     isOpen,
