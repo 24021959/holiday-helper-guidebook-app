@@ -1,10 +1,11 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle, AlertTriangle, RefreshCw, Database } from "lucide-react";
+import { CheckCircle, AlertTriangle, RefreshCw, Database, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface KnowledgeBaseStatusProps {
   status: {
@@ -25,8 +26,16 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
   errorMessage,
   onUpdateKnowledgeBase
 }) => {
+  const [isCheckingTable, setIsCheckingTable] = React.useState(false);
+
+  useEffect(() => {
+    // Force re-check of the table existence when component mounts
+    createTable();
+  }, []);
+
   const createTable = async () => {
     try {
+      setIsCheckingTable(true);
       // Create the knowledge base table directly using SQL
       const { error } = await supabase.rpc('run_sql', {
         sql: `
@@ -46,9 +55,20 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
         console.error("Error creating knowledge base table:", error);
       } else {
         console.log("Knowledge base table created or already exists");
+        
+        // Check if table has records
+        const { count, error: countError } = await supabase
+          .from('chatbot_knowledge')
+          .select('*', { count: 'exact', head: true });
+          
+        if (!countError && count && count > 0) {
+          toast.success(`Base di conoscenza verificata: ${count} elementi`);
+        }
       }
     } catch (error) {
       console.error("Error creating knowledge base table:", error);
+    } finally {
+      setIsCheckingTable(false);
     }
   };
 
@@ -69,13 +89,18 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
         <Button
           size="sm"
           onClick={handleUpdateClick}
-          disabled={isProcessing}
+          disabled={isProcessing || isCheckingTable}
           className="bg-emerald-600 hover:bg-emerald-700 text-white"
         >
           {isProcessing ? (
             <>
               <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
               Elaborazione...
+            </>
+          ) : isCheckingTable ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Verifica...
             </>
           ) : (
             <>
@@ -155,3 +180,4 @@ const KnowledgeBaseStatus: React.FC<KnowledgeBaseStatusProps> = ({
 };
 
 export default KnowledgeBaseStatus;
+

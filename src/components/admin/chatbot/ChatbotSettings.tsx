@@ -129,10 +129,11 @@ const ChatbotSettings: React.FC = () => {
       try {
         const { count, error: countError } = await supabase
           .from('chatbot_knowledge')
-          .select('*', { count: 'exact', head: true });
+          .select('*', { count: 'exact', head: true })
+          .limit(1);
         
         if (countError) {
-          // Table likely doesn't exist
+          // Table likely doesn't exist or other error
           console.error("Error checking knowledge base:", countError);
           setKnowledgeStatus({
             exists: false,
@@ -145,6 +146,7 @@ const ChatbotSettings: React.FC = () => {
         let lastUpdated = null;
         
         if (count && count > 0) {
+          // Try to get the latest update timestamp
           const { data: latestRecord, error: latestError } = await supabase
             .from('chatbot_knowledge')
             .select('updated_at')
@@ -155,6 +157,13 @@ const ChatbotSettings: React.FC = () => {
           if (!latestError && latestRecord) {
             lastUpdated = new Date(latestRecord.updated_at).toLocaleString('it-IT');
           }
+          
+          console.log("Knowledge base exists with", count, "items. Latest update:", lastUpdated);
+          
+          // Show confirmation toast with count
+          toast.success(`Base di conoscenza verificata: ${count} elementi`);
+        } else {
+          console.log("Knowledge base is empty or doesn't exist");
         }
         
         setKnowledgeStatus({
@@ -274,6 +283,7 @@ const ChatbotSettings: React.FC = () => {
     setProcessingError(null);
     
     try {
+      // First ensure the table exists
       try {
         const { error: tableError } = await supabase.rpc('run_sql', {
           sql: `
@@ -297,6 +307,7 @@ const ChatbotSettings: React.FC = () => {
         // Continue anyway - we'll try direct inserts
       }
 
+      // Clear existing data for fresh update
       try {
         const { error: deleteError } = await supabase
           .from('chatbot_knowledge')
@@ -305,12 +316,15 @@ const ChatbotSettings: React.FC = () => {
           
         if (deleteError) {
           console.error("Error clearing existing data:", deleteError);
+        } else {
+          console.log("Successfully cleared existing data");
         }
       } catch (clearError) {
         console.error("Error clearing existing data:", clearError);
         // Continue anyway
       }
 
+      // Fetch all published pages
       const { data: pages, error: pagesError } = await supabase
         .from('custom_pages')
         .select('*')
@@ -328,6 +342,7 @@ const ChatbotSettings: React.FC = () => {
 
       toast.info(`Elaborazione di ${pages.length} pagine per la base di conoscenza...`);
       
+      // Process pages in smaller batches to avoid timeout
       const batchSize = 3;
       let processedCount = 0;
       let successCount = 0;
@@ -340,6 +355,7 @@ const ChatbotSettings: React.FC = () => {
             console.log(`Processing page ${page.id}: ${page.title}`);
             
             try {
+              // Try to use the edge function first
               const response = await supabase.functions.invoke('process-page-content', {
                 body: { page }
               });
@@ -353,6 +369,7 @@ const ChatbotSettings: React.FC = () => {
             } catch (edgeFunctionError) {
               console.error(`Edge function error for page ${page.id}:`, edgeFunctionError);
               
+              // Fallback: Insert directly to database with basic content extraction
               try {
                 const cleanContent = (page.content || "")
                   .replace(/<[^>]*>/g, " ")
@@ -392,6 +409,7 @@ Content: ${cleanContent}${listItemsText}
               } catch (insertError) {
                 console.error(`Direct insert error for page ${page.id}:`, insertError);
                 
+                // Last resort: Insert minimal content using SQL
                 try {
                   const { error: sqlError } = await supabase.rpc('run_sql', {
                     sql: `

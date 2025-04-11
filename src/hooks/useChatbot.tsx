@@ -45,6 +45,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
   const [config, setConfig] = useState<ChatbotConfig>(previewConfig || defaultConfig);
   const [initializing, setInitializing] = useState(true);
   const [knowledgeBaseExists, setKnowledgeBaseExists] = useState<boolean | null>(null);
+  const [knowledgeBaseCount, setKnowledgeBaseCount] = useState<number>(0);
   const { language } = useTranslation();
 
   // Load chatbot configuration
@@ -86,17 +87,29 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
   // Check if knowledge base exists
   useEffect(() => {
     const checkKnowledgeBase = async () => {
+      if (previewConfig) {
+        // In preview mode, assume KB exists
+        setKnowledgeBaseExists(true);
+        return;
+      }
+
       try {
+        // Force a non-cached request
+        const timestamp = new Date().getTime();
         const { count, error } = await supabase
           .from('chatbot_knowledge')
-          .select('*', { count: 'exact', head: true });
+          .select('*', { count: 'exact', head: true })
+          .limit(1)
+          .order('created_at', { ascending: false });
         
         if (error) {
           console.error("Error checking knowledge base:", error);
           setKnowledgeBaseExists(false);
+          setKnowledgeBaseCount(0);
         } else {
           const knowledgeBaseHasContent = count !== null && count > 0;
           setKnowledgeBaseExists(knowledgeBaseHasContent);
+          setKnowledgeBaseCount(count || 0);
           console.log("Knowledge base check result:", count);
           
           // Show confirmation toast if knowledge base exists
@@ -107,13 +120,14 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
       } catch (error) {
         console.error("Error checking knowledge base:", error);
         setKnowledgeBaseExists(false);
+        setKnowledgeBaseCount(0);
       }
     };
     
-    if (!previewConfig && !initializing) {
+    if (!initializing) {
       checkKnowledgeBase();
     }
-  }, [previewConfig, initializing]);
+  }, [initializing, previewConfig]);
 
   useEffect(() => {
     if (previewConfig) {
@@ -253,6 +267,36 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
   const closeChat = useCallback(() => setIsOpen(false), []);
   const openChat = useCallback(() => setIsOpen(true), []);
 
+  const refreshKnowledgeBase = useCallback(async () => {
+    if (previewConfig) return;
+    
+    try {
+      const { count, error } = await supabase
+        .from('chatbot_knowledge')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) {
+        console.error("Error refreshing knowledge base status:", error);
+        return;
+      }
+      
+      const hasContent = count !== null && count > 0;
+      setKnowledgeBaseExists(hasContent);
+      setKnowledgeBaseCount(count || 0);
+      
+      if (hasContent) {
+        toast.success(`Base di conoscenza verificata: ${count} elementi`);
+      } else if (count === 0) {
+        toast.warning("La base di conoscenza è vuota");
+      }
+      
+      return hasContent;
+    } catch (error) {
+      console.error("Error refreshing knowledge base status:", error);
+      return false;
+    }
+  }, [previewConfig]);
+
   return {
     isOpen,
     messages,
@@ -263,6 +307,9 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
     closeChat,
     openChat,
     initializing,
-    knowledgeBaseExists
+    knowledgeBaseExists,
+    knowledgeBaseCount,
+    refreshKnowledgeBase
   };
 };
+

@@ -16,7 +16,7 @@ interface ChatMessagesProps {
   messages: Message[];
   isLoading: boolean;
   primaryColor: string;
-  messagesEndRef?: React.RefObject<HTMLDivElement>; // Make messagesEndRef optional
+  messagesEndRef?: React.RefObject<HTMLDivElement>;
 }
 
 const ChatMessages: React.FC<ChatMessagesProps> = ({ 
