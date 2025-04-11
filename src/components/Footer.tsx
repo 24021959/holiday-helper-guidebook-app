@@ -70,8 +70,10 @@ const Footer: React.FC = () => {
   if (isLoading) {
     return (
       <div className={`w-full ${defaultFooterSettings.background_color} py-3 border-t border-gray-200`}>
-        <div className="text-left ml-4 text-gray-500 text-xs">
-          {defaultFooterSettings.custom_text}
+        <div className="container mx-auto px-4">
+          <div className={`${getTextAlignClass()} text-gray-500 text-xs`}>
+            {defaultFooterSettings.custom_text}
+          </div>
         </div>
       </div>
     );
@@ -80,8 +82,8 @@ const Footer: React.FC = () => {
   return (
     <div className={`w-full ${settings.background_color} py-3 border-t border-gray-200`}>
       <div className="container mx-auto px-4">
-        <div className={`flex flex-col md:flex-row justify-between items-start md:items-center ${getTextAlignClass()}`}>
-          <div className="text-gray-500 text-xs md:text-sm w-full">
+        <div className={`flex flex-col md:flex-row ${settings.show_social_links ? 'justify-between' : 'justify-center'} items-center`}>
+          <div className={`${getTextAlignClass()} text-gray-500 text-xs md:text-sm w-full`}>
             {settings.custom_text}
           </div>
           

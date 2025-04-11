@@ -108,15 +108,15 @@ const FooterSettingsView: React.FC = () => {
   };
 
   const backgroundOptions = [
-    { value: "bg-gradient-to-r from-teal-50 to-emerald-50", label: "Verde Chiaro (Default)" },
-    { value: "bg-gradient-to-r from-blue-50 to-indigo-50", label: "Blu Chiaro" },
-    { value: "bg-gradient-to-r from-gray-50 to-slate-100", label: "Grigio Chiaro" },
-    { value: "bg-gradient-to-r from-amber-50 to-yellow-50", label: "Giallo Chiaro" },
-    { value: "bg-white", label: "Bianco" },
-    { value: "bg-gray-100", label: "Grigio" },
-    { value: "bg-emerald-700 text-white", label: "Verde Scuro (Testo Bianco)" },
-    { value: "bg-indigo-700 text-white", label: "Blu Scuro (Testo Bianco)" },
-    { value: "bg-gray-800 text-white", label: "Grigio Scuro (Testo Bianco)" }
+    { value: "bg-gradient-to-r from-teal-50 to-emerald-50", label: "Verde Chiaro", color: "from-teal-50 to-emerald-50" },
+    { value: "bg-gradient-to-r from-blue-50 to-indigo-50", label: "Blu Chiaro", color: "from-blue-50 to-indigo-50" },
+    { value: "bg-gradient-to-r from-gray-50 to-slate-100", label: "Grigio Chiaro", color: "from-gray-50 to-slate-100" },
+    { value: "bg-gradient-to-r from-amber-50 to-yellow-50", label: "Giallo Chiaro", color: "from-amber-50 to-yellow-50" },
+    { value: "bg-white", label: "Bianco", color: "bg-white" },
+    { value: "bg-gray-100", label: "Grigio", color: "bg-gray-100" },
+    { value: "bg-emerald-700 text-white", label: "Verde Scuro", color: "bg-emerald-700" },
+    { value: "bg-indigo-700 text-white", label: "Blu Scuro", color: "bg-indigo-700" },
+    { value: "bg-gray-800 text-white", label: "Grigio Scuro", color: "bg-gray-800" }
   ];
 
   return (
@@ -135,24 +135,6 @@ const FooterSettingsView: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name="custom_text"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Testo Personalizzato</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        {...field} 
-                        placeholder="© 2025 Company Name - Inserisci testo per il footer"
-                        className="min-h-[80px]"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
               <FormField
                 control={form.control}
                 name="text_alignment"
@@ -193,21 +175,46 @@ const FooterSettingsView: React.FC = () => {
               
               <FormField
                 control={form.control}
+                name="custom_text"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Testo Personalizzato</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        {...field} 
+                        placeholder="© 2025 Company Name - Inserisci testo per il footer"
+                        className="min-h-[80px]"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
                 name="background_color"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Colore di sfondo</FormLabel>
                     <FormControl>
-                      <select
-                        className="w-full p-2 border rounded-md"
-                        {...field}
-                      >
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                         {backgroundOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
+                          <div 
+                            key={option.value}
+                            className={`
+                              flex items-center p-2 border rounded-md cursor-pointer
+                              ${field.value === option.value ? 'ring-2 ring-emerald-500' : ''}
+                            `}
+                            onClick={() => field.onChange(option.value)}
+                          >
+                            <div 
+                              className={`w-8 h-8 rounded mr-2 bg-gradient-to-r ${option.color}`}
+                            ></div>
+                            <span>{option.label}</span>
+                          </div>
                         ))}
-                      </select>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
