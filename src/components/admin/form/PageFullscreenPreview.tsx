@@ -218,7 +218,7 @@ const PageFullscreenPreview: React.FC<PageFullscreenPreviewProps> = ({
                           if (!imageUrl) {
                             const originalContent = window.opener.document.querySelector('.prose')?.innerHTML || '';
                             try {
-                              const escapedCaption = caption.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                              const escapedCaption = caption.replace(/[.*+?^${}()|[\\]\\]/g, '\\\\$&');
                               const imgMatch = originalContent.match(new RegExp('src="([^"]+)".*?' + escapedCaption, 'i'));
                               if (imgMatch && imgMatch[1]) {
                                 imageUrl = imgMatch[1];
@@ -329,13 +329,15 @@ const PageFullscreenPreview: React.FC<PageFullscreenPreviewProps> = ({
               <Maximize2 className="h-4 w-4 mr-2" />
               <TranslatedText text={`Anteprima: ${title}`} />
             </h2>
-            <button 
-              className="w-8 h-8 rounded-md inline-flex items-center justify-center hover:bg-gray-100 transition-colors"
-              onClick={() => onClose()}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onClose} 
+              className="rounded-full h-8 w-8 p-0 flex items-center justify-center"
               aria-label="Chiudi"
             >
               <X className="h-5 w-5" />
-            </button>
+            </Button>
           </div>
           
           <div className="flex-1 overflow-auto bg-white">
