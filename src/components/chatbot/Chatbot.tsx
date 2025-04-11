@@ -17,13 +17,19 @@ const Chatbot: React.FC<{ previewConfig?: any }> = ({ previewConfig }) => {
     config, 
     closeChat,
     knowledgeBaseExists,
-    knowledgeBaseCount
+    knowledgeBaseCount,
+    refreshKnowledgeBase
   } = useChatbot(previewConfig);
   
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Verifica la base di conoscenza all'avvio
+  useEffect(() => {
+    refreshKnowledgeBase();
+  }, []);
 
   // Scroll to bottom when messages change
   useEffect(() => {

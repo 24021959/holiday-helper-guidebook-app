@@ -87,50 +87,10 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
 
   // Check if knowledge base exists
   useEffect(() => {
-    const checkKnowledgeBase = async () => {
-      if (previewConfig) {
-        // In preview mode, assume KB exists
-        setKnowledgeBaseExists(true);
-        return;
-      }
-
-      try {
-        // Force a non-cached request with timestamp
-        const timestamp = new Date().getTime();
-        
-        // Add a delay to ensure database operations have completed
-        setTimeout(async () => {
-          const { count, error } = await supabase
-            .from('chatbot_knowledge')
-            .select('*', { count: 'exact', head: true });
-          
-          if (error) {
-            console.error("Error checking knowledge base:", error);
-            setKnowledgeBaseExists(false);
-            setKnowledgeBaseCount(0);
-          } else {
-            const knowledgeBaseHasContent = count !== null && count > 0;
-            setKnowledgeBaseExists(knowledgeBaseHasContent);
-            setKnowledgeBaseCount(count || 0);
-            console.log("Knowledge base check result:", count);
-            
-            if (knowledgeBaseHasContent && !knowledgeBaseCheckedRef.current) {
-              toast.success(`Base di conoscenza configurata con ${count} elementi`);
-              knowledgeBaseCheckedRef.current = true;
-            }
-          }
-        }, 500);
-      } catch (error) {
-        console.error("Error checking knowledge base:", error);
-        setKnowledgeBaseExists(false);
-        setKnowledgeBaseCount(0);
-      }
-    };
-    
     if (!initializing) {
-      checkKnowledgeBase();
+      refreshKnowledgeBase();
     }
-  }, [initializing, previewConfig]);
+  }, [initializing]);
 
   useEffect(() => {
     if (previewConfig) {
@@ -274,11 +234,18 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
   const openChat = useCallback(() => setIsOpen(true), []);
 
   const refreshKnowledgeBase = useCallback(async () => {
-    if (previewConfig) return true;
+    if (previewConfig) {
+      // In modalità anteprima, assumiamo che la base di conoscenza esista
+      setKnowledgeBaseExists(true);
+      setKnowledgeBaseCount(10); // Valore fittizio per l'anteprima
+      return true;
+    }
     
     try {
-      // Force a direct, non-cached check
-      const timestamp = new Date().getTime();
+      console.log("Refreshing knowledge base status...");
+      
+      // Aggiungiamo un ritardo per garantire che le operazioni del database siano state completate
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       const { count, error } = await supabase
         .from('chatbot_knowledge')
@@ -291,6 +258,8 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
         return false;
       }
       
+      console.log("Knowledge base check result:", count);
+      
       const hasContent = count !== null && count > 0;
       setKnowledgeBaseExists(hasContent);
       setKnowledgeBaseCount(count || 0);
@@ -298,7 +267,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
       if (hasContent && !knowledgeBaseCheckedRef.current) {
         toast.success(`Base di conoscenza verificata: ${count} elementi`);
         knowledgeBaseCheckedRef.current = true;
-      } else if (count === 0 && !knowledgeBaseCheckedRef.current) {
+      } else if (!hasContent && !knowledgeBaseCheckedRef.current) {
         toast.warning("La base di conoscenza è vuota");
         knowledgeBaseCheckedRef.current = true;
       }
@@ -306,6 +275,8 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
       return hasContent;
     } catch (error) {
       console.error("Error refreshing knowledge base status:", error);
+      setKnowledgeBaseExists(false);
+      setKnowledgeBaseCount(0);
       return false;
     }
   }, [previewConfig]);
