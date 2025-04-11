@@ -1,13 +1,13 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import HeaderSettingsView from "./HeaderSettingsView";
+import { HeaderSettingsView } from "./HeaderSettingsView";
 import FooterSettingsView from "./FooterSettingsView";
 import UserManagementView from "./UserManagementView";
 import ChatbotSettings from "./ChatbotSettings";
-import { PageData } from "@/context/AdminContext";
 
 const AdminPanel: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -56,11 +56,11 @@ const AdminPanel: React.FC = () => {
         </TabsList>
         
         <TabsContent value="header">
-          <HeaderSettingsView onSettingsUpdate={handleSettingsUpdate} />
+          <HeaderSettingsView />
         </TabsContent>
         
         <TabsContent value="footer">
-          <FooterSettingsView onSettingsUpdate={handleSettingsUpdate} />
+          <FooterSettingsView />
         </TabsContent>
         
         <TabsContent value="users">
@@ -68,7 +68,7 @@ const AdminPanel: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="chatbot">
-          <ChatbotSettings onSettingsUpdate={handleSettingsUpdate} />
+          <ChatbotSettings />
         </TabsContent>
       </Tabs>
     </div>

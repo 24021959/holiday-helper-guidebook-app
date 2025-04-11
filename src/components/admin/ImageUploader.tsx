@@ -5,15 +5,22 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
 interface ImageUploaderProps {
-  onImageSelected: (imageUrl: string | null) => void;
+  onImageSelected?: (imageUrl: string | null) => void;
+  onImageUpload?: (imageUrl: string) => void;
 }
 
-const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelected }) => {
+const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelected, onImageUpload }) => {
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       // For simplicity, we'll just use a placeholder URL
-      onImageSelected('https://example.com/image.jpg');
+      const imageUrl = 'https://example.com/image.jpg';
+      if (onImageSelected) {
+        onImageSelected(imageUrl);
+      }
+      if (onImageUpload) {
+        onImageUpload(imageUrl);
+      }
     }
   };
 
