@@ -1,128 +1,47 @@
-import React, { useState } from "react";
-import { Eye, Maximize2 } from "lucide-react";
+import React from "react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { X, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TranslatedText from "@/components/TranslatedText";
-import { ImageItem } from "./PageMultiImageSection";
-import PageFullscreenPreview from "./PageFullscreenPreview";
 
-interface PagePreviewProps {
-  content: string;
+interface PageFullscreenPreviewProps {
+  isOpen: boolean;
+  onClose: () => void;
+  content: React.ReactNode;
   title: string;
-  images?: ImageItem[];
 }
 
-const PagePreview: React.FC<PagePreviewProps> = ({ content, title, images = [] }) => {
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
-  const renderContent = () => {
-    let processedContent = content;
-    
-    // Process Google Maps links
-    const mapsRegex = /\[📍 (.*?)\]\((https:\/\/(?:maps\.google\.com|goo\.gl\/maps).*?)\)/g;
-    processedContent = processedContent.replace(mapsRegex, '<a href="$2" target="_blank" rel="noopener noreferrer" class="map-link">📍 $1</a>');
-    
-    // Process phone links
-    const phoneRegex = /\[📞 (.*?)\]\(tel:(.*?)\)/g;
-    processedContent = processedContent.replace(phoneRegex, '<a href="tel:$2" class="phone-link">📞 $1</a>');
-    
-    // Process regular links
-    const linkRegex = /\[(.*?)\]\(((?!tel:|maps\.google|goo\.gl).*?)\)/g;
-    processedContent = processedContent.replace(linkRegex, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-    
-    // Process images
-    const imageRegex = /!\[(.*?)\]\((.*?)\)/g;
-    processedContent = processedContent.replace(imageRegex, '<div class="editor-preview-image-center"><img src="$2" alt="$1" /></div>');
-    
-    // Split by paragraphs and keep empty lines
-    const paragraphs = processedContent.split('\n\n');
-    
-    return (
-      <div>
-        {paragraphs.map((paragraph, index) => {
-          if (!paragraph.trim()) return <div key={index} className="mb-4"></div>;
-          
-          if (paragraph.startsWith('<div class="editor-preview-image')) {
-            return <div key={index} dangerouslySetInnerHTML={{ __html: paragraph }} />;
-          }
-          
-          return (
-            <p key={index} className="mb-4" dangerouslySetInnerHTML={{ __html: paragraph }} />
-          );
-        })}
-        
-        {images && images.length > 0 && (
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-            {images.map((image, index) => {
-              if (image.contentImage) return null;
-              
-              return (
-                <div key={`gallery-${index}`} className="relative">
-                  <img 
-                    src={image.url} 
-                    alt={image.caption || "Immagine"} 
-                    className="w-full h-auto rounded-md"
-                  />
-                  {image.caption && (
-                    <div className="text-sm text-gray-600 mt-1">
-                      <TranslatedText text={image.caption} />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const previewContent = (
-    <div className="editor-preview">
-      <h2 className="text-2xl font-bold mb-6">
-        <TranslatedText text={title} />
-      </h2>
-      {renderContent()}
-    </div>
-  );
-
-  const fullscreenContent = (
-    <div className="preview-fullscreen">
-      <div className="preview-fullscreen-content">
-        <h1 className="text-3xl font-bold mb-8">
-          <TranslatedText text={title} />
-        </h1>
-        {renderContent()}
-      </div>
-    </div>
-  );
-
+const PageFullscreenPreview: React.FC<PageFullscreenPreviewProps> = ({
+  isOpen,
+  onClose,
+  content,
+  title
+}) => {
   return (
-    <div className="relative">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium">
-          <TranslatedText text="Anteprima" />
-        </h3>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => setIsFullscreen(true)}
-          className="flex items-center gap-2"
-        >
-          <Maximize2 className="h-4 w-4" />
-          <TranslatedText text="Anteprima a schermo intero" />
-        </Button>
-      </div>
-      
-      {previewContent}
-      
-      <PageFullscreenPreview
-        isOpen={isFullscreen}
-        onClose={() => setIsFullscreen(false)}
-        content={fullscreenContent}
-        title={title}
-      />
-    </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-full w-screen h-screen p-0 overflow-hidden inset-0 m-0 rounded-none border-0 fixed top-0 left-0">
+        <div className="flex flex-col h-full">
+          <div className="flex justify-between items-center p-3 border-b bg-white z-10 sticky top-0">
+            <h2 className="text-lg font-medium flex items-center">
+              <Maximize2 className="h-4 w-4 mr-2" />
+              <TranslatedText text={`Anteprima: ${title}`} />
+            </h2>
+            <Button variant="ghost" size="sm" onClick={onClose} className="hover:bg-gray-100">
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          
+          <div className="flex-1 overflow-auto bg-white">
+            <div className="fullscreen-preview-container">
+              <div className="fullscreen-preview-content">
+                {content}
+              </div>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
-export default PagePreview;
+export default PageFullscreenPreview;
