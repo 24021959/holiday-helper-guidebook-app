@@ -32,6 +32,7 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
   const [showMapDialog, setShowMapDialog] = useState(false);
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
   const [previewContent, setPreviewContent] = useState<string>("");
+  const [imagePosition, setImagePosition] = useState<"left" | "center" | "right" | "full">("center");
   
   const contentValue = watch(name);
   
@@ -43,6 +44,15 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
     if (!content) return "";
     
     let formattedContent = content;
+    
+    formattedContent = formattedContent.replace(
+      /<!-- IMAGE: (.*?) -->\n\[Immagine: (.*?)\]\n/g,
+      (match, url, name) => {
+        return `<div class="bg-gray-100 border border-gray-300 rounded p-2 my-2 flex items-center">
+          <span class="text-gray-700"><span class="text-emerald-600">📷</span> ${name}</span>
+        </div>`;
+      }
+    );
     
     formattedContent = formattedContent.replace(
       /<!-- FORMAT:LEFT -->\n(.*?)(?=<!-- FORMAT:|$)/gs, 
@@ -109,6 +119,16 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
     formattedContent = formattedContent.replace(
       /\[([^\]]+)\]\(([^)]+)\)/g,
       '<a href="$2" style="color: #3b82f6; text-decoration: underline;">$1</a>'
+    );
+    
+    formattedContent = formattedContent.replace(
+      /<!-- MAP: (.*?) -->\n\[📍 (.*?)\]\n/g,
+      '<div class="bg-blue-50 border border-blue-200 rounded p-2 my-2 flex items-center"><span class="text-blue-700">📍 $2</span></div>'
+    );
+    
+    formattedContent = formattedContent.replace(
+      /<!-- PHONE: (.*?) -->\n\[📞 (.*?)\]\n/g,
+      '<div class="bg-green-50 border border-green-200 rounded p-2 my-2 flex items-center"><span class="text-green-700">📞 $2</span></div>'
     );
     
     formattedContent = formattedContent.replace(/\n\n/g, '<br><br>');
@@ -256,7 +276,7 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
     }, 0);
   };
 
-  const handleInsertImage = (imageUrl: string) => {
+  const handleInsertImage = (imageUrl: string, position: "left" | "center" | "right" | "full" = "center") => {
     try {
       const content = getValues(name) as string;
       if (clickPosition !== null) {
@@ -277,7 +297,7 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
         const newContent = content.substring(0, clickPosition) + imageMarkup + content.substring(clickPosition);
         setValue(name, newContent, { shouldDirty: true });
         
-        console.log("Immagine inserita correttamente:", imageName);
+        console.log("Immagine inserita correttamente:", imageName, "posizione:", position);
       }
     } catch (error) {
       console.error("Errore durante l'inserimento dell'immagine:", error);
@@ -671,7 +691,8 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
       <ImageInsertionDialog
         isOpen={showImageDialog}
         onClose={() => setShowImageDialog(false)}
-        onImageUpload={handleInsertImage}
+        onImageUpload={(imageUrl) => handleInsertImage(imageUrl, imagePosition)}
+        onPositionChange={setImagePosition}
       />
 
       {showGalleryDialog && (
