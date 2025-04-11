@@ -35,6 +35,14 @@ export interface PageData {
   is_parent: boolean;
 }
 
+export interface UserData {
+  id: string;
+  email: string;
+  isActive: boolean;
+  role: string;
+  createdAt: string;
+}
+
 const Admin: React.FC = () => {
   const navigate = useNavigate();
   const { headerSettings, loading: headerLoading } = useHeaderSettings();
@@ -82,7 +90,6 @@ const Admin: React.FC = () => {
         
         setPages(formattedPages);
         
-        // Filtra le pagine "parent"
         const parents = formattedPages.filter(page => page.content === "" && page.imageUrl === null);
         setParentPages(parents);
         
@@ -125,7 +132,6 @@ const Admin: React.FC = () => {
   const handlePagesUpdate = (updatedPages: PageData[]) => {
     setPages(updatedPages);
     
-    // Aggiorna anche le parent pages
     const parents = updatedPages.filter(page => page.content === "" && page.imageUrl === null);
     setParentPages(parents);
   };
@@ -185,7 +191,6 @@ const Admin: React.FC = () => {
       />
 
       <main className="container mx-auto flex flex-col md:flex-row flex-grow p-4">
-        {/* Left Column / Tabs */}
         <aside className="md:w-1/4 pr-4">
           <Card className="shadow-md border-0">
             <CardHeader className="py-2">
@@ -213,7 +218,6 @@ const Admin: React.FC = () => {
           </Card>
         </aside>
 
-        {/* Right Column / Content */}
         <div className="md:w-3/4 pl-4">
           {leftColTabs.map((tab) => (
             <TabsContent key={tab.value} value={tab.value} className="mt-2">
