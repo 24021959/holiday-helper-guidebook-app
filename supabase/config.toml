@@ -1,9 +1,48 @@
 
-[functions.process-page-content]
-verify_jwt = false
+project_id = "hxozchwpuwowlsurmptr"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[realtime]
+enabled = false
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+
+[auth.email]
+enabled = true
+
+[auth.email.template.invite]
+subject = "You have been invited"
+content_path = "./supabase/templates/invite.html"
 
 [functions.chatbot]
 verify_jwt = false
 
-[functions.create-chatbot-knowledge]
+[functions.process-page-content]
 verify_jwt = false
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://localhost"

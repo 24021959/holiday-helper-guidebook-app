@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
@@ -17,6 +16,25 @@ Sii conciso ma completo. Formatta le tue risposte in modo chiaro e leggibile, us
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+// Approx token count estimator
+function estimateTokenCount(text) {
+  // Rough estimation: ~4 characters per token for languages like English
+  // For languages with non-Latin characters, this might be different
+  return Math.ceil(text.length / 4);
+}
+
+// Function to truncate content if it's too long
+function truncateContent(content, maxTokens = 8000) {
+  if (estimateTokenCount(content) <= maxTokens) {
+    return content;
+  }
+  
+  // If content is too long, truncate it to approximate token limit
+  // We'll keep first part as it often contains most relevant info
+  const approxCharLimit = maxTokens * 4;
+  return content.substring(0, approxCharLimit) + "... [contenuto troncato per limiti di lunghezza]";
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -44,26 +62,6 @@ serve(async (req) => {
       supabaseKey || ''
     );
 
-    // Ensure the chatbot_knowledge table exists
-    try {
-      await supabaseClient.rpc("run_sql", {
-        sql: `
-          CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
-            id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-            page_id uuid NOT NULL,
-            title text NOT NULL,
-            content text NOT NULL,
-            path text NOT NULL,
-            created_at timestamp with time zone DEFAULT now(),
-            updated_at timestamp with time zone DEFAULT now()
-          )
-        `
-      });
-    } catch (error) {
-      console.error("Error ensuring table exists (continuing anyway):", error);
-      // Continue execution - the table might already exist
-    }
-
     // Get relevant documents from the knowledge base using better semantic search
     let relevantContent = [];
     try {
@@ -86,7 +84,7 @@ serve(async (req) => {
       
       // Extract meaningful keywords from the user's message
       const searchTerms = message.toLowerCase().split(/\s+/)
-        .filter((term: string) => term.length > 3)  // Only terms with 4+ chars
+        .filter((term) => term.length > 3)  // Only terms with 4+ chars
         .slice(0, 6);  // Limit to 6 keywords
         
       console.log("Search terms:", searchTerms);
@@ -98,7 +96,7 @@ serve(async (req) => {
           .from('chatbot_knowledge')
           .select('*')
           .order('updated_at', { ascending: false })
-          .limit(3);
+          .limit(2); // Reduced from 3 to 2 to limit token count
           
         if (recentError) {
           console.error("Error fetching recent documents:", recentError);
@@ -117,7 +115,7 @@ serve(async (req) => {
               .from('chatbot_knowledge')
               .select('*')
               .or(`title.ilike.%${term}%,content.ilike.%${term}%`)
-              .limit(10);
+              .limit(5); // Reduced from 10 to 5
               
             queries.push(query);
           }
@@ -150,24 +148,24 @@ serve(async (req) => {
           return { ...doc, relevance_score: score };
         });
         
-        // Sort by relevance score and take the top 3
+        // Sort by relevance score and take the top 2 (reduced from 3)
         relevantContent = scoredDocs
           .sort((a, b) => b.relevance_score - a.relevance_score)
-          .slice(0, 3);
+          .slice(0, 2);
           
         console.log(`Selected ${relevantContent.length} most relevant documents`);
       }
       
-      // If we still have no content, get all documents as last resort
+      // If we still have no content, get some documents as last resort
       if (relevantContent.length === 0) {
-        console.log("No relevant content found, retrieving all documents");
+        console.log("No relevant content found, retrieving a sample of documents");
         const { data: allDocs, error: allError } = await supabaseClient
           .from('chatbot_knowledge')
           .select('*')
-          .limit(3);
+          .limit(2); // Reduced from 3 to 2
           
         if (allError) {
-          console.error("Error fetching all documents:", allError);
+          console.error("Error fetching documents:", allError);
         } else if (allDocs) {
           relevantContent = allDocs;
           console.log(`Retrieved ${relevantContent.length} documents as fallback`);
@@ -188,25 +186,38 @@ serve(async (req) => {
       );
     }
 
-    // Format the chat history for the OpenAI API
+    // Format the chat history for the OpenAI API - limit to only last 2 messages to save tokens
     const formattedHistory = chatHistory ? chatHistory.map(msg => ({
       role: msg.role,
       content: msg.content
-    })).slice(-4) : [];  // Only include last 4 messages for context
+    })).slice(-2) : [];  // Only include last 2 messages for context
 
-    // Create context from knowledge base
+    // Create context from knowledge base - TRUNCATE content to avoid token limits
     let knowledgeContext = "";
     if (relevantContent.length > 0) {
       knowledgeContext = "### Informazioni dalla base di conoscenza:\n\n" + 
-        relevantContent.map(doc => doc.content).join("\n\n---\n\n");
-      console.log("Knowledge context created from relevant documents");
+        relevantContent.map(doc => {
+          // Truncate each document's content to avoid token limits
+          return `Titolo: ${doc.title}\nURL: ${doc.path}\n${truncateContent(doc.content, 3000)}`;
+        }).join("\n\n---\n\n");
+      
+      // Final safety check - truncate the entire context if still too large
+      knowledgeContext = truncateContent(knowledgeContext, 7000);
+      console.log("Knowledge context created (estimated tokens: " + estimateTokenCount(knowledgeContext) + ")");
     } else {
       knowledgeContext = "Non ci sono informazioni specifiche nella base di conoscenza per questa richiesta.";
       console.log("No relevant documents found");
     }
 
     const promptWithContext = `${knowledgeContext}\n\nDomanda dell'utente: ${message}\n\nRispondi alla domanda dell'utente nella lingua "${language}" utilizzando le informazioni fornite sopra.`;
-
+    
+    // Estimate total token usage
+    const estimatedSystemTokens = estimateTokenCount(SYSTEM_PROMPT);
+    const estimatedHistoryTokens = formattedHistory.reduce((acc, msg) => acc + estimateTokenCount(msg.content), 0);
+    const estimatedPromptTokens = estimateTokenCount(promptWithContext);
+    const totalEstimatedTokens = estimatedSystemTokens + estimatedHistoryTokens + estimatedPromptTokens;
+    
+    console.log(`Estimated tokens: System=${estimatedSystemTokens}, History=${estimatedHistoryTokens}, Prompt=${estimatedPromptTokens}, Total=${totalEstimatedTokens}`);
     console.log("Calling OpenAI API...");
     
     // Call OpenAI for a response with better error handling
@@ -225,6 +236,8 @@ serve(async (req) => {
             { role: 'user', content: promptWithContext }
           ],
           temperature: 0.7,
+          // Set a reasonable max_tokens to prevent exceeding limits
+          max_tokens: 1000,
         }),
       });
 

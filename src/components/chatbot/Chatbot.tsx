@@ -1,11 +1,12 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useChatbot } from '@/hooks/useChatbot';
-import { Send, Loader2, X } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import ChatMessages from './ChatMessages';
 import ChatHeader from './ChatHeader';
+import { toast } from "sonner";
 
 const Chatbot: React.FC<{ previewConfig?: any }> = ({ previewConfig }) => {
   const { 
@@ -30,12 +31,17 @@ const Chatbot: React.FC<{ previewConfig?: any }> = ({ previewConfig }) => {
     e.preventDefault();
     if (!input.trim()) return;
     
-    sendMessage(input);
-    setInput('');
-    
-    // Reset textarea height
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
+    try {
+      sendMessage(input);
+      setInput('');
+      
+      // Reset textarea height
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast.error("Errore nell'invio del messaggio. Riprova più tardi.");
     }
   };
 

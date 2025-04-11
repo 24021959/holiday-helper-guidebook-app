@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
@@ -11,52 +10,65 @@ const corsHeaders = {
 
 const htmlToPlainText = (html) => {
   try {
+    if (!html) return "";
+    
     const doc = new DOMParser().parseFromString(html, "text/html");
-    if (!doc) return html;
+    if (!doc) return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
     
-    // Remove script and style elements
-    const scripts = doc.querySelectorAll("script, style");
-    scripts.forEach(el => el.remove());
+    const scriptsAndStyles = doc.querySelectorAll("script, style, [hidden], .hidden, meta, link, head");
+    scriptsAndStyles.forEach(el => el.remove());
     
-    // Extract text content
-    return doc.textContent || html;
+    let text = doc.textContent || html;
+    
+    text = text.replace(/\s+/g, " ").trim();
+    
+    return text;
   } catch (e) {
     console.error("Error parsing HTML:", e);
-    return html;
+    return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
   }
 };
 
 const extractStructuredContent = (page) => {
   try {
-    // Start with basic details
     let structuredContent = `Titolo: ${page.title || "Senza titolo"}\n`;
     structuredContent += `URL: ${page.path || ""}\n\n`;
     
-    // Process main content
     let mainContent = "";
     if (page.content) {
       mainContent = htmlToPlainText(page.content);
+      if (mainContent.length > 8000) {
+        mainContent = mainContent.substring(0, 8000) + "... (contenuto troncato)";
+      }
     }
     
     structuredContent += `Contenuto principale:\n${mainContent}\n\n`;
     
-    // Process list items if present
     if (page.list_items && Array.isArray(page.list_items) && page.list_items.length > 0) {
       structuredContent += "Elementi della lista:\n";
       
-      page.list_items.forEach((item, index) => {
+      const limitedItems = page.list_items.slice(0, 10);
+      
+      limitedItems.forEach((item, index) => {
         structuredContent += `${index + 1}. `;
         
         if (item.name) structuredContent += `${item.name}`;
         if (item.name && item.description) structuredContent += " - ";
-        if (item.description) structuredContent += `${item.description}`;
+        if (item.description) {
+          const desc = item.description.length > 200 
+            ? item.description.substring(0, 200) + "..."
+            : item.description;
+          structuredContent += desc;
+        }
         
         structuredContent += "\n";
         
-        // Add additional details if present
-        if (item.details) structuredContent += `   Dettagli: ${item.details}\n`;
         if (item.price) structuredContent += `   Prezzo: ${item.price}\n`;
       });
+      
+      if (page.list_items.length > 10) {
+        structuredContent += `... e altri ${page.list_items.length - 10} elementi\n`;
+      }
     }
     
     return structuredContent.trim();
@@ -67,7 +79,6 @@ const extractStructuredContent = (page) => {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -84,7 +95,6 @@ serve(async (req) => {
     
     console.log(`Processing page: ${page.id} - ${page.title}`);
     
-    // Get the Supabase URL and service role key from environment variables
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
@@ -92,10 +102,8 @@ serve(async (req) => {
       throw new Error("Missing Supabase environment variables");
     }
     
-    // Initialize the Supabase client
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Create the chatbot_knowledge table if it doesn't exist
     try {
       await supabase.rpc("run_sql", {
         sql: `
@@ -110,16 +118,14 @@ serve(async (req) => {
           )
         `
       });
-    } catch (error) {
-      console.error("Error ensuring table exists (continuing anyway):", error);
+    } catch (tableError) {
+      console.error("Error ensuring table exists (continuing anyway):", tableError);
     }
     
-    // Process the page content
     const structuredContent = extractStructuredContent(page);
     
     console.log(`Structured content length: ${structuredContent.length} chars`);
     
-    // First delete any existing entries for this page
     try {
       const { error: deleteError } = await supabase
         .from("chatbot_knowledge")
@@ -133,7 +139,6 @@ serve(async (req) => {
       console.error("Exception during delete:", deleteError);
     }
     
-    // Insert the processed content
     const { data, error } = await supabase
       .from("chatbot_knowledge")
       .insert({
