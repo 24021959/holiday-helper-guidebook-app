@@ -17,10 +17,17 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
   onImageUpload
 }) => {
   const [selectedPosition, setSelectedPosition] = useState<"left" | "center" | "right" | "full">("center");
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  const handleImageUploaded = (imageUrl: string) => {
-    onImageUpload(imageUrl, selectedPosition);
-    onClose();
+  const handleImageSelected = (imageUrl: string) => {
+    setSelectedImage(imageUrl);
+  };
+
+  const handleInsertImage = () => {
+    if (selectedImage) {
+      onImageUpload(selectedImage, selectedPosition);
+      onClose();
+    }
   };
 
   return (
@@ -78,7 +85,33 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
               </Button>
             </div>
           </div>
-          <ImageUploader onImageUpload={handleImageUploaded} />
+          
+          {selectedImage ? (
+            <div className="relative">
+              <img 
+                src={selectedImage} 
+                alt="Anteprima immagine" 
+                className="w-full h-auto max-h-64 object-contain border rounded-md"
+              />
+              <div className="mt-2 flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedImage(null)}
+                  className="mr-2"
+                >
+                  Cambia immagine
+                </Button>
+                <Button
+                  onClick={handleInsertImage}
+                >
+                  Inserisci
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <ImageUploader onImageUpload={handleImageSelected} />
+          )}
         </div>
       </DialogContent>
     </Dialog>
