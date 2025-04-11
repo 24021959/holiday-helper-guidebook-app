@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,6 +75,7 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
           const pageImages: ImageItem[] = [];
           let processedContent = pageData.content;
           
+          // Estrazione delle immagini dal contenuto
           const contentImageRegex = /<!-- IMAGE-CONTENT-\d+ -->\n({.*?})\n\n/gs;
           let contentMatch;
           while ((contentMatch = contentImageRegex.exec(processedContent)) !== null) {
@@ -260,6 +262,7 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
               src={image.url} 
               alt={image.caption || `Immagine ${index + 1}`}
               className="object-cover w-full h-full"
+              data-image-id={`img-${index}`}
             />
           </AspectRatio>
         </div>
@@ -405,6 +408,7 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
                   src={pageData.imageUrl} 
                   alt={pageData.title} 
                   className="w-full h-full object-cover"
+                  data-main-image="true"
                 />
               </AspectRatio>
             </div>

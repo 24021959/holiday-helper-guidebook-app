@@ -164,6 +164,58 @@ const PageFullscreenPreview: React.FC<PageFullscreenPreviewProps> = ({
           </div>
 
           <script>
+            // Elabora i segnaposto di immagine per renderli correttamente
+            document.addEventListener('DOMContentLoaded', function() {
+              const imagePlaceholders = document.querySelectorAll('.prose *');
+              imagePlaceholders.forEach(el => {
+                if (el.textContent && el.textContent.match(/^\[📷 [⏺️▶️◀️⬛] Immagine.*\]$/)) {
+                  const text = el.textContent;
+                  const matches = text.match(/^\[📷 ([⏺️▶️◀️⬛]) (.*)\]$/);
+                  if (matches) {
+                    const position = matches[1];
+                    const caption = matches[2];
+                    
+                    // Trova l'URL dell'immagine nel documento originale
+                    // Questa è solo una soluzione temporanea - nella realtà dovremmo passare i dati reali
+                    const posClass = position === '◀️' ? 'editor-preview-image-left' : 
+                                    position === '▶️' ? 'editor-preview-image-right' : 
+                                    position === '⬛' ? 'editor-preview-image-full' : 
+                                    'editor-preview-image-center';
+                                    
+                    // Trova la prima immagine con questo caption nel documento originale
+                    const images = window.opener.document.querySelectorAll('img');
+                    let imageUrl = '';
+                    
+                    for (let img of images) {
+                      if ((img.alt === caption || img.alt.includes(caption)) && img.src) {
+                        imageUrl = img.src;
+                        break;
+                      }
+                    }
+                    
+                    if (!imageUrl) {
+                      // Se non troviamo l'immagine, proviamo a cercarla nell'innerHTML
+                      const originalContent = window.opener.document.querySelector('.prose')?.innerHTML || '';
+                      const imgMatch = originalContent.match(new RegExp('src="([^"]+)".*?' + caption, 'i'));
+                      if (imgMatch && imgMatch[1]) {
+                        imageUrl = imgMatch[1];
+                      }
+                    }
+                    
+                    if (imageUrl) {
+                      const imgElement = document.createElement('div');
+                      imgElement.className = 'image-placeholder ' + posClass;
+                      imgElement.innerHTML = \`
+                        <img src="\${imageUrl}" alt="\${caption}" class="image-preview" />
+                        <figcaption class="text-sm text-gray-600 text-center mt-2 italic">\${caption}</figcaption>
+                      \`;
+                      el.parentNode.replaceChild(imgElement, el);
+                    }
+                  }
+                }
+              });
+            });
+            
             document.getElementById('closeButton').addEventListener('click', function() {
               window.close();
             });
