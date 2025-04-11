@@ -95,8 +95,14 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
           console.error("Error checking knowledge base:", error);
           setKnowledgeBaseExists(false);
         } else {
-          setKnowledgeBaseExists(count !== null && count > 0);
+          const knowledgeBaseHasContent = count !== null && count > 0;
+          setKnowledgeBaseExists(knowledgeBaseHasContent);
           console.log("Knowledge base check result:", count);
+          
+          // Show confirmation toast if knowledge base exists
+          if (knowledgeBaseHasContent) {
+            toast.success(`Base di conoscenza configurata con ${count} elementi`);
+          }
         }
       } catch (error) {
         console.error("Error checking knowledge base:", error);

@@ -72,7 +72,7 @@ const Chatbot: React.FC<{ previewConfig?: any }> = ({ previewConfig }) => {
       />
       
       {knowledgeBaseExists === false && !previewConfig && (
-        <Alert variant="warning" className="m-2 bg-amber-50 border-amber-200">
+        <Alert variant="destructive" className="m-2 bg-amber-50 border-amber-200">
           <AlertTriangle className="h-4 w-4 text-amber-500" />
           <AlertDescription className="text-xs text-amber-800">
             La base di conoscenza del chatbot è vuota. Assicurati di averla aggiornata dalle impostazioni del chatbot.
