@@ -1,6 +1,6 @@
 
 import React from "react";
-import { TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useAdmin } from "@/context/AdminContext";
 import ManagePagesView from "@/components/admin/ManagePagesView";
 import MenuTranslationManager from "@/components/admin/MenuTranslationManager";
@@ -25,7 +25,7 @@ export const AdminContent: React.FC = () => {
         {showMasterPanel ? (
           <MasterPanel />
         ) : (
-          <>
+          <Tabs value={activeTab} defaultValue={activeTab}>
             <TabsContent value="pages" className="mt-2">
               <ManagePagesView
                 pages={pages}
@@ -38,7 +38,7 @@ export const AdminContent: React.FC = () => {
             <TabsContent value="translation" className="mt-2">
               <MenuTranslationManager />
             </TabsContent>
-          </>
+          </Tabs>
         )}
       </div>
     </>
