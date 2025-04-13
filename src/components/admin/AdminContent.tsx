@@ -27,6 +27,12 @@ export const AdminContent: React.FC = () => {
           <MasterPanel />
         ) : (
           <Tabs value={activeTab} defaultValue={activeTab}>
+            <TabsList className="hidden">
+              <TabsTrigger value="pages">Pages</TabsTrigger>
+              <TabsTrigger value="translation">Translation</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
+            
             <TabsContent value="pages" className="mt-2">
               <ManagePagesView
                 pages={pages}
