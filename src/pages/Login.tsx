@@ -11,6 +11,7 @@ import { md5 } from "js-md5";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, AlertCircle } from "lucide-react";
+import { useAuthentication } from "@/hooks/useAuthentication";
 
 const Login: React.FC = () => {
   const [adminUsername, setAdminUsername] = useState<string>("");
@@ -21,6 +22,7 @@ const Login: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("admin");
   const [configError, setConfigError] = useState<boolean>(false);
   const navigate = useNavigate();
+  const auth = useAuthentication();
 
   // Verifica se l'utente è già autenticato e reindirizza se necessario
   useEffect(() => {
@@ -29,12 +31,10 @@ const Login: React.FC = () => {
       localStorage.removeItem("currentRoute");
     }
     
-    const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
-    
-    if (isAuthenticated) {
+    if (auth.isAuthenticated) {
       navigate("/admin");
     }
-  }, [navigate]);
+  }, [navigate, auth.isAuthenticated]);
 
   // Verifica la connessione al database
   useEffect(() => {
@@ -92,19 +92,7 @@ const Login: React.FC = () => {
     setIsLoading(true);
     
     try {
-      if (adminUsername === "admin" && adminPassword === "password") {
-        console.log("Login demo riuscito");
-        localStorage.setItem("admin_token", "demo_token");
-        localStorage.setItem("admin_user", "admin");
-        localStorage.setItem("user_role", "admin");
-        localStorage.setItem("isAuthenticated", "true");
-        localStorage.setItem("currentRoute", "/admin");
-        toast.success("Login effettuato con successo (modalità demo)");
-        navigate("/admin");
-        return;
-      } 
-      
-      const success = await checkDbLogin(adminUsername, adminPassword, "admin");
+      const success = await auth.login(adminUsername, adminPassword, "admin");
       if (!success) {
         toast.error("Credenziali non valide");
       }
@@ -121,18 +109,7 @@ const Login: React.FC = () => {
     setIsLoading(true);
     
     try {
-      if (masterUsername === "master" && masterPassword === "master123") {
-        console.log("Login demo master riuscito");
-        localStorage.setItem("admin_token", "master_token");
-        localStorage.setItem("admin_user", "master");
-        localStorage.setItem("user_role", "master");
-        localStorage.setItem("isAuthenticated", "true");
-        toast.success("Login come Master effettuato con successo");
-        navigate("/admin");
-        return;
-      }
-      
-      const success = await checkDbLogin(masterUsername, masterPassword, "master");
+      const success = await auth.login(masterUsername, masterPassword, "master");
       if (!success) {
         toast.error("Credenziali Master non valide");
       }
@@ -141,138 +118,6 @@ const Login: React.FC = () => {
       toast.error("Errore durante il login. Riprova più tardi.");
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const checkDbLogin = async (email: string, password: string, role: string): Promise<boolean> => {
-    try {
-      console.log("Verifica del login DB per:", email);
-      
-      // Se siamo in modalità demo o c'è un errore di configurazione, usiamo le credenziali di demo
-      if (configError) {
-        if (email === "admin" && password === "password") {
-          localStorage.setItem("admin_token", "demo_token");
-          localStorage.setItem("admin_user", "admin");
-          localStorage.setItem("user_role", "admin");
-          localStorage.setItem("isAuthenticated", "true");
-          toast.success("Login effettuato con successo (modalità demo)");
-          navigate("/admin");
-          return true;
-        }
-        
-        if (email === "master" && password === "master123" && role === "master") {
-          localStorage.setItem("admin_token", "master_token");
-          localStorage.setItem("admin_user", "master");
-          localStorage.setItem("user_role", "master");
-          localStorage.setItem("isAuthenticated", "true");
-          toast.success("Login come Master effettuato con successo");
-          navigate("/admin");
-          return true;
-        }
-        
-        return false;
-      }
-      
-      try {
-        const { data, error } = await supabase.functions.invoke("admin_users_helpers", {
-          body: { 
-            action: "check_login",
-            email,
-            password_hash: md5(password)
-          }
-        });
-
-        console.log("Risposta verifica login:", data, error);
-
-        if (error) {
-          console.error("Errore durante la verifica del login:", error);
-          // In caso di errore con la funzione, proviamo con le credenziali demo
-          if (email === "admin" && password === "password") {
-            localStorage.setItem("admin_token", "demo_token");
-            localStorage.setItem("admin_user", "admin");
-            localStorage.setItem("user_role", "admin");
-            localStorage.setItem("isAuthenticated", "true");
-            toast.success("Login effettuato con successo (modalità demo)");
-            navigate("/admin");
-            return true;
-          }
-          
-          if (email === "master" && password === "master123" && role === "master") {
-            localStorage.setItem("admin_token", "master_token");
-            localStorage.setItem("admin_user", "master");
-            localStorage.setItem("user_role", "master");
-            localStorage.setItem("isAuthenticated", "true");
-            toast.success("Login come Master effettuato con successo");
-            navigate("/admin");
-            return true;
-          }
-          
-          return false;
-        }
-        
-        if (data && data.success) {
-          localStorage.setItem("admin_token", "user_token");
-          localStorage.setItem("admin_user", email);
-          localStorage.setItem("user_role", data.user.role || role);
-          localStorage.setItem("isAuthenticated", "true");
-          toast.success("Login effettuato con successo");
-          
-          navigate("/admin");
-          return true;
-        }
-        
-        return false;
-      } catch (error) {
-        console.error("Errore durante l'invocazione della funzione:", error);
-        
-        // In caso di errore durante l'invocazione della funzione, proviamo con le credenziali demo
-        if (email === "admin" && password === "password") {
-          localStorage.setItem("admin_token", "demo_token");
-          localStorage.setItem("admin_user", "admin");
-          localStorage.setItem("user_role", "admin");
-          localStorage.setItem("isAuthenticated", "true");
-          toast.success("Login effettuato con successo (modalità demo)");
-          navigate("/admin");
-          return true;
-        }
-        
-        if (email === "master" && password === "master123" && role === "master") {
-          localStorage.setItem("admin_token", "master_token");
-          localStorage.setItem("admin_user", "master");
-          localStorage.setItem("user_role", "master");
-          localStorage.setItem("isAuthenticated", "true");
-          toast.success("Login come Master effettuato con successo");
-          navigate("/admin");
-          return true;
-        }
-        
-        return false;
-      }
-    } catch (error) {
-      console.error("Errore durante la verifica del login:", error);
-      
-      // In caso di qualsiasi errore, proviamo con le credenziali demo
-      if (email === "admin" && password === "password") {
-        localStorage.setItem("admin_token", "demo_token");
-        localStorage.setItem("admin_user", "admin");
-        localStorage.setItem("user_role", "admin");
-        localStorage.setItem("isAuthenticated", "true");
-        toast.success("Login effettuato con successo (modalità demo)");
-        navigate("/admin");
-        return true;
-      }
-      
-      if (email === "master" && password === "master123" && role === "master") {
-        localStorage.setItem("admin_token", "master_token");
-        localStorage.setItem("admin_user", "master");
-        localStorage.setItem("user_role", "master");
-        localStorage.setItem("isAuthenticated", "true");
-        toast.success("Login come Master effettuato con successo");
-        navigate("/admin");
-        return true;
-      }
-      
-      return false;
     }
   };
 
