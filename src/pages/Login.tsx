@@ -22,25 +22,29 @@ const Login: React.FC = () => {
   const [configError, setConfigError] = useState<boolean>(false);
   const navigate = useNavigate();
 
+  // Check if user is already authenticated and redirect if needed
   useEffect(() => {
+    // Clear any current admin session to prevent redirect loops
+    if (window.location.pathname === "/login") {
+      localStorage.removeItem("currentRoute");
+    }
+    
     const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
     const userRole = localStorage.getItem("user_role");
     
     if (isAuthenticated) {
-      if (userRole === "master") {
-        navigate("/admin");
-      } else {
-        navigate("/admin");
-      }
+      navigate("/admin");
     }
   }, [navigate]);
 
+  // Check database connection
   useEffect(() => {
     const checkConnection = async () => {
       try {
         setConfigError(false);
         
         try {
+          console.log("Testing database connection...");
           const { error } = await supabase.from('header_settings').select('count').limit(1);
           
           if (error) {
@@ -60,6 +64,7 @@ const Login: React.FC = () => {
               setConfigError(true);
             }
           } else {
+            console.log("Database connection successful");
             setConfigError(false);
           }
         } catch (err) {
@@ -94,6 +99,7 @@ const Login: React.FC = () => {
         localStorage.setItem("admin_user", "admin");
         localStorage.setItem("user_role", "admin");
         localStorage.setItem("isAuthenticated", "true");
+        localStorage.setItem("currentRoute", "/admin");
         toast.success("Login effettuato con successo (modalità demo)");
         navigate("/admin");
         return;

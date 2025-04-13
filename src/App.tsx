@@ -1,5 +1,5 @@
 
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
 import Index from "./pages/Index";
 import Menu from "./pages/Menu";
@@ -17,6 +17,11 @@ import { Toaster } from "sonner";
 import ChatbotBubble from "./components/ChatbotBubble";
 
 function App() {
+  // Check if user is authenticated
+  const isAuthenticated = () => {
+    return localStorage.getItem("isAuthenticated") === "true";
+  };
+
   return (
     <TranslationProvider>
       <Toaster position="top-right" />
@@ -26,7 +31,10 @@ function App() {
           <Route path="/" element={<Index />} />
           <Route path="/home" element={<Home />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/admin" element={<AdminPage />} />
+          <Route 
+            path="/admin" 
+            element={isAuthenticated() ? <AdminPage /> : <Navigate to="/login" />} 
+          />
           <Route path="/welcome" element={<Welcome />} />
           <Route path="/storia" element={<Storia />} />
           <Route path="/auto-translate" element={<AutoTranslatePage />} />

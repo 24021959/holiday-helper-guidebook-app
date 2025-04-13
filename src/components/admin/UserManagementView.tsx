@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Table,
@@ -88,7 +87,7 @@ const UserManagementView: React.FC = () => {
         ];
         
         setUsers(demoUsers);
-        setLoading(false);
+        setIsLoading(false);
         return;
       }
       

@@ -27,6 +27,7 @@ export const useHeaderSettings = () => {
 
   const fetchHeaderSettings = useCallback(async () => {
     try {
+      console.log("Fetching header settings...");
       setError(null);
       
       // Check if we're in demo mode 
@@ -70,6 +71,7 @@ export const useHeaderSettings = () => {
       
       // Then try to get from Supabase
       try {
+        console.log("Trying to fetch settings from Supabase...");
         const { data, error } = await supabase
           .from('header_settings')
           .select('*')
@@ -113,6 +115,7 @@ export const useHeaderSettings = () => {
         }
         
         if (data) {
+          console.log("Received data from Supabase:", data);
           const newSettings = {
             logoUrl: data.logo_url,
             headerColor: data.header_color,

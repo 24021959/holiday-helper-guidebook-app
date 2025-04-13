@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -85,44 +84,30 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       
       console.log("Local auth check:", { isAuthenticated, adminToken, storedUserRole });
       
-      if (isAuthenticated && adminToken) {
-        // Demo or local authentication is valid
-        console.log("User authenticated via localStorage");
-        
-        // Set user role from localStorage
-        setUserRole(storedUserRole);
-        
-        // If master role, show master panel
-        if (storedUserRole === "master") {
-          setShowMasterPanel(true);
-          setActiveTab("user-management");
-        }
-        
-        // Check if we're in demo mode
-        if (adminToken === "demo_token" || adminToken === "master_token") {
-          setIsDemoMode(true);
-        }
-        
-        return; // Auth successful, exit early
+      if (!isAuthenticated || !adminToken) {
+        console.error("No valid auth found - redirecting to login");
+        toast.error("Accesso negato. Effettua il login");
+        navigate("/login");
+        return;
       }
       
-      // If no local auth, try Supabase session
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error || !session) {
-          console.error("No valid auth found - redirecting to login", error);
-          toast.error("Accesso negato. Effettua il login");
-          navigate("/login");
-          return;
-        }
-        
-        console.log("User session verified via Supabase");
-      } catch (err) {
-        console.error("Error checking Supabase session:", err);
-        toast.error("Errore nel controllo dell'accesso. Effettua il login.");
-        navigate("/login");
+      // Set user role from localStorage
+      setUserRole(storedUserRole);
+      
+      // If master role, show master panel
+      if (storedUserRole === "master") {
+        setShowMasterPanel(true);
+        setActiveTab("user-management");
       }
+      
+      // Check if we're in demo mode
+      if (adminToken === "demo_token" || adminToken === "master_token") {
+        console.log("Setting demo mode to true");
+        setIsDemoMode(true);
+      }
+      
+      return; // Auth successful
+      
     } catch (err) {
       console.error("Error checking admin access:", err);
       toast.error("Errore nel controllo dell'accesso");
