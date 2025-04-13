@@ -34,18 +34,45 @@ const Login: React.FC = () => {
     const checkConnection = async () => {
       try {
         setConfigError(false);
-        const { error } = await supabase.from('header_settings').select('count').single();
-        if (error && error.code === '42P01') {
-          console.log("Table does not exist, but connection works");
-          setConfigError(false);
-        } else if (error) {
-          console.error("Error checking Supabase connection:", error);
+        
+        // First try a simple query to check connection
+        try {
+          const { error } = await supabase.from('header_settings').select('count').limit(1);
+          
+          if (error) {
+            if (error.code === '42P01') {
+              console.log("Table does not exist, but connection works");
+              // This means we're in demo mode, which is fine
+              toast.info("Modalità demo attiva.", {
+                duration: 5000,
+                id: "demo-mode-info"
+              });
+              setConfigError(false);
+            } else {
+              console.error("Error checking Supabase connection:", error);
+              toast.error("Problemi di connessione al database. Usando modalità demo.", {
+                duration: 5000,
+                id: "config-error"
+              });
+              setConfigError(true);
+            }
+          } else {
+            setConfigError(false);
+          }
+        } catch (err) {
+          console.error("Error connecting to Supabase:", err);
+          toast.error("Problemi di connessione al database. Usando modalità demo.", {
+            duration: 5000,
+            id: "config-error"
+          });
           setConfigError(true);
-        } else {
-          setConfigError(false);
         }
       } catch (err) {
-        console.error("Error connecting to Supabase:", err);
+        console.error("Error during connection check:", err);
+        toast.error("Problemi di connessione al database. Usando modalità demo.", {
+          duration: 5000,
+          id: "config-error"
+        });
         setConfigError(true);
       }
     };
@@ -226,16 +253,6 @@ const Login: React.FC = () => {
       return false;
     }
   };
-
-  // Show a configuration error notification if we have issues connecting to Supabase
-  useEffect(() => {
-    if (configError) {
-      toast.error("Problemi di connessione al database. Usando modalità demo.", {
-        duration: 5000,
-        id: "config-error"
-      });
-    }
-  }, [configError]);
 
   return (
     <div className="min-h-screen bg-white p-6 pt-20">

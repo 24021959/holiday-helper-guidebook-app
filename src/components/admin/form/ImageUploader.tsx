@@ -59,6 +59,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         reader.readAsDataURL(file);
       });
       
+      // Set the image URL directly (this handles demo mode without needing Supabase)
       setImageUrl(imageDataUrl);
       
       if (onImageUpload) {

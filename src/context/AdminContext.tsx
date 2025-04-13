@@ -120,8 +120,45 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         .select('*');
 
       if (error) {
+        // If table doesn't exist, we're in demo mode and need to use fallback data
+        if (error.code === '42P01') {
+          console.warn("Pages table doesn't exist, using demo data");
+          
+          // Demo data - create some example pages
+          const demoPages: PageData[] = [
+            {
+              id: "1",
+              title: "Home",
+              content: "<p>Welcome to our site!</p>",
+              path: "home",
+              icon: "Home",
+              isSubmenu: false,
+              pageImages: [],
+              published: true,
+              is_parent: false
+            },
+            {
+              id: "2",
+              title: "About",
+              content: "<p>About our company</p>",
+              path: "about",
+              icon: "Info",
+              isSubmenu: false,
+              pageImages: [],
+              published: true,
+              is_parent: false
+            }
+          ];
+          
+          setPages(demoPages);
+          setParentPages([]);
+          setIsLoading(false);
+          return;
+        }
+        
         console.error("Errore nel recupero delle pagine:", error);
         setError(error.message);
+        setIsLoading(false);
         return;
       }
 
@@ -165,7 +202,30 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       if (error) {
         console.error("Errore nel recupero della mappa keyword-icon:", error);
-        toast.error("Errore nel caricamento della configurazione");
+        // Don't show error toast for this issue as it's not critical
+        
+        if (error.code === '42P01') {
+          // Table doesn't exist, we're in demo mode - create a default map
+          const defaultMap: Record<string, string> = {
+            "home": "Home",
+            "about": "Info",
+            "contact": "Phone",
+            "services": "Settings",
+            "products": "ShoppingCart",
+            "news": "Newspaper",
+            "blog": "FileText",
+            "events": "Calendar",
+            "faq": "HelpCircle",
+            "gallery": "Image",
+            "team": "Users",
+            "testimonials": "Quote",
+            "pricing": "DollarSign",
+            "login": "LogIn",
+            "register": "UserPlus"
+          };
+          
+          setKeywordToIconMap(defaultMap);
+        }
         return;
       }
 
@@ -179,7 +239,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     } catch (err: any) {
       console.error("Errore durante il recupero della mappa keyword-icon:", err);
-      toast.error("Errore nel caricamento della configurazione");
+      // Don't show error toast for this issue as it's not critical
     }
   };
 
