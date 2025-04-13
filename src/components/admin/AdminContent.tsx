@@ -1,11 +1,12 @@
 
 import React from "react";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdmin } from "@/context/AdminContext";
 import ManagePagesView from "@/components/admin/ManagePagesView";
 import MenuTranslationManager from "@/components/admin/MenuTranslationManager";
 import AdminPanel from "@/components/admin/AdminPanel";
 import { AdminSidebar } from "./AdminSidebar";
+import MasterPanel from "./MasterPanel";
 
 export const AdminContent: React.FC = () => {
   const { 
@@ -23,10 +24,7 @@ export const AdminContent: React.FC = () => {
       
       <div className="md:w-3/4 pl-4">
         {showMasterPanel ? (
-          // No content here since showMasterPanel should be false for regular admin users
-          <div className="p-4 text-center">
-            Questa sezione è riservata agli amministratori di sistema.
-          </div>
+          <MasterPanel />
         ) : (
           <Tabs value={activeTab} defaultValue={activeTab}>
             <TabsContent value="pages" className="mt-2">

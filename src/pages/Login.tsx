@@ -251,11 +251,11 @@ const Login: React.FC = () => {
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-8">
           <img 
-            src="/lovable-uploads/f001bbd0-3515-4169-944c-9a037d5ddae8.png" 
-            alt="EVA AI Technologies Logo" 
+            src="/lovable-uploads/f82196b0-12a4-4b65-983d-804add60b9fb.png" 
+            alt="Locanda dell'Angelo Logo" 
             className="h-12 md:h-16 mx-auto mb-4" 
           />
-          <h1 className="text-2xl font-bold text-emerald-700">EV-AI Guest</h1>
+          <h1 className="text-2xl font-bold text-emerald-700">Locanda dell'Angelo</h1>
           <p className="text-gray-600">Accedi alla piattaforma con le tue credenziali</p>
         </div>
 
@@ -269,7 +269,7 @@ const Login: React.FC = () => {
           </Alert>
         )}
 
-        <Tabs defaultValue="admin" className="w-full" value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100 p-1 rounded-lg">
             <TabsTrigger 
               value="admin" 
@@ -405,8 +405,8 @@ const Login: React.FC = () => {
         <div className="w-full py-6 mt-10 border-t border-gray-200">
           <div className="flex justify-center items-center">
             <img 
-              src="/lovable-uploads/f001bbd0-3515-4169-944c-9a037d5ddae8.png" 
-              alt="EVA AI Technologies Logo" 
+              src="/lovable-uploads/f82196b0-12a4-4b65-983d-804add60b9fb.png"  
+              alt="Locanda dell'Angelo Logo" 
               className="h-8 md:h-10" 
             />
           </div>
