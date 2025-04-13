@@ -32,10 +32,10 @@ export type Table = {
   header_settings: {
     id: number;
     logo_url: string | null;
-    header_color: string | null;
-    establishment_name: string | null;
-    logo_position: string | null;
-    logo_size: string | null;
+    header_color: string;
+    establishment_name: string;
+    logo_position?: "left" | "center" | "right";
+    logo_size?: "small" | "medium" | "large";
     created_at?: string;
     updated_at?: string;
   };

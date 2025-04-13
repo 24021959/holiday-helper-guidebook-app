@@ -1,437 +1,311 @@
+
 import React, { useState, useEffect } from "react";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+import { toast } from "sonner";
+import { 
+  PlusCircle, 
+  Trash2, 
+  Check, 
+  X, 
+  UserCog, 
+  LockKeyhole, 
+  Shield, 
+  Mail
+} from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { 
+  Table, 
+  TableHeader, 
+  TableRow, 
+  TableHead, 
+  TableBody, 
+  TableCell 
 } from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle, UserPlus, XCircle, Loader2 } from "lucide-react";
-import { md5 } from "js-md5";
-import { UserData } from "@/context/AdminContext";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { UserData } from "@/pages/Admin";
 
-interface UserForm {
-  email: string;
-  password?: string;
-  role: string;
-}
-
-const UserManagementView: React.FC = () => {
+export const UserManagementView: React.FC = () => {
   const [users, setUsers] = useState<UserData[]>([]);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [newUser, setNewUser] = useState<UserForm>({ email: "", password: "", role: "user" });
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedTab, setSelectedTab] = useState("users");
-  const [isDemo, setIsDemo] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [role, setRole] = useState<string>("user");
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState<boolean>(false);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
 
+  // Fetch users on component mount
   useEffect(() => {
-    // Check if we're in demo mode
-    const adminToken = localStorage.getItem("admin_token");
-    const isLoggedInAsDemo = adminToken === "demo_token" || adminToken === "master_token";
-    setIsDemo(isLoggedInAsDemo);
-    
     fetchUsers();
   }, []);
 
   const fetchUsers = async () => {
-    setIsLoading(true);
     try {
-      // Check if we're in demo mode
-      const adminToken = localStorage.getItem("admin_token");
-      const isLoggedInAsDemo = adminToken === "demo_token" || adminToken === "master_token";
+      setIsLoading(true);
       
-      if (isLoggedInAsDemo) {
-        console.log("Using demo users data");
-        
-        // Demo users
-        const demoUsers: UserData[] = [
-          {
-            id: "1",
-            email: "admin@example.com",
-            isActive: true,
-            role: "admin",
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: "2",
-            email: "user@example.com",
-            isActive: true,
-            role: "user",
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: "3",
-            email: "inactive@example.com",
-            isActive: false,
-            role: "user",
-            createdAt: new Date().toISOString()
-          }
-        ];
-        
-        setUsers(demoUsers);
-        setIsLoading(false);
-        return;
-      }
+      // Call our edge function instead of direct Supabase query
+      const { data, error } = await supabase.functions.invoke("admin_users_helpers", {
+        body: { action: "get_users" }
+      });
+
+      if (error) throw error;
       
-      try {
-        const { data, error } = await supabase.functions.invoke('admin_users_helpers', {
-          body: { action: 'get_users' }
-        });
-
-        if (error) {
-          console.error("Error fetching users:", error);
-          toast.error("Failed to load users.");
-          
-          // Use demo data as fallback
-          const demoUsers: UserData[] = [
-            {
-              id: "1",
-              email: "admin@example.com",
-              isActive: true,
-              role: "admin",
-              createdAt: new Date().toISOString()
-            },
-            {
-              id: "2",
-              email: "user@example.com",
-              isActive: true,
-              role: "user",
-              createdAt: new Date().toISOString()
-            }
-          ];
-          
-          setUsers(demoUsers);
-          setIsDemo(true);
-          return;
-        }
-
-        if (data && data.data) {
-          const formattedUsers = data.data.map((user: any) => ({
-            id: user.id,
-            email: user.email,
-            isActive: user.is_active,
-            role: user.role,
-            createdAt: user.created_at
-          }));
-          setUsers(formattedUsers);
-        }
-      } catch (error) {
-        console.error("Error invoking function:", error);
-        toast.error("Failed to load users. Using demo data.");
-        
-        // Use demo data as fallback
-        const demoUsers: UserData[] = [
-          {
-            id: "1",
-            email: "admin@example.com",
-            isActive: true,
-            role: "admin",
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: "2",
-            email: "user@example.com",
-            isActive: true,
-            role: "user",
-            createdAt: new Date().toISOString()
-          }
-        ];
-        
-        setUsers(demoUsers);
-        setIsDemo(true);
+      if (data && data.data) {
+        setUsers(data.data.map((user: any) => ({
+          id: user.id,
+          email: user.email,
+          isActive: user.is_active,
+          role: user.role,
+          createdAt: new Date(user.created_at).toLocaleDateString()
+        })));
       }
+    } catch (error) {
+      console.error("Errore nel caricamento degli utenti:", error);
+      toast.error("Impossibile caricare gli utenti");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setNewUser({ ...newUser, [e.target.name]: e.target.value });
-  };
+  const handleCreateUser = async () => {
+    if (!email || !password) {
+      toast.error("Email e password sono obbligatorie");
+      return;
+    }
 
-  const createUser = async () => {
-    setIsSubmitting(true);
     try {
-      if (!newUser.email || !newUser.password) {
-        toast.error("Email and password are required.");
-        return;
-      }
-
-      // In demo mode, just fake the creation
-      if (isDemo) {
-        // Add a fake user to the list
-        const newId = (users.length + 1).toString();
-        const fakeUser: UserData = {
-          id: newId,
-          email: newUser.email,
-          isActive: true,
-          role: newUser.role,
-          createdAt: new Date().toISOString()
-        };
-        
-        setUsers([...users, fakeUser]);
-        toast.success("User created successfully! (Demo Mode)");
-        setIsCreateDialogOpen(false);
-        setNewUser({ email: "", password: "", role: "user" });
-        return;
-      }
-      
-      try {
-        const { data, error } = await supabase.functions.invoke('admin_users_helpers', {
-          body: {
-            action: 'create_user',
-            email: newUser.email,
-            password_hash: md5(newUser.password),
-            role: newUser.role
-          }
-        });
-
-        if (error) {
-          console.error("Error creating user:", error);
-          toast.error("Failed to create user.");
-          return;
+      // Call our edge function to create user
+      const { error } = await supabase.functions.invoke("admin_users_helpers", {
+        body: { 
+          action: "create_user",
+          email,
+          password_hash: password, 
+          role
         }
+      });
 
-        toast.success("User created successfully!");
-        setIsCreateDialogOpen(false);
-        setNewUser({ email: "", password: "", role: "user" });
-        fetchUsers();
-      } catch (error) {
-        console.error("Error invoking function:", error);
-        toast.error("Failed to create user.");
-      }
-    } finally {
-      setIsSubmitting(false);
+      if (error) throw error;
+      
+      toast.success("Utente creato con successo");
+      setEmail("");
+      setPassword("");
+      setRole("user");
+      setIsDialogOpen(false);
+      fetchUsers();
+    } catch (error) {
+      console.error("Errore nella creazione dell'utente:", error);
+      toast.error("Impossibile creare l'utente");
     }
   };
 
-  const toggleUserStatus = async (id: string, isActive: boolean) => {
-    setIsLoading(true);
+  const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
     try {
-      // In demo mode, just fake the status toggle
-      if (isDemo) {
-        const updatedUsers = users.map(user => 
-          user.id === id ? { ...user, isActive: !isActive } : user
-        );
-        setUsers(updatedUsers);
-        toast.success("User status updated successfully! (Demo Mode)");
-        return;
-      }
-      
-      try {
-        const { data, error } = await supabase.functions.invoke('admin_users_helpers', {
-          body: {
-            action: 'toggle_status',
-            id: id,
-            is_active: !isActive
-          }
-        });
-
-        if (error) {
-          console.error("Error toggling user status:", error);
-          toast.error("Failed to update user status.");
-          return;
+      // Call our edge function to toggle user status
+      const { error } = await supabase.functions.invoke("admin_users_helpers", {
+        body: { 
+          action: "toggle_status",
+          id: userId,
+          is_active: !currentStatus
         }
+      });
 
-        toast.success("User status updated successfully!");
-        fetchUsers();
-      } catch (error) {
-        console.error("Error invoking function:", error);
-        toast.error("Failed to update user status.");
-      }
-    } finally {
-      setIsLoading(false);
+      if (error) throw error;
+      
+      setUsers(users.map(user => 
+        user.id === userId ? { ...user, isActive: !currentStatus } : user
+      ));
+      
+      toast.success(`Utente ${currentStatus ? 'disattivato' : 'attivato'} con successo`);
+    } catch (error) {
+      console.error("Errore nella modifica dello stato dell'utente:", error);
+      toast.error("Impossibile modificare lo stato dell'utente");
     }
   };
 
-  const deleteUser = async (id: string) => {
-    setIsLoading(true);
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    
     try {
-      // In demo mode, just fake the deletion
-      if (isDemo) {
-        const updatedUsers = users.filter(user => user.id !== id);
-        setUsers(updatedUsers);
-        toast.success("User deleted successfully! (Demo Mode)");
-        return;
-      }
-      
-      try {
-        const { data, error } = await supabase.functions.invoke('admin_users_helpers', {
-          body: {
-            action: 'delete_user',
-            id: id
-          }
-        });
-
-        if (error) {
-          console.error("Error deleting user:", error);
-          toast.error("Failed to delete user.");
-          return;
+      // Call our edge function to delete user
+      const { error } = await supabase.functions.invoke("admin_users_helpers", {
+        body: { 
+          action: "delete_user",
+          id: userToDelete
         }
+      });
 
-        toast.success("User deleted successfully!");
-        fetchUsers();
-      } catch (error) {
-        console.error("Error invoking function:", error);
-        toast.error("Failed to delete user.");
-      }
-    } finally {
-      setIsLoading(false);
+      if (error) throw error;
+      
+      setUsers(users.filter(user => user.id !== userToDelete));
+      toast.success("Utente eliminato con successo");
+      setConfirmDialogOpen(false);
+      setUserToDelete(null);
+    } catch (error) {
+      console.error("Errore nell'eliminazione dell'utente:", error);
+      toast.error("Impossibile eliminare l'utente");
     }
+  };
+
+  const confirmDelete = (userId: string) => {
+    setUserToDelete(userId);
+    setConfirmDialogOpen(true);
   };
 
   return (
-    <div>
-      <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="users">Utenti</TabsTrigger>
-          <TabsTrigger value="settings">Impostazioni</TabsTrigger>
-        </TabsList>
-        <TabsContent value="users">
-          <div className="mb-4 flex justify-between items-center">
-            <h2 className="text-2xl font-bold">Gestione Utenti</h2>
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline">
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Crea Utente
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Crea Nuovo Utente</DialogTitle>
-                  <DialogDescription>
-                    Crea un nuovo account utente.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="email" className="text-right">
-                      Email
-                    </Label>
-                    <Input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={newUser.email}
-                      onChange={handleInputChange}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="password" className="text-right">
-                      Password
-                    </Label>
-                    <Input
-                      type="password"
-                      id="password"
-                      name="password"
-                      value={newUser.password || ""}
-                      onChange={handleInputChange}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="role" className="text-right">
-                      Ruolo
-                    </Label>
-                    <select
-                      id="role"
-                      name="role"
-                      value={newUser.role}
-                      onChange={handleInputChange}
-                      className="col-span-3 rounded-md border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    >
-                      <option value="user">Utente</option>
-                      <option value="admin">Admin</option>
-                      <option value="master">Master</option>
-                    </select>
-                  </div>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-medium text-emerald-600">Gestione Utenti</h2>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="gap-1">
+              <PlusCircle className="h-4 w-4" />
+              Nuovo Utente
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Crea Nuovo Utente</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label htmlFor="email" className="text-sm font-medium">Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="email@example.com"
+                    className="pl-8"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </div>
-                <DialogFooter>
-                  <Button type="button" onClick={createUser} disabled={isSubmitting}>
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creazione in corso...
-                      </>
-                    ) : "Crea Utente"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="password" className="text-sm font-medium">Password</label>
+                <div className="relative">
+                  <LockKeyhole className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    className="pl-8"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="role" className="text-sm font-medium">Ruolo</label>
+                <div className="relative">
+                  <Shield className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
+                  <Select value={role} onValueChange={setRole}>
+                    <SelectTrigger className="pl-8">
+                      <SelectValue placeholder="Seleziona un ruolo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Amministratore</SelectItem>
+                      <SelectItem value="editor">Editor</SelectItem>
+                      <SelectItem value="user">Utente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Annulla</Button>
+              <Button onClick={handleCreateUser}>Crea Utente</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
 
-          {isLoading ? (
-            <div className="flex items-center justify-center">
-              <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-              Caricamento utenti...
+      {isLoading ? (
+        <div className="text-center py-10">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto"></div>
+          <p className="mt-2 text-emerald-600">Caricamento utenti...</p>
+        </div>
+      ) : (
+        <>
+          {users.length === 0 ? (
+            <div className="text-center py-10 bg-gray-50 rounded-lg">
+              <UserCog className="h-12 w-12 mx-auto text-gray-400" />
+              <h3 className="mt-2 text-lg font-medium text-gray-900">Nessun utente</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Non ci sono ancora utenti registrati. Crea il tuo primo utente.
+              </p>
+              <div className="mt-6">
+                <Button onClick={() => setIsDialogOpen(true)}>
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Nuovo Utente
+                </Button>
+              </div>
             </div>
           ) : (
-            <div className="rounded-md border">
+            <div className="border rounded-lg overflow-hidden">
               <Table>
-                <TableCaption>Lista di tutti gli utenti {isDemo ? "(Modalità Demo)" : ""}</TableCaption>
-                <TableHeader>
+                <TableHeader className="bg-gray-50">
                   <TableRow>
-                    <TableHead className="w-[100px]">ID</TableHead>
-                    <TableHead>Email</TableHead>
+                    <TableHead className="w-[250px]">Email</TableHead>
                     <TableHead>Ruolo</TableHead>
+                    <TableHead>Data Creazione</TableHead>
                     <TableHead>Stato</TableHead>
-                    <TableHead>Azioni</TableHead>
+                    <TableHead className="text-right">Azioni</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {users.map((user) => (
                     <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.id}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.role}</TableCell>
+                      <TableCell className="font-medium">{user.email}</TableCell>
+                      <TableCell className="capitalize">{user.role}</TableCell>
+                      <TableCell>{user.createdAt}</TableCell>
                       <TableCell>
-                        {user.isActive ? (
-                          <CheckCircle className="text-green-500 h-5 w-5" />
-                        ) : (
-                          <XCircle className="text-red-500 h-5 w-5" />
-                        )}
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs ${
+                            user.isActive 
+                              ? "bg-green-100 text-green-800" 
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {user.isActive ? "Attivo" : "Disattivato"}
+                        </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-right space-x-1">
                         <Button
-                          variant="secondary"
+                          variant="ghost"
                           size="sm"
                           onClick={() => toggleUserStatus(user.id, user.isActive)}
-                          disabled={isLoading}
+                          title={user.isActive ? "Disattiva" : "Attiva"}
                         >
-                          {isLoading ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : user.isActive ? "Disattiva" : "Attiva"}
+                          {user.isActive ? (
+                            <X className="h-4 w-4 text-red-500" />
+                          ) : (
+                            <Check className="h-4 w-4 text-green-500" />
+                          )}
                         </Button>
                         <Button
-                          variant="destructive"
+                          variant="ghost"
                           size="sm"
-                          onClick={() => deleteUser(user.id)}
-                          disabled={isLoading}
-                          className="ml-2"
+                          onClick={() => confirmDelete(user.id)}
+                          title="Elimina"
                         >
-                          {isLoading ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : "Elimina"}
+                          <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -440,21 +314,24 @@ const UserManagementView: React.FC = () => {
               </Table>
             </div>
           )}
-        </TabsContent>
-        <TabsContent value="settings">
-          <div>
-            <h2 className="text-2xl font-bold">Impostazioni</h2>
-            <p>Qui puoi gestire le impostazioni globali.</p>
-            {isDemo && (
-              <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-md">
-                <p className="text-amber-700">Modalità demo attiva. Le modifiche non verranno salvate permanentemente.</p>
-              </div>
-            )}
+        </>
+      )}
+      
+      {/* Confirm Delete Dialog */}
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Conferma eliminazione</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p>Sei sicuro di voler eliminare questo utente? Questa azione non può essere annullata.</p>
           </div>
-        </TabsContent>
-      </Tabs>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDialogOpen(false)}>Annulla</Button>
+            <Button variant="destructive" onClick={handleDeleteUser}>Elimina</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
-
-export default UserManagementView;

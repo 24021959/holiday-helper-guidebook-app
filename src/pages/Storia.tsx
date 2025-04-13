@@ -1,13 +1,60 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import TranslatedText from "@/components/TranslatedText";
-import { useHeaderSettings } from "@/hooks/useHeaderSettings";
+
+interface HeaderSettings {
+  logoUrl?: string | null;
+  headerColor?: string;
+  establishmentName?: string | null;
+}
 
 const Storia: React.FC = () => {
-  const { headerSettings, loading, error } = useHeaderSettings();
+  const [headerSettings, setHeaderSettings] = useState<HeaderSettings>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const fetchHeaderSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('header_settings')
+          .select('*')
+          .limit(1)
+          .single();
+          
+        if (error) throw error;
+        
+        if (data) {
+          setHeaderSettings({
+            logoUrl: data.logo_url,
+            headerColor: data.header_color,
+            establishmentName: data.establishment_name
+          });
+        }
+      } catch (error) {
+        console.error("Errore nel caricamento delle impostazioni header:", error);
+        setError("Impossibile caricare le impostazioni dell'header");
+        
+        // Fallback al localStorage se Supabase fallisce
+        const savedHeaderSettings = localStorage.getItem("headerSettings");
+        if (savedHeaderSettings) {
+          try {
+            setHeaderSettings(JSON.parse(savedHeaderSettings));
+          } catch (err) {
+            console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
+          }
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchHeaderSettings();
+  }, []);
   
   if (loading) {
     return (
@@ -44,8 +91,6 @@ const Storia: React.FC = () => {
         logoUrl={headerSettings.logoUrl || undefined}
         backgroundColor={headerSettings.headerColor}
         establishmentName={headerSettings.establishmentName || undefined}
-        logoPosition={headerSettings.logoPosition as "left" | "center" | "right" || "left"}
-        logoSize={headerSettings.logoSize as "small" | "medium" | "large" || "medium"}
         showAdminButton={false}
       />
       

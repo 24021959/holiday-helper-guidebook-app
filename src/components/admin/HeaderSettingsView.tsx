@@ -4,12 +4,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import ImageUploader from "@/components/ImageUploader";
+import Header from "@/components/Header";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { colorPalette } from "@/utils/colorPalette";
-import Header from "@/components/Header";
-import ImageUploader from "@/components/ImageUploader";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { FormItem, FormLabel } from "@/components/ui/form";
 
 interface HeaderSettingsViewProps {
   uploadedLogo: string | null;
@@ -25,15 +24,15 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
   setHeaderColor 
 }) => {
   const headerColorOptions = [
-    { value: colorPalette.gradients.tealEmerald, label: "Teal/Emerald (Default)" },
-    { value: colorPalette.gradients.blueIndigo, label: "Blue/Indigo" },
-    { value: colorPalette.gradients.purplePink, label: "Purple/Pink" },
-    { value: colorPalette.gradients.redOrange, label: "Red/Orange" },
-    { value: colorPalette.gradients.amberYellow, label: "Amber/Yellow" },
-    { value: colorPalette.solid.white, label: "White" },
-    { value: colorPalette.solid.grayDark, label: "Dark Gray" },
-    { value: colorPalette.solid.black, label: "Black" },
-    { value: colorPalette.gradients.purpleIndigo, label: "Purple/Indigo" }
+    { value: "bg-gradient-to-r from-teal-500 to-emerald-600", label: "Teal/Emerald (Default)" },
+    { value: "bg-gradient-to-r from-blue-500 to-indigo-600", label: "Blue/Indigo" },
+    { value: "bg-gradient-to-r from-purple-500 to-pink-500", label: "Purple/Pink" },
+    { value: "bg-gradient-to-r from-red-500 to-orange-500", label: "Red/Orange" },
+    { value: "bg-gradient-to-r from-amber-400 to-yellow-500", label: "Amber/Yellow" },
+    { value: "bg-white", label: "White" },
+    { value: "bg-gray-800", label: "Dark Gray" },
+    { value: "bg-black", label: "Black" },
+    { value: "bg-gradient-to-r from-purple-400 to-indigo-500", label: "Purple/Indigo" }
   ];
   
   const [establishmentName, setEstablishmentName] = useState<string>("");
@@ -42,51 +41,39 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
   const [logoPosition, setLogoPosition] = useState<"left" | "center" | "right">("left");
   const [logoSize, setLogoSize] = useState<"small" | "medium" | "large">("medium");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
   
+  // Fetch header settings on component mount
   useEffect(() => {
     const fetchHeaderSettings = async () => {
       try {
-        setLoadError(null);
         const { data, error } = await supabase
           .from('header_settings')
           .select('*')
-          .limit(1)
-          .maybeSingle();
+          .limit(1);
           
-        if (error) {
-          if (error.code === '42P01') {
-            // Table doesn't exist, but that's okay - we're in demo mode
-            console.warn("Header settings table does not exist. Using defaults.");
-            return;
-          }
-          console.error("Error fetching header settings:", error);
-          setLoadError("Non è stato possibile caricare le impostazioni. Utilizzando valori predefiniti.");
-          return;
-        }
+        if (error) throw error;
         
-        if (data) {
-          if (data.establishment_name) {
-            setEstablishmentName(data.establishment_name);
+        if (data && data.length > 0) {
+          if (data[0].establishment_name) {
+            setEstablishmentName(data[0].establishment_name);
           }
-          if (data.logo_url) {
-            setLocalLogo(data.logo_url);
-            setUploadedLogo(data.logo_url);
+          if (data[0].logo_url) {
+            setLocalLogo(data[0].logo_url);
+            setUploadedLogo(data[0].logo_url);
           }
-          if (data.header_color) {
-            setLocalColor(data.header_color);
-            setHeaderColor(data.header_color);
+          if (data[0].header_color) {
+            setLocalColor(data[0].header_color);
+            setHeaderColor(data[0].header_color);
           }
-          if (data.logo_position) {
-            setLogoPosition(data.logo_position);
+          if (data[0].logo_position) {
+            setLogoPosition(data[0].logo_position);
           }
-          if (data.logo_size) {
-            setLogoSize(data.logo_size);
+          if (data[0].logo_size) {
+            setLogoSize(data[0].logo_size);
           }
         }
       } catch (error) {
         console.error("Error fetching header settings:", error);
-        setLoadError("Non è stato possibile caricare le impostazioni. Utilizzando valori predefiniti.");
       }
     };
     
@@ -108,34 +95,7 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
   const saveAllSettings = async () => {
     setIsLoading(true);
     try {
-      // First check if table exists to avoid errors
-      const { error: tableCheckError } = await supabase
-        .from('header_settings')
-        .select('count')
-        .limit(1);
-      
-      if (tableCheckError && tableCheckError.code === '42P01') {
-        // Table doesn't exist, show a message but don't throw an error
-        toast.warning("Modalità demo attiva. Le impostazioni non vengono salvate nel database.");
-        
-        // Still update local state
-        setUploadedLogo(localLogo);
-        setHeaderColor(localColor);
-        
-        const headerSettings = {
-          logoUrl: localLogo,
-          headerColor: localColor,
-          establishmentName: establishmentName || null,
-          logoPosition: logoPosition,
-          logoSize: logoSize
-        };
-        localStorage.setItem("headerSettings", JSON.stringify(headerSettings));
-        
-        toast.success("Impostazioni header salvate localmente");
-        setIsLoading(false);
-        return;
-      }
-      
+      // Check if header settings exist
       const { data: existingData, error: fetchError } = await supabase
         .from('header_settings')
         .select('*')
@@ -143,6 +103,7 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
       
       if (fetchError) throw fetchError;
       
+      // Create the data object for the update or insert operation
       const headerData = { 
         logo_url: localLogo, 
         header_color: localColor,
@@ -155,11 +116,13 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
       
       let saveOperation;
       if (existingData && existingData.length > 0) {
+        // Update existing record
         saveOperation = supabase
           .from('header_settings')
           .update(headerData)
           .eq('id', existingData[0].id);
       } else {
+        // Insert new record
         saveOperation = supabase
           .from('header_settings')
           .insert(headerData);
@@ -168,9 +131,11 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
       const { error: saveError } = await saveOperation;
       if (saveError) throw saveError;
       
+      // Update parent state to reflect changes
       setUploadedLogo(localLogo);
       setHeaderColor(localColor);
       
+      // Update localStorage for fallback
       const headerSettings = {
         logoUrl: localLogo,
         headerColor: localColor,
@@ -192,12 +157,6 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
   return (
     <>
       <h2 className="text-xl font-medium text-emerald-600 mb-4">Personalizza Header</h2>
-      
-      {loadError && (
-        <Alert className="mb-4">
-          <AlertDescription>{loadError}</AlertDescription>
-        </Alert>
-      )}
       
       <div className="space-y-6">
         <div className="p-4 border rounded-lg bg-gray-50">
@@ -288,7 +247,6 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
         
         <div className="p-4 border rounded-lg bg-gray-50">
           <h3 className="text-md font-medium text-emerald-700 mb-4">Colore dell'header</h3>
-          <p className="text-xs text-gray-500 mb-4">Il colore del footer verrà automaticamente abbinato al colore dell'header</p>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {headerColorOptions.map((option) => (
@@ -301,11 +259,11 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
               >
                 <div 
                   className={`${option.value} h-16 rounded-lg flex items-center justify-center ${
-                    option.value === colorPalette.solid.white ? "border" : ""
+                    option.value === "bg-white" ? "border" : ""
                   }`}
                 >
                   <span className={`text-sm font-medium ${
-                    option.value === colorPalette.solid.white || option.value === colorPalette.gradients.amberYellow 
+                    option.value === "bg-white" || option.value === "bg-gradient-to-r from-amber-400 to-yellow-500" 
                       ? "text-gray-800" 
                       : "text-white"
                   }`}>
@@ -331,6 +289,7 @@ export const HeaderSettingsView: React.FC<HeaderSettingsViewProps> = ({
           </div>
         </div>
         
+        {/* Save button for all header settings */}
         <div className="flex justify-end">
           <Button 
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-6"

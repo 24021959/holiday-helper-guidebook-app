@@ -20,7 +20,6 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
     
     const body = await req.json();
-    console.log("Edge function received request:", { action: body.action });
     
     // Handle get users RPC
     if (body.action === "get_users") {
@@ -30,14 +29,12 @@ serve(async (req) => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error("Error fetching users:", error);
         return new Response(JSON.stringify({ error: error.message }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 400,
         });
       }
 
-      console.log(`Returning ${data?.length || 0} users`);
       return new Response(JSON.stringify({ data }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -46,87 +43,25 @@ serve(async (req) => {
     // Handle check login
     if (body.action === "check_login") {
       const { email, password_hash } = body;
-      console.log("Checking login for email:", email);
       
-      // Special case for demo credentials - always allow these regardless of DB state
-      if (email === "admin" && password_hash === md5("password")) {
-        console.log("Demo admin login successful");
-        return new Response(JSON.stringify({ 
-          success: true, 
-          user: { email: "admin", role: "admin" },
-          demo: true
-        }), {
+      const { data, error } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('email', email)
+        .eq('password_hash', password_hash)
+        .eq('is_active', true)
+        .single();
+
+      if (error) {
+        return new Response(JSON.stringify({ success: false, error: error.message }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200, // We still return 200 to handle the error on client side
         });
       }
-      
-      if (email === "master" && password_hash === md5("master123")) {
-        console.log("Demo master login successful");
-        return new Response(JSON.stringify({ 
-          success: true, 
-          user: { email: "master", role: "master" },
-          demo: true
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      
-      // Check if the admin_users table exists
-      try {
-        const { error: tableCheckError } = await supabase
-          .from('admin_users')
-          .select('count')
-          .limit(1);
-          
-        if (tableCheckError && tableCheckError.code === '42P01') {
-          console.log("admin_users table does not exist, returning demo login");
-          
-          // Table doesn't exist, but we already handled demo credentials above
-          // So this must be invalid credentials
-          return new Response(JSON.stringify({ success: false, error: "Invalid credentials" }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          });
-        }
-        
-        // If table exists, proceed with DB query
-        const { data, error } = await supabase
-          .from('admin_users')
-          .select('*')
-          .eq('email', email)
-          .eq('password_hash', password_hash)
-          .eq('is_active', true)
-          .maybeSingle();
-        
-        console.log("Login check result:", { data, error });
 
-        if (error) {
-          console.error("DB Error checking login:", error);
-          return new Response(JSON.stringify({ success: false, error: error.message }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200, // We still return 200 to handle the error on client side
-          });
-        }
-
-        if (!data) {
-          console.log("No matching user found");
-          return new Response(JSON.stringify({ success: false, error: "Invalid credentials" }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          });
-        }
-
-        console.log("User found, returning success");
-        return new Response(JSON.stringify({ success: true, user: data }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      } catch (dbError) {
-        console.error("Error with database operation:", dbError);
-        return new Response(JSON.stringify({ success: false, error: "Database error" }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
-      }
+      return new Response(JSON.stringify({ success: true, user: data }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
     
     // Handle create user
@@ -143,7 +78,6 @@ serve(async (req) => {
         });
 
       if (error) {
-        console.error("Error creating user:", error);
         return new Response(JSON.stringify({ error: error.message }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 400,
@@ -165,7 +99,6 @@ serve(async (req) => {
         .eq('id', id);
 
       if (error) {
-        console.error("Error toggling user status:", error);
         return new Response(JSON.stringify({ error: error.message }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 400,
@@ -187,7 +120,6 @@ serve(async (req) => {
         .eq('id', id);
 
       if (error) {
-        console.error("Error deleting user:", error);
         return new Response(JSON.stringify({ error: error.message }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 400,
@@ -213,15 +145,3 @@ serve(async (req) => {
     });
   }
 });
-
-// Helper function to calculate MD5 hash (since we can't import js-md5 directly in Deno)
-function md5(input: string): string {
-  // This is a simplified implementation for the edge function
-  // It will recognize "password" -> 5f4dcc3b5aa765d61d8327deb882cf99
-  if (input === "password") return "5f4dcc3b5aa765d61d8327deb882cf99";
-  if (input === "master123") return "c7d1847ccea7a5f1253aa3bb663f55d0";
-  
-  // For other passwords, we'll just return the input as a fallback (not secure)
-  // In a real implementation, you would use Deno's crypto APIs
-  return input;
-}

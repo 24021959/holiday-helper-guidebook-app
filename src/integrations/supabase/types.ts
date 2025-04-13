@@ -150,8 +150,6 @@ export type Database = {
           establishment_name: string | null
           header_color: string | null
           id: number
-          logo_position: string | null
-          logo_size: string | null
           logo_url: string | null
           updated_at: string | null
         }
@@ -160,8 +158,6 @@ export type Database = {
           establishment_name?: string | null
           header_color?: string | null
           id?: number
-          logo_position?: string | null
-          logo_size?: string | null
           logo_url?: string | null
           updated_at?: string | null
         }
@@ -170,8 +166,6 @@ export type Database = {
           establishment_name?: string | null
           header_color?: string | null
           id?: number
-          logo_position?: string | null
-          logo_size?: string | null
           logo_url?: string | null
           updated_at?: string | null
         }

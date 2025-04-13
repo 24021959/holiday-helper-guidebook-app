@@ -9,14 +9,56 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import TranslatedText from "@/components/TranslatedText";
 import { useTranslation } from "@/context/TranslationContext";
-import { useHeaderSettings, HeaderSettings } from "@/hooks/useHeaderSettings";
+
+interface HeaderSettings {
+  logoUrl?: string | null;
+  headerColor?: string;
+  establishmentName?: string | null;
+}
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
-  const { headerSettings, loading } = useHeaderSettings();
+  const [headerSettings, setHeaderSettings] = useState<HeaderSettings>({});
+  const [loading, setLoading] = useState(true);
   const { language, setLanguage } = useTranslation();
   
   useEffect(() => {
+    const fetchHeaderSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('header_settings')
+          .select('*')
+          .limit(1)
+          .single();
+          
+        if (error) throw error;
+        
+        if (data) {
+          setHeaderSettings({
+            logoUrl: data.logo_url,
+            headerColor: data.header_color,
+            establishmentName: data.establishment_name
+          });
+        }
+      } catch (error) {
+        console.error("Error loading header settings:", error);
+        
+        // Fallback to localStorage if Supabase fails
+        const savedHeaderSettings = localStorage.getItem("headerSettings");
+        if (savedHeaderSettings) {
+          try {
+            setHeaderSettings(JSON.parse(savedHeaderSettings));
+          } catch (err) {
+            console.error("Error parsing settings from localStorage:", err);
+          }
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchHeaderSettings();
+    
     // Reset language to default to ensure proper selection
     setLanguage('it');
   }, [setLanguage]);
@@ -54,8 +96,6 @@ const Index: React.FC = () => {
         backgroundColor={headerSettings.headerColor || "bg-white"}
         logoUrl={headerSettings.logoUrl || undefined}
         establishmentName={headerSettings.establishmentName || undefined}
-        logoPosition={headerSettings.logoPosition as "left" | "center" | "right" || "left"}
-        logoSize={headerSettings.logoSize as "small" | "medium" | "large" || "medium"}
         showAdminButton={false}
       />
       
@@ -65,7 +105,9 @@ const Index: React.FC = () => {
         <div className="absolute bottom-10 right-10 w-40 h-40 rounded-full bg-emerald-100 opacity-50 blur-xl"></div>
         
         <div className="max-w-md w-full mb-4">
-          {/* Text header removed as requested */}
+          <h1 className="text-center text-2xl font-bold text-emerald-800 mb-6">
+            <TranslatedText text="Seleziona la tua lingua" />
+          </h1>
           <Card className="bg-white/90 backdrop-blur-sm shadow-xl border-0 rounded-2xl overflow-hidden">
             <CardContent className="p-6">
               <LanguageSelector onChange={handleLanguageSelect} />

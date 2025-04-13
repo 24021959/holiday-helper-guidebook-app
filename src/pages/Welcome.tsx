@@ -4,14 +4,58 @@ import BackToMenu from "@/components/BackToMenu";
 import { Card } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import TranslatedText from "@/components/TranslatedText";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useHeaderSettings } from "@/hooks/useHeaderSettings";
+
+interface HeaderSettings {
+  logoUrl?: string | null;
+  headerColor?: string;
+  establishmentName?: string | null;
+}
 
 const Welcome: React.FC = () => {
-  const { headerSettings, loading } = useHeaderSettings();
+  const [headerSettings, setHeaderSettings] = useState<HeaderSettings>({});
+  const [loading, setLoading] = useState(true);
   const isMobile = useIsMobile();
+  
+  useEffect(() => {
+    const fetchHeaderSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('header_settings')
+          .select('*')
+          .limit(1)
+          .single();
+          
+        if (error) throw error;
+        
+        if (data) {
+          setHeaderSettings({
+            logoUrl: data.logo_url,
+            headerColor: data.header_color,
+            establishmentName: data.establishment_name
+          });
+        }
+      } catch (error) {
+        console.error("Errore nel caricamento delle impostazioni header:", error);
+        
+        const savedHeaderSettings = localStorage.getItem("headerSettings");
+        if (savedHeaderSettings) {
+          try {
+            setHeaderSettings(JSON.parse(savedHeaderSettings));
+          } catch (err) {
+            console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
+          }
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchHeaderSettings();
+  }, []);
   
   if (loading) {
     return (
@@ -30,8 +74,6 @@ const Welcome: React.FC = () => {
         backgroundColor={headerSettings.headerColor}
         logoUrl={headerSettings.logoUrl || undefined}
         establishmentName={headerSettings.establishmentName || undefined}
-        logoPosition={headerSettings.logoPosition as "left" | "center" | "right" || "left"}
-        logoSize={headerSettings.logoSize as "small" | "medium" | "large" || "medium"}
         showAdminButton={false}
       />
       
