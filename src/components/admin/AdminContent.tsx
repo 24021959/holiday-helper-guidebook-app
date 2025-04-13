@@ -15,22 +15,24 @@ export const AdminContent: React.FC = () => {
     pages, 
     parentPages, 
     keywordToIconMap,
-    handlePagesUpdate 
+    handlePagesUpdate,
+    userRole 
   } = useAdmin();
 
   return (
-    <>
+    <div className="flex flex-col md:flex-row gap-4 w-full">
       <AdminSidebar />
       
-      <div className="md:w-3/4 pl-4">
-        {showMasterPanel ? (
+      <div className="md:w-3/4 pl-0 md:pl-4">
+        {activeTab === "user-management" && userRole === "master" ? (
           <MasterPanel />
         ) : (
           <Tabs value={activeTab} defaultValue={activeTab}>
             <TabsList className="hidden">
-              <TabsTrigger value="pages">Pages</TabsTrigger>
-              <TabsTrigger value="translation">Translation</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
+              <TabsTrigger value="pages">Pagine</TabsTrigger>
+              <TabsTrigger value="translation">Traduzioni</TabsTrigger>
+              <TabsTrigger value="settings">Impostazioni</TabsTrigger>
+              {userRole === "master" && <TabsTrigger value="user-management">Gestione Utenti</TabsTrigger>}
             </TabsList>
             
             <TabsContent value="pages" className="mt-2">
@@ -49,9 +51,15 @@ export const AdminContent: React.FC = () => {
             <TabsContent value="settings" className="mt-2">
               <AdminPanel />
             </TabsContent>
+            
+            {userRole === "master" && (
+              <TabsContent value="user-management" className="mt-2">
+                <MasterPanel />
+              </TabsContent>
+            )}
           </Tabs>
         )}
       </div>
-    </>
+    </div>
   );
 };

@@ -22,41 +22,40 @@ const Login: React.FC = () => {
   const [configError, setConfigError] = useState<boolean>(false);
   const navigate = useNavigate();
 
-  // Check if user is already authenticated and redirect if needed
+  // Verifica se l'utente è già autenticato e reindirizza se necessario
   useEffect(() => {
-    // Clear any current admin session to prevent redirect loops
+    // Pulisci qualsiasi sessione admin corrente per evitare loop di reindirizzamento
     if (window.location.pathname === "/login") {
       localStorage.removeItem("currentRoute");
     }
     
     const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
-    const userRole = localStorage.getItem("user_role");
     
     if (isAuthenticated) {
       navigate("/admin");
     }
   }, [navigate]);
 
-  // Check database connection
+  // Verifica la connessione al database
   useEffect(() => {
     const checkConnection = async () => {
       try {
         setConfigError(false);
         
         try {
-          console.log("Testing database connection...");
+          console.log("Verifica della connessione al database...");
           const { error } = await supabase.from('header_settings').select('count').limit(1);
           
           if (error) {
             if (error.code === '42P01') {
-              console.log("Table does not exist, but connection works");
+              console.log("La tabella non esiste, ma la connessione funziona");
               toast.info("Modalità demo attiva.", {
                 duration: 5000,
                 id: "demo-mode-info"
               });
               setConfigError(false);
             } else {
-              console.error("Error checking Supabase connection:", error);
+              console.error("Errore nel controllo della connessione a Supabase:", error);
               toast.error("Problemi di connessione al database. Usando modalità demo.", {
                 duration: 5000,
                 id: "config-error"
@@ -64,11 +63,11 @@ const Login: React.FC = () => {
               setConfigError(true);
             }
           } else {
-            console.log("Database connection successful");
+            console.log("Connessione al database riuscita");
             setConfigError(false);
           }
         } catch (err) {
-          console.error("Error connecting to Supabase:", err);
+          console.error("Errore di connessione a Supabase:", err);
           toast.error("Problemi di connessione al database. Usando modalità demo.", {
             duration: 5000,
             id: "config-error"
@@ -76,7 +75,7 @@ const Login: React.FC = () => {
           setConfigError(true);
         }
       } catch (err) {
-        console.error("Error during connection check:", err);
+        console.error("Errore durante il controllo della connessione:", err);
         toast.error("Problemi di connessione al database. Usando modalità demo.", {
           duration: 5000,
           id: "config-error"
@@ -94,7 +93,7 @@ const Login: React.FC = () => {
     
     try {
       if (adminUsername === "admin" && adminPassword === "password") {
-        console.log("Demo login successful");
+        console.log("Login demo riuscito");
         localStorage.setItem("admin_token", "demo_token");
         localStorage.setItem("admin_user", "admin");
         localStorage.setItem("user_role", "admin");
@@ -110,7 +109,7 @@ const Login: React.FC = () => {
         toast.error("Credenziali non valide");
       }
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("Errore di login:", error);
       toast.error("Errore durante il login. Riprova più tardi.");
     } finally {
       setIsLoading(false);
@@ -123,7 +122,7 @@ const Login: React.FC = () => {
     
     try {
       if (masterUsername === "master" && masterPassword === "master123") {
-        console.log("Demo master login successful");
+        console.log("Login demo master riuscito");
         localStorage.setItem("admin_token", "master_token");
         localStorage.setItem("admin_user", "master");
         localStorage.setItem("user_role", "master");
@@ -138,7 +137,7 @@ const Login: React.FC = () => {
         toast.error("Credenziali Master non valide");
       }
     } catch (error) {
-      console.error("Master login error:", error);
+      console.error("Errore durante il login master:", error);
       toast.error("Errore durante il login. Riprova più tardi.");
     } finally {
       setIsLoading(false);
@@ -147,7 +146,7 @@ const Login: React.FC = () => {
 
   const checkDbLogin = async (email: string, password: string, role: string): Promise<boolean> => {
     try {
-      console.log("Checking DB login for:", email);
+      console.log("Verifica del login DB per:", email);
       
       // Se siamo in modalità demo o c'è un errore di configurazione, usiamo le credenziali di demo
       if (configError) {
@@ -183,10 +182,10 @@ const Login: React.FC = () => {
           }
         });
 
-        console.log("Login check response:", data, error);
+        console.log("Risposta verifica login:", data, error);
 
         if (error) {
-          console.error("Error checking login:", error);
+          console.error("Errore durante la verifica del login:", error);
           // In caso di errore con la funzione, proviamo con le credenziali demo
           if (email === "admin" && password === "password") {
             localStorage.setItem("admin_token", "demo_token");
@@ -224,7 +223,7 @@ const Login: React.FC = () => {
         
         return false;
       } catch (error) {
-        console.error("Error invoking function:", error);
+        console.error("Errore durante l'invocazione della funzione:", error);
         
         // In caso di errore durante l'invocazione della funzione, proviamo con le credenziali demo
         if (email === "admin" && password === "password") {
@@ -250,7 +249,7 @@ const Login: React.FC = () => {
         return false;
       }
     } catch (error) {
-      console.error("Login check error:", error);
+      console.error("Errore durante la verifica del login:", error);
       
       // In caso di qualsiasi errore, proviamo con le credenziali demo
       if (email === "admin" && password === "password") {

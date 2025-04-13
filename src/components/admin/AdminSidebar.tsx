@@ -1,6 +1,6 @@
 
 import React from "react";
-import { FileText, Globe, Settings } from "lucide-react";
+import { FileText, Globe, Settings, Users } from "lucide-react";
 import { 
   Card, 
   CardContent, 
@@ -16,7 +16,8 @@ export const AdminSidebar: React.FC = () => {
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    setShowMasterPanel(false);
+    // Se non è la tab user-management, nascondi il pannello master
+    setShowMasterPanel(value === "user-management");
   };
 
   // Mostra solo i tab appropriati in base al ruolo dell'utente
@@ -38,6 +39,15 @@ export const AdminSidebar: React.FC = () => {
     }
   ];
 
+  // Aggiungi il tab di gestione utenti solo per il ruolo master
+  if (userRole === "master") {
+    leftColTabs.push({
+      value: "user-management",
+      label: "Gestione Utenti",
+      icon: <Users className="h-5 w-5" />
+    });
+  }
+
   return (
     <aside className="md:w-1/4 pr-4">
       <Card className="shadow-md border-0">
@@ -46,6 +56,11 @@ export const AdminSidebar: React.FC = () => {
           <CardDescription>
             Seleziona la sezione da gestire
           </CardDescription>
+          {userRole === "master" && (
+            <div className="text-xs text-purple-600 font-semibold mt-1">
+              Accesso Master attivo
+            </div>
+          )}
         </CardHeader>
         <CardContent className="p-2">
           <Tabs value={activeTab} onValueChange={handleTabChange} className="flex flex-col h-full">
@@ -54,7 +69,9 @@ export const AdminSidebar: React.FC = () => {
                 <TabsTrigger
                   key={tab.value}
                   value={tab.value}
-                  className={`flex items-center space-x-2 py-2 px-3 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground hover:bg-muted hover:text-muted-foreground ${activeTab === tab.value ? 'bg-secondary text-secondary-foreground' : ''}`}
+                  className={`flex items-center space-x-2 py-2 px-3 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground hover:bg-muted hover:text-muted-foreground ${
+                    tab.value === "user-management" ? "text-purple-700" : ""
+                  } ${activeTab === tab.value ? 'bg-secondary text-secondary-foreground' : ''}`}
                 >
                   {tab.icon}
                   <span>{tab.label}</span>

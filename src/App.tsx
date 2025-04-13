@@ -17,7 +17,7 @@ import { Toaster } from "sonner";
 import ChatbotBubble from "./components/ChatbotBubble";
 
 function App() {
-  // Check if user is authenticated
+  // Verifica se l'utente è autenticato
   const isAuthenticated = () => {
     return localStorage.getItem("isAuthenticated") === "true";
   };
@@ -27,10 +27,12 @@ function App() {
       <Toaster position="top-right" />
       <Router>
         <Routes>
-          {/* Index and system pages */}
+          {/* Pagine principali */}
           <Route path="/" element={<Index />} />
           <Route path="/home" element={<Home />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={
+            isAuthenticated() ? <Navigate to="/admin" /> : <Login />
+          } />
           <Route 
             path="/admin" 
             element={isAuthenticated() ? <AdminPage /> : <Navigate to="/login" />} 
@@ -39,25 +41,25 @@ function App() {
           <Route path="/storia" element={<Storia />} />
           <Route path="/auto-translate" element={<AutoTranslatePage />} />
           
-          {/* Main menu routes with language support */}
+          {/* Route del menu principale con supporto multilingua */}
           <Route path="/menu" element={<Menu />} />
           <Route path="/en/menu" element={<Menu />} />
           <Route path="/fr/menu" element={<Menu />} />
           <Route path="/es/menu" element={<Menu />} />
           <Route path="/de/menu" element={<Menu />} />
           
-          {/* SubMenu routes with improved path handling */}
+          {/* Route per i sottomenu con gestione migliorata dei percorsi */}
           <Route path="/submenu/:parentPath" element={<SubMenu />} />
           <Route path="/submenu/:language/:path" element={<SubMenu />} />
           
-          {/* Content page routes - both with and without language prefixes */}
+          {/* Route delle pagine di contenuto - con e senza prefissi di lingua */}
           <Route path="/preview/*" element={<PreviewPage />} />
           
-          {/* Content pages without language prefix */}
+          {/* Pagine di contenuto senza prefisso di lingua */}
           <Route path="/:path" element={<PreviewPage />} />
           <Route path="/:parent/:child" element={<PreviewPage />} />
           
-          {/* Content pages with language prefixes */}
+          {/* Pagine di contenuto con prefissi di lingua */}
           <Route path="/en/:path" element={<PreviewPage />} />
           <Route path="/en/:parent/:child" element={<PreviewPage />} />
           <Route path="/fr/:path" element={<PreviewPage />} />
@@ -67,7 +69,7 @@ function App() {
           <Route path="/de/:path" element={<PreviewPage />} />
           <Route path="/de/:parent/:child" element={<PreviewPage />} />
           
-          {/* Catch-all for unmatched routes */}
+          {/* Catch-all per route non corrispondenti */}
           <Route path="*" element={<NotFound />} />
         </Routes>
         <ChatbotBubble />
