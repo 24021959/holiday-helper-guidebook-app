@@ -22,6 +22,14 @@ const Login: React.FC = () => {
   const [configError, setConfigError] = useState<boolean>(false);
   const navigate = useNavigate();
 
+  // Check if user is already logged in
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
+    if (isAuthenticated) {
+      navigate("/admin");
+    }
+  }, [navigate]);
+
   useEffect(() => {
     const checkConnection = async () => {
       try {
@@ -50,16 +58,20 @@ const Login: React.FC = () => {
     setIsLoading(true);
     
     try {
+      // Demo login - handle it first for simplicity and reliability
       if (adminUsername === "admin" && adminPassword === "password") {
+        console.log("Demo login successful");
         // Demo login
         localStorage.setItem("admin_token", "demo_token");
         localStorage.setItem("admin_user", "admin");
+        localStorage.setItem("user_role", "admin");
         localStorage.setItem("isAuthenticated", "true");
         toast.success("Login effettuato con successo (modalità demo)");
         navigate("/admin");
         return;
       } 
       
+      // If not demo, check DB login
       const success = await checkDbLogin(adminUsername, adminPassword, "user");
       if (!success) {
         toast.error("Credenziali non valide");
@@ -77,7 +89,9 @@ const Login: React.FC = () => {
     setIsLoading(true);
     
     try {
+      // Demo Master login - handle it first for simplicity and reliability
       if (masterUsername === "master" && masterPassword === "master123") {
+        console.log("Demo master login successful");
         localStorage.setItem("admin_token", "master_token");
         localStorage.setItem("admin_user", "master");
         localStorage.setItem("user_role", "master");
@@ -122,21 +136,39 @@ const Login: React.FC = () => {
           if (email === "admin" && password === "password") {
             localStorage.setItem("admin_token", "demo_token");
             localStorage.setItem("admin_user", "admin");
+            localStorage.setItem("user_role", "admin");
             localStorage.setItem("isAuthenticated", "true");
             toast.success("Login effettuato con successo (modalità demo)");
             navigate("/admin");
             return true;
           }
+          
+          if (email === "master" && password === "master123" && role === "master") {
+            localStorage.setItem("admin_token", "master_token");
+            localStorage.setItem("admin_user", "master");
+            localStorage.setItem("user_role", "master");
+            localStorage.setItem("isAuthenticated", "true");
+            toast.success("Login come Master effettuato con successo");
+            navigate("/admin?tab=user-management");
+            return true;
+          }
+          
           return false;
         }
         
         if (data && data.success) {
           localStorage.setItem("admin_token", "user_token");
           localStorage.setItem("admin_user", email);
-          localStorage.setItem("user_role", role);
+          localStorage.setItem("user_role", data.user.role || role);
           localStorage.setItem("isAuthenticated", "true");
           toast.success("Login effettuato con successo");
-          navigate("/admin");
+          
+          // Redirect based on role
+          if (data.user.role === "master") {
+            navigate("/admin?tab=user-management");
+          } else {
+            navigate("/admin");
+          }
           return true;
         }
         
@@ -148,6 +180,7 @@ const Login: React.FC = () => {
         if (email === "admin" && password === "password") {
           localStorage.setItem("admin_token", "demo_token");
           localStorage.setItem("admin_user", "admin");
+          localStorage.setItem("user_role", "admin");
           localStorage.setItem("isAuthenticated", "true");
           toast.success("Login effettuato con successo (modalità demo)");
           navigate("/admin");
@@ -173,6 +206,7 @@ const Login: React.FC = () => {
       if (email === "admin" && password === "password") {
         localStorage.setItem("admin_token", "demo_token");
         localStorage.setItem("admin_user", "admin");
+        localStorage.setItem("user_role", "admin");
         localStorage.setItem("isAuthenticated", "true");
         toast.success("Login effettuato con successo (modalità demo)");
         navigate("/admin");

@@ -48,83 +48,85 @@ serve(async (req) => {
       const { email, password_hash } = body;
       console.log("Checking login for email:", email);
       
+      // Special case for demo credentials - always allow these regardless of DB state
+      if (email === "admin" && password_hash === md5("password")) {
+        console.log("Demo admin login successful");
+        return new Response(JSON.stringify({ 
+          success: true, 
+          user: { email: "admin", role: "admin" },
+          demo: true
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
+      if (email === "master" && password_hash === md5("master123")) {
+        console.log("Demo master login successful");
+        return new Response(JSON.stringify({ 
+          success: true, 
+          user: { email: "master", role: "master" },
+          demo: true
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
       // Check if the admin_users table exists
-      const { error: tableCheckError } = await supabase
-        .from('admin_users')
-        .select('count')
-        .limit(1);
-        
-      if (tableCheckError && tableCheckError.code === '42P01') {
-        console.log("admin_users table does not exist, returning demo login");
-        // Table doesn't exist, return demo login success for admin/password
-        if (email === "admin" && password_hash === md5("password")) {
-          return new Response(JSON.stringify({ 
-            success: true, 
-            user: { email: "admin", role: "admin" },
-            demo: true
-          }), {
+      try {
+        const { error: tableCheckError } = await supabase
+          .from('admin_users')
+          .select('count')
+          .limit(1);
+          
+        if (tableCheckError && tableCheckError.code === '42P01') {
+          console.log("admin_users table does not exist, returning demo login");
+          
+          // Table doesn't exist, but we already handled demo credentials above
+          // So this must be invalid credentials
+          return new Response(JSON.stringify({ success: false, error: "Invalid credentials" }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
           });
         }
         
-        return new Response(JSON.stringify({ success: false, error: "Invalid credentials" }), {
+        // If table exists, proceed with DB query
+        const { data, error } = await supabase
+          .from('admin_users')
+          .select('*')
+          .eq('email', email)
+          .eq('password_hash', password_hash)
+          .eq('is_active', true)
+          .maybeSingle();
+        
+        console.log("Login check result:", { data, error });
+
+        if (error) {
+          console.error("DB Error checking login:", error);
+          return new Response(JSON.stringify({ success: false, error: error.message }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200, // We still return 200 to handle the error on client side
+          });
+        }
+
+        if (!data) {
+          console.log("No matching user found");
+          return new Response(JSON.stringify({ success: false, error: "Invalid credentials" }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
+
+        console.log("User found, returning success");
+        return new Response(JSON.stringify({ success: true, user: data }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (dbError) {
+        console.error("Error with database operation:", dbError);
+        return new Response(JSON.stringify({ success: false, error: "Database error" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200,
         });
       }
-      
-      const { data, error } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('email', email)
-        .eq('password_hash', password_hash)
-        .eq('is_active', true)
-        .maybeSingle();
-      
-      console.log("Login check result:", { data, error });
-
-      if (error) {
-        console.error("DB Error checking login:", error);
-        // Fallback to demo credentials if there's a DB error
-        if (email === "admin" && password_hash === md5("password")) {
-          return new Response(JSON.stringify({ 
-            success: true, 
-            user: { email: "admin", role: "admin" },
-            demo: true
-          }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        
-        return new Response(JSON.stringify({ success: false, error: error.message }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200, // We still return 200 to handle the error on client side
-        });
-      }
-
-      if (!data) {
-        console.log("No matching user found");
-        // Special case for demo login
-        if (email === "admin" && password_hash === md5("password")) {
-          return new Response(JSON.stringify({ 
-            success: true, 
-            user: { email: "admin", role: "admin" },
-            demo: true
-          }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        
-        return new Response(JSON.stringify({ success: false, error: "Invalid credentials" }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
-      }
-
-      console.log("User found, returning success");
-      return new Response(JSON.stringify({ success: true, user: data }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
     }
     
     // Handle create user

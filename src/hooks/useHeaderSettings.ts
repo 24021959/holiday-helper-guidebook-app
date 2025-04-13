@@ -21,6 +21,10 @@ export const useHeaderSettings = () => {
     try {
       setError(null);
       
+      // Check if we're in demo mode 
+      const adminToken = localStorage.getItem("admin_token");
+      const isLoggedInAsDemo = adminToken === "demo_token" || adminToken === "master_token";
+      
       // First try to get from localStorage as immediate fallback
       const savedHeaderSettings = localStorage.getItem("headerSettings");
       let localSettings = null;
@@ -35,15 +39,15 @@ export const useHeaderSettings = () => {
         }
       }
       
-      // Check if we're in demo mode (logged in with admin/password)
-      const isLoggedInAsDemo = localStorage.getItem("admin_token") === "demo_token";
       if (isLoggedInAsDemo) {
+        console.log("Using demo mode for header settings");
         setIsDemo(true);
+        
         const defaultSettings = {
           headerColor: "bg-gradient-to-r from-teal-500 to-emerald-600",
           logoPosition: "left",
           logoSize: "medium",
-          establishmentName: "Locanda dell'Angelo"
+          establishmentName: adminToken === "master_token" ? "EV-AI Master" : "Locanda dell'Angelo"
         };
         
         // Only use default settings if we don't have cached settings

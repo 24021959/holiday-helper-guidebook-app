@@ -75,15 +75,36 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const checkAdminAccess = async () => {
     try {
+      // First check localStorage-based auth for demo mode
+      const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
+      const adminToken = localStorage.getItem("admin_token");
+      const userRole = localStorage.getItem("user_role");
+      
+      console.log("Local auth check:", { isAuthenticated, adminToken, userRole });
+      
+      if (isAuthenticated && adminToken) {
+        // Demo or local authentication is valid
+        console.log("User authenticated via localStorage");
+        
+        // If master role, show master panel
+        if (userRole === "master") {
+          setShowMasterPanel(true);
+        }
+        
+        return; // Auth successful, exit early
+      }
+      
+      // If no local auth, try Supabase session
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
+        console.error("No valid auth found - redirecting to login");
         toast.error("Accesso negato. Effettua il login");
         navigate("/login");
         return;
       }
       
-      console.log("User session verified");
+      console.log("User session verified via Supabase");
     } catch (err) {
       console.error("Error checking admin access:", err);
       toast.error("Errore nel controllo dell'accesso");
