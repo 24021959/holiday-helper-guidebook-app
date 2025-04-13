@@ -6,7 +6,6 @@ import { AlertCircle, CheckCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HeaderSettingsView } from "./HeaderSettingsView";
 import FooterSettingsView from "./FooterSettingsView";
-import UserManagementView from "./UserManagementView";
 import ChatbotSettings from "./ChatbotSettings";
 
 const AdminPanel: React.FC = () => {
@@ -53,7 +52,6 @@ const AdminPanel: React.FC = () => {
         <TabsList className="mb-4">
           <TabsTrigger value="header">Header</TabsTrigger>
           <TabsTrigger value="footer">Footer</TabsTrigger>
-          <TabsTrigger value="users">Utenti</TabsTrigger>
           <TabsTrigger value="chatbot">Chatbot</TabsTrigger>
         </TabsList>
         
@@ -68,10 +66,6 @@ const AdminPanel: React.FC = () => {
         
         <TabsContent value="footer">
           <FooterSettingsView />
-        </TabsContent>
-        
-        <TabsContent value="users">
-          <UserManagementView />
         </TabsContent>
         
         <TabsContent value="chatbot">

@@ -43,6 +43,7 @@ interface AdminContextType {
   setParentPages: React.Dispatch<React.SetStateAction<PageData[]>>;
   showMasterPanel: boolean;
   setShowMasterPanel: React.Dispatch<React.SetStateAction<boolean>>;
+  userRole: string | null;
   handlePagesUpdate: (updatedPages: PageData[]) => void;
   fetchPages: () => Promise<void>;
   fetchKeywordToIconMap: () => Promise<void>;
@@ -59,6 +60,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [keywordToIconMap, setKeywordToIconMap] = useState<Record<string, string>>({});
   const [parentPages, setParentPages] = useState<PageData[]>([]);
   const [showMasterPanel, setShowMasterPanel] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -78,17 +80,21 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // First check localStorage-based auth for demo mode
       const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
       const adminToken = localStorage.getItem("admin_token");
-      const userRole = localStorage.getItem("user_role");
+      const storedUserRole = localStorage.getItem("user_role");
       
-      console.log("Local auth check:", { isAuthenticated, adminToken, userRole });
+      console.log("Local auth check:", { isAuthenticated, adminToken, storedUserRole });
       
       if (isAuthenticated && adminToken) {
         // Demo or local authentication is valid
         console.log("User authenticated via localStorage");
         
+        // Set user role from localStorage
+        setUserRole(storedUserRole);
+        
         // If master role, show master panel
-        if (userRole === "master") {
+        if (storedUserRole === "master") {
           setShowMasterPanel(true);
+          setActiveTab("user-management");
         }
         
         return; // Auth successful, exit early
@@ -265,6 +271,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setParentPages,
     showMasterPanel,
     setShowMasterPanel,
+    userRole,
     handlePagesUpdate,
     fetchPages,
     fetchKeywordToIconMap

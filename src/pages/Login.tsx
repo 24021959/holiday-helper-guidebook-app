@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,11 +21,16 @@ const Login: React.FC = () => {
   const [configError, setConfigError] = useState<boolean>(false);
   const navigate = useNavigate();
 
-  // Check if user is already logged in
   useEffect(() => {
     const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
+    const userRole = localStorage.getItem("user_role");
+    
     if (isAuthenticated) {
-      navigate("/admin");
+      if (userRole === "master") {
+        navigate("/admin");
+      } else {
+        navigate("/admin");
+      }
     }
   }, [navigate]);
 
@@ -35,14 +39,12 @@ const Login: React.FC = () => {
       try {
         setConfigError(false);
         
-        // First try a simple query to check connection
         try {
           const { error } = await supabase.from('header_settings').select('count').limit(1);
           
           if (error) {
             if (error.code === '42P01') {
               console.log("Table does not exist, but connection works");
-              // This means we're in demo mode, which is fine
               toast.info("Modalità demo attiva.", {
                 duration: 5000,
                 id: "demo-mode-info"
@@ -85,10 +87,8 @@ const Login: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Demo login - handle it first for simplicity and reliability
       if (adminUsername === "admin" && adminPassword === "password") {
         console.log("Demo login successful");
-        // Demo login
         localStorage.setItem("admin_token", "demo_token");
         localStorage.setItem("admin_user", "admin");
         localStorage.setItem("user_role", "admin");
@@ -98,8 +98,7 @@ const Login: React.FC = () => {
         return;
       } 
       
-      // If not demo, check DB login
-      const success = await checkDbLogin(adminUsername, adminPassword, "user");
+      const success = await checkDbLogin(adminUsername, adminPassword, "admin");
       if (!success) {
         toast.error("Credenziali non valide");
       }
@@ -116,7 +115,6 @@ const Login: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Demo Master login - handle it first for simplicity and reliability
       if (masterUsername === "master" && masterPassword === "master123") {
         console.log("Demo master login successful");
         localStorage.setItem("admin_token", "master_token");
@@ -124,11 +122,10 @@ const Login: React.FC = () => {
         localStorage.setItem("user_role", "master");
         localStorage.setItem("isAuthenticated", "true");
         toast.success("Login come Master effettuato con successo");
-        navigate("/admin?tab=user-management");
+        navigate("/admin");
         return;
       }
       
-      // Check DB login if not using demo credentials
       const success = await checkDbLogin(masterUsername, masterPassword, "master");
       if (!success) {
         toast.error("Credenziali Master non valide");
@@ -145,7 +142,6 @@ const Login: React.FC = () => {
     try {
       console.log("Checking DB login for:", email);
       
-      // Try to call the Edge Function
       try {
         const { data, error } = await supabase.functions.invoke("admin_users_helpers", {
           body: { 
@@ -159,7 +155,6 @@ const Login: React.FC = () => {
 
         if (error) {
           console.error("Error checking login:", error);
-          // Fall back to demo login if function call fails
           if (email === "admin" && password === "password") {
             localStorage.setItem("admin_token", "demo_token");
             localStorage.setItem("admin_user", "admin");
@@ -176,7 +171,7 @@ const Login: React.FC = () => {
             localStorage.setItem("user_role", "master");
             localStorage.setItem("isAuthenticated", "true");
             toast.success("Login come Master effettuato con successo");
-            navigate("/admin?tab=user-management");
+            navigate("/admin");
             return true;
           }
           
@@ -190,9 +185,8 @@ const Login: React.FC = () => {
           localStorage.setItem("isAuthenticated", "true");
           toast.success("Login effettuato con successo");
           
-          // Redirect based on role
           if (data.user.role === "master") {
-            navigate("/admin?tab=user-management");
+            navigate("/admin");
           } else {
             navigate("/admin");
           }
@@ -203,7 +197,6 @@ const Login: React.FC = () => {
       } catch (error) {
         console.error("Error invoking function:", error);
         
-        // Fall back to demo login
         if (email === "admin" && password === "password") {
           localStorage.setItem("admin_token", "demo_token");
           localStorage.setItem("admin_user", "admin");
@@ -220,7 +213,7 @@ const Login: React.FC = () => {
           localStorage.setItem("user_role", "master");
           localStorage.setItem("isAuthenticated", "true");
           toast.success("Login come Master effettuato con successo");
-          navigate("/admin?tab=user-management");
+          navigate("/admin");
           return true;
         }
         
@@ -229,7 +222,6 @@ const Login: React.FC = () => {
     } catch (error) {
       console.error("Login check error:", error);
       
-      // Final fallback for demo login
       if (email === "admin" && password === "password") {
         localStorage.setItem("admin_token", "demo_token");
         localStorage.setItem("admin_user", "admin");
@@ -246,7 +238,7 @@ const Login: React.FC = () => {
         localStorage.setItem("user_role", "master");
         localStorage.setItem("isAuthenticated", "true");
         toast.success("Login come Master effettuato con successo");
-        navigate("/admin?tab=user-management");
+        navigate("/admin");
         return true;
       }
       

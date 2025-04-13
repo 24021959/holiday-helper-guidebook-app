@@ -1,6 +1,6 @@
 
 import React from "react";
-import { FileText, Users, Globe } from "lucide-react";
+import { FileText, Globe, Settings } from "lucide-react";
 import { 
   Card, 
   CardContent, 
@@ -12,13 +12,14 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdmin } from "@/context/AdminContext";
 
 export const AdminSidebar: React.FC = () => {
-  const { activeTab, setActiveTab, setShowMasterPanel } = useAdmin();
+  const { activeTab, setActiveTab, setShowMasterPanel, userRole } = useAdmin();
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    setShowMasterPanel(value === "users");
+    setShowMasterPanel(false);
   };
 
+  // Mostra solo i tab appropriati in base al ruolo dell'utente
   const leftColTabs = [
     {
       value: "pages",
@@ -31,10 +32,10 @@ export const AdminSidebar: React.FC = () => {
       icon: <Globe className="h-5 w-5" />
     },
     {
-      value: "users",
-      label: "Utenti & Impostazioni",
-      icon: <Users className="h-5 w-5" />
-    },
+      value: "settings",
+      label: "Impostazioni",
+      icon: <Settings className="h-5 w-5" />
+    }
   ];
 
   return (
