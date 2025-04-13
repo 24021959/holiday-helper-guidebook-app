@@ -1,17 +1,15 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { md5 } from "js-md5";
+import { Loader2, AlertCircle, User, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, AlertCircle } from "lucide-react";
-import { useAuthentication } from "@/hooks/useAuthentication";
 
 const Login: React.FC = () => {
   const [adminUsername, setAdminUsername] = useState<string>("");
@@ -20,67 +18,46 @@ const Login: React.FC = () => {
   const [masterPassword, setMasterPassword] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>("admin");
-  const [configError, setConfigError] = useState<boolean>(false);
+  const [demoMode, setDemoMode] = useState<boolean>(false);
   const navigate = useNavigate();
-  const auth = useAuthentication();
 
-  // Verifica se l'utente è già autenticato e reindirizza se necessario
+  // Verifica se l'utente è già autenticato
   useEffect(() => {
-    // Pulisci qualsiasi sessione admin corrente per evitare loop di reindirizzamento
-    if (window.location.pathname === "/login") {
-      localStorage.removeItem("currentRoute");
-    }
+    const checkAuth = () => {
+      const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
+      if (isAuthenticated) {
+        navigate("/admin");
+      }
+    };
     
-    if (auth.isAuthenticated) {
-      navigate("/admin");
-    }
-  }, [navigate, auth.isAuthenticated]);
+    checkAuth();
+  }, [navigate]);
 
   // Verifica la connessione al database
   useEffect(() => {
     const checkConnection = async () => {
       try {
-        setConfigError(false);
+        console.log("Verifica della connessione al database...");
+        const { error } = await supabase.from('header_settings').select('count').limit(1);
         
-        try {
-          console.log("Verifica della connessione al database...");
-          const { error } = await supabase.from('header_settings').select('count').limit(1);
-          
-          if (error) {
-            if (error.code === '42P01') {
-              console.log("La tabella non esiste, ma la connessione funziona");
-              toast.info("Modalità demo attiva.", {
-                duration: 5000,
-                id: "demo-mode-info"
-              });
-              setConfigError(false);
-            } else {
-              console.error("Errore nel controllo della connessione a Supabase:", error);
-              toast.error("Problemi di connessione al database. Usando modalità demo.", {
-                duration: 5000,
-                id: "config-error"
-              });
-              setConfigError(true);
-            }
-          } else {
-            console.log("Connessione al database riuscita");
-            setConfigError(false);
-          }
-        } catch (err) {
-          console.error("Errore di connessione a Supabase:", err);
-          toast.error("Problemi di connessione al database. Usando modalità demo.", {
+        if (error) {
+          console.error("Errore nel controllo della connessione a Supabase:", error);
+          toast.info("Modalità demo attiva.", {
             duration: 5000,
-            id: "config-error"
+            id: "demo-mode-info"
           });
-          setConfigError(true);
+          setDemoMode(true);
+        } else {
+          console.log("Connessione al database riuscita");
+          setDemoMode(false);
         }
       } catch (err) {
-        console.error("Errore durante il controllo della connessione:", err);
-        toast.error("Problemi di connessione al database. Usando modalità demo.", {
+        console.error("Errore di connessione a Supabase:", err);
+        toast.info("Modalità demo attiva.", {
           duration: 5000,
-          id: "config-error"
+          id: "demo-mode-info"
         });
-        setConfigError(true);
+        setDemoMode(true);
       }
     };
     
@@ -92,13 +69,49 @@ const Login: React.FC = () => {
     setIsLoading(true);
     
     try {
-      const success = await auth.login(adminUsername, adminPassword, "admin");
-      if (!success) {
-        toast.error("Credenziali non valide");
+      // In modalità demo, accetta credenziali fisse
+      if (demoMode || (adminUsername === "admin" && adminPassword === "password")) {
+        localStorage.setItem("admin_token", "demo_token");
+        localStorage.setItem("admin_user", adminUsername);
+        localStorage.setItem("user_role", "admin");
+        localStorage.setItem("isAuthenticated", "true");
+        
+        toast.success("Login effettuato con successo (modalità demo)");
+        navigate("/admin");
+        return;
       }
-    } catch (error) {
-      console.error("Errore di login:", error);
-      toast.error("Errore durante il login. Riprova più tardi.");
+      
+      // Altrimenti, verifica tramite Supabase
+      try {
+        const { data, error } = await supabase.functions.invoke("admin_users_helpers", {
+          body: { 
+            action: "check_login",
+            email: adminUsername,
+            password_hash: adminPassword
+          }
+        });
+
+        if (error) {
+          console.error("Errore durante la verifica del login:", error);
+          toast.error("Errore durante il login. Riprova più tardi.");
+          return;
+        }
+        
+        if (data && data.success) {
+          localStorage.setItem("admin_token", "user_token");
+          localStorage.setItem("admin_user", adminUsername);
+          localStorage.setItem("user_role", data.user.role || "admin");
+          localStorage.setItem("isAuthenticated", "true");
+          
+          toast.success("Login effettuato con successo");
+          navigate("/admin");
+        } else {
+          toast.error("Credenziali non valide");
+        }
+      } catch (err) {
+        console.error("Errore durante l'invocazione della funzione:", err);
+        toast.error("Errore durante il login. Riprova più tardi.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -109,70 +122,80 @@ const Login: React.FC = () => {
     setIsLoading(true);
     
     try {
-      const success = await auth.login(masterUsername, masterPassword, "master");
-      if (!success) {
-        toast.error("Credenziali Master non valide");
+      // In modalità demo, accetta credenziali fisse
+      if (demoMode || (masterUsername === "master" && masterPassword === "master123")) {
+        localStorage.setItem("admin_token", "master_token");
+        localStorage.setItem("admin_user", masterUsername);
+        localStorage.setItem("user_role", "master");
+        localStorage.setItem("isAuthenticated", "true");
+        
+        toast.success("Login Master effettuato con successo (modalità demo)");
+        navigate("/admin");
+        return;
       }
-    } catch (error) {
-      console.error("Errore durante il login master:", error);
-      toast.error("Errore durante il login. Riprova più tardi.");
+      
+      // Altrimenti, verifica tramite Supabase (adattare secondo le tue esigenze)
+      toast.error("Credenziali Master non valide");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-white p-6 pt-20">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center p-4">
+      <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <img 
             src="/lovable-uploads/f82196b0-12a4-4b65-983d-804add60b9fb.png" 
             alt="Locanda dell'Angelo Logo" 
-            className="h-12 md:h-16 mx-auto mb-4" 
+            className="h-16 mx-auto mb-4" 
           />
           <h1 className="text-2xl font-bold text-emerald-700">Locanda dell'Angelo</h1>
-          <p className="text-gray-600">Accedi alla piattaforma con le tue credenziali</p>
+          <p className="text-gray-600">Accedi alla piattaforma</p>
         </div>
-
-        {configError && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Errore di configurazione</AlertTitle>
+        
+        {demoMode && (
+          <Alert variant="info" className="mb-6 bg-blue-50 border-blue-200">
+            <AlertCircle className="h-4 w-4 text-blue-500" />
+            <AlertTitle>Modalità Demo</AlertTitle>
             <AlertDescription>
-              Impossibile connettersi al database. Utilizzando la modalità demo. Usare username "admin" e password "password".
+              Connessione al database non disponibile. Utilizzando la modalità demo.
             </AlertDescription>
           </Alert>
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100 p-1 rounded-lg">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger 
               value="admin" 
-              className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white transition-all duration-200"
+              className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white"
             >
-              Amministrazione
+              Amministratore
             </TabsTrigger>
             <TabsTrigger 
               value="master" 
-              className="data-[state=active]:bg-purple-500 data-[state=active]:text-white transition-all duration-200"
+              className="data-[state=active]:bg-purple-500 data-[state=active]:text-white"
             >
               Master
             </TabsTrigger>
           </TabsList>
             
           <TabsContent value="admin">
-            <Card className="border-emerald-100 bg-gradient-to-br from-emerald-50 to-white shadow-md">
-              <CardHeader className="border-b border-emerald-100 bg-emerald-50/50">
-                <CardTitle className="text-xl text-emerald-700">Amministrazione</CardTitle>
-                <CardDescription className="text-emerald-600/80">
-                  Accedi per gestire i contenuti del sito
+            <Card>
+              <CardHeader className="bg-emerald-50 border-b border-emerald-100">
+                <CardTitle className="text-emerald-700">Accesso Amministratore</CardTitle>
+                <CardDescription>
+                  Accedi come amministratore per gestire i contenuti
                 </CardDescription>
               </CardHeader>
                 
               <CardContent className="pt-6">
                 <form onSubmit={handleAdminLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="admin-username" className="text-emerald-700">Username</Label>
+                    <Label htmlFor="admin-username" className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Username
+                    </Label>
                     <Input 
                       id="admin-username"
                       type="text"
@@ -180,26 +203,31 @@ const Login: React.FC = () => {
                       value={adminUsername}
                       onChange={(e) => setAdminUsername(e.target.value)}
                       disabled={isLoading}
-                      className="border-emerald-200 focus-visible:ring-emerald-500"
+                      className="border-emerald-200"
+                      required
                     />
                   </div>
                     
                   <div className="space-y-2">
-                    <Label htmlFor="admin-password" className="text-emerald-700">Password</Label>
+                    <Label htmlFor="admin-password" className="flex items-center gap-2">
+                      <Lock className="h-4 w-4" />
+                      Password
+                    </Label>
                     <Input 
                       id="admin-password"
                       type="password"
-                      placeholder="password"
+                      placeholder="••••••"
                       value={adminPassword}
                       onChange={(e) => setAdminPassword(e.target.value)}
                       disabled={isLoading}
-                      className="border-emerald-200 focus-visible:ring-emerald-500"
+                      className="border-emerald-200"
+                      required
                     />
                   </div>
                     
                   <Button 
                     type="submit"
-                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 transition-all duration-300"
+                    className="w-full bg-emerald-500 hover:bg-emerald-600"
                     disabled={isLoading}
                   >
                     {isLoading ? (
@@ -212,25 +240,30 @@ const Login: React.FC = () => {
                 </form>
               </CardContent>
                 
-              <CardFooter className="text-center justify-center text-xs text-gray-500 border-t border-emerald-100 bg-emerald-50/30">
-                Demo: usa username "admin" e password "password"
+              <CardFooter className="flex justify-center border-t border-emerald-100 bg-emerald-50 py-3">
+                <p className="text-xs text-gray-500">
+                  Demo: usa username "admin" e password "password"
+                </p>
               </CardFooter>
             </Card>
           </TabsContent>
             
           <TabsContent value="master">
-            <Card className="border-purple-100 bg-gradient-to-br from-purple-50 to-white shadow-md">
-              <CardHeader className="border-b border-purple-100 bg-purple-50/50">
-                <CardTitle className="text-xl text-purple-700">Master</CardTitle>
-                <CardDescription className="text-purple-600/80">
-                  Accedi come Master per gestire gli utenti del sistema
+            <Card>
+              <CardHeader className="bg-purple-50 border-b border-purple-100">
+                <CardTitle className="text-purple-700">Accesso Master</CardTitle>
+                <CardDescription>
+                  Accedi come Master per amministrare il sistema
                 </CardDescription>
               </CardHeader>
                 
               <CardContent className="pt-6">
                 <form onSubmit={handleMasterLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="master-username" className="text-purple-700">Username Master</Label>
+                    <Label htmlFor="master-username" className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Username Master
+                    </Label>
                     <Input 
                       id="master-username"
                       type="text"
@@ -238,26 +271,31 @@ const Login: React.FC = () => {
                       value={masterUsername}
                       onChange={(e) => setMasterUsername(e.target.value)}
                       disabled={isLoading}
-                      className="border-purple-200 focus-visible:ring-purple-500"
+                      className="border-purple-200"
+                      required
                     />
                   </div>
                     
                   <div className="space-y-2">
-                    <Label htmlFor="master-password" className="text-purple-700">Password Master</Label>
+                    <Label htmlFor="master-password" className="flex items-center gap-2">
+                      <Lock className="h-4 w-4" />
+                      Password Master
+                    </Label>
                     <Input 
                       id="master-password"
                       type="password"
-                      placeholder="********"
+                      placeholder="••••••"
                       value={masterPassword}
                       onChange={(e) => setMasterPassword(e.target.value)}
                       disabled={isLoading}
-                      className="border-purple-200 focus-visible:ring-purple-500"
+                      className="border-purple-200"
+                      required
                     />
                   </div>
                     
                   <Button 
                     type="submit"
-                    className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 transition-all duration-300"
+                    className="w-full bg-purple-500 hover:bg-purple-600"
                     disabled={isLoading}
                   >
                     {isLoading ? (
@@ -270,22 +308,14 @@ const Login: React.FC = () => {
                 </form>
               </CardContent>
                 
-              <CardFooter className="text-center justify-center text-xs text-gray-500 border-t border-purple-100 bg-purple-50/30">
-                Demo: usa username "master" e password "master123"
+              <CardFooter className="flex justify-center border-t border-purple-100 bg-purple-50 py-3">
+                <p className="text-xs text-gray-500">
+                  Demo: usa username "master" e password "master123"
+                </p>
               </CardFooter>
             </Card>
           </TabsContent>
         </Tabs>
-
-        <div className="w-full py-6 mt-10 border-t border-gray-200">
-          <div className="flex justify-center items-center">
-            <img 
-              src="/lovable-uploads/f82196b0-12a4-4b65-983d-804add60b9fb.png"  
-              alt="Locanda dell'Angelo Logo" 
-              className="h-8 md:h-10" 
-            />
-          </div>
-        </div>
       </div>
     </div>
   );

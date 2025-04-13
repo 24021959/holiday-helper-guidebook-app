@@ -24,7 +24,6 @@ function App() {
 
   return (
     <TranslationProvider>
-      <Toaster position="top-right" />
       <Router>
         <Routes>
           {/* Pagine principali */}
@@ -74,6 +73,7 @@ function App() {
         </Routes>
         <ChatbotBubble />
       </Router>
+      <Toaster position="top-right" />
     </TranslationProvider>
   );
 }
