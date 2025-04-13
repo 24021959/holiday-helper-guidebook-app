@@ -17,6 +17,14 @@ export const useHeaderSettings = () => {
   const [error, setError] = useState<string | null>(null);
   const [isDemo, setIsDemo] = useState<boolean>(false);
 
+  // Default settings to use as fallback
+  const defaultSettings: HeaderSettings = {
+    headerColor: "bg-gradient-to-r from-teal-500 to-emerald-600",
+    logoPosition: "left",
+    logoSize: "medium",
+    establishmentName: "Locanda dell'Angelo"
+  };
+
   const fetchHeaderSettings = useCallback(async () => {
     try {
       setError(null);
@@ -43,7 +51,7 @@ export const useHeaderSettings = () => {
         console.log("Using demo mode for header settings");
         setIsDemo(true);
         
-        const defaultSettings = {
+        const demoSettings = {
           headerColor: "bg-gradient-to-r from-teal-500 to-emerald-600",
           logoPosition: "left",
           logoSize: "medium",
@@ -52,8 +60,8 @@ export const useHeaderSettings = () => {
         
         // Only use default settings if we don't have cached settings
         if (!localSettings) {
-          setHeaderSettings(defaultSettings);
-          localStorage.setItem("headerSettings", JSON.stringify(defaultSettings));
+          setHeaderSettings(demoSettings);
+          localStorage.setItem("headerSettings", JSON.stringify(demoSettings));
         }
         
         setLoading(false);
@@ -79,13 +87,6 @@ export const useHeaderSettings = () => {
             }
             
             // Set default values
-            const defaultSettings = {
-              headerColor: "bg-gradient-to-r from-teal-500 to-emerald-600",
-              logoPosition: "left",
-              logoSize: "medium",
-              establishmentName: "EV-AI Guest"
-            };
-            
             setHeaderSettings(defaultSettings);
             localStorage.setItem("headerSettings", JSON.stringify(defaultSettings));
             setLoading(false);
@@ -104,13 +105,6 @@ export const useHeaderSettings = () => {
           setError("Impossibile connettersi al database. Controlla la tua connessione e riprova.");
           
           // Set default values as fallback
-          const defaultSettings = {
-            headerColor: "bg-gradient-to-r from-teal-500 to-emerald-600",
-            logoPosition: "left",
-            logoSize: "medium",
-            establishmentName: "EV-AI Guest"
-          };
-          
           setHeaderSettings(defaultSettings);
           localStorage.setItem("headerSettings", JSON.stringify(defaultSettings));
           setIsDemo(true);
@@ -122,7 +116,7 @@ export const useHeaderSettings = () => {
           const newSettings = {
             logoUrl: data.logo_url,
             headerColor: data.header_color,
-            establishmentName: data.establishment_name,
+            establishmentName: data.establishment_name || "Locanda dell'Angelo",
             logoPosition: data.logo_position || "left",
             logoSize: data.logo_size || "medium"
           };
@@ -133,13 +127,6 @@ export const useHeaderSettings = () => {
           localStorage.setItem("headerSettings", JSON.stringify(newSettings));
         } else if (!localSettings) {
           // If no data from server and no local settings, use defaults
-          const defaultSettings = {
-            headerColor: "bg-gradient-to-r from-teal-500 to-emerald-600",
-            logoPosition: "left",
-            logoSize: "medium",
-            establishmentName: "EV-AI Guest"
-          };
-          
           setHeaderSettings(defaultSettings);
           localStorage.setItem("headerSettings", JSON.stringify(defaultSettings));
           setIsDemo(true);
@@ -150,13 +137,6 @@ export const useHeaderSettings = () => {
         // If we already have local settings, don't show error toast
         if (!localSettings) {
           // Set default values as fallback
-          const defaultSettings = {
-            headerColor: "bg-gradient-to-r from-teal-500 to-emerald-600",
-            logoPosition: "left",
-            logoSize: "medium",
-            establishmentName: "EV-AI Guest"
-          };
-          
           setHeaderSettings(defaultSettings);
           localStorage.setItem("headerSettings", JSON.stringify(defaultSettings));
           setIsDemo(true);
@@ -171,13 +151,6 @@ export const useHeaderSettings = () => {
       const savedHeaderSettings = localStorage.getItem("headerSettings");
       if (!savedHeaderSettings) {
         // Set default values as fallback
-        const defaultSettings = {
-          headerColor: "bg-gradient-to-r from-teal-500 to-emerald-600",
-          logoPosition: "left",
-          logoSize: "medium",
-          establishmentName: "EV-AI Guest"
-        };
-        
         setHeaderSettings(defaultSettings);
         localStorage.setItem("headerSettings", JSON.stringify(defaultSettings));
         setIsDemo(true);
