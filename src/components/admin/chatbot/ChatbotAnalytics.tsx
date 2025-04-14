@@ -338,28 +338,29 @@ const ChatbotAnalytics: React.FC = () => {
         </TabsContent>
       </Tabs>
       
-      {isEditDialogOpen && (
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>Correggi risposta del chatbot</DialogTitle>
-              <DialogDescription>
-                Modifica la risposta del chatbot per migliorare la qualità delle risposte future.
-              </DialogDescription>
-            </DialogHeader>
-            
+      {/* Important fix: Always render the Dialog component, but control it with the open prop */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Correggi risposta del chatbot</DialogTitle>
+            <DialogDescription>
+              Modifica la risposta del chatbot per migliorare la qualità delle risposte future.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedConversation && (
             <div className="space-y-4 py-4">
               <div>
                 <h4 className="text-sm font-medium mb-2">Domanda dell'utente:</h4>
                 <div className="p-3 bg-gray-50 rounded-md border text-gray-700">
-                  {selectedConversation?.user_message}
+                  {selectedConversation.user_message}
                 </div>
               </div>
               
               <div>
                 <h4 className="text-sm font-medium mb-2">Risposta originale:</h4>
                 <div className="p-3 bg-gray-50 rounded-md border text-gray-700">
-                  {selectedConversation?.bot_response}
+                  {selectedConversation.bot_response}
                 </div>
               </div>
               
@@ -375,18 +376,18 @@ const ChatbotAnalytics: React.FC = () => {
                 </p>
               </div>
             </div>
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                Annulla
-              </Button>
-              <Button onClick={handleSaveCorrection}>
-                Salva correzione
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button onClick={handleSaveCorrection}>
+              Salva correzione
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
