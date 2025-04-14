@@ -46,9 +46,9 @@ const PageFullscreenPreview: React.FC<PageFullscreenPreviewProps> = ({
             <Button 
               variant="ghost" 
               size="sm" 
+              onClick={onClose} 
               className="rounded-full h-8 w-8 p-0 flex items-center justify-center"
               aria-label="Chiudi"
-              onClick={onClose}
             >
               <X className="h-5 w-5" />
             </Button>

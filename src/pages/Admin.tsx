@@ -241,7 +241,6 @@ const Admin: React.FC = () => {
 
   const parentPages = pages.filter(page => !page.isSubmenu);
 
-  // Main render return - simplify structure to avoid nesting issues
   return (
     <div className="min-h-screen bg-gray-50">
       <AdminHeader isMaster={isMaster} />

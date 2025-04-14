@@ -14,8 +14,6 @@ import Chatbot from "@/components/Chatbot";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import KnowledgeBaseStatus from "./chatbot/KnowledgeBaseStatus";
-import ChatbotAnalytics from './chatbot/ChatbotAnalytics';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 interface ChatbotConfig {
   enabled: boolean;
@@ -473,295 +471,282 @@ Contenuto: ${cleanContent}${listItemsText}
         </Sheet>
       </div>
 
-      <Tabs defaultValue="settings" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="settings">Impostazioni</TabsTrigger>
-          <TabsTrigger value="analytics">Statistiche</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="settings">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <h3 className="text-lg font-medium">Attiva Chatbot</h3>
-                  <p className="text-sm text-gray-500">
-                    Abilita o disabilita il chatbot sul tuo sito
-                  </p>
-                </div>
-                <Switch
-                  checked={chatbotConfig.enabled}
-                  onCheckedChange={handleSwitchChange}
-                />
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h3 className="text-lg font-medium">Attiva Chatbot</h3>
+              <p className="text-sm text-gray-500">
+                Abilita o disabilita il chatbot sul tuo sito
+              </p>
+            </div>
+            <Switch
+              checked={chatbotConfig.enabled}
+              onCheckedChange={handleSwitchChange}
+            />
+          </div>
 
-              <Separator />
+          <Separator />
 
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Impostazioni Generali</h3>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="botName">Nome del Bot</Label>
-                  <Input
-                    id="botName"
-                    value={chatbotConfig.botName}
-                    onChange={(e) =>
-                      setChatbotConfig({
-                        ...chatbotConfig,
-                        botName: e.target.value
-                      })
-                    }
-                    placeholder="Assistente Virtuale"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="primaryColor">Colore Principale</Label>
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      id="primaryColor"
-                      type="color"
-                      value={chatbotConfig.primaryColor}
-                      onChange={(e) =>
-                        setChatbotConfig({
-                          ...chatbotConfig,
-                          primaryColor: e.target.value
-                        })
-                      }
-                      className="w-16 h-10 p-1"
-                    />
-                    <Input
-                      value={chatbotConfig.primaryColor}
-                      onChange={(e) =>
-                        setChatbotConfig({
-                          ...chatbotConfig,
-                          primaryColor: e.target.value
-                        })
-                      }
-                      placeholder="#4ade80"
-                      className="flex-1"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="secondaryColor">Colore Secondario</Label>
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      id="secondaryColor"
-                      type="color"
-                      value={chatbotConfig.secondaryColor}
-                      onChange={(e) =>
-                        setChatbotConfig({
-                          ...chatbotConfig,
-                          secondaryColor: e.target.value
-                        })
-                      }
-                      className="w-16 h-10 p-1"
-                    />
-                    <Input
-                      value={chatbotConfig.secondaryColor}
-                      onChange={(e) =>
-                        setChatbotConfig({
-                          ...chatbotConfig,
-                          secondaryColor: e.target.value
-                        })
-                      }
-                      placeholder="#ffffff"
-                      className="flex-1"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Posizione del Chatbot</Label>
-                  <div className="flex space-x-2">
-                    <Button
-                      type="button"
-                      variant={chatbotConfig.position === 'right' ? 'default' : 'outline'}
-                      onClick={() => handlePositionChange('right')}
-                      className={chatbotConfig.position === 'right' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}
-                    >
-                      Destra
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={chatbotConfig.position === 'left' ? 'default' : 'outline'}
-                      onClick={() => handlePositionChange('left')}
-                      className={chatbotConfig.position === 'left' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}
-                    >
-                      Sinistra
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Tipo di Icona</Label>
-                  <div className="flex space-x-2">
-                    <Button
-                      type="button"
-                      variant={chatbotConfig.iconType === 'default' ? 'default' : 'outline'}
-                      onClick={() => handleIconTypeChange('default')}
-                      className={chatbotConfig.iconType === 'default' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}
-                    >
-                      Predefinita
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={chatbotConfig.iconType === 'custom' ? 'default' : 'outline'}
-                      onClick={() => handleIconTypeChange('custom')}
-                      className={chatbotConfig.iconType === 'custom' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}
-                    >
-                      Personalizzata
-                    </Button>
-                  </div>
-                </div>
-
-                {chatbotConfig.iconType === 'custom' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="customIconUrl">URL Icona Personalizzata</Label>
-                    <Input
-                      id="customIconUrl"
-                      value={chatbotConfig.customIconUrl || ''}
-                      onChange={(e) =>
-                        setChatbotConfig({
-                          ...chatbotConfig,
-                          customIconUrl: e.target.value
-                        })
-                      }
-                      placeholder="https://example.com/icon.png"
-                    />
-                  </div>
-                )}
-              </div>
-
-              <Separator />
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <BookOpen className="h-5 w-5 text-emerald-600" />
-                    <span>Base di conoscenza</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Crea una base di conoscenza per il chatbot utilizzando i contenuti delle pagine del sito
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <KnowledgeBaseStatus 
-                    status={knowledgeStatus}
-                    isProcessing={isProcessing}
-                    processingProgress={processingProgress}
-                    errorMessage={processingError}
-                    onUpdateKnowledgeBase={updatePageContent}
-                    onCheckStatus={checkKnowledgeBase}
-                  />
-                </CardContent>
-              </Card>
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Impostazioni Generali</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="botName">Nome del Bot</Label>
+              <Input
+                id="botName"
+                value={chatbotConfig.botName}
+                onChange={(e) =>
+                  setChatbotConfig({
+                    ...chatbotConfig,
+                    botName: e.target.value
+                  })
+                }
+                placeholder="Assistente Virtuale"
+              />
             </div>
 
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium flex items-center">
-                    <MessageSquare className="h-5 w-5 mr-2 text-emerald-600" />
-                    Messaggio di Benvenuto
-                  </h3>
-                  
-                  <div className="flex items-center">
-                    <Button
-                      onClick={generateMessagesInAllLanguages}
-                      disabled={isLoading}
-                      variant="outline"
-                      size="sm"
-                      className="text-xs"
-                    >
-                      <Globe className="mr-1 h-3 w-3" />
-                      Genera in Tutte le Lingue
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Label className="flex-shrink-0">Lingua:</Label>
-                    <div className="bg-gray-100 rounded p-2 flex items-center space-x-2 overflow-x-auto w-full">
-                      {['it', 'en', 'fr', 'es', 'de'].map((lang) => (
-                        <Button
-                          key={lang}
-                          variant={activeLanguage === lang ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setActiveLanguage(lang as 'it' | 'en' | 'fr' | 'es' | 'de')}
-                          className={activeLanguage === lang ? 'bg-emerald-500 hover:bg-emerald-600' : 'text-xs'}
-                        >
-                          {lang.toUpperCase()}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <Textarea
-                    value={welcomeMessage}
-                    onChange={(e) => setWelcomeMessage(e.target.value)}
-                    placeholder="Inserisci il messaggio di benvenuto per questa lingua..."
-                    className="min-h-[120px]"
-                  />
-                </div>
+            <div className="space-y-2">
+              <Label htmlFor="primaryColor">Colore Principale</Label>
+              <div className="flex items-center space-x-2">
+                <Input
+                  id="primaryColor"
+                  type="color"
+                  value={chatbotConfig.primaryColor}
+                  onChange={(e) =>
+                    setChatbotConfig({
+                      ...chatbotConfig,
+                      primaryColor: e.target.value
+                    })
+                  }
+                  className="w-16 h-10 p-1"
+                />
+                <Input
+                  value={chatbotConfig.primaryColor}
+                  onChange={(e) =>
+                    setChatbotConfig({
+                      ...chatbotConfig,
+                      primaryColor: e.target.value
+                    })
+                  }
+                  placeholder="#4ade80"
+                  className="flex-1"
+                />
               </div>
+            </div>
 
-              <div className="space-y-4 bg-gray-50 border rounded-lg p-4">
-                <h3 className="text-lg font-medium">Anteprima</h3>
-                <div className="relative p-5 border rounded-lg bg-white shadow-sm min-h-[250px]">
-                  <div className="absolute bottom-4 right-4 bg-emerald-500 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-md" 
-                       style={{ backgroundColor: chatbotConfig.primaryColor }}>
-                    <Bot className="h-6 w-6" />
-                  </div>
-                  <div className="absolute bottom-20 right-4 max-w-xs bg-white rounded-lg shadow-md p-3 border-l-4" 
-                       style={{ borderColor: chatbotConfig.primaryColor }}>
-                    <div className="text-xs font-medium mb-1" style={{ color: chatbotConfig.primaryColor }}>
-                      {chatbotConfig.botName}
-                    </div>
-                    <p className="text-sm text-gray-700">{welcomeMessage}</p>
-                  </div>
+            <div className="space-y-2">
+              <Label htmlFor="secondaryColor">Colore Secondario</Label>
+              <div className="flex items-center space-x-2">
+                <Input
+                  id="secondaryColor"
+                  type="color"
+                  value={chatbotConfig.secondaryColor}
+                  onChange={(e) =>
+                    setChatbotConfig({
+                      ...chatbotConfig,
+                      secondaryColor: e.target.value
+                    })
+                  }
+                  className="w-16 h-10 p-1"
+                />
+                <Input
+                  value={chatbotConfig.secondaryColor}
+                  onChange={(e) =>
+                    setChatbotConfig({
+                      ...chatbotConfig,
+                      secondaryColor: e.target.value
+                    })
+                  }
+                  placeholder="#ffffff"
+                  className="flex-1"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Posizione del Chatbot</Label>
+              <div className="flex space-x-2">
+                <Button
+                  type="button"
+                  variant={chatbotConfig.position === 'right' ? 'default' : 'outline'}
+                  onClick={() => handlePositionChange('right')}
+                  className={chatbotConfig.position === 'right' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}
+                >
+                  Destra
+                </Button>
+                <Button
+                  type="button"
+                  variant={chatbotConfig.position === 'left' ? 'default' : 'outline'}
+                  onClick={() => handlePositionChange('left')}
+                  className={chatbotConfig.position === 'left' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}
+                >
+                  Sinistra
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Tipo di Icona</Label>
+              <div className="flex space-x-2">
+                <Button
+                  type="button"
+                  variant={chatbotConfig.iconType === 'default' ? 'default' : 'outline'}
+                  onClick={() => handleIconTypeChange('default')}
+                  className={chatbotConfig.iconType === 'default' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}
+                >
+                  Predefinita
+                </Button>
+                <Button
+                  type="button"
+                  variant={chatbotConfig.iconType === 'custom' ? 'default' : 'outline'}
+                  onClick={() => handleIconTypeChange('custom')}
+                  className={chatbotConfig.iconType === 'custom' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}
+                >
+                  Personalizzata
+                </Button>
+              </div>
+            </div>
+
+            {chatbotConfig.iconType === 'custom' && (
+              <div className="space-y-2">
+                <Label htmlFor="customIconUrl">URL Icona Personalizzata</Label>
+                <Input
+                  id="customIconUrl"
+                  value={chatbotConfig.customIconUrl || ''}
+                  onChange={(e) =>
+                    setChatbotConfig({
+                      ...chatbotConfig,
+                      customIconUrl: e.target.value
+                    })
+                  }
+                  placeholder="https://example.com/icon.png"
+                />
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <BookOpen className="h-5 w-5 text-emerald-600" />
+                <span>Base di conoscenza</span>
+              </CardTitle>
+              <CardDescription>
+                Crea una base di conoscenza per il chatbot utilizzando i contenuti delle pagine del sito
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <KnowledgeBaseStatus 
+                status={knowledgeStatus}
+                isProcessing={isProcessing}
+                processingProgress={processingProgress}
+                errorMessage={processingError}
+                onUpdateKnowledgeBase={updatePageContent}
+                onCheckStatus={checkKnowledgeBase}
+              />
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium flex items-center">
+                <MessageSquare className="h-5 w-5 mr-2 text-emerald-600" />
+                Messaggio di Benvenuto
+              </h3>
+              
+              <div className="flex items-center">
+                <Button
+                  onClick={generateMessagesInAllLanguages}
+                  disabled={isLoading}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                >
+                  <Globe className="mr-1 h-3 w-3" />
+                  Genera in Tutte le Lingue
+                </Button>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Label className="flex-shrink-0">Lingua:</Label>
+                <div className="bg-gray-100 rounded p-2 flex items-center space-x-2 overflow-x-auto w-full">
+                  {['it', 'en', 'fr', 'es', 'de'].map((lang) => (
+                    <Button
+                      key={lang}
+                      variant={activeLanguage === lang ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setActiveLanguage(lang as 'it' | 'en' | 'fr' | 'es' | 'de')}
+                      className={activeLanguage === lang ? 'bg-emerald-500 hover:bg-emerald-600' : 'text-xs'}
+                    >
+                      {lang.toUpperCase()}
+                    </Button>
+                  ))}
                 </div>
               </div>
               
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Settings2 className="h-5 w-5 text-emerald-600" />
-                    <span>Comportamento del Chatbot</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Il chatbot è configurato per rispondere utilizzando informazioni provenienti dalle pagine del tuo sito.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-sm space-y-2 text-gray-700">
-                    <p>
-                      L'assistente virtuale è programmato per:
-                    </p>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>Rispondere a domande sulla struttura (orari, servizi, regole)</li>
-                      <li>Fornire informazioni sugli spazi comuni (piscina, ristorante, ecc.)</li>
-                      <li>Suggerire opzioni gastronomiche e attrazioni turistiche</li>
-                      <li>Offrire supporto logistico (indicazioni, trasporti, ecc.)</li>
-                    </ul>
-                    <p className="mt-3 text-gray-600 italic">
-                      Il chatbot utilizzerà solo le informazioni trovate nelle pagine del sito, senza inventare dettagli.
-                      Se una domanda va oltre le informazioni disponibili, consiglierà di contattare direttamente la struttura.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              <Textarea
+                value={welcomeMessage}
+                onChange={(e) => setWelcomeMessage(e.target.value)}
+                placeholder="Inserisci il messaggio di benvenuto per questa lingua..."
+                className="min-h-[120px]"
+              />
             </div>
           </div>
-        </TabsContent>
-        
-        <TabsContent value="analytics">
-          <ChatbotAnalytics />
-        </TabsContent>
-      </Tabs>
+
+          <div className="space-y-4 bg-gray-50 border rounded-lg p-4">
+            <h3 className="text-lg font-medium">Anteprima</h3>
+            <div className="relative p-5 border rounded-lg bg-white shadow-sm min-h-[250px]">
+              <div className="absolute bottom-4 right-4 bg-emerald-500 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-md" 
+                   style={{ backgroundColor: chatbotConfig.primaryColor }}>
+                <Bot className="h-6 w-6" />
+              </div>
+              <div className="absolute bottom-20 right-4 max-w-xs bg-white rounded-lg shadow-md p-3 border-l-4" 
+                   style={{ borderColor: chatbotConfig.primaryColor }}>
+                <div className="text-xs font-medium mb-1" style={{ color: chatbotConfig.primaryColor }}>
+                  {chatbotConfig.botName}
+                </div>
+                <p className="text-sm text-gray-700">{welcomeMessage}</p>
+              </div>
+            </div>
+          </div>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Settings2 className="h-5 w-5 text-emerald-600" />
+                <span>Comportamento del Chatbot</span>
+              </CardTitle>
+              <CardDescription>
+                Il chatbot è configurato per rispondere utilizzando informazioni provenienti dalle pagine del tuo sito.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm space-y-2 text-gray-700">
+                <p>
+                  L'assistente virtuale è programmato per:
+                </p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Rispondere a domande sulla struttura (orari, servizi, regole)</li>
+                  <li>Fornire informazioni sugli spazi comuni (piscina, ristorante, ecc.)</li>
+                  <li>Suggerire opzioni gastronomiche e attrazioni turistiche</li>
+                  <li>Offrire supporto logistico (indicazioni, trasporti, ecc.)</li>
+                </ul>
+                <p className="mt-3 text-gray-600 italic">
+                  Il chatbot utilizzerà solo le informazioni trovate nelle pagine del sito, senza inventare dettagli.
+                  Se una domanda va oltre le informazioni disponibili, consiglierà di contattare direttamente la struttura.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       <div className="mt-8 flex justify-end">
         <Button

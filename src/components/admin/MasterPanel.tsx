@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Card,
@@ -10,8 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagementView } from "./UserManagementView";
-import ChatbotSettings from "./chatbot/ChatbotSettings";
-import ChatbotAnalytics from "./chatbot/ChatbotAnalytics";
+import ChatbotSettings from "./ChatbotSettings";
 import FooterSettingsView from "./FooterSettingsView";
 import { HeaderSettingsView } from "./HeaderSettingsView";
 
@@ -46,12 +44,6 @@ const MasterPanel: React.FC = () => {
           className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
         >
           Chatbot
-        </TabsTrigger>
-        <TabsTrigger
-          value="chatbot-analytics"
-          className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
-        >
-          Analisi Chatbot
         </TabsTrigger>
         <TabsTrigger
           value="footer-settings"
@@ -89,10 +81,6 @@ const MasterPanel: React.FC = () => {
         
         <TabsContent value="chatbot-settings" className="mt-0">
           <ChatbotSettings />
-        </TabsContent>
-        
-        <TabsContent value="chatbot-analytics" className="mt-0">
-          <ChatbotAnalytics />
         </TabsContent>
         
         <TabsContent value="footer-settings" className="mt-0">

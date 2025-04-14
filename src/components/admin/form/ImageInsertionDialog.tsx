@@ -118,10 +118,10 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => setSelectedImage(null)}
                   className="mr-2"
-                  onClick={onClose}
                 >
-                  Annulla
+                  Cambia immagine
                 </Button>
                 <Button
                   onClick={handleInsertImage}

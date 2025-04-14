@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
@@ -385,9 +386,6 @@ serve(async (req) => {
     
     console.log("Number of relevant documents used for context:", relevantContent.length);
     
-    // Capture start time for response timing
-    const startTime = performance.now();
-    
     // Call OpenAI for a response
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -396,13 +394,13 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           ...formattedHistory,
           { role: 'user', content: promptWithContext }
         ],
-        temperature: 0.7,
+        temperature: 0.7, // Aumentata leggermente per risposte più naturali e meno prevedibili
         max_tokens: 1000,
       }),
     });
@@ -414,36 +412,6 @@ serve(async (req) => {
 
     const data = await response.json();
     const chatbotResponse = data.choices[0].message.content;
-    
-    // Calculate response time
-    const endTime = performance.now();
-    const responseTime = (endTime - startTime) / 1000; // Convert to seconds
-    
-    // Store conversation in database
-    try {
-      const conversationId = crypto.randomUUID();
-      
-      const { error: conversationError } = await supabaseClient
-        .from('chatbot_conversations')
-        .insert({
-          conversation_id: conversationId,
-          user_message: message,
-          bot_response: chatbotResponse,
-          matched_documents: relevantContent,
-          metadata: {
-            language,
-            response_time: responseTime,
-            history_length: formattedHistory.length
-          }
-        });
-
-      if (conversationError) {
-        console.error('Error storing conversation:', conversationError);
-      }
-    } catch (storageError) {
-      console.error('Error storing conversation:', storageError);
-      // Continue execution even if storage fails
-    }
 
     return new Response(
       JSON.stringify({ response: chatbotResponse }),

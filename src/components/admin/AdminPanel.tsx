@@ -1,12 +1,11 @@
 
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import CreatePageForm from "./CreatePageForm"; 
+import CreatePageForm from "./CreatePageForm"; // Fix import to use default export
 import ManagePagesView from "./ManagePagesView";
 import { HeaderSettingsView } from "./HeaderSettingsView";
 import MenuTranslationManager from "./MenuTranslationManager";
 import ChatbotSettings from "./ChatbotSettings";
-import ChatbotAnalytics from "./chatbot/ChatbotAnalytics";
 import FooterSettingsView from "./FooterSettingsView";
 import { PageData } from "@/pages/Admin";
 
@@ -71,12 +70,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           Chatbot
         </TabsTrigger>
         <TabsTrigger
-          value="chatbot-analytics"
-          className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
-        >
-          Analisi Chatbot
-        </TabsTrigger>
-        <TabsTrigger
           value="footer-settings"
           className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
         >
@@ -117,10 +110,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         
         <TabsContent value="chatbot-settings" className="mt-0">
           <ChatbotSettings />
-        </TabsContent>
-        
-        <TabsContent value="chatbot-analytics" className="mt-0">
-          <ChatbotAnalytics />
         </TabsContent>
         
         <TabsContent value="footer-settings" className="mt-0">
