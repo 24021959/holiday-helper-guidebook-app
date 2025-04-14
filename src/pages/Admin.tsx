@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -242,6 +241,7 @@ const Admin: React.FC = () => {
 
   const parentPages = pages.filter(page => !page.isSubmenu);
 
+  // Main render return - simplify structure to avoid nesting issues
   return (
     <div className="min-h-screen bg-gray-50">
       <AdminHeader isMaster={isMaster} />
