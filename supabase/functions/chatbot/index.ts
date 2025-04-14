@@ -73,13 +73,13 @@ serve(async (req) => {
 
     // Definizione delle query più comuni che potrebbero essere fatte dall'utente
     const commonQueries = {
-      wifi: ["wifi", "internet", "connessione", "password wifi", "rete", "connessione internet"],
+      wifi: ["wifi", "internet", "connessione", "password wifi", "rete", "connessione internet", "wi-fi", "wi fi"],
       colazione: ["colazione", "breakfast", "prima colazione", "orari colazione", "quando si fa colazione"],
       reception: ["reception", "accoglienza", "check-in", "check-out", "orari reception", "banco"],
-      ristorante: ["ristorante", "restaurant", "cena", "pranzo", "mangiare", "orari ristorante", "orari pasti"],
+      ristorante: ["ristorante", "restaurant", "cena", "pranzo", "mangiare", "orari ristorante", "orari pasti", "prenotare", "prenotazione"],
       camere: ["camera", "camere", "stanza", "stanze", "alloggio", "dormire", "servizi in camera"],
       minibar: ["minibar", "mini bar", "frigobar", "frigo", "bevande camera"],
-      orari: ["orario", "orari", "tempo", "quando", "a che ora"],
+      orari: ["orario", "orari", "tempo", "quando", "a che ora", "dalle", "alle"],
       deposito: ["deposito", "biciclette", "bici", "bike", "deposito biciclette"],
       parcheggio: ["parcheggio", "parking", "auto", "macchina", "dove parcheggiare"],
       pagamento: ["pagamento", "pagare", "costo", "prezzo", "carta di credito", "contanti"],
@@ -385,6 +385,9 @@ serve(async (req) => {
         
         // Check for exact key phrases
         if (lowerMessage.includes('wifi') && lowerTitle.includes('wifi')) score += 20;
+        if (lowerMessage.includes('wi-fi') && lowerTitle.includes('wifi')) score += 20;
+        if (lowerMessage.includes('wi fi') && lowerTitle.includes('wifi')) score += 20;
+        if (lowerMessage.includes('internet') && lowerTitle.includes('wifi')) score += 15;
         if (lowerMessage.includes('colazione') && lowerTitle.includes('colazione')) score += 20;
         if (lowerMessage.includes('ristorante') && lowerTitle.includes('ristorante')) score += 20;
         if (lowerMessage.includes('reception') && lowerTitle.includes('reception')) score += 20;
@@ -395,6 +398,7 @@ serve(async (req) => {
         if (lowerMessage.includes('deposito') && lowerTitle.includes('deposito')) score += 20;
         if (lowerMessage.includes('internet') && lowerTitle.includes('wifi')) score += 20;
         if (lowerMessage.includes('check') && (lowerTitle.includes('check') || lowerTitle.includes('reception'))) score += 20;
+        if (lowerMessage.includes('prenot') && lowerTitle.includes('ristorante')) score += 20;
         
         // Similarity score if available (from vector search)
         if (doc.similarity) {
