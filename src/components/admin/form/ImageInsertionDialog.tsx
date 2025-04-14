@@ -115,15 +115,14 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
                 />
               </div>
               <div className="mt-4 flex justify-end">
-                <DialogClose asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mr-2"
-                  >
-                    Annulla
-                  </Button>
-                </DialogClose>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mr-2"
+                  onClick={onClose}
+                >
+                  Annulla
+                </Button>
                 <Button
                   onClick={handleInsertImage}
                 >
