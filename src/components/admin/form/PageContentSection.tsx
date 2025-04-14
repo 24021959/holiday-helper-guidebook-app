@@ -467,6 +467,32 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
     setShowImageDialog(true);
   };
 
+  const renderImage = (image: ImageItem, index: number) => {
+    const positionClass = image.position === "left" 
+      ? "float-left mr-4 mb-4 w-1/2" 
+      : image.position === "right" 
+        ? "float-right ml-4 mb-4 w-1/2" 
+        : image.position === "center" 
+          ? "mx-auto mb-4 w-2/3" 
+          : "w-full mb-4";
+    
+    return (
+      <figure key={`img-${index}`} className={`${positionClass} my-6`}>
+        <img 
+          src={image.url} 
+          alt={image.caption || `Immagine ${index + 1}`}
+          className="w-full h-auto object-contain"
+          data-image-id={`img-${index}`}
+        />
+        {image.caption && image.caption !== "[Immagine]" && (
+          <figcaption className="text-sm text-gray-600 text-center mt-2 italic">
+            {image.caption}
+          </figcaption>
+        )}
+      </figure>
+    );
+  };
+
   return (
     <>
       <FormField
