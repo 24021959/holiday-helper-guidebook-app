@@ -24,5 +24,5 @@ export interface CreatePageFormProps {
 export interface PageFormData {
   title: string;
   content: string;
-  icon?: string;
+  icon: string;  // Changed from optional to required to fix build error
 }

@@ -1,7 +1,10 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "@/context/TranslationContext";
@@ -9,11 +12,9 @@ import { Bot, Settings2, MessageSquare } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Chatbot from "@/components/chatbot/Chatbot";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import KnowledgeBaseStatus from "./KnowledgeBaseStatus";
-import WelcomeMessageEditor from "./WelcomeMessageEditor";
-import ChatbotPreview from "./ChatbotPreview";
-import ChatbotGeneralSettings from "./ChatbotGeneralSettings";
+import KnowledgeBaseManager from "./KnowledgeBaseManager";
 
 interface ChatbotConfig {
   enabled: boolean;
@@ -37,18 +38,6 @@ const defaultWelcomeMessages = {
 const ChatbotSettings: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processingProgress, setProcessingProgress] = useState(0);
-  const [processingError, setProcessingError] = useState<string | null>(null);
-  const [knowledgeStatus, setKnowledgeStatus] = useState<{
-    exists: boolean;
-    count: number;
-    lastUpdated: string | null;
-  }>({
-    exists: false,
-    count: 0,
-    lastUpdated: null
-  });
   const [chatbotConfig, setChatbotConfig] = useState<ChatbotConfig>({
     enabled: true,
     welcomeMessage: { ...defaultWelcomeMessages },
@@ -60,11 +49,11 @@ const ChatbotSettings: React.FC = () => {
   });
   const [activeLanguage, setActiveLanguage] = useState<'it' | 'en' | 'fr' | 'es' | 'de'>('it');
   const [welcomeMessage, setWelcomeMessage] = useState(defaultWelcomeMessages.it);
+  const [activeTab, setActiveTab] = useState("general");
   const { translateBulk } = useTranslation();
 
   useEffect(() => {
     loadChatbotConfig();
-    checkKnowledgeBase();
   }, []);
 
   const loadChatbotConfig = async () => {
@@ -91,143 +80,13 @@ const ChatbotSettings: React.FC = () => {
             ...config.welcomeMessage
           }
         });
+        setWelcomeMessage(config.welcomeMessage[activeLanguage] || defaultWelcomeMessages[activeLanguage]);
       }
     } catch (error) {
       console.error("Errore nel caricamento della configurazione del chatbot:", error);
       toast.error("Errore nel caricamento della configurazione del chatbot");
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const checkKnowledgeBase = async () => {
-    try {
-      setProcessingError(null);
-      console.log("Checking knowledge base status...");
-      
-      // First, check if we need to create the vector extension
-      try {
-        const { data: extensionExists, error: extensionError } = await supabase.rpc('check_vector_extension');
-        
-        if (extensionError) {
-          console.error("Error checking vector extension:", extensionError);
-        } else if (!extensionExists) {
-          console.log("Vector extension not found, attempting to create it");
-          const { error: createExtensionError } = await supabase.rpc('create_vector_extension');
-          
-          if (createExtensionError) {
-            console.error("Error creating vector extension:", createExtensionError);
-          } else {
-            console.log("Vector extension created successfully");
-          }
-        } else {
-          console.log("Vector extension already exists");
-        }
-      } catch (extensionErr) {
-        console.error("Error with vector extension operations:", extensionErr);
-      }
-      
-      // Check if the table exists
-      try {
-        const { data: tableExists, error: tableExistsError } = await supabase.rpc('table_exists', {
-          table_name: 'chatbot_knowledge'
-        });
-        
-        if (tableExistsError) {
-          console.error("Error checking if table exists:", tableExistsError);
-        } else if (!tableExists) {
-          console.log("Table doesn't exist, creating it now");
-          
-          const { error: createTableError } = await supabase.rpc('run_sql', {
-            sql: `
-              CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
-                id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-                page_id uuid NOT NULL,
-                title text NOT NULL,
-                content text NOT NULL, 
-                path text NOT NULL,
-                embedding vector(1536),
-                created_at timestamp with time zone DEFAULT now(),
-                updated_at timestamp with time zone DEFAULT now()
-              );
-              
-              ALTER TABLE public.chatbot_knowledge ENABLE ROW LEVEL SECURITY;
-              
-              DROP POLICY IF EXISTS "Allow chatbot_knowledge access to all users" ON public.chatbot_knowledge;
-              
-              CREATE POLICY "Allow chatbot_knowledge access to all users" 
-              ON public.chatbot_knowledge
-              FOR ALL
-              USING (true);
-            `
-          });
-          
-          if (createTableError) {
-            console.error("Error creating table:", createTableError);
-          } else {
-            console.log("Table created successfully");
-          }
-        } else {
-          console.log("Table already exists");
-        }
-      } catch (tableError) {
-        console.error("Error with table operations:", tableError);
-      }
-
-      // Now check if there's data in the table
-      try {
-        const { count, error: countError } = await supabase
-          .from('chatbot_knowledge')
-          .select('*', { count: 'exact', head: true });
-        
-        if (countError) {
-          console.error("Error checking knowledge base:", countError);
-          throw new Error(`Database error: ${countError.message}`);
-        }
-        
-        let lastUpdated = null;
-        
-        if (count && count > 0) {
-          // Try to get the latest update timestamp
-          const { data: latestRecord, error: latestError } = await supabase
-            .from('chatbot_knowledge')
-            .select('updated_at')
-            .order('updated_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-            
-          if (!latestError && latestRecord) {
-            lastUpdated = new Date(latestRecord.updated_at).toLocaleString('it-IT');
-          }
-          
-          console.log("Knowledge base exists with", count, "items. Latest update:", lastUpdated);
-          
-          // Show confirmation toast with count
-          toast.success(`Base di conoscenza verificata: ${count} elementi`);
-        } else {
-          console.log("Knowledge base is empty or doesn't exist");
-          toast.warning("La base di conoscenza è vuota");
-        }
-        
-        setKnowledgeStatus({
-          exists: count ? count > 0 : false,
-          count: count || 0,
-          lastUpdated
-        });
-      } catch (error) {
-        console.error("Error checking knowledge base:", error);
-        setKnowledgeStatus({
-          exists: false,
-          count: 0,
-          lastUpdated: null
-        });
-        setProcessingError(`Errore nella verifica: ${error.message}`);
-        toast.error(`Errore nella verifica della base di conoscenza: ${error.message}`);
-      }
-    } catch (error) {
-      console.error("Error checking knowledge base:", error);
-      setProcessingError(`Errore nella verifica: ${error.message}`);
-      toast.error(`Errore nella verifica della base di conoscenza: ${error.message}`);
     }
   };
 
@@ -244,7 +103,7 @@ const ChatbotSettings: React.FC = () => {
 
       setChatbotConfig(updatedConfig);
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('site_settings')
         .upsert({
           key: 'chatbot_config',
@@ -276,15 +135,24 @@ const ChatbotSettings: React.FC = () => {
     });
   };
 
-  const handleWelcomeMessageChange = (lang: string, message: string) => {
-    setWelcomeMessage(message);
+  const handleWelcomeMessageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setWelcomeMessage(event.target.value);
+  };
+
+  const handleLanguageChange = (lang: 'it' | 'en' | 'fr' | 'es' | 'de') => {
+    // Save current language message before switching
+    const updatedWelcomeMessages = {
+      ...chatbotConfig.welcomeMessage,
+      [activeLanguage]: welcomeMessage
+    };
+    
     setChatbotConfig({
       ...chatbotConfig,
-      welcomeMessage: {
-        ...chatbotConfig.welcomeMessage,
-        [lang]: message
-      }
+      welcomeMessage: updatedWelcomeMessages
     });
+    
+    setActiveLanguage(lang);
+    setWelcomeMessage(updatedWelcomeMessages[lang] || defaultWelcomeMessages[lang]);
   };
 
   const generateMessagesInAllLanguages = async () => {
@@ -323,161 +191,6 @@ const ChatbotSettings: React.FC = () => {
     }
   };
 
-  const updatePageContent = async () => {
-    setIsProcessing(true);
-    setProcessingProgress(10);
-    setProcessingError(null);
-    
-    try {
-      // First ensure the table exists
-      try {
-        const { error: tableError } = await supabase.rpc('run_sql', {
-          sql: `
-            CREATE TABLE IF NOT EXISTS public.chatbot_knowledge (
-              id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-              page_id uuid NOT NULL,
-              title text NOT NULL,
-              content text NOT NULL, 
-              path text NOT NULL,
-              created_at timestamp with time zone DEFAULT now(),
-              updated_at timestamp with time zone DEFAULT now()
-            );
-          `
-        });
-        
-        if (tableError && tableError.message !== "function run_sql does not exist") {
-          console.error("Error creating table:", tableError);
-        }
-      } catch (tableError) {
-        console.error("Error creating table:", tableError);
-        // Continue anyway - we'll try direct inserts
-      }
-
-      // Clear existing data for fresh update
-      try {
-        const { error: deleteError } = await supabase
-          .from('chatbot_knowledge')
-          .delete()
-          .neq('id', '00000000-0000-0000-0000-000000000000');
-          
-        if (deleteError) {
-          console.error("Error clearing existing data:", deleteError);
-        } else {
-          console.log("Successfully cleared existing data");
-        }
-      } catch (clearError) {
-        console.error("Error clearing existing data:", clearError);
-        // Continue anyway
-      }
-
-      // Fetch all published pages
-      const { data: pages, error: pagesError } = await supabase
-        .from('custom_pages')
-        .select('*')
-        .eq('published', true);
-
-      if (pagesError) throw pagesError;
-
-      if (!pages || pages.length === 0) {
-        toast.warning("Nessuna pagina trovata per creare la base di conoscenza del chatbot");
-        setProcessingError("Nessuna pagina pubblicata trovata per creare la base di conoscenza");
-        setIsProcessing(false);
-        setProcessingProgress(0);
-        return;
-      }
-
-      toast.info(`Elaborazione di ${pages.length} pagine per la base di conoscenza...`);
-      
-      // Process pages in smaller batches to avoid timeout
-      const batchSize = 3;
-      let processedCount = 0;
-      let successCount = 0;
-      let failureCount = 0;
-      
-      for (let i = 0; i < pages.length; i += batchSize) {
-        const batch = pages.slice(i, Math.min(i + batchSize, pages.length));
-        const batchPromises = batch.map(async (page) => {
-          try {
-            console.log(`Processing page ${page.id}: ${page.title}`);
-            
-            // Simplified approach: Insert directly to database with basic content extraction
-            const cleanContent = (page.content || "")
-              .replace(/<[^>]*>/g, " ")
-              .replace(/<!--.*?-->/g, "")
-              .replace(/\s+/g, " ")
-              .trim();
-            
-            let listItemsText = "";
-            if (page.list_items && Array.isArray(page.list_items) && page.list_items.length > 0) {
-              listItemsText = "\n\nItems in this page:\n" + 
-                page.list_items.map((item: any, index: number) => 
-                  `${index + 1}. ${item.name || ""} - ${item.description || ""}`
-                ).join("\n");
-            }
-            
-            const formattedContent = `
-Page Title: ${page.title || "Untitled"}
-URL Path: ${page.path || ""}
-Content: ${cleanContent}${listItemsText}
-            `.trim();
-            
-            const { error: insertError } = await supabase
-              .from("chatbot_knowledge")
-              .insert({
-                page_id: page.id,
-                title: page.title || "Untitled",
-                content: formattedContent,
-                path: page.path || ""
-              });
-              
-            if (insertError) {
-              throw insertError;
-            }
-            
-            console.log(`Page ${page.id} processed successfully with direct database insert`);
-            return true;
-          } catch (error) {
-            console.error(`Failed to process page ${page.id}:`, error);
-            return false;
-          }
-        });
-        
-        const batchResults = await Promise.all(batchPromises);
-        
-        processedCount += batch.length;
-        successCount += batchResults.filter(result => result).length;
-        failureCount += batchResults.filter(result => !result).length;
-        
-        const progressPercentage = Math.round((processedCount / pages.length) * 90);
-        setProcessingProgress(progressPercentage);
-      }
-      
-      setProcessingProgress(100);
-      
-      if (successCount > 0) {
-        toast.success(`Base di conoscenza aggiornata con ${successCount} pagine`);
-        
-        if (failureCount > 0) {
-          toast.warning(`${failureCount} pagine non sono state elaborate correttamente`);
-        }
-        
-        await checkKnowledgeBase();
-      } else {
-        setProcessingError(`Nessuna pagina è stata elaborata correttamente. Riprova più tardi.`);
-        toast.error("Errore nell'aggiornamento della base di conoscenza");
-      }
-    } catch (error) {
-      console.error("Errore nell'aggiornamento della base di conoscenza:", error);
-      setProcessingError(`Errore nell'aggiornamento della base di conoscenza: ${error.message}`);
-      toast.error("Errore nell'aggiornamento della base di conoscenza");
-    } finally {
-      setIsProcessing(false);
-      setTimeout(() => {
-        setProcessingProgress(0);
-      }, 1500);
-    }
-  };
-
   const previewConfig = {
     ...chatbotConfig,
     welcomeMessage: {
@@ -496,22 +209,17 @@ Content: ${cleanContent}${listItemsText}
         
         <Sheet>
           <SheetTrigger asChild>
-            <Button
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-            >
-              <MessageSquare className="mr-2 h-4 w-4" />
-              Anteprima Chatbot
+            <Button variant="outline" className="flex items-center space-x-2">
+              <MessageSquare className="h-4 w-4" />
+              <span>Anteprima Chatbot</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-full sm:max-w-lg md:max-w-xl">
+          <SheetContent side="right" className="sm:max-w-md">
             <div className="h-full flex flex-col">
-              <h3 className="text-lg font-medium my-4">Anteprima Chatbot</h3>
-              <div className="flex-1 bg-gray-100 rounded-lg p-4 relative overflow-hidden">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <p className="text-gray-500 italic">
-                    Questa è un'anteprima del chatbot con le impostazioni attuali
-                  </p>
-                </div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium">Anteprima Chatbot</h3>
+              </div>
+              <div className="flex-1 overflow-hidden">
                 <Chatbot previewConfig={previewConfig} />
               </div>
             </div>
@@ -519,107 +227,149 @@ Content: ${cleanContent}${listItemsText}
         </Sheet>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <h3 className="text-lg font-medium">Attiva Chatbot</h3>
-              <p className="text-sm text-gray-500">
-                Abilita o disabilita il chatbot sul tuo sito
-              </p>
-            </div>
-            <Switch
-              checked={chatbotConfig.enabled}
-              onCheckedChange={handleSwitchChange}
-            />
-          </div>
-
-          <Separator />
-
-          <ChatbotGeneralSettings 
-            config={chatbotConfig}
-            onConfigChange={handleConfigChange}
-          />
-
-          <Separator />
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <span>Base di conoscenza</span>
-              </CardTitle>
-              <CardDescription>
-                Crea una base di conoscenza per il chatbot utilizzando i contenuti delle pagine del sito
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <KnowledgeBaseStatus 
-                status={knowledgeStatus}
-                isProcessing={isProcessing}
-                processingProgress={processingProgress}
-                errorMessage={processingError}
-                onUpdateKnowledgeBase={updatePageContent}
-                onCheckStatus={checkKnowledgeBase}
-              />
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-6">
-          <WelcomeMessageEditor 
-            welcomeMessage={chatbotConfig.welcomeMessage}
-            onWelcomeMessageChange={handleWelcomeMessageChange}
-            onGenerateAllLanguages={generateMessagesInAllLanguages}
-            isLoading={isLoading}
-          />
-
-          <ChatbotPreview 
-            primaryColor={chatbotConfig.primaryColor}
-            botName={chatbotConfig.botName}
-            welcomeMessage={welcomeMessage}
-          />
-          
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Settings2 className="h-5 w-5 text-emerald-600" />
-                <span>Comportamento del Chatbot</span>
-              </CardTitle>
-              <CardDescription>
-                Il chatbot è configurato per rispondere utilizzando informazioni provenienti dalle pagine del tuo sito.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm space-y-2 text-gray-700">
-                <p>
-                  L'assistente virtuale è programmato per:
-                </p>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>Rispondere a domande sulla struttura (orari, servizi, regole)</li>
-                  <li>Fornire informazioni sugli spazi comuni (piscina, ristorante, ecc.)</li>
-                  <li>Suggerire opzioni gastronomiche e attrazioni turistiche</li>
-                  <li>Offrire supporto logistico (indicazioni, trasporti, ecc.)</li>
-                </ul>
-                <p className="mt-3 text-gray-600 italic">
-                  Il chatbot utilizzerà solo le informazioni trovate nelle pagine del sito, senza inventare dettagli.
-                  Se una domanda va oltre le informazioni disponibili, consiglierà di contattare direttamente la struttura.
-                </p>
+      <Card>
+        <CardHeader>
+          <CardTitle>Configurazione Chatbot</CardTitle>
+          <CardDescription>
+            Configura il chatbot per il tuo sito web
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="general">Generale</TabsTrigger>
+              <TabsTrigger value="messages">Messaggi</TabsTrigger>
+              <TabsTrigger value="knowledge">Base di Conoscenza</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="general" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Abilita Chatbot</Label>
+                  <p className="text-sm text-gray-500">
+                    Mostra il chatbot sul sito web
+                  </p>
+                </div>
+                <Switch
+                  checked={chatbotConfig.enabled}
+                  onCheckedChange={handleSwitchChange}
+                />
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      <div className="mt-8 flex justify-end">
-        <Button
-          onClick={saveChatbotConfig}
-          disabled={isSaving || isLoading}
-          className="bg-emerald-500 hover:bg-emerald-600 text-white"
-        >
-          <Settings2 className="mr-2 h-4 w-4" />
-          {isSaving ? "Salvataggio..." : "Salva Impostazioni"}
-        </Button>
-      </div>
+              
+              <Separator />
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="botName">Nome del Bot</Label>
+                    <Input
+                      id="botName"
+                      value={chatbotConfig.botName}
+                      onChange={(e) => handleConfigChange('botName', e.target.value)}
+                      placeholder="Assistente Virtuale"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="primaryColor">Colore Primario</Label>
+                    <div className="flex space-x-2">
+                      <Input
+                        id="primaryColor"
+                        type="color"
+                        className="w-12 p-1 h-10"
+                        value={chatbotConfig.primaryColor}
+                        onChange={(e) => handleConfigChange('primaryColor', e.target.value)}
+                      />
+                      <Input
+                        value={chatbotConfig.primaryColor}
+                        onChange={(e) => handleConfigChange('primaryColor', e.target.value)}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Posizione</Label>
+                  <div className="flex space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="position-right"
+                        checked={chatbotConfig.position === 'right'}
+                        onChange={() => handleConfigChange('position', 'right')}
+                      />
+                      <Label htmlFor="position-right">Destra</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="position-left"
+                        checked={chatbotConfig.position === 'left'}
+                        onChange={() => handleConfigChange('position', 'left')}
+                      />
+                      <Label htmlFor="position-left">Sinistra</Label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="messages" className="space-y-4">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Lingua del messaggio di benvenuto</Label>
+                  <div className="flex space-x-2">
+                    {(['it', 'en', 'fr', 'es', 'de'] as const).map((lang) => (
+                      <Button
+                        key={lang}
+                        type="button"
+                        variant={activeLanguage === lang ? "default" : "outline"}
+                        className="px-3 py-1 h-8"
+                        onClick={() => handleLanguageChange(lang)}
+                      >
+                        {lang.toUpperCase()}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="welcomeMessage">Messaggio di Benvenuto ({activeLanguage.toUpperCase()})</Label>
+                  <Input
+                    id="welcomeMessage"
+                    value={welcomeMessage}
+                    onChange={handleWelcomeMessageChange}
+                    placeholder="Messaggio di benvenuto"
+                  />
+                </div>
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={generateMessagesInAllLanguages}
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Generazione...' : 'Genera messaggi in tutte le lingue'}
+                </Button>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="knowledge">
+              <KnowledgeBaseManager />
+            </TabsContent>
+          </Tabs>
+          
+          <div className="mt-6">
+            <Button 
+              onClick={saveChatbotConfig} 
+              disabled={isSaving || isLoading}
+              className="w-full"
+            >
+              {isSaving ? 'Salvataggio...' : 'Salva Configurazione'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
