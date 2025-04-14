@@ -28,7 +28,12 @@ const PageFullscreenPreview: React.FC<PageFullscreenPreviewProps> = ({
               <TranslatedText text={`Anteprima: ${title}`} />
             </h2>
             <DialogClose asChild>
-              <Button variant="ghost" size="sm" className="hover:bg-gray-100">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="rounded-full h-8 w-8 p-0 flex items-center justify-center"
+                aria-label="Chiudi"
+              >
                 <X className="h-5 w-5" />
               </Button>
             </DialogClose>
