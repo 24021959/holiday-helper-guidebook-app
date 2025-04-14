@@ -92,25 +92,27 @@ const ChatbotAnalytics = () => {
           <CardDescription>Numero di messaggi per giorno negli ultimi 30 giorni</CardDescription>
         </CardHeader>
         <CardContent className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={stats?.reverse()}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="date" 
-                tickFormatter={(date) => format(new Date(date), 'dd/MM')}
-              />
-              <YAxis />
-              <Tooltip 
-                labelFormatter={(date) => format(new Date(date), 'dd/MM/yyyy')}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="total_messages" 
-                stroke="#4ade80" 
-                name="Messaggi"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          {stats && (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={stats?.slice().reverse()}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="date" 
+                  tickFormatter={(date) => format(new Date(date), 'dd/MM')}
+                />
+                <YAxis />
+                <Tooltip 
+                  labelFormatter={(date) => format(new Date(date), 'dd/MM/yyyy')}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="total_messages" 
+                  stroke="#4ade80" 
+                  name="Messaggi"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </CardContent>
       </Card>
 
