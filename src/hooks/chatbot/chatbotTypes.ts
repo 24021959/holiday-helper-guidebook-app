@@ -1,4 +1,3 @@
-
 export interface Message {
   id: string;
   content: string;
@@ -32,3 +31,29 @@ export const defaultConfig: ChatbotConfig = {
   position: 'right',
   iconType: 'default'
 };
+
+export interface ChatbotConversation {
+  id: string;
+  conversation_id: string;
+  user_message: string;
+  bot_response: string;
+  was_helpful?: boolean;
+  feedback?: string;
+  corrected_response?: string;
+  matched_documents?: any[];
+  metadata?: Record<string, any>;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface ChatbotStats {
+  id: string;
+  date: string;
+  total_conversations: number;
+  total_messages: number;
+  average_response_time?: number;
+  helpful_responses?: number;
+  unhelpful_responses?: number;
+  created_at: Date;
+  updated_at: Date;
+}
