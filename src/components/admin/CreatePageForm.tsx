@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useRouter } from '@/lib/next-router-mock';
 import { useForm } from "react-hook-form";
@@ -54,6 +55,7 @@ import {
 import { Editor } from "@/components/editor/Editor";
 import { uploadImage } from "@/integrations/supabase/storage";
 import ImagesUploader, { ImageItem as UploaderImageItem } from "@/components/ImagesUploader";
+import { ImageItem } from "@/pages/Admin";
 
 const pageFormSchema = z.object({
   title: z.string().min(2, {
@@ -72,11 +74,12 @@ interface CreatePageFormProps {
   keywordToIconMap: Record<string, string>;
 }
 
-const convertToAdminImageItem = (images: UploaderImageItem[]) => {
+const convertToAdminImageItem = (images: UploaderImageItem[]): ImageItem[] => {
   return images.map(img => ({
     url: img.url,
-    position: img.position === "top" ? "top" : 
-             img.position === "bottom" ? "bottom" : "center",
+    position: (img.position === "top" ? "center" : 
+              img.position === "bottom" ? "center" : 
+              img.position) as "left" | "center" | "right" | "full",
     caption: img.caption || "",
     type: "image"
   }));
