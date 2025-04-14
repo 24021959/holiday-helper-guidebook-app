@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import ImageUploader from "@/components/ImageUploader";
 import { Button } from "@/components/ui/button";
 import { AlignCenter, AlignLeft, AlignRight, Maximize, Image } from "lucide-react";

@@ -22,8 +22,9 @@ const EditResponseDialog: React.FC<EditResponseDialogProps> = ({
   onEditingResponseChange,
   onSave,
 }) => {
+  // Fixed: Ensure we properly handle the open state with onOpenChange
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Correggi risposta del chatbot</DialogTitle>
