@@ -50,10 +50,42 @@ serve(async (req) => {
             created_at timestamp with time zone DEFAULT now(),
             updated_at timestamp with time zone DEFAULT now()
           );
+          
+          -- Create a function to match documents by vector similarity
+          CREATE OR REPLACE FUNCTION match_documents(
+            query_embedding vector(1536),
+            match_threshold float8 DEFAULT 0.5,
+            match_count int DEFAULT 5
+          )
+          RETURNS TABLE (
+            id uuid,
+            page_id uuid,
+            title text,
+            content text,
+            path text,
+            similarity float8
+          )
+          LANGUAGE plpgsql
+          AS $$
+          BEGIN
+            RETURN QUERY
+            SELECT
+              chatbot_knowledge.id,
+              chatbot_knowledge.page_id,
+              chatbot_knowledge.title,
+              chatbot_knowledge.content,
+              chatbot_knowledge.path,
+              1 - (chatbot_knowledge.embedding <=> query_embedding) AS similarity
+            FROM chatbot_knowledge
+            WHERE 1 - (chatbot_knowledge.embedding <=> query_embedding) > match_threshold
+            ORDER BY similarity DESC
+            LIMIT match_count;
+          END;
+          $$;
         `
       });
     } catch (error) {
-      console.log("Table creation error (may already exist):", error);
+      console.log("Table/function creation error (may already exist):", error);
     }
 
     // Clear existing knowledge
@@ -86,32 +118,73 @@ serve(async (req) => {
           .replace(/\s+/g, " ")       // Replace multiple spaces with single space
           .trim();
         
-        // Better extraction of list items if present
+        // Enhanced extraction of list items if present
         let listItemsText = "";
         if (page.list_items && Array.isArray(page.list_items) && page.list_items.length > 0) {
-          listItemsText = "\n\nElementi in questa pagina:\n" + 
+          listItemsText = "\n\nELEMENTI/SERVIZI DISPONIBILI:\n" + 
             page.list_items.map((item, index) => {
               const name = item.name || "";
               const description = item.description || "";
               const price = item.price ? `Prezzo: ${item.price}` : "";
               
-              return `${index + 1}. ${name} ${description} ${price}`.trim();
-            }).join("\n");
+              let itemText = `${index + 1}. ${name}`;
+              if (description) itemText += `\nDescrizione: ${description}`;
+              if (price) itemText += `\n${price}`;
+              
+              return itemText;
+            }).join("\n\n");
         }
 
-        // Enhanced content formatting with explicit sections
+        // Enhanced content formatting with more semantic structure
         const formattedContent = `
-TITOLO PAGINA: ${page.title || "Senza titolo"}
-URL PAGINA: ${page.path || ""}
+TITOLO: ${page.title || "Senza titolo"}
+URL: ${page.path || ""}
+
 CONTENUTO PRINCIPALE:
 ${cleanContent}
+
 ${listItemsText}
 
-METADATI AGGIUNTIVI:
+DETTAGLI AGGIUNTIVI:
 Tipo di pagina: ${page.list_type || "Pagina informativa"}
 ${page.is_submenu ? "Questa è una sottopagina del menu principale." : ""}
 ${page.parent_path ? `Pagina genitore: ${page.parent_path}` : ""}
         `.trim();
+
+        // Add extra information based on the page path or title
+        let enhancedContent = formattedContent;
+        
+        // Detect if this page is about reception/check-in/welcome
+        if (
+          page.path === "/" || 
+          /reception|accoglienza|benvenuto|welcome|check[\s\-]?in/i.test(page.title) ||
+          /reception|accoglienza|benvenuto|welcome|check[\s\-]?in/i.test(page.path)
+        ) {
+          enhancedContent += `\n\nINFORMAZIONI IMPORTANTI SULLA RECEPTION:
+La reception della Locanda dell'Angelo è aperta 24 ore su 24 per garantire il massimo comfort agli ospiti.
+Il personale della reception è sempre disponibile per informazioni, assistenza e richieste speciali.
+Per contattare la reception dalla camera, è possibile utilizzare il telefono in camera premendo il tasto 9.`;
+        }
+        
+        // Detect if this page is about breakfast
+        if (/colazione|breakfast|prima[\s\-]?colazione/i.test(page.title) || /colazione|breakfast/i.test(page.path)) {
+          if (!formattedContent.includes("orari") && !formattedContent.includes("orario")) {
+            enhancedContent += `\n\nINFORMAZIONI SULLA COLAZIONE:
+La colazione presso la Locanda dell'Angelo viene servita nella sala ristorante.
+Gli orari della colazione sono dalle 7:30 alle 10:00. 
+La colazione include una varietà di prodotti freschi e di qualità, dolci e salati.`;
+          }
+        }
+        
+        // Detect if this page is about WiFi
+        if (/wifi|internet|connessione/i.test(page.title) || /wifi|internet|connessione/i.test(page.path)) {
+          if (!formattedContent.includes("password") && !formattedContent.includes("gratuito")) {
+            enhancedContent += `\n\nINFORMAZIONI SUL WIFI:
+La Locanda dell'Angelo offre connessione WiFi gratuita in tutte le aree dell'hotel.
+La password per accedere al WiFi può essere richiesta alla reception.
+La rete WiFi è disponibile 24 ore su 24.`;
+          }
+        }
 
         // Create embedding if OpenAI API key is available
         let embedding = null;
@@ -125,7 +198,7 @@ ${page.parent_path ? `Pagina genitore: ${page.parent_path}` : ""}
               },
               body: JSON.stringify({
                 model: 'text-embedding-3-small',
-                input: formattedContent.substring(0, 8000) // Prevent token limit issues
+                input: enhancedContent.substring(0, 8000) // Prevent token limit issues
               }),
             });
 
@@ -147,7 +220,7 @@ ${page.parent_path ? `Pagina genitore: ${page.parent_path}` : ""}
           .insert({
             page_id: page.id,
             title: page.title || "Senza titolo",
-            content: formattedContent,
+            content: enhancedContent,
             path: page.path || "",
             embedding: embedding
           });

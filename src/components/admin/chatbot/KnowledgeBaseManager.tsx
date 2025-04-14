@@ -152,7 +152,7 @@ const KnowledgeBaseManager: React.FC = () => {
         )}
         
         {!status.exists && (
-          <Alert variant="warning" className="bg-amber-50 border-amber-200">
+          <Alert variant="destructive" className="bg-amber-50 border-amber-200">
             <AlertCircle className="h-4 w-4 text-amber-500" />
             <AlertDescription className="text-sm text-amber-800">
               La base di conoscenza non è stata ancora creata. Il chatbot funzionerà, ma non avrà 
