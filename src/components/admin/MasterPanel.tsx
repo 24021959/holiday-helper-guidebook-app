@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagementView } from "./UserManagementView";
-import ChatbotSettings from "./ChatbotSettings";
+import ChatbotSettings from "./chatbot/ChatbotSettings";
 import ChatbotAnalytics from "./chatbot/ChatbotAnalytics";
 import FooterSettingsView from "./FooterSettingsView";
 import { HeaderSettingsView } from "./HeaderSettingsView";

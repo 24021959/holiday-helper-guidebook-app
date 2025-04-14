@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -137,6 +137,7 @@ const ChatbotAnalytics: React.FC = () => {
     return <div className="flex justify-center p-8">Caricamento delle statistiche...</div>;
   }
 
+  // Render component
   return (
     <>
       <div>
@@ -345,7 +346,7 @@ const ChatbotAnalytics: React.FC = () => {
         </Tabs>
       </div>
 
-      {/* Dialog is rendered separately, outside the component flow */}
+      {/* Dialog component - always rendered but controlled by open prop */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
