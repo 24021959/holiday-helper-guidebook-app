@@ -1,7 +1,6 @@
-
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { useRouter } from '@/lib/next-router-mock';
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { v4 as uuidv4 } from 'uuid';
@@ -54,8 +53,7 @@ import {
 } from "@/components/ui/resizable";
 import { Editor } from "@/components/editor/Editor";
 import { uploadImage } from "@/integrations/supabase/storage";
-// Fixed import statement to use default import
-import ImagesUploader, { ImageItem } from "@/components/ImagesUploader";
+import ImagesUploader, { ImageItem as UploaderImageItem } from "@/components/ImagesUploader";
 
 const pageFormSchema = z.object({
   title: z.string().min(2, {
@@ -74,10 +72,20 @@ interface CreatePageFormProps {
   keywordToIconMap: Record<string, string>;
 }
 
+const convertToAdminImageItem = (images: UploaderImageItem[]) => {
+  return images.map(img => ({
+    url: img.url,
+    position: img.position === "top" ? "top" : 
+             img.position === "bottom" ? "bottom" : "center",
+    caption: img.caption || "",
+    type: "image"
+  }));
+};
+
 export default function CreatePageForm({ parentPages, onPageCreated, keywordToIconMap }: CreatePageFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [pageImages, setPageImages] = useState<ImageItem[]>([]);
+  const [pageImages, setPageImages] = useState<UploaderImageItem[]>([]);
   const router = useRouter();
   const [selectedIcon, setSelectedIcon] = useState<string | undefined>(undefined);
   const [isParent, setIsParent] = useState(false);
@@ -131,6 +139,8 @@ export default function CreatePageForm({ parentPages, onPageCreated, keywordToIc
         return;
       }
       
+      const convertedImages = convertToAdminImageItem(pageImages);
+      
       await handleTranslateAndCreate(
         { 
           title: values.title, 
@@ -140,7 +150,7 @@ export default function CreatePageForm({ parentPages, onPageCreated, keywordToIc
         values.pageType,
         selectedParentPath || "/",
         uploadedImage,
-        pageImages,
+        convertedImages,
         () => {
           form.reset();
           setUploadedImage(null);
@@ -377,7 +387,6 @@ export default function CreatePageForm({ parentPages, onPageCreated, keywordToIc
                     Aggiungi immagini da mostrare all'interno della pagina.
                   </FormDescription>
                   <FormControl>
-                    {/* Fixed property name from setImages to onChange to match ImagesUploader component */}
                     <ImagesUploader images={pageImages} onChange={setPageImages} />
                   </FormControl>
                   <FormMessage />
