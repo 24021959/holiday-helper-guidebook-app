@@ -8,23 +8,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const SYSTEM_PROMPT = `Sei un assistente virtuale specializzato della Locanda dell'Angelo, una struttura ricettiva in Italia. Il tuo compito è fornire informazioni accurate e dettagliate agli ospiti, basandoti sui contenuti della base di conoscenza fornita.
+const SYSTEM_PROMPT = `Sei un assistente virtuale specializzato della Locanda dell'Angelo, una struttura ricettiva in Italia. 
+Il tuo compito è fornire informazioni accurate e utili agli ospiti, rispondendo in modo naturale e cortese.
 
 ISTRUZIONI IMPORTANTI:
-1. Rispondi SEMPRE in italiano con uno stile cordiale, professionale e dettagliato.
-2. Quando un utente fa una domanda, analizza attentamente tutte le informazioni disponibili nella base di conoscenza prima di rispondere.
-3. Utilizza ESCLUSIVAMENTE le informazioni presenti nella base di conoscenza fornita. Non inventare mai informazioni o dettagli che non sono esplicitamente menzionati.
-4. Quando fornisci una risposta, includi tutti i dettagli pertinenti come: orari, prezzi, localizzazioni, restrizioni e qualsiasi altra informazione utile.
-5. Personalizza sempre le tue risposte facendo riferimento alla "Locanda dell'Angelo" per creare un'esperienza personalizzata.
-6. Se una domanda riguarda un servizio tipico per un hotel (come WiFi, colazione, check-in), ma non trovi informazioni specifiche, verifica nella sezione "INFORMAZIONI STANDARD" che è stata aggiunta a molti documenti.
-7. Se dopo aver cercato ovunque, non trovi alcuna informazione pertinente per rispondere alla domanda, rispondi: "Mi dispiace, non ho informazioni specifiche su questo argomento. Ti consiglio di contattare direttamente la reception, che sarà lieta di assisterti."
+1. Rispondi SEMPRE in italiano con uno stile cordiale, professionale e conversazionale.
+2. Usa le informazioni presenti nella base di conoscenza per informare le tue risposte, ma NON citare direttamente il testo o menzionare "la base di conoscenza".
+3. Formula risposte naturali e fluide, come se fossi un receptionist umano che conosce bene la struttura.
+4. Se la domanda è ambigua, cerca di capire l'intento dell'utente basandoti sul contesto della conversazione.
+5. Fornisci dettagli rilevanti e specifici quando possibile (orari, prezzi, posizioni, etc.), ma in modo conversazionale.
+6. Personalizza le risposte facendo riferimento alla "Locanda dell'Angelo" per creare un'esperienza autentica.
+7. Se non hai informazioni sufficienti per rispondere a una domanda specifica, sii onesto e suggerisci di contattare direttamente la reception.
 
-PRIORITÀ NELLE INFORMAZIONI:
-1. Informazioni specifiche trovate direttamente nei documenti della base di conoscenza
-2. Informazioni standard fornite nella sezione "INFORMAZIONI STANDARD" 
-3. Informazioni generali che si applicano a tutti gli hotel solo se chiaramente pertinenti e non contraddicono nulla nella base di conoscenza
-
-Ricorda: il tuo obiettivo è aiutare gli ospiti a godere al massimo del loro soggiorno alla Locanda dell'Angelo fornendo informazioni accurate e utili.`;
+IMPORTANTE: Non limitarti a ripetere il testo che trovi nella base di conoscenza. Usa quelle informazioni per creare una risposta originale, naturale e utile, come farebbe un receptionist umano competente e cordiale.`;
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -374,70 +370,19 @@ serve(async (req) => {
     if (knowledgeBaseEmpty) {
       knowledgeContext = "ATTENZIONE: La base di conoscenza è vuota. Non sono disponibili informazioni specifiche sulla struttura Locanda dell'Angelo.";
     } else if (relevantContent.length > 0) {
-      // Score documents by relevance and order them
-      const scoredDocuments = relevantContent.map(doc => {
-        // Simple scoring based on content length and title match
-        let score = 5;  // Base score
-        
-        // Title matches add more weight
-        const lowerTitle = doc.title.toLowerCase();
-        const lowerMessage = message.toLowerCase();
-        
-        // Check for exact key phrases
-        if (lowerMessage.includes('wifi') && lowerTitle.includes('wifi')) score += 20;
-        if (lowerMessage.includes('wi-fi') && lowerTitle.includes('wifi')) score += 20;
-        if (lowerMessage.includes('wi fi') && lowerTitle.includes('wifi')) score += 20;
-        if (lowerMessage.includes('internet') && lowerTitle.includes('wifi')) score += 15;
-        if (lowerMessage.includes('colazione') && lowerTitle.includes('colazione')) score += 20;
-        if (lowerMessage.includes('ristorante') && lowerTitle.includes('ristorante')) score += 20;
-        if (lowerMessage.includes('reception') && lowerTitle.includes('reception')) score += 20;
-        if (lowerMessage.includes('camera') && lowerTitle.includes('camera')) score += 20;
-        if (lowerMessage.includes('parcheggio') && lowerTitle.includes('parcheggio')) score += 20;
-        if (lowerMessage.includes('orari') && (lowerTitle.includes('orari') || lowerTitle.includes('orario'))) score += 20;
-        if (lowerMessage.includes('bici') && (lowerTitle.includes('bici') || lowerTitle.includes('biciclette'))) score += 20;
-        if (lowerMessage.includes('deposito') && lowerTitle.includes('deposito')) score += 20;
-        if (lowerMessage.includes('internet') && lowerTitle.includes('wifi')) score += 20;
-        if (lowerMessage.includes('check') && (lowerTitle.includes('check') || lowerTitle.includes('reception'))) score += 20;
-        if (lowerMessage.includes('prenot') && lowerTitle.includes('ristorante')) score += 20;
-        
-        // Similarity score if available (from vector search)
-        if (doc.similarity) {
-          score += doc.similarity * 50; // Scale up to make it significant
-        }
-        
-        // Keywords in content
-        const content = doc.content.toLowerCase();
-        const messageWords = lowerMessage.split(/\s+/).filter(w => w.length > 3);
-        
-        for (const word of messageWords) {
-          const matches = (content.match(new RegExp(word, 'g')) || []).length;
-          score += matches * 3;  // 3 points per keyword match
-        }
-
-        // Special handling for "common questions" document
-        if (doc.page_id === '00000000-0000-0000-0000-000000000001') {
-          // Add a modest base score but not too high to allow more specific matches to rank higher
-          score += 10;
-        }
-        
-        return { ...doc, score };
-      }).sort((a, b) => b.score - a.score);
+      // Preparare i documenti per il contesto
+      knowledgeContext = "### INFORMAZIONI DISPONIBILI SULLA LOCANDA DELL'ANGELO:\n\n" + 
+        relevantContent.map(doc => {
+          return `DOCUMENTO: ${doc.title}\n${doc.content}\n`;
+        }).join("\n---\n\n");
       
-      // Use scored and ordered documents
-      knowledgeContext = "### INFORMAZIONI DALLA BASE DI CONOSCENZA DELLA LOCANDA DELL'ANGELO:\n\n" + 
-        scoredDocuments.map(doc => {
-          // Create a more structured format
-          const truncatedContent = truncateContent(doc.content, 2000);
-          return `DOCUMENTO [${doc.title}] (punteggio: ${doc.score.toFixed(1)}):\n${truncatedContent}\n`;
-        }).join("\n\n---\n\n");
-      
-      // Final safety check - truncate the entire context if still too large
+      // Troncare il contesto se troppo lungo
       knowledgeContext = truncateContent(knowledgeContext, 7000);
     } else {
       knowledgeContext = "ATTENZIONE: Non sono state trovate informazioni pertinenti nella base di conoscenza per rispondere alla domanda dell'utente.";
     }
 
-    const promptWithContext = `${knowledgeContext}\n\nDOMANDA DELL'UTENTE: ${message}\n\nRispondi alla domanda dell'utente utilizzando ESCLUSIVAMENTE le informazioni fornite sopra dalla base di conoscenza. Ricorda di essere cordiale, preciso e di integrare sempre tutte le informazioni pertinenti disponibili negli estratti forniti. Se la domanda riguarda un servizio tipico ma non trovi informazioni specifiche, cerca nella sezione INFORMAZIONI STANDARD che potrebbe essere presente nei documenti.`;
+    const promptWithContext = `${knowledgeContext}\n\nDOMANDA DELL'UTENTE: ${message}\n\nRispondi in modo naturale e conversazionale come un receptionist umano, utilizzando le informazioni sopra riportate per guidare la tua risposta. Ricorda di essere cordiale, preciso e di NON citare direttamente la fonte delle informazioni o menzionare "la base di conoscenza". Elabora le informazioni e fornisci una risposta originale, utile e personale.`;
     
     console.log("Number of relevant documents used for context:", relevantContent.length);
     
@@ -449,13 +394,13 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini', // Using the smaller model for cost and speed
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           ...formattedHistory,
           { role: 'user', content: promptWithContext }
         ],
-        temperature: 0.5, // Lower temperature for more factual responses
+        temperature: 0.7, // Aumentata leggermente per risposte più naturali e meno prevedibili
         max_tokens: 1000,
       }),
     });
