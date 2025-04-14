@@ -76,27 +76,41 @@ serve(async (req) => {
       try {
         console.log(`Processing page: ${page.title} (${page.id})`);
         
-        // Clean HTML tags and format content
+        // Extract and clean HTML tags for better content processing
         const cleanContent = (page.content || "")
-          .replace(/<[^>]*>/g, " ")
-          .replace(/<!--.*?-->/g, "")
-          .replace(/\s+/g, " ")
+          .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "") // Remove scripts
+          .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")    // Remove styles
+          .replace(/<[^>]*>/g, " ")  // Remove HTML tags
+          .replace(/<!--.*?-->/g, "") // Remove comments
+          .replace(/&nbsp;/g, " ")    // Replace &nbsp; with spaces
+          .replace(/\s+/g, " ")       // Replace multiple spaces with single space
           .trim();
         
-        // Extract list items if present
+        // Better extraction of list items if present
         let listItemsText = "";
         if (page.list_items && Array.isArray(page.list_items) && page.list_items.length > 0) {
-          listItemsText = "\n\nItems in this page:\n" + 
-            page.list_items.map((item, index) => 
-              `${index + 1}. ${item.name || ""} - ${item.description || ""}`
-            ).join("\n");
+          listItemsText = "\n\nElementi in questa pagina:\n" + 
+            page.list_items.map((item, index) => {
+              const name = item.name || "";
+              const description = item.description || "";
+              const price = item.price ? `Prezzo: ${item.price}` : "";
+              
+              return `${index + 1}. ${name} ${description} ${price}`.trim();
+            }).join("\n");
         }
 
-        // Format the content for the chatbot
+        // Enhanced content formatting with explicit sections
         const formattedContent = `
-Page Title: ${page.title || "Untitled"}
-URL Path: ${page.path || ""}
-Content: ${cleanContent}${listItemsText}
+TITOLO PAGINA: ${page.title || "Senza titolo"}
+URL PAGINA: ${page.path || ""}
+CONTENUTO PRINCIPALE:
+${cleanContent}
+${listItemsText}
+
+METADATI AGGIUNTIVI:
+Tipo di pagina: ${page.list_type || "Pagina informativa"}
+${page.is_submenu ? "Questa è una sottopagina del menu principale." : ""}
+${page.parent_path ? `Pagina genitore: ${page.parent_path}` : ""}
         `.trim();
 
         // Create embedding if OpenAI API key is available
@@ -132,7 +146,7 @@ Content: ${cleanContent}${listItemsText}
           .from('chatbot_knowledge')
           .insert({
             page_id: page.id,
-            title: page.title || "Untitled",
+            title: page.title || "Senza titolo",
             content: formattedContent,
             path: page.path || "",
             embedding: embedding
@@ -155,7 +169,7 @@ Content: ${cleanContent}${listItemsText}
     return new Response(
       JSON.stringify({ 
         success: successCount > 0,
-        message: `Successfully processed ${successCount} out of ${pages.length} pages for chatbot knowledge base`,
+        message: `Elaborazione completata. ${successCount} pagine aggiunte correttamente alla base di conoscenza del chatbot.`,
         errors: errorCount
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -166,7 +180,7 @@ Content: ${cleanContent}${listItemsText}
     return new Response(
       JSON.stringify({ 
         error: error.message,
-        details: "Unexpected error occurred. Check function logs for more information."
+        details: "Si è verificato un errore imprevisto. Controlla i log delle funzioni per ulteriori informazioni."
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

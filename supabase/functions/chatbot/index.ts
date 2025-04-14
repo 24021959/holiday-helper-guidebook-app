@@ -8,11 +8,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const SYSTEM_PROMPT = `Sei un assistente virtuale per una struttura ricettiva. Usa le informazioni fornite dalla base di conoscenza per rispondere alle domande degli utenti in modo preciso e cordiale. Rispondi sempre nella lingua dell'utente.
+const SYSTEM_PROMPT = `Sei un assistente virtuale per una struttura ricettiva. La tua funzione principale è fornire informazioni accurate e utili agli ospiti.
 
-Se non trovi informazioni sufficienti nella base di conoscenza, rispondi in modo educato dicendo che non hai abbastanza informazioni, e suggerisci di contattare direttamente la struttura. Non inventare mai informazioni che non sono presenti nella base di conoscenza.
+ISTRUZIONI IMPORTANTI:
+1. Rispondi SEMPRE nella lingua dell'utente (principalmente italiano).
+2. Basati ESCLUSIVAMENTE sulle informazioni fornite dalla base di conoscenza per rispondere.
+3. Se trovi informazioni nella base di conoscenza, usale per dare risposte precise e complete.
+4. Se NON trovi informazioni specifiche nella base di conoscenza, NON INVENTARE. Invece, rispondi cortesemente che non hai quell'informazione specifica e suggerisci di contattare la reception.
+5. Devi dare SEMPRE precedenza alle informazioni trovate nella base di conoscenza rispetto a conoscenze generali.
+6. Sii conciso ma completo. Formatta le tue risposte in modo chiaro e leggibile.
+7. Se l'utente chiede informazioni su orari, servizi, o altre caratteristiche della struttura, cerca attentamente nella base di conoscenza.
+8. Rispondi in modo cordiale e professionale, come faresti se fossi un receptionist della struttura.
 
-Sii conciso ma completo. Formatta le tue risposte in modo chiaro e leggibile, usando elenchi puntati o numerati quando appropriato.`;
+Ricorda: il tuo scopo è assistere gli ospiti utilizzando le informazioni disponibili sulla struttura. La precisione è fondamentale.`;
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -78,7 +86,9 @@ serve(async (req) => {
       } else {
         console.log(`Found ${count} documents in knowledge base`);
         
-        // First try using embeddings if available
+        // Combine multiple search approaches for better results
+        
+        // 1. First try using embeddings if available
         if (openAIApiKey) {
           try {
             // Create embedding for search query
@@ -104,7 +114,7 @@ serve(async (req) => {
                 {
                   query_embedding: embedding,
                   match_threshold: 0.5,
-                  match_count: 5
+                  match_count: 6  // Increase number of matches
                 }
               );
 
@@ -120,8 +130,8 @@ serve(async (req) => {
           }
         }
         
-        // If no results from vector search, fall back to keyword search
-        if (relevantContent.length === 0) {
+        // 2. If no results from vector search or very few results, add keyword search results
+        if (relevantContent.length < 3) {
           const cleanedMessage = message.toLowerCase()
             .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, " ")
             .replace(/\s{2,}/g, " ")
@@ -129,11 +139,12 @@ serve(async (req) => {
             
           const searchTerms = cleanedMessage.split(/\s+/)
             .filter(term => term.length > 2)
-            .slice(0, 5);
+            .slice(0, 8);  // Use more search terms
             
           console.log("Search terms:", searchTerms);
           
           if (searchTerms.length > 0) {
+            // Try more flexible search with OR conditions
             let searchConditions = [];
             
             for (const term of searchTerms) {
@@ -144,26 +155,76 @@ serve(async (req) => {
               .from('chatbot_knowledge')
               .select('*')
               .or(searchConditions.join(','))
-              .limit(5);
+              .limit(8);  // Increase limit
               
             if (!keywordError && keywordMatches && keywordMatches.length > 0) {
               console.log(`Found ${keywordMatches.length} documents using keyword search`);
-              relevantContent = keywordMatches;
-            } else {
-              console.log("No keyword search results, using most recent documents");
               
-              // Get most recent documents as fallback
-              const { data: recentDocs, error: recentError } = await supabaseClient
-                .from('chatbot_knowledge')
-                .select('*')
-                .order('created_at', { ascending: false })
-                .limit(3);
+              // Combine results if we already have some from embedding search
+              if (relevantContent.length > 0) {
+                // Filter out duplicates
+                const existingIds = new Set(relevantContent.map(doc => doc.id));
+                const uniqueKeywordMatches = keywordMatches.filter(doc => !existingIds.has(doc.id));
                 
-              if (!recentError && recentDocs && recentDocs.length > 0) {
-                console.log(`Using ${recentDocs.length} most recent documents as fallback`);
-                relevantContent = recentDocs;
+                relevantContent = [...relevantContent, ...uniqueKeywordMatches];
+                console.log(`Combined results: ${relevantContent.length} documents`);
+              } else {
+                relevantContent = keywordMatches;
+              }
+            } else {
+              console.log("No keyword search results, trying another approach");
+              
+              // Try a more aggressive search by searching each term individually
+              if (relevantContent.length === 0) {
+                const allResults = [];
+                
+                for (const term of searchTerms) {
+                  if (term.length < 3) continue;
+                  
+                  const { data: termMatches, error: termError } = await supabaseClient
+                    .from('chatbot_knowledge')
+                    .select('*')
+                    .ilike('content', `%${term}%`)
+                    .limit(3);
+                    
+                  if (!termError && termMatches && termMatches.length > 0) {
+                    allResults.push(...termMatches);
+                  }
+                }
+                
+                // Remove duplicates
+                const uniqueIds = new Set();
+                const uniqueResults = [];
+                
+                for (const doc of allResults) {
+                  if (!uniqueIds.has(doc.id)) {
+                    uniqueIds.add(doc.id);
+                    uniqueResults.push(doc);
+                  }
+                }
+                
+                if (uniqueResults.length > 0) {
+                  console.log(`Found ${uniqueResults.length} documents using individual term search`);
+                  relevantContent = uniqueResults;
+                } else {
+                  console.log("No individual term search results, using most recent documents");
+                }
               }
             }
+          }
+        }
+        
+        // 3. If still no results, get most recent documents as fallback
+        if (relevantContent.length === 0) {
+          const { data: recentDocs, error: recentError } = await supabaseClient
+            .from('chatbot_knowledge')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(5);
+            
+          if (!recentError && recentDocs && recentDocs.length > 0) {
+            console.log(`Using ${recentDocs.length} most recent documents as fallback`);
+            relevantContent = recentDocs;
           }
         }
       }
@@ -208,7 +269,7 @@ serve(async (req) => {
       knowledgeContext = "Non ci sono informazioni specifiche nella base di conoscenza per questa richiesta.";
     }
 
-    const promptWithContext = `${knowledgeContext}\n\nDomanda dell'utente: ${message}\n\nRispondi alla domanda dell'utente nella lingua "${language}" utilizzando le informazioni fornite sopra.`;
+    const promptWithContext = `${knowledgeContext}\n\nDomanda dell'utente: ${message}\n\nRispondi alla domanda dell'utente nella lingua "${language}" utilizzando le informazioni fornite sopra. Cerca di essere il più possibile preciso ed esaustivo utilizzando le informazioni disponibili.`;
     
     // Call OpenAI for a response
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
