@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useCallback } from "react";
-import { useRouter } from 'next-router-mock';
+import { useRouter } from '@/lib/next-router-mock';
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -56,7 +57,7 @@ import {
 } from "@/components/ui/resizable";
 import { Editor } from "@/components/editor/Editor";
 import { uploadImage } from "@/integrations/supabase/storage";
-import { ImagesUploader } from "../ImagesUploader";
+import { ImagesUploader } from "@/components/ImagesUploader";
 import { ImageItem } from "@/pages/Admin";
 
 const pageFormSchema = z.object({
