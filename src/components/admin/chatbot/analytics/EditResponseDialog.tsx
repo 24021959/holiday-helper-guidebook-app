@@ -63,11 +63,9 @@ const EditResponseDialog: React.FC<EditResponseDialogProps> = ({
         )}
         
         <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline">
-              Annulla
-            </Button>
-          </DialogClose>
+          <Button variant="outline" onClick={onClose}>
+            Annulla
+          </Button>
           <Button onClick={onSave}>
             Salva correzione
           </Button>
