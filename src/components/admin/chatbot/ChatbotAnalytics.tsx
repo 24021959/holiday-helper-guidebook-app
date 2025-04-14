@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -343,58 +344,57 @@ const ChatbotAnalytics: React.FC = () => {
           </TabsContent>
         </Tabs>
       </div>
-      
-      {isEditDialogOpen && (
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>Correggi risposta del chatbot</DialogTitle>
-              <DialogDescription>
-                Modifica la risposta del chatbot per migliorare la qualità delle risposte future.
-              </DialogDescription>
-            </DialogHeader>
-            
-            {selectedConversation && (
-              <div className="space-y-4 py-4">
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Domanda dell'utente:</h4>
-                  <div className="p-3 bg-gray-50 rounded-md border text-gray-700">
-                    {selectedConversation.user_message}
-                  </div>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Risposta originale:</h4>
-                  <div className="p-3 bg-gray-50 rounded-md border text-gray-700">
-                    {selectedConversation.bot_response}
-                  </div>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Risposta corretta:</h4>
-                  <Textarea
-                    value={editingResponse}
-                    onChange={(e) => setEditingResponse(e.target.value)}
-                    className="min-h-[100px]"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Questa correzione verrà usata per migliorare le risposte future del chatbot.
-                  </p>
+
+      {/* Dialog is rendered separately, outside the component flow */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Correggi risposta del chatbot</DialogTitle>
+            <DialogDescription>
+              Modifica la risposta del chatbot per migliorare la qualità delle risposte future.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedConversation && (
+            <div className="space-y-4 py-4">
+              <div>
+                <h4 className="text-sm font-medium mb-2">Domanda dell'utente:</h4>
+                <div className="p-3 bg-gray-50 rounded-md border text-gray-700">
+                  {selectedConversation.user_message}
                 </div>
               </div>
-            )}
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                Annulla
-              </Button>
-              <Button onClick={handleSaveCorrection}>
-                Salva correzione
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+              
+              <div>
+                <h4 className="text-sm font-medium mb-2">Risposta originale:</h4>
+                <div className="p-3 bg-gray-50 rounded-md border text-gray-700">
+                  {selectedConversation.bot_response}
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium mb-2">Risposta corretta:</h4>
+                <Textarea
+                  value={editingResponse}
+                  onChange={(e) => setEditingResponse(e.target.value)}
+                  className="min-h-[100px]"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Questa correzione verrà usata per migliorare le risposte future del chatbot.
+                </p>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button onClick={handleSaveCorrection}>
+              Salva correzione
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
