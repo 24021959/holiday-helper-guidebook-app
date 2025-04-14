@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagementView } from "./UserManagementView";
 import ChatbotSettings from "./ChatbotSettings";
 import FooterSettingsView from "./FooterSettingsView";
+import HeaderSettingsView from "./HeaderSettingsView";
 
 interface MasterPanelProps {}
 
@@ -26,6 +27,12 @@ const MasterPanel: React.FC<MasterPanelProps> = () => {
           className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
         >
           Gestione Utenti
+        </TabsTrigger>
+        <TabsTrigger
+          value="header-settings"
+          className="rounded-b-none data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-0 data-[state=active]:border-t-2 data-[state=active]:border-t-emerald-500"
+        >
+          Impostazioni Header
         </TabsTrigger>
         <TabsTrigger
           value="site-settings"
@@ -50,6 +57,10 @@ const MasterPanel: React.FC<MasterPanelProps> = () => {
       <div className="admin-tab-content bg-white shadow-md rounded-md p-6 border">
         <TabsContent value="user-management" className="mt-0">
           <UserManagementView />
+        </TabsContent>
+        
+        <TabsContent value="header-settings" className="mt-0">
+          <HeaderSettingsView />
         </TabsContent>
         
         <TabsContent value="site-settings" className="mt-0">

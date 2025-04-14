@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export interface HeaderSettings {
   logoUrl?: string | null;
@@ -16,8 +17,11 @@ export const useHeaderSettings = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchHeaderSettings = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      // Prima prova a ottenere da localStorage come fallback immediato
+      // First check localStorage as immediate fallback
       const savedHeaderSettings = localStorage.getItem("headerSettings");
       let localSettings = null;
       
@@ -25,13 +29,13 @@ export const useHeaderSettings = () => {
         try {
           localSettings = JSON.parse(savedHeaderSettings);
           setHeaderSettings(localSettings);
-          console.log("Utilizzo impostazioni header in cache:", localSettings);
+          console.log("Using cached header settings:", localSettings);
         } catch (err) {
-          console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
+          console.error("Error parsing settings from localStorage:", err);
         }
       }
       
-      // Poi prova a ottenere da Supabase
+      // Then try to fetch from Supabase
       const { data, error } = await supabase
         .from('header_settings')
         .select('*')
@@ -39,12 +43,12 @@ export const useHeaderSettings = () => {
         .maybeSingle();
         
       if (error) {
-        console.warn("Errore nel caricamento delle impostazioni header:", error);
+        console.warn("Error loading header settings:", error);
         
-        // Se abbiamo già impostato da localStorage, non mostrare errore
-        if (localSettings) return;
-        
-        setError("Impossibile connettersi al database. Controlla la tua connessione e riprova.");
+        // If we already have local settings, don't show error
+        if (!localSettings) {
+          setError("Impossibile connettersi al database. Controlla la tua connessione e riprova.");
+        }
         return;
       }
       
@@ -59,11 +63,24 @@ export const useHeaderSettings = () => {
         
         setHeaderSettings(newSettings);
         
-        // Salva in localStorage come backup
+        // Save in localStorage as backup
         localStorage.setItem("headerSettings", JSON.stringify(newSettings));
+        console.log("Updated header settings from database:", newSettings);
+      } else if (!localSettings) {
+        // No data found and no local settings
+        console.log("No header settings found");
+        setHeaderSettings({
+          headerColor: "bg-white",
+          establishmentName: "Locanda dell'Angelo",
+          logoPosition: "left",
+          logoSize: "medium"
+        });
       }
     } catch (error) {
-      console.error("Errore nel caricamento delle impostazioni header:", error);
+      console.error("Error loading header settings:", error);
+      if (!headerSettings || Object.keys(headerSettings).length === 0) {
+        setError("Si è verificato un errore durante il caricamento delle impostazioni. Riprova più tardi.");
+      }
     } finally {
       setLoading(false);
     }
@@ -75,7 +92,7 @@ export const useHeaderSettings = () => {
 
   return {
     headerSettings,
-    loading: loading,
+    loading,
     error,
     refreshHeaderSettings: fetchHeaderSettings
   };

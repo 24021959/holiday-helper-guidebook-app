@@ -2,7 +2,6 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import { Toaster } from 'sonner'
 
 const container = document.getElementById('root')
 if (container) {
@@ -10,7 +9,6 @@ if (container) {
   root.render(
     <>
       <App />
-      <Toaster position="top-right" richColors />
     </>
   )
 }

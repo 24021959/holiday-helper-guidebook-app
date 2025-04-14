@@ -4,58 +4,14 @@ import BackToMenu from "@/components/BackToMenu";
 import { Card } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { supabase } from "@/integrations/supabase/client";
+import { useHeaderSettings } from "@/hooks/useHeaderSettings";
 import { Loader2 } from "lucide-react";
 import TranslatedText from "@/components/TranslatedText";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-interface HeaderSettings {
-  logoUrl?: string | null;
-  headerColor?: string;
-  establishmentName?: string | null;
-}
-
 const Welcome: React.FC = () => {
-  const [headerSettings, setHeaderSettings] = useState<HeaderSettings>({});
-  const [loading, setLoading] = useState(true);
+  const { headerSettings, loading, error } = useHeaderSettings();
   const isMobile = useIsMobile();
-  
-  useEffect(() => {
-    const fetchHeaderSettings = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('header_settings')
-          .select('*')
-          .limit(1)
-          .single();
-          
-        if (error) throw error;
-        
-        if (data) {
-          setHeaderSettings({
-            logoUrl: data.logo_url,
-            headerColor: data.header_color,
-            establishmentName: data.establishment_name
-          });
-        }
-      } catch (error) {
-        console.error("Errore nel caricamento delle impostazioni header:", error);
-        
-        const savedHeaderSettings = localStorage.getItem("headerSettings");
-        if (savedHeaderSettings) {
-          try {
-            setHeaderSettings(JSON.parse(savedHeaderSettings));
-          } catch (err) {
-            console.error("Errore nel parsing delle impostazioni dal localStorage:", err);
-          }
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchHeaderSettings();
-  }, []);
   
   if (loading) {
     return (
@@ -64,6 +20,23 @@ const Welcome: React.FC = () => {
         <p className="mt-4 text-emerald-700">
           <TranslatedText text="Caricamento..." />
         </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100 p-4">
+        <div className="bg-red-50 text-red-800 p-6 rounded-lg max-w-md shadow-md">
+          <h2 className="font-bold text-xl mb-4">Errore</h2>
+          <p className="mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-red-100 hover:bg-red-200 text-red-800 px-4 py-2 rounded"
+          >
+            Riprova
+          </button>
+        </div>
       </div>
     );
   }

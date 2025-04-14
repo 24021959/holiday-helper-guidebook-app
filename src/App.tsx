@@ -18,7 +18,6 @@ import ChatbotBubble from "./components/ChatbotBubble";
 function App() {
   return (
     <TranslationProvider>
-      <Toaster position="top-right" />
       <Router>
         <Routes>
           {/* Index and system pages */}
@@ -61,6 +60,7 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
         <ChatbotBubble />
+        <Toaster position="top-right" richColors />
       </Router>
     </TranslationProvider>
   );
