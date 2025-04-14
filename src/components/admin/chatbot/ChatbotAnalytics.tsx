@@ -2,13 +2,12 @@
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format, subDays } from "date-fns";
+import { format } from "date-fns";
 import { toast } from "sonner";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -36,20 +35,17 @@ import {
 import { 
   Table, 
   TableBody, 
-  TableCaption, 
   TableCell, 
   TableHead, 
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, CheckCircle, HelpCircle, PieChart as PieChartIcon, MessageSquare } from "lucide-react";
+import { AlertCircle, CheckCircle, HelpCircle, MessageSquare } from "lucide-react";
 import { ChatbotConversation, ChatbotStats } from "@/hooks/chatbot/chatbotTypes";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 const COLORS = ['#4ade80', '#f87171', '#facc15', '#60a5fa'];
 
@@ -152,7 +148,7 @@ const ChatbotAnalytics: React.FC = () => {
                 <CardDescription>Numero di messaggi per giorno negli ultimi 30 giorni</CardDescription>
               </CardHeader>
               <CardContent className="h-[300px]">
-                {stats && stats.length > 0 && (
+                {stats && stats.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={[...stats].reverse()}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -172,8 +168,7 @@ const ChatbotAnalytics: React.FC = () => {
                       />
                     </LineChart>
                   </ResponsiveContainer>
-                )}
-                {(!stats || stats.length === 0) && (
+                ) : (
                   <div className="flex items-center justify-center h-full text-gray-400">
                     <p>Nessun dato disponibile</p>
                   </div>
@@ -187,7 +182,7 @@ const ChatbotAnalytics: React.FC = () => {
                 <CardDescription>Numero di conversazioni per giorno</CardDescription>
               </CardHeader>
               <CardContent className="h-[300px]">
-                {stats && stats.length > 0 && (
+                {stats && stats.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={[...stats].reverse()}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -206,8 +201,7 @@ const ChatbotAnalytics: React.FC = () => {
                       />
                     </BarChart>
                   </ResponsiveContainer>
-                )}
-                {(!stats || stats.length === 0) && (
+                ) : (
                   <div className="flex items-center justify-center h-full text-gray-400">
                     <p>Nessun dato disponibile</p>
                   </div>
@@ -344,53 +338,55 @@ const ChatbotAnalytics: React.FC = () => {
         </TabsContent>
       </Tabs>
       
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Correggi risposta del chatbot</DialogTitle>
-            <DialogDescription>
-              Modifica la risposta del chatbot per migliorare la qualità delle risposte future.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div>
-              <h4 className="text-sm font-medium mb-2">Domanda dell'utente:</h4>
-              <div className="p-3 bg-gray-50 rounded-md border text-gray-700">
-                {selectedConversation?.user_message}
+      {isEditDialogOpen && (
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Correggi risposta del chatbot</DialogTitle>
+              <DialogDescription>
+                Modifica la risposta del chatbot per migliorare la qualità delle risposte future.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div>
+                <h4 className="text-sm font-medium mb-2">Domanda dell'utente:</h4>
+                <div className="p-3 bg-gray-50 rounded-md border text-gray-700">
+                  {selectedConversation?.user_message}
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium mb-2">Risposta originale:</h4>
+                <div className="p-3 bg-gray-50 rounded-md border text-gray-700">
+                  {selectedConversation?.bot_response}
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium mb-2">Risposta corretta:</h4>
+                <Textarea
+                  value={editingResponse}
+                  onChange={(e) => setEditingResponse(e.target.value)}
+                  className="min-h-[100px]"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Questa correzione verrà usata per migliorare le risposte future del chatbot.
+                </p>
               </div>
             </div>
             
-            <div>
-              <h4 className="text-sm font-medium mb-2">Risposta originale:</h4>
-              <div className="p-3 bg-gray-50 rounded-md border text-gray-700">
-                {selectedConversation?.bot_response}
-              </div>
-            </div>
-            
-            <div>
-              <h4 className="text-sm font-medium mb-2">Risposta corretta:</h4>
-              <Textarea
-                value={editingResponse}
-                onChange={(e) => setEditingResponse(e.target.value)}
-                className="min-h-[100px]"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Questa correzione verrà usata per migliorare le risposte future del chatbot.
-              </p>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              Annulla
-            </Button>
-            <Button onClick={handleSaveCorrection}>
-              Salva correzione
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Annulla
+              </Button>
+              <Button onClick={handleSaveCorrection}>
+                Salva correzione
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
