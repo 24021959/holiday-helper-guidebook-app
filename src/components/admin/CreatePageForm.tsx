@@ -54,7 +54,6 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
   const [currentTab, setCurrentTab] = useState<string>("content");
   const [isCreating, setIsCreating] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
-  const [autoTranslate, setAutoTranslate] = useState(false);
   const { translateSequential } = useTranslation();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -395,41 +394,7 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
         }
       }
       
-      if (autoTranslate) {
-        doTranslate();
-      } else {
-        const { data: pagesData, error: fetchError } = await supabase
-          .from('custom_pages')
-          .select('*');
-      
-        if (fetchError) {
-          console.error("Errore nel recupero delle pagine:", fetchError);
-          throw fetchError;
-        }
-      
-        if (pagesData) {
-          const formattedPages = pagesData.map(page => ({
-            id: page.id,
-            title: page.title,
-            content: page.content,
-            path: page.path,
-            imageUrl: page.image_url,
-            icon: page.icon,
-            listType: page.list_type as "locations" | "activities" | "restaurants" | undefined,
-            listItems: page.list_items as { name: string; description?: string; phoneNumber?: string; mapsUrl?: string; }[] | undefined,
-            isSubmenu: page.is_submenu || false,
-            parentPath: page.parent_path || undefined,
-            pageImages: [],
-            published: page.published || false,
-            is_parent: false
-          }));
-        
-          onPageCreated(formattedPages);
-        
-          console.log("Lista pagine aggiornata:", formattedPages);
-          toast.success("Pagina creata con successo");
-        }
-      }
+      await doTranslate();
       
       form.reset();
       setUploadedImage(null);
@@ -439,7 +404,6 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
       setListType(undefined);
       setSelectedIcon("FileText");
       setPageImages([]);
-      setAutoTranslate(false);
       
     } catch (error) {
       console.error("Errore nella creazione della pagina:", error);
@@ -535,20 +499,6 @@ export const CreatePageForm: React.FC<CreatePageFormProps> = ({
               <p className="text-amber-800 font-medium">
                 Le pagine genitore non hanno contenuto proprio. Servono solo come contenitore per le sottopagine.
               </p>
-            </div>
-          )}
-          
-          {!isContentTabDisabled && (
-            <div className="flex items-center space-x-2 bg-blue-50 p-4 rounded-md border border-blue-100">
-              <Switch
-                id="auto-translate"
-                checked={autoTranslate}
-                onCheckedChange={setAutoTranslate}
-              />
-              <Label htmlFor="auto-translate" className="flex items-center gap-2 cursor-pointer">
-                <Globe className="h-4 w-4 text-blue-600" />
-                <span className="text-blue-800 font-medium">Crea automaticamente versioni tradotte (EN, FR, ES, DE)</span>
-              </Label>
             </div>
           )}
           
