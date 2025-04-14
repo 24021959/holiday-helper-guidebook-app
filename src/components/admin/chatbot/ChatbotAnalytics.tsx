@@ -338,7 +338,6 @@ const ChatbotAnalytics: React.FC = () => {
         </TabsContent>
       </Tabs>
       
-      {/* Important fix: Always render the Dialog component, but control it with the open prop */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
