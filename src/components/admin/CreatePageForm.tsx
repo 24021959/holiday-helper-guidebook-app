@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from '@/lib/next-router-mock';
 import { useForm, Controller } from "react-hook-form";
@@ -53,8 +54,8 @@ import {
 } from "@/components/ui/resizable";
 import { Editor } from "@/components/editor/Editor";
 import { uploadImage } from "@/integrations/supabase/storage";
-import { ImagesUploader } from "@/components/ImagesUploader";
-import { ImageItem } from "@/pages/Admin";
+// Fixed import statement to use default import
+import ImagesUploader, { ImageItem } from "@/components/ImagesUploader";
 
 const pageFormSchema = z.object({
   title: z.string().min(2, {
@@ -376,7 +377,8 @@ export default function CreatePageForm({ parentPages, onPageCreated, keywordToIc
                     Aggiungi immagini da mostrare all'interno della pagina.
                   </FormDescription>
                   <FormControl>
-                    <ImagesUploader images={pageImages} setImages={setPageImages} />
+                    {/* Fixed property name from setImages to onChange to match ImagesUploader component */}
+                    <ImagesUploader images={pageImages} onChange={setPageImages} />
                   </FormControl>
                   <FormMessage />
                 </div>
