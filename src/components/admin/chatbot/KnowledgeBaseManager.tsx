@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -11,7 +10,7 @@ const KnowledgeBaseManager: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [status, setStatus] = useState<{
+  const [status, setStatus<{
     exists: boolean;
     count: number;
     lastUpdated: string | null;
