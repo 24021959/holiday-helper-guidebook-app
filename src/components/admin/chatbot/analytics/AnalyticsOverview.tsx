@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
+import { MessageSquare, HelpCircle } from "lucide-react"; // Added missing icon imports
 import { ChatbotStats } from "@/hooks/chatbot/chatbotTypes";
 
 interface AnalyticsOverviewProps {
