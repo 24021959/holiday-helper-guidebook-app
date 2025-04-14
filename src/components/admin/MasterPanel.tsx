@@ -13,10 +13,10 @@ import ChatbotSettings from "./ChatbotSettings";
 import FooterSettingsView from "./FooterSettingsView";
 import { HeaderSettingsView } from "./HeaderSettingsView";
 
-interface MasterPanelProps {}
-
-const MasterPanel: React.FC<MasterPanelProps> = () => {
+const MasterPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("user-management");
+  const [uploadedLogo, setUploadedLogo] = useState<string | null>(null);
+  const [headerColor, setHeaderColor] = useState<string>("bg-gradient-to-r from-teal-500 to-emerald-600");
   
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -59,7 +59,12 @@ const MasterPanel: React.FC<MasterPanelProps> = () => {
         </TabsContent>
         
         <TabsContent value="header-settings" className="mt-0">
-          <HeaderSettingsView />
+          <HeaderSettingsView 
+            uploadedLogo={uploadedLogo}
+            setUploadedLogo={setUploadedLogo}
+            headerColor={headerColor}
+            setHeaderColor={setHeaderColor}
+          />
         </TabsContent>
         
         <TabsContent value="site-settings" className="mt-0">

@@ -591,248 +591,248 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
                 </TooltipProvider>
               </div>
             </div>
-            <div className="space-y-2">
-              <div className="flex flex-wrap gap-2 mb-2 w-full border-b pb-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleTextFormat('bold')}
-                        className="text-xs"
-                      >
-                        <Bold className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Grassetto</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2 mb-2 w-full border-b pb-2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleTextFormat('bold')}
+                          className="text-xs"
+                        >
+                          <Bold className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Grassetto</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleTextFormat('italic')}
+                          className="text-xs"
+                        >
+                          <Italic className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Corsivo</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleTextFormat('bulletList')}
+                          className="text-xs"
+                        >
+                          <List className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Elenco puntato</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleTextFormat('numberedList')}
+                          className="text-xs"
+                        >
+                          <ListOrdered className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Elenco numerato</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleTextFormat('heading1')}
+                          className="text-xs"
+                        >
+                          <Heading1 className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Titolo principale</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleTextFormat('heading2')}
+                          className="text-xs"
+                        >
+                          <Heading2 className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Sottotitolo</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleTextFormat('link')}
+                          className="text-xs"
+                        >
+                          <LinkIcon className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Inserisci link</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleTextFormat('quote')}
+                          className="text-xs"
+                        >
+                          <Quote className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Citazione</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleFormatClick('paragraph')}
+                          className="text-xs"
+                        >
+                          <Rows3 className="h-4 w-4 mr-1" />
+                          Separa in paragrafi
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Divide il testo selezionato in paragrafi dopo ogni punto</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleFormatClick('left')}
+                          className="text-xs"
+                        >
+                          <PanelLeft className="h-4 w-4 mr-1" />
+                          Allinea a sinistra
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Allinea il testo selezionato a sinistra</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleFormatClick('center')}
+                          className="text-xs"
+                        >
+                          <AlignCenter className="h-4 w-4 mr-1" />
+                          Centra
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Centra il testo selezionato</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleFormatClick('right')}
+                          className="text-xs"
+                        >
+                          <PanelRight className="h-4 w-4 mr-1" />
+                          Allinea a destra
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Allinea il testo selezionato a destra</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleTextFormat('italic')}
-                        className="text-xs"
-                      >
-                        <Italic className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Corsivo</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleTextFormat('bulletList')}
-                        className="text-xs"
-                      >
-                        <List className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Elenco puntato</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleTextFormat('numberedList')}
-                        className="text-xs"
-                      >
-                        <ListOrdered className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Elenco numerato</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleTextFormat('heading1')}
-                        className="text-xs"
-                      >
-                        <Heading1 className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Titolo principale</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleTextFormat('heading2')}
-                        className="text-xs"
-                      >
-                        <Heading2 className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Sottotitolo</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleTextFormat('link')}
-                        className="text-xs"
-                      >
-                        <LinkIcon className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Inserisci link</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleTextFormat('quote')}
-                        className="text-xs"
-                      >
-                        <Quote className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Citazione</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleFormatClick('paragraph')}
-                        className="text-xs"
-                      >
-                        <Rows3 className="h-4 w-4 mr-1" />
-                        Separa in paragrafi
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Divide il testo selezionato in paragrafi dopo ogni punto</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleFormatClick('left')}
-                        className="text-xs"
-                      >
-                        <PanelLeft className="h-4 w-4 mr-1" />
-                        Allinea a sinistra
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Allinea il testo selezionato a sinistra</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleFormatClick('center')}
-                        className="text-xs"
-                      >
-                        <AlignCenter className="h-4 w-4 mr-1" />
-                        Centra
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Centra il testo selezionato</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleFormatClick('right')}
-                        className="text-xs"
-                      >
-                        <PanelRight className="h-4 w-4 mr-1" />
-                        Allinea a destra
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Allinea il testo selezionato a destra</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              
-              <div className={`${showFullscreenPreview ? "grid grid-cols-1 md:grid-cols-2 gap-4" : ""}`}>
-                <div className={`${isEditorExpanded ? "h-[65vh]" : ""} ${viewMode === "visual" ? "editor-visual-mode" : "editor-code-mode"}`}>
+                <div className={`${isEditorExpanded ? "h-[65vh]" : ""}`}>
                   <FormControl>
                     <Textarea
                       {...field}
                       ref={textareaRef}
-                      className={`min-h-[350px] font-medium leading-relaxed p-4 resize-none ${isEditorExpanded ? "h-full" : ""}`}
+                      className={`min-h-[500px] font-medium leading-relaxed p-4 resize-none ${isEditorExpanded ? "h-full" : ""}`}
                       style={{ lineHeight: "1.8" }}
                       value={formatTextareaContent(field.value || "")}
                       onChange={(e) => {
@@ -841,72 +841,63 @@ export const PageContentSection: React.FC<PageContentSectionProps> = ({
                           handleContentChange(e.target.value);
                         }
                       }}
-                      expandable={true}
-                      viewMode={viewMode}
-                      onViewModeChange={handleViewModeChange}
-                      onUndo={handleUndo}
-                      onRedo={handleRedo}
                     />
                   </FormControl>
                 </div>
-                
-                {showFullscreenPreview && (
-                  <div>
-                    <div className="border rounded-md p-4 min-h-[350px] bg-white overflow-auto">
-                      <div 
-                        className="prose prose-sm max-w-none" 
-                        dangerouslySetInnerHTML={{ __html: previewContent }} 
-                      />
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1 text-center">Anteprima della formattazione</p>
-                  </div>
-                )}
               </div>
               
-              <div className="flex flex-wrap gap-2 sticky bottom-0 bg-white z-10 py-2">
+              <div className="bg-white border rounded-md p-6 min-h-[500px] overflow-y-auto">
+                <div 
+                  className="prose prose-sm max-w-none" 
+                  dangerouslySetInnerHTML={{ __html: previewContent }}
+                />
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-2 sticky bottom-0 bg-white z-10 py-2 mt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleInsertImageClick}
+                className="flex items-center"
+              >
+                <ImageIcon className="h-4 w-4 mr-2" />
+                Inserisci nuova immagine
+              </Button>
+              
+              {pageImages.length > 0 && (
                 <Button 
                   type="button" 
                   variant="outline" 
-                  onClick={handleInsertImageClick}
+                  onClick={handleInsertGalleryImageClick}
                   className="flex items-center"
                 >
                   <ImageIcon className="h-4 w-4 mr-2" />
-                  Inserisci nuova immagine
+                  Inserisci da galleria
                 </Button>
-                
-                {pageImages.length > 0 && (
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={handleInsertGalleryImageClick}
-                    className="flex items-center"
-                  >
-                    <ImageIcon className="h-4 w-4 mr-2" />
-                    Inserisci da galleria
-                  </Button>
-                )}
-
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={handleInsertMapClick}
-                  className="flex items-center"
-                >
-                  <MapPin className="h-4 w-4 mr-2" />
-                  Inserisci link Google Maps
-                </Button>
-
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={handleInsertPhoneClick}
-                  className="flex items-center"
-                >
-                  <Phone className="h-4 w-4 mr-2" />
-                  Inserisci numero di telefono
-                </Button>
-              </div>
+              )}
+              
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleInsertMapClick}
+                className="flex items-center"
+              >
+                <MapPin className="h-4 w-4 mr-2" />
+                Inserisci link Google Maps
+              </Button>
+              
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleInsertPhoneClick}
+                className="flex items-center"
+              >
+                <Phone className="h-4 w-4 mr-2" />
+                Inserisci numero di telefono
+              </Button>
             </div>
+            
             <FormMessage />
           </FormItem>
         )}
