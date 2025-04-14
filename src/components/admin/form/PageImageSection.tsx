@@ -21,7 +21,7 @@ export const PageImageSection: React.FC<PageImageSectionProps> = ({
             <img 
               src={imageUrl} 
               alt="Anteprima" 
-              className="w-full max-h-32 object-cover rounded-md"
+              className="w-full h-auto object-contain max-h-[300px] rounded-md"
             />
           </div>
         )}

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Card,
@@ -12,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagementView } from "./UserManagementView";
 import ChatbotSettings from "./ChatbotSettings";
 import FooterSettingsView from "./FooterSettingsView";
-import HeaderSettingsView from "./HeaderSettingsView";
+import { HeaderSettingsView } from "./HeaderSettingsView";
 
 interface MasterPanelProps {}
 
