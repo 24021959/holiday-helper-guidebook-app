@@ -53,8 +53,8 @@ import {
 } from "@/components/ui/resizable";
 import { Editor } from "@/components/editor/Editor";
 import { uploadImage } from "@/integrations/supabase/storage";
-import { ImagesUploader } from "@/components/ImagesUploader";
-import { ImageItem } from "@/pages/Admin";
+import ImagesUploader, { ImageItem } from "@/components/ImagesUploader";
+import { ImageItem as AdminImageItem } from "@/pages/Admin";
 
 const pageFormSchema = z.object({
   title: z.string().min(2, {
