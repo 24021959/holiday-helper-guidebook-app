@@ -87,6 +87,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
     images: ImageItem[]
   ) => {
     try {
+      console.log(`Saving page: ${title}, path: ${path}, pageType: ${pageType}, parentPath: ${parentPath}`);
       const pageId = uuidv4();
       const formattedContent = formatPageContent(content, images);
 
@@ -195,6 +196,8 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         ? `${values.parentPath}/${sanitizedTitle}`
         : `/${sanitizedTitle}`;
 
+      console.log(`Creating page with path: ${finalPath}, type: ${values.pageType}, parentPath: ${values.parentPath || 'none'}`);
+      
       // Save the Italian version first (main version)
       await saveNewPage(
         values.title,
@@ -221,9 +224,13 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
       for (const lang of targetLangs) {
         if (translations[lang]) {
           const translatedPath = `/${lang}${finalPath}`;
-          const translatedParentPath = values.pageType === "submenu" ? 
-            (values.parentPath?.startsWith(`/${lang}`) ? values.parentPath : `/${lang}${values.parentPath}`) : 
-            null;
+          let translatedParentPath = null;
+          
+          if (values.pageType === "submenu" && values.parentPath) {
+            translatedParentPath = `/${lang}${values.parentPath}`;
+          }
+          
+          console.log(`Creating translated page: ${lang}, path: ${translatedPath}, parentPath: ${translatedParentPath || 'none'}`);
           
           await saveNewPage(
             translations[lang].title,

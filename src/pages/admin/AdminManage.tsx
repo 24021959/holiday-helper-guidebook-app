@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageData } from "@/types/page.types";
@@ -51,8 +52,13 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
       let query = supabase.from('custom_pages').select('*');
       
       if (langCode === 'it') {
-        query = query.or(`path.not.like./%/%, path.like./it/%`);
+        // For Italian, filter out pages that have language prefix
+        query = query.not('path', 'like', '/en/%')
+                     .not('path', 'like', '/fr/%')
+                     .not('path', 'like', '/es/%')
+                     .not('path', 'like', '/de/%');
       } else {
+        // For other languages, get pages with that language prefix
         query = query.like('path', `/${langCode}/%`);
       }
 

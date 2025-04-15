@@ -38,6 +38,8 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
     return isItalianPage && isParentPage;
   });
 
+  console.log("Filtered Italian parent pages in PageTypeSection:", filteredParentPages);
+
   return (
     <>
       <FormField
@@ -48,6 +50,7 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
             <FormLabel>Tipo di Pagina</FormLabel>
             <Select
               onValueChange={(value) => {
+                console.log(`Setting page type to: ${value}`);
                 setPageType(value as PageType);
                 field.onChange(value);
               }}
@@ -60,7 +63,7 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
               </FormControl>
               <SelectContent>
                 <SelectItem value="normal">Normale</SelectItem>
-                <SelectItem value="submenu">Sottomenu</SelectItem>
+                <SelectItem value="submenu">Sottopagina</SelectItem>
                 <SelectItem value="parent">Pagina Genitore</SelectItem>
               </SelectContent>
             </Select>
@@ -78,6 +81,7 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
               <FormLabel>Pagina Genitore</FormLabel>
               <Select
                 onValueChange={(value) => {
+                  console.log(`Setting parent path to: ${value}`);
                   setParentPath(value);
                   field.onChange(value);
                 }}
