@@ -18,7 +18,7 @@ export const usePreviewWindow = ({
   onClose,
   openInNewWindow = false
 }: PreviewWindowProps): boolean => {
-  const [shouldRenderDialog, setShouldRenderDialog] = useState<boolean>(false);
+  const [shouldRenderDialog, setShouldRenderDialog] = useState<boolean>(true);
   const windowRef = useRef<Window | null>(null);
   const intervalRef = useRef<number | null>(null);
   
@@ -43,7 +43,7 @@ export const usePreviewWindow = ({
     
     // Se il dialog non è aperto, resettiamo tutto
     if (!isOpen) {
-      setShouldRenderDialog(false);
+      setShouldRenderDialog(true);
       cleanupWindow();
       return;
     }
@@ -69,8 +69,6 @@ export const usePreviewWindow = ({
           
           // Imposta titolo
           newWindow.document.title = title || 'Anteprima';
-          
-          return cleanupWindow;
         } else {
           // Fallback a dialog se la creazione finestra fallisce
           console.warn("Cannot open a new window. Showing dialog instead.");
