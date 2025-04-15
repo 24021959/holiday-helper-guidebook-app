@@ -1,49 +1,56 @@
 
-import { useEffect } from "react";
-import { generatePreviewHTML } from "@/utils/previewHtmlTemplate";
+import { useState, useEffect } from "react";
 
-interface UsePreviewWindowProps {
+interface PreviewWindowProps {
   isOpen: boolean;
   title: string;
   onClose: () => void;
-  openInNewWindow: boolean;
+  openInNewWindow?: boolean;
 }
 
-/**
- * Hook to manage opening content in a new window
- */
-export const usePreviewWindow = ({ 
-  isOpen, 
-  title, 
-  onClose, 
-  openInNewWindow 
-}: UsePreviewWindowProps) => {
+export const usePreviewWindow = ({
+  isOpen,
+  title,
+  onClose,
+  openInNewWindow = false
+}: PreviewWindowProps): boolean => {
+  const [shouldRenderDialog, setShouldRenderDialog] = useState(true);
+  
   useEffect(() => {
     if (isOpen && openInNewWindow) {
-      // Get content from the prose element
-      const contentHtml = document.querySelector('.prose')?.innerHTML || '';
+      // Apre una nuova finestra per l'anteprima
+      const previewWindow = window.open('', '_blank');
       
-      // Generate the preview HTML
-      const previewHTML = generatePreviewHTML(title, contentHtml);
-      
-      // Open a new window and write the HTML
-      const previewWindow = window.open('', '_blank', 'width=1024,height=768');
       if (previewWindow) {
-        previewWindow.document.write(previewHTML);
-        previewWindow.document.close();
+        // Set dialog rendering to false since we're opening in new window
+        setShouldRenderDialog(false);
         
-        // Close the dialog in the main page
-        onClose();
+        // When the preview window is closed, we need to notify our component
+        const checkIfClosed = setInterval(() => {
+          if (previewWindow.closed) {
+            clearInterval(checkIfClosed);
+            onClose();
+            setShouldRenderDialog(true); // Reset for future openings
+          }
+        }, 500);
         
-        // When the window is closed, execute onClose
-        previewWindow.onbeforeunload = () => {
-          onClose();
-          return null;
+        // Clean up on component unmount
+        return () => {
+          clearInterval(checkIfClosed);
+          if (!previewWindow.closed) {
+            previewWindow.close();
+          }
         };
+      } else {
+        // If window couldn't be opened (popup blocked), fallback to dialog
+        console.warn("Impossibile aprire una nuova finestra. Mostrando il dialog invece.");
+        setShouldRenderDialog(true);
       }
+    } else {
+      // For normal dialog mode or when closed
+      setShouldRenderDialog(isOpen);
     }
-  }, [isOpen, openInNewWindow, title, onClose]);
-
-  // Return true if we should render the dialog, false otherwise
-  return !openInNewWindow;
+  }, [isOpen, onClose, openInNewWindow]);
+  
+  return shouldRenderDialog;
 };
