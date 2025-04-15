@@ -39,7 +39,8 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
       url: img.url,
       position: img.position,
       caption: img.caption || "",
-      type: "image" as const
+      type: "image" as const,
+      width: "100%"
     })) || [],
     pageType: pageToEdit?.is_parent ? "parent" : pageToEdit?.isSubmenu ? "submenu" : "normal",
     parentPath: pageToEdit?.parentPath

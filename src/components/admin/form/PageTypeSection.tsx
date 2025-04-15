@@ -23,6 +23,12 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
   parentPages,
   control
 }) => {
+  // Filter for Italian parent pages only (no language prefix and is_parent true)
+  const filteredParentPages = parentPages.filter(page => 
+    !page.path.match(/^\/[a-z]{2}\//) && // No language prefix
+    page.is_parent // Is a parent page
+  );
+
   return (
     <>
       <FormField
@@ -68,13 +74,16 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {parentPages.map((page) => (
+                  {filteredParentPages.map((page) => (
                     <SelectItem key={page.path} value={page.path}>
                       {page.title}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <FormDescription>
+                Seleziona una pagina genitore italiana
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -89,7 +98,7 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
             <FormItem>
               <FormLabel>Percorso della Pagina Genitore</FormLabel>
               <FormControl>
-                <Input placeholder="es. /it/pagina-genitore" {...field} />
+                <Input placeholder="es. /pagina-genitore" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -99,3 +108,4 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
     </>
   );
 };
+
