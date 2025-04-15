@@ -1,6 +1,6 @@
 
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { VisualEditor } from "@/components/admin/VisualEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { usePageCreation } from "@/hooks/usePageCreation";
 import { ImageItem } from "@/types/image.types";
 import { PageData } from "@/types/page.types";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface PageContent {
   title: string;
@@ -49,6 +50,7 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
   }));
 
   const [uploadedImage, setUploadedImage] = useState<string | null>(pageToEdit?.imageUrl || null);
+  const [parentPages, setParentPages] = useState<PageData[]>([]);
   const { handleTranslateAndCreate, isCreating, isTranslating } = usePageCreation({
     onPageCreated: (pages) => {
       setPageContent({
@@ -62,6 +64,43 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
       toast.success(pageToEdit ? "Pagina aggiornata con successo!" : "Pagina creata con successo!");
     }
   });
+
+  // Fetch parent pages
+  useEffect(() => {
+    const fetchParentPages = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('custom_pages')
+          .select('*')
+          .eq('is_parent', true);
+
+        if (error) throw error;
+
+        if (data) {
+          const formattedPages = data.map(page => ({
+            id: page.id,
+            title: page.title,
+            content: page.content,
+            path: page.path,
+            imageUrl: page.image_url,
+            icon: page.icon,
+            listType: page.list_type as "locations" | "activities" | "restaurants" | undefined,
+            listItems: page.list_items,
+            isSubmenu: page.is_submenu || false,
+            parentPath: page.parent_path || undefined,
+            pageImages: [],
+            published: page.published,
+            is_parent: true
+          }));
+          setParentPages(formattedPages);
+        }
+      } catch (error) {
+        console.error("Error fetching parent pages:", error);
+      }
+    };
+
+    fetchParentPages();
+  }, []);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPageContent(prev => ({
@@ -193,9 +232,17 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
                     <SelectValue placeholder="Seleziona la pagina master" />
                   </SelectTrigger>
                   <SelectContent>
-                    {/* We'll need to fetch and populate parent pages here */}
-                    <SelectItem value="/page1">Pagina 1</SelectItem>
-                    <SelectItem value="/page2">Pagina 2</SelectItem>
+                    {parentPages.length > 0 ? (
+                      parentPages.map(page => (
+                        <SelectItem key={page.path} value={page.path}>
+                          {page.title}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="" disabled>
+                        Nessuna pagina master disponibile
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

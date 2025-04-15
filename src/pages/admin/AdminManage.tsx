@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageData } from "@/types/page.types";
@@ -147,7 +146,7 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
     <div className="p-6">
       <div className="mb-6">
         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Gestione Pagine</h2>
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-6 flex-wrap">
           {languages.map((lang) => (
             <Button
               key={lang.code}
