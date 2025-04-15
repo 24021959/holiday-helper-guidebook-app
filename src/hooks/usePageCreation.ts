@@ -1,24 +1,13 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTranslation } from "@/context/TranslationContext";
 import { v4 as uuidv4 } from "uuid";
 import { ImageItem } from "@/types/image.types";
+import { PageFormValues } from "@/types/form.types";
 
 interface UsePageCreationProps {
   onPageCreated: (pages: any[]) => void;
-}
-
-interface SavePageData {
-  title: string;
-  content: string;
-  path: string;
-  imageUrl: string | null;
-  icon: string;
-  pageType: "normal" | "submenu" | "parent";
-  parentPath: string | null;
-  is_parent?: boolean;
 }
 
 export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
@@ -51,27 +40,43 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
     return enhancedContent;
   };
 
-  const saveNewPage = async (pageData: SavePageData) => {
+  const saveNewPage = async (
+    title: string,
+    content: string,
+    path: string,
+    imageUrl: string | null,
+    icon: string,
+    pageType: "normal" | "submenu" | "parent",
+    parentPath: string | null,
+    images: ImageItem[]
+  ) => {
     try {
+      const pageId = uuidv4();
+      const formattedContent = formatPageContent(content, images);
+
+      // Check if page already exists
       const { data: existingPage } = await supabase
         .from('custom_pages')
         .select('id')
-        .eq('path', pageData.path)
+        .eq('path', path)
         .maybeSingle();
+
+      const pageData = {
+        title,
+        content: formattedContent,
+        path,
+        image_url: imageUrl,
+        icon,
+        is_submenu: pageType === "submenu",
+        parent_path: pageType === "submenu" ? parentPath : null,
+        published: true,
+        is_parent: pageType === "parent"
+      };
 
       if (existingPage) {
         const { error: updateError } = await supabase
           .from('custom_pages')
-          .update({
-            title: pageData.title,
-            content: pageData.content,
-            image_url: pageData.imageUrl,
-            icon: pageData.icon,
-            is_submenu: pageData.pageType === "submenu",
-            parent_path: pageData.pageType === "submenu" ? pageData.parentPath : null,
-            is_parent: pageData.pageType === "parent" || pageData.is_parent || false,
-            updated_at: new Date().toISOString()
-          })
+          .update(pageData)
           .eq('id', existingPage.id);
           
         if (updateError) throw updateError;
@@ -79,15 +84,8 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         const { error } = await supabase
           .from('custom_pages')
           .insert({
-            title: pageData.title,
-            content: pageData.content,
-            path: pageData.path,
-            image_url: pageData.imageUrl,
-            icon: pageData.icon,
-            is_submenu: pageData.pageType === "submenu",
-            parent_path: pageData.pageType === "submenu" ? pageData.parentPath : null,
-            published: true,
-            is_parent: pageData.pageType === "parent" || pageData.is_parent || false,
+            id: pageId,
+            ...pageData,
             updated_at: new Date().toISOString()
           });
 
@@ -98,43 +96,39 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
       const { data: existingIcon } = await supabase
         .from('menu_icons')
         .select('*')
-        .eq('path', pageData.path)
+        .eq('path', path)
         .maybeSingle();
+
+      const menuData = {
+        label: title,
+        icon,
+        bg_color: 'bg-blue-200',
+        is_submenu: pageType === "submenu",
+        parent_path: pageType === "submenu" ? parentPath : null,
+        published: true,
+        is_parent: pageType === "parent",
+        updated_at: new Date().toISOString()
+      };
 
       if (existingIcon) {
         const { error: iconError } = await supabase
           .from('menu_icons')
-          .update({
-            label: pageData.title,
-            icon: pageData.icon,
-            is_submenu: pageData.pageType === "submenu",
-            parent_path: pageData.pageType === "submenu" ? pageData.parentPath : null,
-            published: true,
-            is_parent: pageData.pageType === "parent" || pageData.is_parent || false,
-            updated_at: new Date().toISOString()
-          })
-          .eq('path', pageData.path);
+          .update(menuData)
+          .eq('path', path);
 
         if (iconError) throw iconError;
       } else {
         const { error: iconError } = await supabase
           .from('menu_icons')
           .insert({
-            path: pageData.path,
-            label: pageData.title,
-            icon: pageData.icon,
-            bg_color: 'bg-blue-200',
-            is_submenu: pageData.pageType === "submenu",
-            parent_path: pageData.pageType === "submenu" ? pageData.parentPath : null,
-            published: true,
-            is_parent: pageData.pageType === "parent" || pageData.is_parent || false,
-            updated_at: new Date().toISOString()
+            path,
+            ...menuData
           });
 
         if (iconError) throw iconError;
       }
 
-      // Fetch updated pages after saving
+      // Fetch updated pages
       const { data: updatedPages, error: fetchError } = await supabase
         .from('custom_pages')
         .select('*')
@@ -150,9 +144,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
   };
 
   const handleTranslateAndCreate = async (
-    values: { title: string; content: string; icon: string },
-    pageType: "normal" | "submenu" | "parent",
-    parentPath: string,
+    values: PageFormValues,
     uploadedImage: string | null,
     pageImages: ImageItem[],
     onSuccess: () => void
@@ -161,60 +153,57 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
       setIsCreating(true);
       setIsTranslating(true);
       
-      const pageId = uuidv4();
       const sanitizedTitle = values.title
         .toLowerCase()
         .replace(/[^\w\s]/gi, '')
         .replace(/\s+/g, '-');
       
-      const finalPath = pageType === "submenu" 
-        ? `${parentPath}/${sanitizedTitle}` 
+      const finalPath = values.pageType === "submenu" && values.parentPath
+        ? `${values.parentPath}/${sanitizedTitle}`
         : `/${sanitizedTitle}`;
-      
-      const formattedContent = pageType === "parent" 
-        ? "" 
-        : formatPageContent(values.content, pageImages);
 
       toast.info("Avvio traduzione automatica in tutte le lingue...");
 
       const targetLangs: ("en" | "fr" | "es" | "de")[] = ['en', 'fr', 'es', 'de'];
       
       // First save the Italian version
-      await saveNewPage({
-        title: values.title,
-        content: formattedContent,
-        path: finalPath,
-        imageUrl: pageType === "parent" ? null : uploadedImage,
-        icon: values.icon,
-        pageType,
-        parentPath: pageType === "submenu" ? parentPath : null,
-        is_parent: pageType === "parent"
-      });
+      await saveNewPage(
+        values.title,
+        values.content,
+        finalPath,
+        uploadedImage,
+        values.icon,
+        values.pageType,
+        values.pageType === "submenu" ? values.parentPath || null : null,
+        pageImages
+      );
 
       // Then translate and save for each target language
-      const translations = await translateSequential(
-        values.content,
-        values.title,
-        targetLangs
-      );
-      
-      for (const lang of targetLangs) {
-        if (translations[lang]) {
-          const translatedPath = `/${lang}${finalPath}`;
-          await saveNewPage({
-            title: translations[lang].title,
-            content: translations[lang].content,
-            path: translatedPath,
-            imageUrl: uploadedImage,
-            icon: values.icon,
-            pageType,
-            parentPath: pageType === "submenu" ? 
-              (parentPath.startsWith(`/${lang}`) ? parentPath : `/${lang}${parentPath}`) : 
-              null,
-            is_parent: pageType === "parent"
-          });
-          
-          toast.success(`Pagina tradotta in ${lang.toUpperCase()} e salvata con successo`);
+      if (values.pageType !== "parent") {
+        const translations = await translateSequential(
+          values.content,
+          values.title,
+          targetLangs
+        );
+        
+        for (const lang of targetLangs) {
+          if (translations[lang]) {
+            const translatedPath = `/${lang}${finalPath}`;
+            await saveNewPage(
+              translations[lang].title,
+              translations[lang].content,
+              translatedPath,
+              uploadedImage,
+              values.icon,
+              values.pageType,
+              values.pageType === "submenu" ? 
+                (values.parentPath?.startsWith(`/${lang}`) ? values.parentPath : `/${lang}${values.parentPath}`) : 
+                null,
+              pageImages
+            );
+            
+            toast.success(`Pagina tradotta in ${lang.toUpperCase()} e salvata con successo`);
+          }
         }
       }
 
@@ -227,25 +216,11 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
       if (fetchError) throw fetchError;
       
       if (pagesData) {
-        const formattedPages = pagesData.map(page => ({
-          id: page.id,
-          title: page.title,
-          content: page.content,
-          path: page.path,
-          imageUrl: page.image_url,
-          icon: page.icon,
-          listType: page.list_type as "locations" | "activities" | "restaurants" | undefined,
-          listItems: page.list_items as { name: string; description?: string; phoneNumber?: string; mapsUrl?: string; }[] | undefined,
-          isSubmenu: page.is_submenu || false,
-          parentPath: page.parent_path || undefined,
-          pageImages: [],
-          published: page.published || false,
-          is_parent: page.is_parent || false
-        }));
-        
-        onPageCreated(formattedPages);
+        onPageCreated(pagesData);
         toast.success("Pagina creata con successo");
-        toast.info("Traduzioni completate. Vai alla pagina menu per vedere tutte le pagine");
+        if (values.pageType !== "parent") {
+          toast.info("Traduzioni completate. Vai alla pagina menu per vedere tutte le pagine");
+        }
         onSuccess();
       }
       
