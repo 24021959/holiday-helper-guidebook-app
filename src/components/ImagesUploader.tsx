@@ -6,18 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { uploadImage } from '@/integrations/supabase/storage';
 import { toast } from 'sonner';
-
-export interface ImageItem {
-  id: string;
-  url: string;
-  position: 'center' | 'top' | 'bottom';
-  caption: string;
-  type?: string;
-}
+import { ImageUploadItem } from '@/types/image.types';
 
 interface ImagesUploaderProps {
-  images: ImageItem[];
-  onChange: (images: ImageItem[]) => void;
+  images: ImageUploadItem[];
+  onChange: (images: ImageUploadItem[]) => void;
   maxImages?: number;
 }
 
@@ -67,7 +60,7 @@ const ImagesUploader: React.FC<ImagesUploaderProps> = ({
     onChange(images.filter(img => img.id !== id));
   }, [images, onChange]);
 
-  const handleChangePosition = useCallback((id: string, position: 'center' | 'top' | 'bottom') => {
+  const handleChangePosition = useCallback((id: string, position: 'left' | 'center' | 'right' | 'full') => {
     onChange(images.map(img => 
       img.id === id ? { ...img, position } : img
     ));
@@ -132,11 +125,7 @@ const ImagesUploader: React.FC<ImagesUploaderProps> = ({
                 <img
                   src={image.url}
                   alt={image.caption || 'Immagine senza didascalia'}
-                  className={`w-full h-full object-cover ${
-                    image.position === 'top' ? 'object-top' :
-                    image.position === 'bottom' ? 'object-bottom' :
-                    'object-center'
-                  }`}
+                  className="w-full h-full object-cover"
                 />
                 <button
                   type="button"
@@ -169,11 +158,11 @@ const ImagesUploader: React.FC<ImagesUploaderProps> = ({
                     <Button
                       type="button"
                       size="sm"
-                      variant={image.position === 'top' ? 'default' : 'outline'}
-                      className={image.position === 'top' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}
-                      onClick={() => handleChangePosition(image.id, 'top')}
+                      variant={image.position === 'left' ? 'default' : 'outline'}
+                      className={image.position === 'left' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}
+                      onClick={() => handleChangePosition(image.id, 'left')}
                     >
-                      Top
+                      Sinistra
                     </Button>
                     <Button
                       type="button"
@@ -187,11 +176,20 @@ const ImagesUploader: React.FC<ImagesUploaderProps> = ({
                     <Button
                       type="button"
                       size="sm"
-                      variant={image.position === 'bottom' ? 'default' : 'outline'}
-                      className={image.position === 'bottom' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}
-                      onClick={() => handleChangePosition(image.id, 'bottom')}
+                      variant={image.position === 'right' ? 'default' : 'outline'}
+                      className={image.position === 'right' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}
+                      onClick={() => handleChangePosition(image.id, 'right')}
                     >
-                      Bottom
+                      Destra
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={image.position === 'full' ? 'default' : 'outline'}
+                      className={image.position === 'full' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}
+                      onClick={() => handleChangePosition(image.id, 'full')}
+                    >
+                      Pieno
                     </Button>
                   </div>
                 </div>

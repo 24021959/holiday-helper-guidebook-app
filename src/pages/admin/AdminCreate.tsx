@@ -38,7 +38,7 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
     content: pageToEdit?.content || "",
     images: pageToEdit?.pageImages.map(img => ({
       url: img.url,
-      position: (img.position === "top" || img.position === "bottom") ? "center" : img.position as "left" | "center" | "right" | "full",
+      position: img.position,
       caption: img.caption || "",
       type: "image" as const
     })) || [],

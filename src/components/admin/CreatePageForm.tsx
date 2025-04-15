@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useRouter } from '@/lib/next-router-mock';
 import { useForm } from "react-hook-form";
@@ -52,8 +53,7 @@ import {
 import { Editor } from "@/components/editor/Editor";
 import { uploadImage } from "@/integrations/supabase/storage";
 import ImagesUploader from "@/components/ImagesUploader";
-import { ImageItem } from "@/types/image.types";
-import { ImageUploadItem } from "@/types/image.types";
+import { ImageItem, ImageUploadItem } from "@/types/image.types";
 import { useToast } from "@/hooks/use-toast";
 
 const pageFormSchema = z.object({
@@ -88,6 +88,7 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mainImage, setMainImage] = useState<string | null>(null);
   const [pageImages, setPageImages] = useState<ImageUploadItem[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
   const [selectedIcon, setSelectedIcon] = useState<string | undefined>(undefined);
@@ -137,10 +138,6 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
   const handleIconSelect = (icon: string) => {
     setSelectedIcon(icon);
     setValue("icon", icon);
-  };
-
-  const handleRemoveImage = () => {
-    setUploadedImage(null);
   };
 
   const onSubmit = async (values: z.infer<typeof pageFormSchema>) => {
@@ -365,13 +362,13 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
                         asChild
                       >
                         <label htmlFor="image-upload" className="cursor-pointer">
-                          {isSubmitting ? "Caricando..." : "Carica Immagine"}
+                          {isUploading ? "Caricando..." : "Carica Immagine"}
                         </label>
                       </Button>
-                      {uploadedImage && (
+                      {mainImage && (
                         <div className="relative">
                           <img
-                            src={uploadedImage}
+                            src={mainImage}
                             alt="Anteprima"
                             className="h-16 w-16 rounded-md object-cover"
                           />
@@ -380,7 +377,7 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
                             size="icon"
                             type="button"
                             className="absolute top-0 right-0"
-                            onClick={handleRemoveImage}
+                            onClick={handleMainImageRemove}
                           >
                             <span className="sr-only">Rimuovi</span>
                             <svg
@@ -408,7 +405,10 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
                     Aggiungi immagini da mostrare all'interno della pagina.
                   </FormDescription>
                   <FormControl>
-                    <ImagesUploader images={pageImages} onChange={setPageImages} />
+                    <ImagesUploader 
+                      images={pageImages} 
+                      onChange={setPageImages} 
+                    />
                   </FormControl>
                 </div>
               </div>

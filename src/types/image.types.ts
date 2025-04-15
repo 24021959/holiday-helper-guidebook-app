@@ -16,4 +16,3 @@ export interface ImageUploadItem {
   caption: string;
   type?: string;
 }
-
