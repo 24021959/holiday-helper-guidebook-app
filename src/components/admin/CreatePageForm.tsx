@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useRouter } from '@/lib/next-router-mock';
 import { useForm } from "react-hook-form";
@@ -53,7 +52,7 @@ import {
 import { Editor } from "@/components/editor/Editor";
 import { uploadImage } from "@/integrations/supabase/storage";
 import ImagesUploader, { ImageItem as UploaderImageItem } from "@/components/ImagesUploader";
-import { ImageItem } from "@/pages/Admin";
+import { ImageItem } from "@/types/image.types";
 
 const pageFormSchema = z.object({
   title: z.string().min(2, {
@@ -72,10 +71,8 @@ interface CreatePageFormProps {
   keywordToIconMap: Record<string, string>;
 }
 
-// Carefully defining the conversion function with explicit typing
 const convertToAdminImageItem = (images: UploaderImageItem[]): ImageItem[] => {
   return images.map(img => {
-    // Ensure position is only one of the allowed values with proper validation
     let position: "left" | "center" | "right" | "full";
     
     if (img.position === "left") {
@@ -85,7 +82,6 @@ const convertToAdminImageItem = (images: UploaderImageItem[]): ImageItem[] => {
     } else if (img.position === "full") {
       position = "full";
     } else {
-      // Default to center for other values
       position = "center";
     }
     

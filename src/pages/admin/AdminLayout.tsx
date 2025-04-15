@@ -9,6 +9,7 @@ import {
   MessageSquare, 
   BarChart3
 } from "lucide-react";
+import AdminCreate from "./AdminCreate";
 
 const AdminLayout = () => {
   // We'll check for authentication here later
@@ -67,14 +68,9 @@ const AdminLayout = () => {
           <div className="mt-6">
             <TabsContent 
               value="create" 
-              className="p-6 bg-green-50/50 rounded-lg border border-green-100"
+              className="rounded-lg border border-green-100"
             >
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                Crea una nuova pagina
-              </h2>
-              <div className="text-gray-600">
-                Contenuto del form di creazione pagina verrà aggiunto qui
-              </div>
+              <AdminCreate />
             </TabsContent>
 
             <TabsContent 

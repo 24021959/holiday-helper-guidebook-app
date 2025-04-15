@@ -1,5 +1,5 @@
 
-import { ImageItem } from "@/pages/Admin";
+import { ImageItem } from "@/types/image.types";
 
 export interface CreatePageFormProps {
   parentPages: {

@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTranslation } from "@/context/TranslationContext";
 import { v4 as uuidv4 } from "uuid";
-import { ImageItem } from "@/pages/Admin";
+import { ImageItem } from "@/types/image.types";
 
 interface UsePageCreationProps {
   onPageCreated: (pages: any[]) => void;
