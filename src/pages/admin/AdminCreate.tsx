@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useState } from "react";
 import { VisualEditor } from "@/components/admin/VisualEditor";
@@ -14,26 +15,31 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { usePageCreation } from "@/hooks/usePageCreation";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TypeIcon, ImageIcon, Phone, MapPin } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Bold, Italic, AlignLeft, AlignCenter, AlignRight, 
+  List, ListOrdered, Heading1, Heading2, Quote, Link as LinkIcon,
+  ImageIcon, Phone, MapPin, TypeIcon
+} from "lucide-react";
 
 export interface PageContent {
   title: string;
-  blocks: ContentBlock[];
+  content: string;
+  images: ImageDetail[];
 }
 
-export interface ContentBlock {
-  id: string;
-  type: "text" | "image" | "phone" | "map";
-  content: string;
+interface ImageDetail {
+  url: string;
+  width: string;
+  position: "left" | "center" | "right" | "full";
   caption?: string;
-  position?: "left" | "center" | "right" | "full";
 }
 
 const AdminCreate = () => {
   const [pageContent, setPageContent] = useState<PageContent>({
     title: "",
-    blocks: []
+    content: "",
+    images: []
   });
 
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -41,7 +47,8 @@ const AdminCreate = () => {
     onPageCreated: (pages) => {
       setPageContent({
         title: "",
-        blocks: []
+        content: "",
+        images: []
       });
       setUploadedImage(null);
     }
@@ -54,24 +61,17 @@ const AdminCreate = () => {
     }));
   };
 
-  const handleBlocksChange = (newBlocks: ContentBlock[]) => {
+  const handleContentChange = (newContent: string) => {
     setPageContent(prev => ({
       ...prev,
-      blocks: newBlocks
+      content: newContent
     }));
   };
 
-  const addContentBlock = (type: "text" | "image" | "phone" | "map") => {
-    const newBlock: ContentBlock = {
-      id: crypto.randomUUID(),
-      type,
-      content: "",
-      position: "full"
-    };
-    
+  const handleImageAdd = (imageDetail: ImageDetail) => {
     setPageContent(prev => ({
       ...prev,
-      blocks: [...prev.blocks, newBlock]
+      images: [...prev.images, imageDetail]
     }));
   };
 
@@ -82,34 +82,17 @@ const AdminCreate = () => {
     }
 
     try {
-      const pageImages = pageContent.blocks
-        .filter(block => block.type === "image")
-        .map(block => ({
-          url: block.content,
-          position: block.position || "full",
-          caption: block.caption,
-          type: "image" as const
-        }));
-
-      let formattedContent = pageContent.blocks
-        .filter(block => block.type !== "image")
-        .map(block => {
-          if (block.type === "text") {
-            return block.content;
-          } else if (block.type === "phone") {
-            return `📞 ${block.caption || "Telefono"}: ${block.content}`;
-          } else if (block.type === "map") {
-            return `📍 ${block.caption || "Indirizzo"}: ${block.content}`;
-          }
-          return "";
-        })
-        .filter(Boolean)
-        .join("\n\n");
+      const pageImages = pageContent.images.map(img => ({
+        url: img.url,
+        position: img.position,
+        caption: img.caption,
+        type: "image" as const
+      }));
 
       await handleTranslateAndCreate(
         {
           title: pageContent.title,
-          content: formattedContent,
+          content: pageContent.content,
           icon: "FileText"
         },
         "normal",
@@ -126,6 +109,20 @@ const AdminCreate = () => {
     }
   };
 
+  const formatButtons = [
+    { icon: <Bold className="h-4 w-4" />, action: 'bold', label: 'Grassetto' },
+    { icon: <Italic className="h-4 w-4" />, action: 'italic', label: 'Corsivo' },
+    { icon: <Heading1 className="h-4 w-4" />, action: 'h1', label: 'Titolo 1' },
+    { icon: <Heading2 className="h-4 w-4" />, action: 'h2', label: 'Titolo 2' },
+    { icon: <List className="h-4 w-4" />, action: 'bullet', label: 'Elenco puntato' },
+    { icon: <ListOrdered className="h-4 w-4" />, action: 'number', label: 'Elenco numerato' },
+    { icon: <Quote className="h-4 w-4" />, action: 'quote', label: 'Citazione' },
+    { icon: <LinkIcon className="h-4 w-4" />, action: 'link', label: 'Link' },
+    { icon: <AlignLeft className="h-4 w-4" />, action: 'left', label: 'Allinea a sinistra' },
+    { icon: <AlignCenter className="h-4 w-4" />, action: 'center', label: 'Centra' },
+    { icon: <AlignRight className="h-4 w-4" />, action: 'right', label: 'Allinea a destra' },
+  ];
+
   return (
     <div className="container mx-auto px-4 py-6">
       <Card className="bg-white shadow-lg border-0">
@@ -134,7 +131,7 @@ const AdminCreate = () => {
             Crea una nuova pagina
           </CardTitle>
           <CardDescription>
-            Utilizza l'editor visuale per creare una nuova pagina con testo, immagini e contenuti interattivi
+            Utilizza l'editor visuale per creare una nuova pagina
           </CardDescription>
         </CardHeader>
         
@@ -152,46 +149,47 @@ const AdminCreate = () => {
             />
           </div>
 
-          <Tabs defaultValue="editor" className="w-full space-y-4">
-            <TabsList className="grid w-full grid-cols-4 bg-blue-50">
-              <TabsTrigger 
-                value="text" 
-                onClick={() => addContentBlock("text")}
-                className="flex items-center gap-2 data-[state=active]:bg-blue-200"
-              >
-                <TypeIcon className="w-4 h-4" />
-                <span>Testo</span>
+          <Tabs defaultValue="editor" className="w-full">
+            <TabsList className="w-full bg-blue-50 mb-2">
+              <TabsTrigger value="editor" className="flex-1">
+                <TypeIcon className="w-4 h-4 mr-2" />
+                Editor
               </TabsTrigger>
-              <TabsTrigger 
-                value="image" 
-                onClick={() => addContentBlock("image")}
-                className="flex items-center gap-2 data-[state=active]:bg-green-200"
-              >
-                <ImageIcon className="w-4 h-4" />
-                <span>Immagine</span>
+              <TabsTrigger value="image" className="flex-1">
+                <ImageIcon className="w-4 h-4 mr-2" />
+                Immagini
               </TabsTrigger>
-              <TabsTrigger 
-                value="phone" 
-                onClick={() => addContentBlock("phone")}
-                className="flex items-center gap-2 data-[state=active]:bg-yellow-200"
-              >
-                <Phone className="w-4 h-4" />
-                <span>Telefono</span>
+              <TabsTrigger value="media" className="flex-1">
+                <Phone className="w-4 h-4 mr-2" />
+                Media
               </TabsTrigger>
-              <TabsTrigger 
-                value="map" 
-                onClick={() => addContentBlock("map")}
-                className="flex items-center gap-2 data-[state=active]:bg-purple-200"
-              >
-                <MapPin className="w-4 h-4" />
-                <span>Mappa</span>
+              <TabsTrigger value="map" className="flex-1">
+                <MapPin className="w-4 h-4 mr-2" />
+                Mappa
               </TabsTrigger>
             </TabsList>
 
-            <div className="border rounded-lg overflow-hidden shadow-sm">
+            <div className="flex flex-wrap gap-2 p-2 bg-gray-50 border-b">
+              {formatButtons.map((btn, idx) => (
+                <Button
+                  key={idx}
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => {/* formatting logic */}}
+                >
+                  {btn.icon}
+                  <span className="sr-only">{btn.label}</span>
+                </Button>
+              ))}
+            </div>
+
+            <div className="border rounded-lg mt-2">
               <VisualEditor 
-                blocks={pageContent.blocks}
-                onChange={handleBlocksChange}
+                content={pageContent.content}
+                images={pageContent.images}
+                onChange={handleContentChange}
+                onImageAdd={handleImageAdd}
               />
             </div>
           </Tabs>
