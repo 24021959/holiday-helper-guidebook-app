@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageData } from "@/types/page.types";
@@ -575,7 +574,10 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
             setPageType={setPageType}
             parentPath={parentPath}
             setParentPath={setParentPath}
+            icon={selectedIcon}
+            setIcon={setSelectedIcon}
             parentPages={parentPages.filter(p => p.id !== selectedPage.id)}
+            control={form.control}
           />
           
           <FormField

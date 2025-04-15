@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PageData } from "@/types/page.types";
 import { PageType } from "@/types/form.types";
 import { Input } from "@/components/ui/input";
-import { IconRenderer } from "@/components/IconRenderer";
+import IconRenderer from "@/components/IconRenderer";
 import {
   FileText, Image, MessageCircle, Info, Map, Utensils, Landmark, 
   Hotel, Wifi, Bus, ShoppingBag, Calendar, Phone, Book, Coffee, 
@@ -225,4 +225,3 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
     </>
   );
 };
-
