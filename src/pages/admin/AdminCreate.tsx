@@ -86,10 +86,11 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
             parentPath: page.parent_path || undefined,
             pageImages: [],
             published: page.published || false,
-            is_parent: false
+            is_parent: page.is_parent || false
           }));
           
           setParentPages(formattedPages);
+          console.log("Fetched parent pages:", formattedPages);
         }
       } catch (error) {
         console.error("Error fetching parent pages:", error);
@@ -99,6 +100,19 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
     
     fetchParentPages();
   }, []);
+
+  const filteredParentPages = parentPages.filter(page => {
+    const isItalianPage = !page.path.startsWith('/en/') && 
+                          !page.path.startsWith('/de/') && 
+                          !page.path.startsWith('/fr/') && 
+                          !page.path.startsWith('/es/');
+    
+    const isParentPage = page.is_parent === true;
+    
+    return isItalianPage && isParentPage;
+  });
+
+  console.log("Filtered Italian parent pages in AdminCreate:", filteredParentPages);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPageContent(prev => ({
@@ -249,7 +263,7 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
                   onChange={(e) => handleParentPathChange(e.target.value)}
                 >
                   <option value="">Seleziona una pagina genitore</option>
-                  {parentPages.map((page) => (
+                  {filteredParentPages.map((page) => (
                     <option key={page.path} value={page.path}>
                       {page.title}
                     </option>

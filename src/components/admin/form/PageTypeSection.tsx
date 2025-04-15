@@ -24,10 +24,21 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
   control
 }) => {
   // Filter for Italian parent pages only (no language prefix and is_parent true)
-  const filteredParentPages = parentPages.filter(page => 
-    !page.path.match(/^\/[a-z]{2}\//) && // No language prefix (Italian pages)
-    page.is_parent // Is a parent page
-  );
+  const filteredParentPages = parentPages.filter(page => {
+    // Check if the page has no language prefix (which means it's an Italian page)
+    const isItalianPage = !page.path.startsWith('/en/') && 
+                          !page.path.startsWith('/de/') && 
+                          !page.path.startsWith('/fr/') && 
+                          !page.path.startsWith('/es/');
+    
+    // Check if it's a parent page
+    const isParentPage = page.is_parent;
+    
+    return isItalianPage && isParentPage;
+  });
+
+  console.log("Parent pages before filtering:", parentPages);
+  console.log("Filtered parent pages:", filteredParentPages);
 
   return (
     <>

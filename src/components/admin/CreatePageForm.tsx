@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useRouter } from '@/lib/next-router-mock';
 import { useForm } from "react-hook-form";
@@ -212,6 +211,23 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
     { value: "LayoutGrid", label: "Layout Grid", icon: <LayoutGrid className="h-4 w-4 mr-2" /> },
   ];
 
+  // Filter parent pages to only include Italian pages that are marked as parent
+  const filteredParentPages = parentPages.filter(page => {
+    // Check if the page has no language prefix (which means it's an Italian page)
+    const isItalianPage = !page.path.startsWith('/en/') && 
+                          !page.path.startsWith('/de/') && 
+                          !page.path.startsWith('/fr/') && 
+                          !page.path.startsWith('/es/');
+    
+    // Check if it's a parent page
+    const isParentPage = page.is_parent === true;
+    
+    return isItalianPage && isParentPage;
+  });
+
+  console.log("All parent pages:", parentPages);
+  console.log("Filtered Italian parent pages:", filteredParentPages);
+
   return (
     <div className="container max-w-4xl mx-auto py-10">
       <Form {...form}>
@@ -280,7 +296,7 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {parentPages.map((page) => (
+                        {filteredParentPages.map((page) => (
                           <SelectItem key={page.id} value={page.path}>
                             {page.title}
                           </SelectItem>
