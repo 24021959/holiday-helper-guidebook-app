@@ -84,12 +84,18 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
                     <SelectValue placeholder="Seleziona la pagina genitore" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
-                  {filteredParentPages.map((page) => (
-                    <SelectItem key={page.path} value={page.path}>
-                      {page.title}
+                <SelectContent className="max-h-[300px] overflow-auto">
+                  {filteredParentPages.length > 0 ? (
+                    filteredParentPages.map((page) => (
+                      <SelectItem key={page.path} value={page.path}>
+                        {page.title}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="none" disabled>
+                      Nessuna pagina genitore disponibile
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
               <FormDescription>

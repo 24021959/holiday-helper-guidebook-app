@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useState, useEffect } from "react";
 import { VisualEditor } from "@/components/admin/VisualEditor";
@@ -17,6 +18,13 @@ import { usePageCreation } from "@/hooks/usePageCreation";
 import { ImageItem, ImageDetail } from "@/types/image.types";
 import { PageData } from "@/types/page.types";
 import { supabase } from "@/integrations/supabase/client";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 
 export interface PageContent {
   title: string;
@@ -256,19 +264,27 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
                 <Label htmlFor="parentPath" className="text-base font-medium">
                   Pagina principale
                 </Label>
-                <select 
-                  id="parentPath"
-                  className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                <Select
                   value={pageContent.parentPath || ""}
-                  onChange={(e) => handleParentPathChange(e.target.value)}
+                  onValueChange={handleParentPathChange}
                 >
-                  <option value="">Seleziona una pagina genitore</option>
-                  {filteredParentPages.map((page) => (
-                    <option key={page.path} value={page.path}>
-                      {page.title}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full mt-1">
+                    <SelectValue placeholder="Seleziona una pagina genitore" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredParentPages.length > 0 ? (
+                      filteredParentPages.map((page) => (
+                        <SelectItem key={page.path} value={page.path}>
+                          {page.title}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="none" disabled>
+                        Nessuna pagina genitore disponibile
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
             )}
 

@@ -54,6 +54,7 @@ import { uploadImage } from "@/integrations/supabase/storage";
 import ImagesUploader from "@/components/ImagesUploader";
 import { ImageItem, ImageUploadItem } from "@/types/image.types";
 import { useToast } from "@/hooks/use-toast";
+import { PageData } from "@/types/page.types";
 
 const pageFormSchema = z.object({
   title: z.string().min(2, {
@@ -67,7 +68,7 @@ const pageFormSchema = z.object({
 });
 
 interface CreatePageFormProps {
-  parentPages: { id: string; title: string; path: string; }[];
+  parentPages: PageData[];
   onPageCreated: (pages: any[]) => void;
   keywordToIconMap: Record<string, string>;
 }
@@ -211,15 +212,12 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
     { value: "LayoutGrid", label: "Layout Grid", icon: <LayoutGrid className="h-4 w-4 mr-2" /> },
   ];
 
-  // Filter parent pages to only include Italian pages that are marked as parent
   const filteredParentPages = parentPages.filter(page => {
-    // Check if the page has no language prefix (which means it's an Italian page)
     const isItalianPage = !page.path.startsWith('/en/') && 
                           !page.path.startsWith('/de/') && 
                           !page.path.startsWith('/fr/') && 
                           !page.path.startsWith('/es/');
     
-    // Check if it's a parent page
     const isParentPage = page.is_parent === true;
     
     return isItalianPage && isParentPage;
@@ -295,12 +293,18 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
                           <SelectValue placeholder="Seleziona la pagina genitore" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
-                        {filteredParentPages.map((page) => (
-                          <SelectItem key={page.id} value={page.path}>
-                            {page.title}
+                      <SelectContent className="max-h-[300px] overflow-auto z-50">
+                        {filteredParentPages.length > 0 ? (
+                          filteredParentPages.map((page) => (
+                            <SelectItem key={page.id} value={page.path}>
+                              {page.title}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="none" disabled>
+                            Nessuna pagina genitore disponibile
                           </SelectItem>
-                        ))}
+                        )}
                       </SelectContent>
                     </Select>
                     <FormDescription>
