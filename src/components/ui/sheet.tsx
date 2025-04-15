@@ -16,8 +16,10 @@ const SheetPortal = ({
   ...props
 }: SheetPrimitive.DialogPortalProps) => (
   <SheetPrimitive.Portal {...props}>
-    <div className="fixed inset-0 z-50">
-      {children}
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {React.Children.map(children, child => 
+        React.isValidElement(child) ? child : null
+      )}
     </div>
   </SheetPrimitive.Portal>
 )

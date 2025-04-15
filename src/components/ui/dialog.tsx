@@ -13,8 +13,10 @@ const DialogPortal = ({
   ...props
 }: DialogPrimitive.DialogPortalProps) => (
   <DialogPrimitive.Portal {...props}>
-    <div className="fixed inset-0 z-50 flex items-start justify-center sm:items-center">
-      {children}
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {React.Children.map(children, child => 
+        React.isValidElement(child) ? child : null
+      )}
     </div>
   </DialogPrimitive.Portal>
 )
