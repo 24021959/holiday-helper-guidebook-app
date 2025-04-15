@@ -1,3 +1,4 @@
+
 import * as SheetPrimitive from "@radix-ui/react-dialog"
 import { cva, type VariantProps } from "class-variance-authority"
 import { X } from "lucide-react"
@@ -16,8 +17,9 @@ const SheetPortal = ({
   ...props
 }: SheetPrimitive.DialogPortalProps) => (
   <SheetPrimitive.Portal {...props}>
+    {/* Ensure we wrap the children in a single element */}
     <div className="fixed inset-0 z-50">
-      {children}
+      {React.Children.only(children)}
     </div>
   </SheetPrimitive.Portal>
 )

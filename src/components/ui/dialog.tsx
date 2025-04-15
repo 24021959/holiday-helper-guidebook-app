@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
@@ -13,8 +14,9 @@ const DialogPortal = ({
   ...props
 }: DialogPrimitive.DialogPortalProps) => (
   <DialogPrimitive.Portal {...props}>
+    {/* Ensure we wrap the children in a single element */}
     <div className="fixed inset-0 z-50 flex items-start justify-center sm:items-center">
-      {children}
+      {React.Children.only(children)}
     </div>
   </DialogPrimitive.Portal>
 )

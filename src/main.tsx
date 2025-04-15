@@ -14,5 +14,5 @@ if (!rootElement) {
 // Create the root using React 18's createRoot method
 const root = createRoot(rootElement)
 
-// Render the app
+// Render the app - ensure we pass a single element
 root.render(<App />)
