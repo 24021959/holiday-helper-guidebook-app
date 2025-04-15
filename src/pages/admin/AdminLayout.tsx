@@ -1,5 +1,4 @@
-import React from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   FileText, 
@@ -10,14 +9,16 @@ import {
 } from "lucide-react";
 import AdminCreate from "./AdminCreate";
 import AdminManage from "./AdminManage";
+import { PageData } from "@/types/page.types";
 
 const AdminLayout = () => {
-  // We'll check for authentication here later
-  const isAuthenticated = true;
+  const [currentTab, setCurrentTab] = useState<string>("create");
+  const [selectedPage, setSelectedPage] = useState<PageData | null>(null);
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
+  const handleEditPage = (page: PageData) => {
+    setSelectedPage(page);
+    setCurrentTab("create");
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
@@ -26,7 +27,7 @@ const AdminLayout = () => {
           Pannello di Amministrazione
         </h1>
 
-        <Tabs defaultValue="create" className="w-full">
+        <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
           <TabsList className="w-full bg-white/50 backdrop-blur-sm border border-gray-200">
             <TabsTrigger 
               value="create" 
@@ -70,14 +71,14 @@ const AdminLayout = () => {
               value="create" 
               className="rounded-lg border border-green-100"
             >
-              <AdminCreate />
+              <AdminCreate initialPage={selectedPage} onPageCreated={() => setSelectedPage(null)} />
             </TabsContent>
 
             <TabsContent 
               value="manage" 
               className="rounded-lg border border-blue-100"
             >
-              <AdminManage />
+              <AdminManage onEditPage={handleEditPage} />
             </TabsContent>
 
             <TabsContent 

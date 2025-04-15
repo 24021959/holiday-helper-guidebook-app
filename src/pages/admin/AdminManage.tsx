@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageData } from "@/types/page.types";
@@ -23,7 +22,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import EditPageForm from "@/components/admin/EditPageForm";
 
 const languages = [
   { code: 'it', name: 'Italiano', flag: '🇮🇹' },
@@ -33,7 +31,7 @@ const languages = [
   { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
 ];
 
-const AdminManage = () => {
+const AdminManage = ({ onEditPage }: { onEditPage: (page: PageData) => void }) => {
   const [pages, setPages] = useState<PageData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPage, setSelectedPage] = useState<PageData | null>(null);
@@ -48,10 +46,8 @@ const AdminManage = () => {
       let query = supabase.from('custom_pages').select('*');
       
       if (langCode === 'it') {
-        // For Italian, show pages without a language prefix and explicitly Italian pages
         query = query.or(`path.not.like./%/%, path.like./it/%`);
       } else {
-        // For other languages, only show pages with that language prefix
         query = query.like('path', `/${langCode}/%`);
       }
 
@@ -96,8 +92,7 @@ const AdminManage = () => {
   };
 
   const handleEdit = (page: PageData) => {
-    setSelectedPage(page);
-    setShowEditDialog(true);
+    onEditPage(page);
   };
 
   const handleDelete = async (page: PageData) => {
@@ -230,30 +225,6 @@ const AdminManage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {showEditDialog && selectedPage && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="relative bg-white rounded-lg w-full max-w-4xl p-6 max-h-[90vh] overflow-y-auto">
-            <Button
-              variant="ghost"
-              className="absolute right-4 top-4"
-              onClick={() => setShowEditDialog(false)}
-            >
-              ✕
-            </Button>
-            <EditPageForm
-              selectedPage={selectedPage}
-              parentPages={pages.filter(p => p.is_parent)}
-              onPageUpdated={(updatedPages) => {
-                fetchPages(currentLanguage);
-                setShowEditDialog(false);
-              }}
-              keywordToIconMap={{}}
-              allPages={pages}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 };
