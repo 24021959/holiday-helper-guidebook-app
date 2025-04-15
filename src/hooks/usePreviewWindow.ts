@@ -8,6 +8,10 @@ interface PreviewWindowProps {
   openInNewWindow?: boolean;
 }
 
+/**
+ * Hook per gestire l'apertura di un contenuto sia in un dialog che in una nuova finestra.
+ * Restituisce true se il contenuto dovrebbe essere mostrato in un dialog, false altrimenti.
+ */
 export const usePreviewWindow = ({
   isOpen,
   title,
@@ -19,7 +23,7 @@ export const usePreviewWindow = ({
   const intervalRef = useRef<number | null>(null);
   
   useEffect(() => {
-    // Cleanup function to handle window closing
+    // Funzione per ripulire risorse quando la finestra viene chiusa
     const cleanupWindow = () => {
       if (intervalRef.current) {
         window.clearInterval(intervalRef.current);
@@ -37,22 +41,24 @@ export const usePreviewWindow = ({
       windowRef.current = null;
     };
     
+    // Se il dialog non è aperto, resettiamo tutto
     if (!isOpen) {
       setShouldRenderDialog(false);
       cleanupWindow();
       return;
     }
     
+    // Se richiesto di aprire in una nuova finestra
     if (openInNewWindow) {
       try {
-        // Try to open a new window
+        // Tentiamo di aprire una nuova finestra
         const newWindow = window.open('', '_blank', 'width=1000,height=800,menubar=0,toolbar=0,location=0');
         
         if (newWindow) {
           windowRef.current = newWindow;
           setShouldRenderDialog(false);
           
-          // Set up monitoring for window closure
+          // Configura monitoraggio per chiusura finestra
           intervalRef.current = window.setInterval(() => {
             if (newWindow.closed) {
               cleanupWindow();
@@ -61,12 +67,12 @@ export const usePreviewWindow = ({
             }
           }, 500) as unknown as number;
           
-          // Set title and prepare window
+          // Imposta titolo
           newWindow.document.title = title || 'Anteprima';
           
           return cleanupWindow;
         } else {
-          // Window creation failed, fallback to dialog
+          // Fallback a dialog se la creazione finestra fallisce
           console.warn("Cannot open a new window. Showing dialog instead.");
           setShouldRenderDialog(true);
         }
@@ -75,7 +81,7 @@ export const usePreviewWindow = ({
         setShouldRenderDialog(true);
       }
     } else {
-      // Normal dialog mode
+      // Modalità dialog normale
       setShouldRenderDialog(true);
     }
     
