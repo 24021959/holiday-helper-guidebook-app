@@ -1,4 +1,3 @@
-
 import * as React from "react"
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
 
@@ -14,9 +13,8 @@ const AlertDialogPortal = ({
   ...props
 }: AlertDialogPrimitive.AlertDialogPortalProps) => (
   <AlertDialogPrimitive.Portal {...props}>
-    {/* Ensure we wrap the children in a single element */}
     <div className="fixed inset-0 z-50 flex items-start justify-center sm:items-center">
-      {React.Children.only(children)}
+      {children}
     </div>
   </AlertDialogPrimitive.Portal>
 )
