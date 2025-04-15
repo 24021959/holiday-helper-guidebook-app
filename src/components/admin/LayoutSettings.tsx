@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
@@ -11,7 +11,8 @@ import {
   AlignLeft, 
   AlignCenter, 
   AlignRight,
-  Palette
+  Palette,
+  Check
 } from "lucide-react";
 import {
   Select,
@@ -23,6 +24,8 @@ import {
 import { HeaderSettings } from "@/hooks/useHeaderSettings";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 interface LayoutSettingsForm extends HeaderSettings {
   footerText: string;
@@ -34,43 +37,10 @@ interface LayoutSettingsForm extends HeaderSettings {
   footerTextAlignment: "left" | "center" | "right";
 }
 
-const colorOptions = [
-  { value: "#FFFFFF", label: "White", textColor: "text-gray-800" },
-  { value: "bg-white", label: "Off White", textColor: "text-gray-800" },
-  { value: "#000000", label: "Black", textColor: "text-white" },
-  
-  // Slate Colors
-  { value: "bg-slate-50", label: "Slate 50", textColor: "text-gray-800" },
-  { value: "bg-slate-100", label: "Slate 100", textColor: "text-gray-800" },
-  { value: "bg-slate-200", label: "Slate 200", textColor: "text-gray-800" },
-  { value: "bg-slate-800", label: "Slate 800", textColor: "text-white" },
-  
-  // Gray Colors
-  { value: "bg-gray-50", label: "Gray 50", textColor: "text-gray-800" },
-  { value: "bg-gray-100", label: "Gray 100", textColor: "text-gray-800" },
-  { value: "bg-gray-200", label: "Gray 200", textColor: "text-gray-800" },
-  { value: "bg-gray-800", label: "Gray 800", textColor: "text-white" },
-  
-  // Blue Colors
-  { value: "bg-blue-50", label: "Blue 50", textColor: "text-gray-800" },
-  { value: "bg-blue-100", label: "Blue 100", textColor: "text-gray-800" },
-  { value: "bg-blue-200", label: "Blue 200", textColor: "text-gray-800" },
-  { value: "bg-blue-800", label: "Blue 800", textColor: "text-white" },
-  
-  // Green Colors
-  { value: "bg-green-50", label: "Green 50", textColor: "text-gray-800" },
-  { value: "bg-green-100", label: "Green 100", textColor: "text-gray-800" },
-  { value: "bg-green-200", label: "Green 200", textColor: "text-gray-800" },
-  { value: "bg-green-800", label: "Green 800", textColor: "text-white" },
-  
-  // Emerald Colors
-  { value: "bg-emerald-50", label: "Emerald 50", textColor: "text-gray-800" },
-  { value: "bg-emerald-100", label: "Emerald 100", textColor: "text-gray-800" },
-  { value: "bg-emerald-200", label: "Emerald 200", textColor: "text-gray-800" },
-  { value: "bg-emerald-800", label: "Emerald 800", textColor: "text-white" },
-];
-
 export const LayoutSettings = () => {
+  const [tempColor, setTempColor] = useState("#FFFFFF");
+  const [showPreview, setShowPreview] = useState(false);
+
   const form = useForm<LayoutSettingsForm>({
     defaultValues: async () => {
       const [headerResult, footerResult] = await Promise.all([
@@ -81,12 +51,15 @@ export const LayoutSettings = () => {
       const headerData = headerResult.data || {};
       const footerData = footerResult.data?.value || {};
 
+      const initialColor = headerData.header_color || '#FFFFFF';
+      setTempColor(initialColor);
+
       return {
         logoUrl: headerData.logo_url || '',
         establishmentName: headerData.establishment_name || '',
         logoPosition: headerData.logo_position || 'left',
         logoSize: headerData.logo_size || 'medium',
-        themeColor: headerData.header_color || 'bg-slate-800',
+        themeColor: initialColor,
         footerText: footerData.custom_text || '',
         showSocialLinks: footerData.show_social_links || false,
         facebookUrl: footerData.facebook_url || '',
@@ -131,11 +104,23 @@ export const LayoutSettings = () => {
       if (footerError) throw footerError;
 
       toast.success("Impostazioni layout salvate con successo");
+      setShowPreview(true);
     } catch (error) {
       console.error("Error saving layout settings:", error);
       toast.error("Errore nel salvataggio delle impostazioni");
     }
   };
+
+  const handleColorChange = (color: string) => {
+    setTempColor(color);
+  };
+
+  const applyColor = () => {
+    form.setValue('themeColor', tempColor);
+    toast.success("Colore applicato");
+  };
+
+  const currentValues = form.watch();
 
   return (
     <div className="p-6">
@@ -151,35 +136,54 @@ export const LayoutSettings = () => {
                   <Palette className="w-4 h-4" />
                   Colore Tema
                 </FormLabel>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {colorOptions.map((color) => (
-                    <Button
-                      key={color.value}
-                      type="button"
-                      variant={field.value === color.value ? "default" : "outline"}
-                      className={`${color.value} ${color.textColor} h-8 w-full`}
-                      onClick={() => field.onChange(color.value)}
-                    >
-                      <span className="text-xs">{color.label}</span>
-                    </Button>
-                  ))}
-                  
-                  {/* Color Picker for Custom Colors */}
-                  <div className="col-span-full mt-2">
-                    <FormLabel>Colore Personalizzato</FormLabel>
+                <div className="flex gap-4 items-end">
+                  <div className="flex-1">
                     <FormControl>
                       <Input
                         type="color"
-                        value={field.value}
-                        onChange={(e) => field.onChange(e.target.value)}
-                        className="w-full h-10"
+                        value={tempColor}
+                        onChange={(e) => handleColorChange(e.target.value)}
+                        className="w-full h-20 p-1 cursor-pointer"
                       />
                     </FormControl>
                   </div>
+                  <Button
+                    type="button"
+                    onClick={applyColor}
+                    className="flex items-center gap-2"
+                  >
+                    <Check className="w-4 h-4" />
+                    Applica
+                  </Button>
                 </div>
               </FormItem>
             )}
           />
+
+          {/* Preview section */}
+          {showPreview && (
+            <div className="space-y-6 border rounded-lg p-4">
+              <h3 className="text-lg font-semibold mb-4">Anteprima</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Header</h4>
+                  <Header
+                    backgroundColor={currentValues.themeColor}
+                    logoUrl={currentValues.logoUrl}
+                    logoPosition={currentValues.logoPosition}
+                    logoSize={currentValues.logoSize}
+                    establishmentName={currentValues.establishmentName}
+                  />
+                </div>
+                
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Footer</h4>
+                  <Footer />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Logo Section */}
           <FormField
