@@ -31,6 +31,7 @@ interface LayoutSettingsForm extends HeaderSettings {
   instagramUrl: string;
   twitterUrl: string;
   themeColor: string;
+  footerTextAlignment: "left" | "center" | "right";
 }
 
 const colorOptions = [
@@ -90,7 +91,8 @@ export const LayoutSettings = () => {
         showSocialLinks: footerData.show_social_links || false,
         facebookUrl: footerData.facebook_url || '',
         instagramUrl: footerData.instagram_url || '',
-        twitterUrl: footerData.twitter_url || ''
+        twitterUrl: footerData.twitter_url || '',
+        footerTextAlignment: footerData.text_alignment || 'left'
       };
     }
   });
@@ -121,7 +123,8 @@ export const LayoutSettings = () => {
             facebook_url: data.facebookUrl,
             instagram_url: data.instagramUrl,
             twitter_url: data.twitterUrl,
-            background_color: data.themeColor
+            background_color: data.themeColor,
+            text_alignment: data.footerTextAlignment
           }
         });
 
@@ -296,9 +299,43 @@ export const LayoutSettings = () => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Testo Footer</FormLabel>
-                <FormControl>
-                  <Input placeholder="Testo del footer" {...field} />
-                </FormControl>
+                <div className="space-y-4">
+                  <FormControl>
+                    <Input placeholder="Testo del footer" {...field} />
+                  </FormControl>
+                  <FormField
+                    control={form.control}
+                    name="footerTextAlignment"
+                    render={({ field: alignmentField }) => (
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          type="button"
+                          variant={alignmentField.value === 'left' ? 'default' : 'outline'}
+                          size="icon"
+                          onClick={() => alignmentField.onChange('left')}
+                        >
+                          <AlignLeft className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={alignmentField.value === 'center' ? 'default' : 'outline'}
+                          size="icon"
+                          onClick={() => alignmentField.onChange('center')}
+                        >
+                          <AlignCenter className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={alignmentField.value === 'right' ? 'default' : 'outline'}
+                          size="icon"
+                          onClick={() => alignmentField.onChange('right')}
+                        >
+                          <AlignRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  />
+                </div>
               </FormItem>
             )}
           />
