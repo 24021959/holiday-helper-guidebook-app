@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageData } from "@/types/page.types";
@@ -76,7 +77,7 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
           parentPath: page.parent_path || undefined,
           pageImages: [],
           published: page.published,
-          is_parent: false
+          is_parent: page.is_parent || false
         }));
         setPages(formattedPages);
       }
@@ -183,7 +184,7 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
                 <TableCell>
                   {page.is_parent ? (
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                      Master
+                      Pagina Master
                     </span>
                   ) : page.isSubmenu ? (
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">

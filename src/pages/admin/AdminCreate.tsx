@@ -36,7 +36,14 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
   const [pageContent, setPageContent] = useState<PageContent>(() => ({
     title: pageToEdit?.title || "",
     content: pageToEdit?.content || "",
-    images: pageToEdit?.pageImages || [],
+    images: pageToEdit?.pageImages?.map(img => ({
+      url: img.url,
+      position: img.position === "top" ? "left" : 
+                img.position === "center" ? "center" : 
+                img.position === "bottom" ? "right" : "full",
+      caption: img.caption,
+      type: "image" as const
+    })) || [],
     pageType: pageToEdit?.is_parent ? "parent" : pageToEdit?.isSubmenu ? "submenu" : "normal",
     parentPath: pageToEdit?.parentPath
   }));
@@ -101,7 +108,6 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
     try {
       const pageImages = pageContent.images.map(img => ({
         ...img,
-        type: "image" as const,
         width: img.width || "100%"
       }));
 
@@ -169,7 +175,7 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
                 <SelectContent>
                   <SelectItem value="normal">Pagina normale</SelectItem>
                   <SelectItem value="submenu">Sottopagina</SelectItem>
-                  <SelectItem value="parent">Pagina master (con sottopagine)</SelectItem>
+                  <SelectItem value="parent">Pagina Master (con sottopagine)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -177,14 +183,14 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
             {pageContent.pageType === "submenu" && (
               <div>
                 <Label htmlFor="parentPath" className="text-base font-medium">
-                  Pagina principale
+                  Pagina Master
                 </Label>
                 <Select
                   value={pageContent.parentPath}
                   onValueChange={handleParentPathChange}
                 >
                   <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Seleziona la pagina principale" />
+                    <SelectValue placeholder="Seleziona la pagina master" />
                   </SelectTrigger>
                   <SelectContent>
                     {/* We'll need to fetch and populate parent pages here */}
