@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from '@/lib/next-router-mock';
 import { useForm, Controller } from "react-hook-form";
@@ -130,6 +131,15 @@ export default function CreatePageForm({ parentPages, onPageCreated, keywordToIc
         return;
       }
       
+      // Convert ImageUploader.ImageItem[] to Admin.ImageItem[]
+      const convertedImages: AdminImageItem[] = pageImages.map(img => ({
+        url: img.url,
+        position: img.position === "top" ? "top" as any : 
+                 img.position === "bottom" ? "bottom" as any : "center",
+        caption: img.caption || "",
+        type: "image"
+      }));
+      
       await handleTranslateAndCreate(
         { 
           title: values.title, 
@@ -139,7 +149,7 @@ export default function CreatePageForm({ parentPages, onPageCreated, keywordToIc
         values.pageType,
         selectedParentPath || "/",
         uploadedImage,
-        pageImages,
+        convertedImages,
         () => {
           form.reset();
           setUploadedImage(null);
