@@ -5,7 +5,6 @@ import { VisualEditor } from "@/components/admin/VisualEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Card, 
   CardContent, 
@@ -19,6 +18,8 @@ import { usePageCreation } from "@/hooks/usePageCreation";
 import { ImageItem } from "@/types/image.types";
 import { PageData } from "@/types/page.types";
 import { supabase } from "@/integrations/supabase/client";
+import { PageTypeSection } from "@/components/admin/form/PageTypeSection";
+import { useForm } from "react-hook-form";
 
 export interface PageContent {
   title: string;
@@ -34,15 +35,22 @@ interface AdminCreateProps {
 }
 
 const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
+  const form = useForm({
+    defaultValues: {
+      title: pageToEdit?.title || "",
+      content: pageToEdit?.content || "",
+      pageType: pageToEdit?.is_parent ? "parent" : pageToEdit?.isSubmenu ? "submenu" : "normal",
+      parentPath: pageToEdit?.parentPath || ""
+    }
+  });
+
   const [pageContent, setPageContent] = useState<PageContent>(() => ({
     title: pageToEdit?.title || "",
     content: pageToEdit?.content || "",
     images: pageToEdit?.pageImages?.map(img => ({
       url: img.url,
-      position: img.position === "top" ? "left" : 
-                img.position === "center" ? "center" : 
-                img.position === "bottom" ? "right" : "full",
-      caption: img.caption,
+      position: img.position,
+      caption: img.caption || "",
       type: "image" as const
     })) || [],
     pageType: pageToEdit?.is_parent ? "parent" : pageToEdit?.isSubmenu ? "submenu" : "normal",
@@ -74,7 +82,42 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
           .select('*')
           .eq('is_parent', true);
 
-        if (error) throw error;
+        if (error) {
+          // If the is_parent column doesn't exist yet, try to get pages marked as parent another way
+          console.error("Error fetching parent pages:", error);
+          
+          // Fallback to getting parent pages without the is_parent column
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('custom_pages')
+            .select('*');
+            
+          if (fallbackError) throw fallbackError;
+          
+          if (fallbackData) {
+            // Try to identify parent pages using other indicators
+            const potentialParentPages = fallbackData.filter(page => 
+              !page.is_submenu && !page.parent_path
+            );
+            
+            const formattedPages = potentialParentPages.map(page => ({
+              id: page.id,
+              title: page.title,
+              content: page.content,
+              path: page.path,
+              imageUrl: page.image_url,
+              icon: page.icon,
+              listType: page.list_type as "locations" | "activities" | "restaurants" | undefined,
+              listItems: page.list_items,
+              isSubmenu: false,
+              parentPath: undefined,
+              pageImages: [],
+              published: page.published,
+              is_parent: true
+            }));
+            setParentPages(formattedPages);
+          }
+          return;
+        }
 
         if (data) {
           const formattedPages = data.map(page => ({
@@ -144,12 +187,12 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
       return;
     }
 
-    try {
-      const pageImages = pageContent.images.map(img => ({
-        ...img,
-        width: img.width || "100%"
-      }));
+    if (pageContent.pageType === "submenu" && !pageContent.parentPath) {
+      toast.error("Seleziona una pagina master per la sottopagina");
+      return;
+    }
 
+    try {
       await handleTranslateAndCreate(
         {
           title: pageContent.title,
@@ -159,7 +202,7 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
         pageContent.pageType,
         pageContent.pageType === "submenu" ? (pageContent.parentPath || "") : "",
         uploadedImage,
-        pageImages,
+        pageContent.images,
         () => {
           toast.success(pageToEdit ? "Pagina aggiornata con successo!" : "Pagina creata con successo!");
         }
@@ -200,53 +243,14 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
               />
             </div>
 
-            <div>
-              <Label htmlFor="pageType" className="text-base font-medium">
-                Tipo di pagina
-              </Label>
-              <Select
-                value={pageContent.pageType}
-                onValueChange={handlePageTypeChange}
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Seleziona il tipo di pagina" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="normal">Pagina normale</SelectItem>
-                  <SelectItem value="submenu">Sottopagina</SelectItem>
-                  <SelectItem value="parent">Pagina Master (con sottopagine)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {pageContent.pageType === "submenu" && (
-              <div>
-                <Label htmlFor="parentPath" className="text-base font-medium">
-                  Pagina Master
-                </Label>
-                <Select
-                  value={pageContent.parentPath}
-                  onValueChange={handleParentPathChange}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Seleziona la pagina master" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {parentPages.length > 0 ? (
-                      parentPages.map(page => (
-                        <SelectItem key={page.path} value={page.path}>
-                          {page.title}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="" disabled>
-                        Nessuna pagina master disponibile
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <PageTypeSection 
+              pageType={pageContent.pageType}
+              setPageType={handlePageTypeChange}
+              parentPath={pageContent.parentPath || ""}
+              setParentPath={handleParentPathChange}
+              parentPages={parentPages}
+              control={form.control}
+            />
 
             {pageContent.pageType !== "parent" && (
               <div className="border rounded-lg mt-2">
@@ -282,6 +286,7 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
           <Button 
             onClick={handleSavePage}
             disabled={isCreating || isTranslating}
+            className="bg-emerald-600 hover:bg-emerald-700"
           >
             {isCreating ? (
               "Salvataggio in corso..."

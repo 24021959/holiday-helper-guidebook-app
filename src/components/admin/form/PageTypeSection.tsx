@@ -1,9 +1,10 @@
+
 import React from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageData } from "@/types/page.types";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { Control } from "react-hook-form";
+import { FormDescription } from "@/components/ui/form";
 
 interface PageTypeSectionProps {
   pageType: "normal" | "submenu" | "parent";
@@ -11,6 +12,7 @@ interface PageTypeSectionProps {
   parentPath: string;
   setParentPath: (path: string) => void;
   parentPages: PageData[];
+  control: Control<any>;
 }
 
 export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
@@ -18,18 +20,22 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
   setPageType,
   parentPath,
   setParentPath,
-  parentPages
+  parentPages,
+  control
 }) => {
   return (
     <>
       <FormField
-        control={form => form.control}
+        control={control}
         name="pageType"
-        render={() => (
+        render={({ field }) => (
           <FormItem>
             <FormLabel>Tipo di Pagina</FormLabel>
             <Select
-              onValueChange={(value) => setPageType(value as "normal" | "submenu" | "parent")}
+              onValueChange={(value) => {
+                setPageType(value as "normal" | "submenu" | "parent");
+                field.onChange(value);
+              }}
               defaultValue={pageType}
             >
               <FormControl>
@@ -40,9 +46,12 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
               <SelectContent>
                 <SelectItem value="normal">Normale</SelectItem>
                 <SelectItem value="submenu">Sottomenu</SelectItem>
-                <SelectItem value="parent">Pagina Genitore</SelectItem>
+                <SelectItem value="parent">Pagina Master</SelectItem>
               </SelectContent>
             </Select>
+            <FormDescription>
+              Seleziona il tipo di pagina che stai creando.
+            </FormDescription>
             <FormMessage />
           </FormItem>
         )}
@@ -50,13 +59,16 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
 
       {pageType === "submenu" && (
         <FormField
-          control={form => form.control}
+          control={control}
           name="parentPage"
-          render={() => (
+          render={({ field }) => (
             <FormItem>
               <FormLabel>Pagina Genitore</FormLabel>
               <Select
-                onValueChange={setParentPath}
+                onValueChange={(value) => {
+                  setParentPath(value);
+                  field.onChange(value);
+                }}
                 defaultValue={parentPath}
               >
                 <FormControl>
@@ -72,6 +84,9 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
                   ))}
                 </SelectContent>
               </Select>
+              <FormDescription>
+                Seleziona la pagina genitore per questo sottomenu.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -80,14 +95,21 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
 
       {pageType === "parent" && (
         <FormField
-          control={form => form.control}
+          control={control}
           name="parentPath"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Percorso della Pagina Genitore</FormLabel>
+              <FormLabel>Percorso della Pagina Master</FormLabel>
               <FormControl>
-                <Input placeholder="es. /it/pagina-genitore" {...field} />
+                <input 
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  placeholder="es. /it/pagina-master" 
+                  {...field} 
+                />
               </FormControl>
+              <FormDescription>
+                Questo sarà il percorso URL della tua pagina master
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

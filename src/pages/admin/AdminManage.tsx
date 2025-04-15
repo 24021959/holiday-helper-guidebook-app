@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageData } from "@/types/page.types";
@@ -82,7 +83,58 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
       }
     } catch (error) {
       console.error("Error fetching pages:", error);
-      toast.error("Errore nel caricamento delle pagine");
+      
+      // If is_parent column doesn't exist, try a fallback
+      if (error instanceof Error && error.message.includes("column custom_pages.is_parent does not exist")) {
+        try {
+          const { data: fallbackData, error: fallbackError } = await supabase.from('custom_pages').select('*');
+          
+          if (fallbackError) throw fallbackError;
+          
+          if (fallbackData) {
+            console.log(`Fetched ${fallbackData.length} pages with fallback for language: ${langCode}`);
+            
+            const formattedPages = fallbackData
+              .filter(page => {
+                if (langCode === 'it') {
+                  return !page.path.match(/^\/[a-z]{2}\//);
+                } else {
+                  return page.path.startsWith(`/${langCode}/`);
+                }
+              })
+              .map(page => {
+                // Identify if this is potentially a parent page by checking if it has child pages
+                const hasChildPages = fallbackData.some(childPage => 
+                  childPage.parent_path === page.path || 
+                  childPage.is_submenu && childPage.parent_path === page.path
+                );
+                
+                return {
+                  id: page.id,
+                  title: page.title,
+                  content: page.content,
+                  path: page.path,
+                  imageUrl: page.image_url,
+                  icon: page.icon,
+                  listType: page.list_type as "locations" | "activities" | "restaurants" | undefined,
+                  listItems: page.list_items,
+                  isSubmenu: page.is_submenu || false,
+                  parentPath: page.parent_path || undefined,
+                  pageImages: [],
+                  published: page.published,
+                  is_parent: hasChildPages
+                };
+              });
+              
+            setPages(formattedPages);
+          }
+        } catch (fallbackError) {
+          console.error("Error in fallback page fetch:", fallbackError);
+          toast.error("Errore nel caricamento delle pagine");
+        }
+      } else {
+        toast.error("Errore nel caricamento delle pagine");
+      }
     } finally {
       setIsLoading(false);
     }

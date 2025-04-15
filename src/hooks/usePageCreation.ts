@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -61,7 +62,8 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
             image_url: pageData.imageUrl,
             icon: pageData.icon,
             is_submenu: pageData.pageType === "submenu",
-            parent_path: pageData.pageType === "submenu" ? pageData.parentPath : null
+            parent_path: pageData.pageType === "submenu" ? pageData.parentPath : null,
+            is_parent: pageData.pageType === "parent"
           })
           .eq('id', existingPage.id);
           
@@ -77,7 +79,8 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
             icon: pageData.icon,
             is_submenu: pageData.pageType === "submenu",
             parent_path: pageData.pageType === "submenu" ? pageData.parentPath : null,
-            published: true
+            published: true,
+            is_parent: pageData.pageType === "parent"
           });
 
         if (error) throw error;
