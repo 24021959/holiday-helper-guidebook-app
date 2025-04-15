@@ -24,7 +24,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import EditPageForm from "@/components/admin/EditPageForm";
-import { LanguageFlags } from "@/components/admin/LanguageFlags";
 
 const languages = [
   { code: 'it', name: 'Italiano', flag: '🇮🇹' },
@@ -178,10 +177,7 @@ const AdminManage = () => {
             {pages.map((page) => (
               <TableRow key={page.id}>
                 <TableCell className="font-medium">
-                  <div className="flex flex-col">
-                    <span>{page.title}</span>
-                    {page.path && <LanguageFlags path={page.path} />}
-                  </div>
+                  {page.title}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
