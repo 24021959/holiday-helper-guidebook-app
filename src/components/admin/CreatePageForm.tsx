@@ -51,8 +51,10 @@ import {
 } from "@/components/ui/resizable";
 import { Editor } from "@/components/editor/Editor";
 import { uploadImage } from "@/integrations/supabase/storage";
-import ImagesUploader, { ImageItem as UploaderImageItem } from "@/components/ImagesUploader";
+import ImagesUploader from "@/components/ImagesUploader";
 import { ImageItem } from "@/types/image.types";
+import { ImageUploadItem } from "@/types/image.types";
+import { useToast } from "@/hooks/use-toast";
 
 const pageFormSchema = z.object({
   title: z.string().min(2, {
@@ -71,33 +73,22 @@ interface CreatePageFormProps {
   keywordToIconMap: Record<string, string>;
 }
 
-const convertToAdminImageItem = (images: UploaderImageItem[]): ImageItem[] => {
-  return images.map(img => {
-    let position: "left" | "center" | "right" | "full";
-    
-    if (img.position === "left") {
-      position = "left";
-    } else if (img.position === "right") {
-      position = "right";
-    } else if (img.position === "full") {
-      position = "full";
-    } else {
-      position = "center";
-    }
-    
-    return {
-      url: img.url,
-      position: position,
-      caption: img.caption || "",
-      type: "image" as const
-    };
-  });
+const convertToImageItem = (images: ImageUploadItem[]): ImageItem[] => {
+  return images.map(img => ({
+    url: img.url,
+    position: img.position,
+    caption: img.caption || "",
+    type: "image" as const,
+  }));
 };
 
-const CreatePageForm: React.FC<CreatePageFormProps> = ({ parentPages, onPageCreated, keywordToIconMap }) => {
+const CreatePageForm: React.FC<CreatePageFormProps> = ({
+  parentPages, onPageCreated, keywordToIconMap
+}) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [pageImages, setPageImages] = useState<UploaderImageItem[]>([]);
+  const [mainImage, setMainImage] = useState<string | null>(null);
+  const [pageImages, setPageImages] = useState<ImageUploadItem[]>([]);
+  const { toast } = useToast();
   const router = useRouter();
   const [selectedIcon, setSelectedIcon] = useState<string | undefined>(undefined);
   const [selectedParentPath, setSelectedParentPath] = useState<string | undefined>(undefined);
@@ -118,18 +109,29 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({ parentPages, onPageCrea
   const pageType = watch("pageType");
   const isParentPage = pageType === "parent";
 
-  const handleImageUpload = async (file: File) => {
+  const handleMainImageUpload = async (file: File) => {
     try {
-      setIsSubmitting(true);
+      setIsUploading(true);
       const imageUrl = await uploadImage(file);
-      setUploadedImage(imageUrl);
-      toast.success("Immagine caricata con successo!");
+      setMainImage(imageUrl);
+      toast({
+        title: "Immagine caricata",
+        description: "L'immagine principale è stata caricata con successo",
+      });
     } catch (error) {
       console.error("Errore durante il caricamento dell'immagine:", error);
-      toast.error("Errore durante il caricamento dell'immagine.");
+      toast({
+        title: "Errore",
+        description: "Si è verificato un errore durante il caricamento dell'immagine",
+        variant: "destructive",
+      });
     } finally {
-      setIsSubmitting(false);
+      setIsUploading(false);
     }
+  };
+
+  const handleMainImageRemove = () => {
+    setMainImage(null);
   };
 
   const handleIconSelect = (icon: string) => {
@@ -146,11 +148,15 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({ parentPages, onPageCrea
       setIsSubmitting(true);
       
       if (values.pageType === "submenu" && !selectedParentPath) {
-        toast.error("Seleziona una pagina padre per il sottomenu.");
+        toast({
+          title: "Errore",
+          description: "Seleziona una pagina padre per il sottomenu",
+          variant: "destructive",
+        });
         return;
       }
       
-      const convertedImages = convertToAdminImageItem(pageImages);
+      const convertedImages = convertToImageItem(pageImages);
       
       await handleTranslateAndCreate(
         { 
@@ -160,11 +166,11 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({ parentPages, onPageCrea
         },
         values.pageType,
         selectedParentPath || "/",
-        uploadedImage,
+        mainImage,
         convertedImages,
         () => {
           form.reset();
-          setUploadedImage(null);
+          setMainImage(null);
           setPageImages([]);
           setSelectedIcon(undefined);
           setSelectedParentPath(undefined);
@@ -172,7 +178,11 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({ parentPages, onPageCrea
       );
     } catch (error) {
       console.error("Errore durante la creazione della pagina:", error);
-      toast.error("Si è verificato un errore durante la creazione della pagina.");
+      toast({
+        title: "Errore",
+        description: "Si è verificato un errore durante la creazione della pagina",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -342,7 +352,7 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({ parentPages, onPageCrea
                       accept="image/*"
                       onChange={(e) => {
                         if (e.target.files && e.target.files.length > 0) {
-                          handleImageUpload(e.target.files[0]);
+                          handleMainImageUpload(e.target.files[0]);
                         }
                       }}
                       className="hidden"

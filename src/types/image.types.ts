@@ -8,3 +8,12 @@ export interface ImageItem {
   insertInContent?: boolean;
   order?: number;
 }
+
+export interface ImageUploadItem {
+  id: string;
+  url: string;
+  position: "left" | "center" | "right" | "full";
+  caption: string;
+  type?: string;
+}
+

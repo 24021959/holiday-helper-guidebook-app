@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -26,21 +25,26 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
   const { translateSequential } = useTranslation();
 
   const formatPageContent = (content: string, images: ImageItem[]) => {
-    if (images.length === 0) return content;
+    if (!content && images.length === 0) return "";
     
-    let enhancedContent = content;
-    enhancedContent += "\n\n<!-- IMAGES -->\n";
+    let enhancedContent = content || "";
     
-    images.forEach((image) => {
-      const imageMarkup = JSON.stringify({
-        type: "image",
-        url: image.url,
-        position: image.position,
-        caption: image.caption || ""
-      });
+    if (images.length > 0) {
+      enhancedContent += "\n\n<!-- IMAGES -->\n";
       
-      enhancedContent += `\n${imageMarkup}\n`;
-    });
+      images.forEach((image) => {
+        const imageMarkup = JSON.stringify({
+          type: "image",
+          url: image.url,
+          position: image.position,
+          caption: image.caption || "",
+          insertInContent: image.insertInContent,
+          order: image.order
+        });
+        
+        enhancedContent += `\n${imageMarkup}\n`;
+      });
+    }
     
     return enhancedContent;
   };
