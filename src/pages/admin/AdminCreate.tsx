@@ -15,18 +15,16 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { usePageCreation } from "@/hooks/usePageCreation";
+import { ImageItem } from "@/types/image.types";
 
 export interface PageContent {
   title: string;
   content: string;
-  images: ImageDetail[];
+  images: ImageItem[];
 }
 
-interface ImageDetail {
-  url: string;
+interface ImageDetail extends ImageItem {
   width: string;
-  position: "left" | "center" | "right" | "full";
-  caption?: string;
 }
 
 const AdminCreate = () => {
@@ -63,7 +61,7 @@ const AdminCreate = () => {
     }));
   };
 
-  const handleImageAdd = (imageDetail: ImageDetail) => {
+  const handleImageAdd = (imageDetail: ImageItem) => {
     setPageContent(prev => ({
       ...prev,
       images: [...prev.images, imageDetail]
@@ -78,10 +76,9 @@ const AdminCreate = () => {
 
     try {
       const pageImages = pageContent.images.map(img => ({
-        url: img.url,
-        position: img.position,
-        caption: img.caption,
-        type: "image" as const
+        ...img,
+        type: "image" as const,
+        width: img.width || "100%"
       }));
 
       await handleTranslateAndCreate(
