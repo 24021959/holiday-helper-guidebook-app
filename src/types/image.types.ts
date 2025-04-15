@@ -4,7 +4,7 @@ export interface ImageItem {
   position: "left" | "center" | "right" | "full";
   caption?: string;
   type: "image";
-  width?: string;
+  width: string;
   insertInContent?: boolean;
   order?: number;
 }
@@ -17,4 +17,11 @@ export interface ImageUploadItem {
   type?: string;
   insertInContent?: boolean;
   order?: number;
+}
+
+export interface ImageDetail {
+  url: string;
+  position: "left" | "center" | "right" | "full";
+  caption?: string;
+  width: string;
 }

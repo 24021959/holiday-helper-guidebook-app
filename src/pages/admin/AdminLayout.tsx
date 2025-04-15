@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -12,11 +13,33 @@ import AdminCreate from "./AdminCreate";
 import AdminManage from "./AdminManage";
 import { PageData } from "@/types/page.types";
 import { LayoutSettings } from "@/components/admin/LayoutSettings";
+import { toast } from "sonner";
 
 const AdminLayout = () => {
   const isAuthenticated = true;
   const [activeTab, setActiveTab] = useState("create");
   const [pageToEdit, setPageToEdit] = useState<PageData | null>(null);
+
+  // Set the active tab from URL hash if present
+  useEffect(() => {
+    const hash = window.location.hash.replace('#', '');
+    if (hash && ['create', 'manage', 'settings', 'chatbot', 'analytics'].includes(hash)) {
+      setActiveTab(hash);
+    }
+    
+    // Update hash when tab changes
+    window.addEventListener('hashchange', () => {
+      const newHash = window.location.hash.replace('#', '');
+      if (newHash && ['create', 'manage', 'settings', 'chatbot', 'analytics'].includes(newHash)) {
+        setActiveTab(newHash);
+      }
+    });
+  }, []);
+
+  // Update URL hash when activeTab changes
+  useEffect(() => {
+    window.location.hash = activeTab;
+  }, [activeTab]);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -25,6 +48,10 @@ const AdminLayout = () => {
   const handleEditPage = (page: PageData) => {
     setPageToEdit(page);
     setActiveTab("create");
+  };
+
+  const handleLayoutSaved = () => {
+    toast.success("Impostazioni layout salvate con successo");
   };
 
   return (

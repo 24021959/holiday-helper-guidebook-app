@@ -1,10 +1,9 @@
-
 import React from "react";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { ImageUploader } from "@/components/ImageUploader";
+import ImageUploader from "@/components/ImageUploader";
 import { 
   Facebook, 
   Instagram, 
@@ -161,11 +160,29 @@ export const LayoutSettings = () => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Logo</FormLabel>
-                <ImageUploader
-                  imageUrl={field.value}
-                  onImageUploaded={(url) => field.onChange(url)}
-                  onImageRemoved={() => field.onChange("")}
-                />
+                <FormControl>
+                  <ImageUploader
+                    onImageUpload={(url) => field.onChange(url)}
+                  />
+                </FormControl>
+                {field.value && (
+                  <div className="mt-2 relative">
+                    <img 
+                      src={field.value} 
+                      alt="Logo anteprima" 
+                      className="h-16 object-contain" 
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-0 right-0"
+                      onClick={() => field.onChange("")}
+                    >
+                      Rimuovi
+                    </Button>
+                  </div>
+                )}
               </FormItem>
             )}
           />

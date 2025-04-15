@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useState, useEffect } from "react";
 import { VisualEditor } from "@/components/admin/VisualEditor";
@@ -15,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { usePageCreation } from "@/hooks/usePageCreation";
-import { ImageItem } from "@/types/image.types";
+import { ImageItem, ImageDetail } from "@/types/image.types";
 import { PageData } from "@/types/page.types";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -114,10 +113,16 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
     }));
   };
 
-  const handleImageAdd = (imageDetail: ImageItem) => {
+  const handleImageAdd = (imageDetail: ImageDetail) => {
+    const newImage: ImageItem = {
+      ...imageDetail,
+      type: "image",
+      width: imageDetail.width || "100%"
+    };
+    
     setPageContent(prev => ({
       ...prev,
-      images: [...prev.images, imageDetail]
+      images: [...prev.images, newImage]
     }));
   };
 
