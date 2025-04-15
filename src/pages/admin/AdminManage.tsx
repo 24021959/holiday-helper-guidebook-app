@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageData } from "@/types/page.types";
@@ -57,7 +56,7 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
         query = query.like('path', `/${langCode}/%`);
       }
 
-      const { data, error } = await query;
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -124,7 +123,7 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
         
         console.log("Found translations to delete:", allTranslations);
         
-        // Delete all translations from custom_pages
+        // Delete all translations from custom_pages and menu_icons
         if (allTranslations && allTranslations.length > 0) {
           const translationIds = allTranslations.map(p => p.id);
           const translationPaths = allTranslations.map(p => p.path);
@@ -145,10 +144,13 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
             
             if (menuError) {
               console.error(`Error deleting menu icon for path ${path}:`, menuError);
+              throw menuError;
             }
           }
           
-          setPages(prev => prev.filter(p => !translationIds.includes(p.id)));
+          // Refresh the page list after deletion
+          await fetchPages(currentLanguage);
+          toast.success("Pagina e tutte le sue traduzioni eliminate con successo");
         }
       } else {
         // For non-Italian pages, just delete the specific page
@@ -164,14 +166,12 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
           .delete()
           .eq('path', deletingPage.path);
 
-        if (menuError) {
-          console.error("Error deleting menu icon:", menuError);
-        }
+        if (menuError) throw menuError;
         
-        setPages(prev => prev.filter(p => p.id !== deletingPage.id));
+        // Refresh the page list after deletion
+        await fetchPages(currentLanguage);
+        toast.success("Pagina eliminata con successo");
       }
-      
-      toast.success("Pagina eliminata con successo");
     } catch (error) {
       console.error("Error deleting page:", error);
       toast.error("Errore nell'eliminazione della pagina");
@@ -181,7 +181,6 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
     }
   };
 
-  // Function to determine the page type text based on page properties
   const getPageTypeText = (page: PageData): string => {
     if (page.isSubmenu) return "Sottopagina";
     if (page.is_parent) return "Master";

@@ -69,7 +69,8 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
             icon: pageData.icon,
             is_submenu: pageData.pageType === "submenu",
             parent_path: pageData.pageType === "submenu" ? pageData.parentPath : null,
-            is_parent: pageData.pageType === "parent" || pageData.is_parent || false
+            is_parent: pageData.pageType === "parent" || pageData.is_parent || false,
+            updated_at: new Date().toISOString()
           })
           .eq('id', existingPage.id);
           
@@ -86,12 +87,14 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
             is_submenu: pageData.pageType === "submenu",
             parent_path: pageData.pageType === "submenu" ? pageData.parentPath : null,
             published: true,
-            is_parent: pageData.pageType === "parent" || pageData.is_parent || false
+            is_parent: pageData.pageType === "parent" || pageData.is_parent || false,
+            updated_at: new Date().toISOString()
           });
 
         if (error) throw error;
       }
 
+      // Update menu icons
       const { data: existingIcon } = await supabase
         .from('menu_icons')
         .select('*')
@@ -107,7 +110,8 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
             is_submenu: pageData.pageType === "submenu",
             parent_path: pageData.pageType === "submenu" ? pageData.parentPath : null,
             published: true,
-            is_parent: pageData.pageType === "parent" || pageData.is_parent || false
+            is_parent: pageData.pageType === "parent" || pageData.is_parent || false,
+            updated_at: new Date().toISOString()
           })
           .eq('path', pageData.path);
 
@@ -123,13 +127,24 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
             is_submenu: pageData.pageType === "submenu",
             parent_path: pageData.pageType === "submenu" ? pageData.parentPath : null,
             published: true,
-            is_parent: pageData.pageType === "parent" || pageData.is_parent || false
+            is_parent: pageData.pageType === "parent" || pageData.is_parent || false,
+            updated_at: new Date().toISOString()
           });
 
         if (iconError) throw iconError;
       }
+
+      // Fetch updated pages after saving
+      const { data: updatedPages, error: fetchError } = await supabase
+        .from('custom_pages')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (fetchError) throw fetchError;
+      return updatedPages;
+      
     } catch (error) {
-      console.error("Errore nel salvataggio della pagina:", error);
+      console.error("Error saving page:", error);
       throw error;
     }
   };
@@ -203,9 +218,11 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         }
       }
 
+      // Fetch final updated pages
       const { data: pagesData, error: fetchError } = await supabase
         .from('custom_pages')
-        .select('*');
+        .select('*')
+        .order('created_at', { ascending: false });
       
       if (fetchError) throw fetchError;
       
