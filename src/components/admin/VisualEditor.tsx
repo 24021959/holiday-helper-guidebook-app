@@ -1,7 +1,11 @@
 
 import React, { useState } from "react";
 import { ContentBlock } from "@/pages/admin/AdminCreate";
-import { PlusCircle, TypeIcon, ImageIcon, Phone, MapPin, Trash2, MoveVertical } from "lucide-react";
+import { 
+  PlusCircle, TypeIcon, ImageIcon, Phone, MapPin, Trash2, MoveVertical,
+  Bold, Italic, AlignLeft, AlignCenter, AlignRight, List, ListOrdered,
+  Heading1, Heading2, Quote, Link as LinkIcon
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -83,6 +87,80 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({ blocks, onChange }) 
     setIsDragging(null);
   };
   
+  const applyTextFormat = (blockId: string, format: string) => {
+    const block = blocks.find(b => b.id === blockId);
+    if (!block || block.type !== "text") return;
+    
+    const textarea = document.querySelector(`textarea[data-block-id="${blockId}"]`) as HTMLTextAreaElement;
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    let formattedText = '';
+    let cursorPosition = start;
+    
+    switch (format) {
+      case 'bold':
+        formattedText = `**${selectedText}**`;
+        cursorPosition = start + formattedText.length;
+        break;
+      case 'italic':
+        formattedText = `*${selectedText}*`;
+        cursorPosition = start + formattedText.length;
+        break;
+      case 'h1':
+        formattedText = `# ${selectedText}`;
+        cursorPosition = start + formattedText.length;
+        break;
+      case 'h2':
+        formattedText = `## ${selectedText}`;
+        cursorPosition = start + formattedText.length;
+        break;
+      case 'quote':
+        formattedText = `> ${selectedText}`;
+        cursorPosition = start + formattedText.length;
+        break;
+      case 'bullet-list':
+        formattedText = selectedText.split('\n').map(line => `- ${line}`).join('\n');
+        cursorPosition = start + formattedText.length;
+        break;
+      case 'numbered-list':
+        formattedText = selectedText.split('\n').map((line, i) => `${i + 1}. ${line}`).join('\n');
+        cursorPosition = start + formattedText.length;
+        break;
+      case 'link':
+        const url = prompt("Inserisci l'URL del link:", "https://");
+        if (url) {
+          formattedText = `[${selectedText || 'Link'}](${url})`;
+          cursorPosition = start + formattedText.length;
+        } else {
+          return;
+        }
+        break;
+      case 'align-left':
+      case 'align-center':
+      case 'align-right':
+        const alignment = format.replace('align-', '');
+        formattedText = `<div style="text-align:${alignment}">${selectedText}</div>`;
+        cursorPosition = start + formattedText.length;
+        break;
+    }
+    
+    if (formattedText) {
+      const newContent = block.content.substring(0, start) + formattedText + block.content.substring(end);
+      updateBlock(blockId, { content: newContent });
+      
+      // Set cursor position after update
+      setTimeout(() => {
+        if (textarea) {
+          textarea.focus();
+          textarea.setSelectionRange(cursorPosition, cursorPosition);
+        }
+      }, 0);
+    }
+  };
+  
   const renderBlockContent = (block: ContentBlock, index: number) => {
     const isSelected = selectedBlock === block.id;
     const isText = block.type === "text";
@@ -102,6 +180,133 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({ blocks, onChange }) 
         onDragOver={(e) => handleDragOver(e, index)}
         onDrop={(e) => handleDrop(e, index)}
       >
+        {isText && isSelected && (
+          <div className="flex flex-wrap gap-1 p-2 bg-gray-50 border-b">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0" 
+              onClick={(e) => {
+                e.stopPropagation();
+                applyTextFormat(block.id, 'bold');
+              }}
+            >
+              <Bold className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0" 
+              onClick={(e) => {
+                e.stopPropagation();
+                applyTextFormat(block.id, 'italic');
+              }}
+            >
+              <Italic className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0" 
+              onClick={(e) => {
+                e.stopPropagation();
+                applyTextFormat(block.id, 'h1');
+              }}
+            >
+              <Heading1 className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0" 
+              onClick={(e) => {
+                e.stopPropagation();
+                applyTextFormat(block.id, 'h2');
+              }}
+            >
+              <Heading2 className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0" 
+              onClick={(e) => {
+                e.stopPropagation();
+                applyTextFormat(block.id, 'bullet-list');
+              }}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0" 
+              onClick={(e) => {
+                e.stopPropagation();
+                applyTextFormat(block.id, 'numbered-list');
+              }}
+            >
+              <ListOrdered className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0" 
+              onClick={(e) => {
+                e.stopPropagation();
+                applyTextFormat(block.id, 'quote');
+              }}
+            >
+              <Quote className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0" 
+              onClick={(e) => {
+                e.stopPropagation();
+                applyTextFormat(block.id, 'link');
+              }}
+            >
+              <LinkIcon className="h-4 w-4" />
+            </Button>
+            <div className="h-6 border-r mx-1"></div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0" 
+              onClick={(e) => {
+                e.stopPropagation();
+                applyTextFormat(block.id, 'align-left');
+              }}
+            >
+              <AlignLeft className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0" 
+              onClick={(e) => {
+                e.stopPropagation();
+                applyTextFormat(block.id, 'align-center');
+              }}
+            >
+              <AlignCenter className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0" 
+              onClick={(e) => {
+                e.stopPropagation();
+                applyTextFormat(block.id, 'align-right');
+              }}
+            >
+              <AlignRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+        
         <div className="p-4">
           {isText && (
             <Textarea
@@ -109,6 +314,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({ blocks, onChange }) 
               placeholder="Inserisci il testo qui..."
               onChange={(e) => updateBlock(block.id, { content: e.target.value })}
               className="w-full border-0 focus:ring-0 p-0 min-h-[100px] resize-none"
+              data-block-id={block.id}
             />
           )}
           

@@ -139,7 +139,13 @@ const AdminCreate = () => {
             />
           </div>
           
-          <div className="border rounded-lg overflow-hidden">
+          <div className="border rounded-lg overflow-hidden shadow-sm">
+            <div className="bg-blue-50 p-3 border-b flex items-center gap-2">
+              <span className="font-medium text-blue-800">Editor visuale</span>
+              <span className="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full">
+                Clicca su un blocco per visualizzare gli strumenti di formattazione
+              </span>
+            </div>
             <VisualEditor 
               blocks={pageContent.blocks}
               onChange={handleBlocksChange}
