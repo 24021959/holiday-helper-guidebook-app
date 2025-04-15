@@ -34,27 +34,39 @@ interface LayoutSettingsForm extends HeaderSettings {
 }
 
 const colorOptions = [
-  { value: "bg-slate-800", label: "Slate" },
-  { value: "bg-zinc-800", label: "Zinc" },
-  { value: "bg-neutral-800", label: "Neutral" },
-  { value: "bg-stone-800", label: "Stone" },
-  { value: "bg-red-800", label: "Red" },
-  { value: "bg-orange-800", label: "Orange" },
-  { value: "bg-amber-800", label: "Amber" },
-  { value: "bg-yellow-800", label: "Yellow" },
-  { value: "bg-lime-800", label: "Lime" },
-  { value: "bg-green-800", label: "Green" },
-  { value: "bg-emerald-800", label: "Emerald" },
-  { value: "bg-teal-800", label: "Teal" },
-  { value: "bg-cyan-800", label: "Cyan" },
-  { value: "bg-sky-800", label: "Sky" },
-  { value: "bg-blue-800", label: "Blue" },
-  { value: "bg-indigo-800", label: "Indigo" },
-  { value: "bg-violet-800", label: "Violet" },
-  { value: "bg-purple-800", label: "Purple" },
-  { value: "bg-fuchsia-800", label: "Fuchsia" },
-  { value: "bg-pink-800", label: "Pink" },
-  { value: "bg-rose-800", label: "Rose" },
+  { value: "#FFFFFF", label: "White", textColor: "text-gray-800" },
+  { value: "bg-white", label: "Off White", textColor: "text-gray-800" },
+  { value: "#000000", label: "Black", textColor: "text-white" },
+  
+  // Slate Colors
+  { value: "bg-slate-50", label: "Slate 50", textColor: "text-gray-800" },
+  { value: "bg-slate-100", label: "Slate 100", textColor: "text-gray-800" },
+  { value: "bg-slate-200", label: "Slate 200", textColor: "text-gray-800" },
+  { value: "bg-slate-800", label: "Slate 800", textColor: "text-white" },
+  
+  // Gray Colors
+  { value: "bg-gray-50", label: "Gray 50", textColor: "text-gray-800" },
+  { value: "bg-gray-100", label: "Gray 100", textColor: "text-gray-800" },
+  { value: "bg-gray-200", label: "Gray 200", textColor: "text-gray-800" },
+  { value: "bg-gray-800", label: "Gray 800", textColor: "text-white" },
+  
+  // Blue Colors
+  { value: "bg-blue-50", label: "Blue 50", textColor: "text-gray-800" },
+  { value: "bg-blue-100", label: "Blue 100", textColor: "text-gray-800" },
+  { value: "bg-blue-200", label: "Blue 200", textColor: "text-gray-800" },
+  { value: "bg-blue-800", label: "Blue 800", textColor: "text-white" },
+  
+  // Green Colors
+  { value: "bg-green-50", label: "Green 50", textColor: "text-gray-800" },
+  { value: "bg-green-100", label: "Green 100", textColor: "text-gray-800" },
+  { value: "bg-green-200", label: "Green 200", textColor: "text-gray-800" },
+  { value: "bg-green-800", label: "Green 800", textColor: "text-white" },
+  
+  // Emerald Colors
+  { value: "bg-emerald-50", label: "Emerald 50", textColor: "text-gray-800" },
+  { value: "bg-emerald-100", label: "Emerald 100", textColor: "text-gray-800" },
+  { value: "bg-emerald-200", label: "Emerald 200", textColor: "text-gray-800" },
+  { value: "bg-emerald-800", label: "Emerald 800", textColor: "text-white" },
 ];
 
 export const LayoutSettings = () => {
@@ -142,12 +154,25 @@ export const LayoutSettings = () => {
                       key={color.value}
                       type="button"
                       variant={field.value === color.value ? "default" : "outline"}
-                      className={`${color.value} h-8 w-full`}
+                      className={`${color.value} ${color.textColor} h-8 w-full`}
                       onClick={() => field.onChange(color.value)}
                     >
-                      <span className="text-white text-xs">{color.label}</span>
+                      <span className="text-xs">{color.label}</span>
                     </Button>
                   ))}
+                  
+                  {/* Color Picker for Custom Colors */}
+                  <div className="col-span-full mt-2">
+                    <FormLabel>Colore Personalizzato</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="color"
+                        value={field.value}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        className="w-full h-10"
+                      />
+                    </FormControl>
+                  </div>
                 </div>
               </FormItem>
             )}
