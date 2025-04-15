@@ -110,23 +110,67 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
     if (!deletingPage) return;
 
     try {
-      const { error: pageError } = await supabase
-        .from('custom_pages')
-        .delete()
-        .eq('id', deletingPage.id);
+      // If it's an Italian page, delete all related translations
+      if (currentLanguage === 'it') {
+        const normalizedPath = deletingPage.path;
+        
+        // Get all translations of this page
+        const { data: allTranslations, error: translationsError } = await supabase
+          .from('custom_pages')
+          .select('id, path')
+          .or(`path.eq.${normalizedPath}, path.like./??${normalizedPath}`);
+        
+        if (translationsError) throw translationsError;
+        
+        console.log("Found translations to delete:", allTranslations);
+        
+        // Delete all translations from custom_pages
+        if (allTranslations && allTranslations.length > 0) {
+          const translationIds = allTranslations.map(p => p.id);
+          const translationPaths = allTranslations.map(p => p.path);
+          
+          const { error: bulkDeleteError } = await supabase
+            .from('custom_pages')
+            .delete()
+            .in('id', translationIds);
+          
+          if (bulkDeleteError) throw bulkDeleteError;
+          
+          // Delete all corresponding menu entries
+          for (const path of translationPaths) {
+            const { error: menuError } = await supabase
+              .from('menu_icons')
+              .delete()
+              .eq('path', path);
+            
+            if (menuError) {
+              console.error(`Error deleting menu icon for path ${path}:`, menuError);
+            }
+          }
+          
+          setPages(prev => prev.filter(p => !translationIds.includes(p.id)));
+        }
+      } else {
+        // For non-Italian pages, just delete the specific page
+        const { error: pageError } = await supabase
+          .from('custom_pages')
+          .delete()
+          .eq('id', deletingPage.id);
 
-      if (pageError) throw pageError;
+        if (pageError) throw pageError;
 
-      const { error: menuError } = await supabase
-        .from('menu_icons')
-        .delete()
-        .eq('path', deletingPage.path);
+        const { error: menuError } = await supabase
+          .from('menu_icons')
+          .delete()
+          .eq('path', deletingPage.path);
 
-      if (menuError) {
-        console.error("Error deleting menu icon:", menuError);
+        if (menuError) {
+          console.error("Error deleting menu icon:", menuError);
+        }
+        
+        setPages(prev => prev.filter(p => p.id !== deletingPage.id));
       }
-
-      setPages(prev => prev.filter(p => p.id !== deletingPage.id));
+      
       toast.success("Pagina eliminata con successo");
     } catch (error) {
       console.error("Error deleting page:", error);

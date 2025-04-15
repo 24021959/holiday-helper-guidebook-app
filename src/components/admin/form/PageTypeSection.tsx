@@ -37,9 +37,6 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
     return isItalianPage && isParentPage;
   });
 
-  console.log("Parent pages before filtering:", parentPages);
-  console.log("Filtered parent pages:", filteredParentPages);
-
   return (
     <>
       <FormField

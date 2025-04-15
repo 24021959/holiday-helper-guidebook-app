@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -17,6 +18,7 @@ interface SavePageData {
   icon: string;
   pageType: "normal" | "submenu" | "parent";
   parentPath: string | null;
+  is_parent?: boolean;
 }
 
 export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
@@ -66,7 +68,8 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
             image_url: pageData.imageUrl,
             icon: pageData.icon,
             is_submenu: pageData.pageType === "submenu",
-            parent_path: pageData.pageType === "submenu" ? pageData.parentPath : null
+            parent_path: pageData.pageType === "submenu" ? pageData.parentPath : null,
+            is_parent: pageData.pageType === "parent" || pageData.is_parent || false
           })
           .eq('id', existingPage.id);
           
@@ -82,7 +85,8 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
             icon: pageData.icon,
             is_submenu: pageData.pageType === "submenu",
             parent_path: pageData.pageType === "submenu" ? pageData.parentPath : null,
-            published: true
+            published: true,
+            is_parent: pageData.pageType === "parent" || pageData.is_parent || false
           });
 
         if (error) throw error;
@@ -102,7 +106,8 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
             icon: pageData.icon,
             is_submenu: pageData.pageType === "submenu",
             parent_path: pageData.pageType === "submenu" ? pageData.parentPath : null,
-            published: true
+            published: true,
+            is_parent: pageData.pageType === "parent" || pageData.is_parent || false
           })
           .eq('path', pageData.path);
 
@@ -117,7 +122,8 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
             bg_color: 'bg-blue-200',
             is_submenu: pageData.pageType === "submenu",
             parent_path: pageData.pageType === "submenu" ? pageData.parentPath : null,
-            published: true
+            published: true,
+            is_parent: pageData.pageType === "parent" || pageData.is_parent || false
           });
 
         if (iconError) throw iconError;
@@ -167,6 +173,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         icon: values.icon,
         pageType,
         parentPath: pageType === "submenu" ? parentPath : null,
+        is_parent: pageType === "parent"
       });
 
       // Then translate and save for each target language
@@ -189,6 +196,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
             parentPath: pageType === "submenu" ? 
               (parentPath.startsWith(`/${lang}`) ? parentPath : `/${lang}${parentPath}`) : 
               null,
+            is_parent: pageType === "parent"
           });
           
           toast.success(`Pagina tradotta in ${lang.toUpperCase()} e salvata con successo`);
@@ -215,7 +223,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
           parentPath: page.parent_path || undefined,
           pageImages: [],
           published: page.published || false,
-          is_parent: false
+          is_parent: page.is_parent || false
         }));
         
         onPageCreated(formattedPages);
