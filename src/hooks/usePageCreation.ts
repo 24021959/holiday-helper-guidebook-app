@@ -146,13 +146,14 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         : `/${sanitizedTitle}`;
       
       const formattedContent = pageType === "parent" 
-        ? ""
+        ? "" 
         : formatPageContent(values.content, pageImages);
 
       toast.info("Avvio traduzione automatica in tutte le lingue...");
 
-      const targetLangs: ("it" | "en" | "fr" | "es" | "de")[] = ['en', 'fr', 'es', 'de'];
+      const targetLangs: ("en" | "fr" | "es" | "de")[] = ['en', 'fr', 'es', 'de'];
       
+      // First save the Italian version
       await saveNewPage({
         title: values.title,
         content: formattedContent,
@@ -163,6 +164,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         parentPath: pageType === "submenu" ? parentPath : null,
       });
 
+      // Then translate and save for each target language
       const translations = await translateSequential(
         values.content,
         values.title,
