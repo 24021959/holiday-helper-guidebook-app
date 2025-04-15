@@ -115,28 +115,6 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
           .eq('id', existingPage.id);
           
         if (updateError) throw updateError;
-
-        if (!path.match(/^\/[a-z]{2}\//)) {
-          const translations = await translateSequential(formattedContent, title, ['en', 'fr', 'es', 'de']);
-          
-          for (const lang of Object.keys(translations)) {
-            if (lang !== 'it') {
-              const translatedPath = `/${lang}${path}`;
-              const translatedParentPath = parentPath ? `/${lang}${parentPath}` : null;
-              
-              await saveNewPage(
-                translations[lang].title,
-                translations[lang].content,
-                translatedPath,
-                imageUrl,
-                icon,
-                pageType,
-                translatedParentPath,
-                images
-              );
-            }
-          }
-        }
       } else {
         const { error } = await supabase
           .from('custom_pages')
@@ -217,7 +195,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         ? `${values.parentPath}/${sanitizedTitle}`
         : `/${sanitizedTitle}`;
 
-      // Always save the Italian version first, regardless of page type
+      // Save the Italian version first (main version)
       await saveNewPage(
         values.title,
         values.content,
@@ -231,7 +209,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
 
       toast.info("Avvio traduzione automatica in tutte le lingue...");
 
-      // For all page types (including parent pages), translate to other languages
+      // Translate to all other languages for all page types
       const targetLangs: ("en" | "fr" | "es" | "de")[] = ['en', 'fr', 'es', 'de'];
       
       const translations = await translateSequential(
