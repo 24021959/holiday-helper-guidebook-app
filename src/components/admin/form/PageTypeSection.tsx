@@ -1,16 +1,15 @@
-
 import React from "react";
-import { Label } from "@/components/ui/label";
-import { PageData } from "@/pages/Admin";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Info } from "lucide-react";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { PageData } from "@/types/page.types";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface PageTypeSectionProps {
   pageType: "normal" | "submenu" | "parent";
-  setPageType: (pageType: "normal" | "submenu" | "parent") => void;
+  setPageType: (type: "normal" | "submenu" | "parent") => void;
   parentPath: string;
-  setParentPath: (parentPath: string) => void;
+  setParentPath: (path: string) => void;
   parentPages: PageData[];
 }
 
@@ -22,69 +21,78 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
   parentPages
 }) => {
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label>Tipo di pagina</Label>
-        <RadioGroup 
-          value={pageType} 
-          onValueChange={(value) => setPageType(value as "normal" | "submenu" | "parent")} 
-          className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2"
-        >
-          <div className="flex items-center space-x-2 border p-3 rounded-md">
-            <RadioGroupItem value="normal" id="normal" />
-            <Label htmlFor="normal" className="cursor-pointer">Pagina normale</Label>
-          </div>
-          <div className="flex items-center space-x-2 border p-3 rounded-md">
-            <RadioGroupItem value="submenu" id="submenu" />
-            <Label htmlFor="submenu" className="cursor-pointer">Sottopagina</Label>
-          </div>
-          <div className="flex items-center space-x-2 border p-3 rounded-md">
-            <RadioGroupItem value="parent" id="parent" />
-            <Label htmlFor="parent" className="cursor-pointer">Pagina genitore</Label>
-          </div>
-        </RadioGroup>
-      </div>
-      
-      {(pageType === "submenu") && (
-        <div className="space-y-2">
-          <Label htmlFor="parentPath">Pagina genitore</Label>
-          <Select 
-            value={parentPath} 
-            onValueChange={setParentPath}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Seleziona pagina genitore" />
-            </SelectTrigger>
-            <SelectContent>
-              {parentPages.map((parent) => (
-                <SelectItem key={parent.path} value={parent.path}>
-                  {parent.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+    <>
+      <FormField
+        control={form => form.control}
+        name="pageType"
+        render={() => (
+          <FormItem>
+            <FormLabel>Tipo di Pagina</FormLabel>
+            <Select
+              onValueChange={(value) => setPageType(value as "normal" | "submenu" | "parent")}
+              defaultValue={pageType}
+            >
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona un tipo" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="normal">Normale</SelectItem>
+                <SelectItem value="submenu">Sottomenu</SelectItem>
+                <SelectItem value="parent">Pagina Genitore</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      {pageType === "submenu" && (
+        <FormField
+          control={form => form.control}
+          name="parentPage"
+          render={() => (
+            <FormItem>
+              <FormLabel>Pagina Genitore</FormLabel>
+              <Select
+                onValueChange={setParentPath}
+                defaultValue={parentPath}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleziona la pagina genitore" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {parentPages.map((page) => (
+                    <SelectItem key={page.path} value={page.path}>
+                      {page.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       )}
-      
-      <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-        <div className="flex space-x-2">
-          <Info className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <h4 className="font-medium text-blue-700">Informazioni sui tipi di pagina:</h4>
-            <ul className="mt-2 space-y-1 text-sm text-blue-600 list-disc pl-5">
-              <li>
-                <strong>Pagina normale:</strong> Una pagina che mostra il suo contenuto quando viene cliccata.
-              </li>
-              <li>
-                <strong>Sottopagina:</strong> Una pagina che appare nel menu di una pagina genitore.
-              </li>
-              <li>
-                <strong>Pagina genitore:</strong> Questa pagina non ha contenuti propri e serve solo come contenitore per sottopagine. Cliccandola si aprirà un sottomenu con le sue sottopagine.
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
+
+      {pageType === "parent" && (
+        <FormField
+          control={form => form.control}
+          name="parentPath"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Percorso della Pagina Genitore</FormLabel>
+              <FormControl>
+                <Input placeholder="es. /it/pagina-genitore" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
+    </>
   );
 };

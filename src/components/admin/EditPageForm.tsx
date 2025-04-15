@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { PageData } from "@/pages/Admin";
+import { PageData } from "@/types/page.types";
 import { toast } from "sonner";
 import { useForm, FormProvider } from "react-hook-form";
 import { z } from "zod";

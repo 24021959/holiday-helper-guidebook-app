@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import EditPageForm from "@/components/admin/EditPageForm";
+import { LanguageFlags } from "@/components/admin/LanguageFlags";
 
 const languages = [
   { code: 'it', name: 'Italiano', flag: '🇮🇹' },
@@ -44,14 +45,24 @@ const AdminManage = () => {
 
   const fetchPages = async (langCode: string) => {
     try {
-      const { data, error } = await supabase
-        .from('custom_pages')
-        .select('*')
-        .like('path', `/${langCode}/%`);
+      setIsLoading(true);
+      let query = supabase.from('custom_pages').select('*');
+      
+      if (langCode === 'it') {
+        // For Italian, show pages without a language prefix and explicitly Italian pages
+        query = query.or(`path.not.like./%/%, path.like./it/%`);
+      } else {
+        // For other languages, only show pages with that language prefix
+        query = query.like('path', `/${langCode}/%`);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
       if (data) {
+        console.log(`Fetched ${data.length} pages for language: ${langCode}`, data);
+        
         const formattedPages = data.map(page => ({
           id: page.id,
           title: page.title,
@@ -142,7 +153,7 @@ const AdminManage = () => {
               key={lang.code}
               variant={currentLanguage === lang.code ? "default" : "outline"}
               onClick={() => setCurrentLanguage(lang.code)}
-              className={currentLanguage === lang.code ? "bg-emerald-100 text-emerald-800" : ""}
+              className={currentLanguage === lang.code ? "bg-emerald-600 text-white hover:bg-emerald-700" : ""}
             >
               <span className="mr-2">{lang.flag}</span>
               {lang.name}
@@ -151,47 +162,58 @@ const AdminManage = () => {
         </div>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Titolo</TableHead>
-            <TableHead className="text-right">Azioni</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {pages.map((page) => (
-            <TableRow key={page.id}>
-              <TableCell className="font-medium">{page.title}</TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleView(page)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleEdit(page)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="text-red-600 hover:text-red-700"
-                    onClick={() => handleDelete(page)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
+      {pages.length === 0 ? (
+        <div className="text-center py-10 bg-gray-50 rounded-lg">
+          <p className="text-gray-500">Nessuna pagina trovata per questa lingua</p>
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Titolo</TableHead>
+              <TableHead className="text-right">Azioni</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {pages.map((page) => (
+              <TableRow key={page.id}>
+                <TableCell className="font-medium">
+                  <div className="flex flex-col">
+                    <span>{page.title}</span>
+                    {page.path && <LanguageFlags path={page.path} />}
+                  </div>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleView(page)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleEdit(page)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="text-red-600 hover:text-red-700"
+                      onClick={() => handleDelete(page)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
@@ -227,10 +249,7 @@ const AdminManage = () => {
               selectedPage={selectedPage}
               parentPages={pages.filter(p => p.is_parent)}
               onPageUpdated={(updatedPages) => {
-                setPages(updatedPages.filter(page => 
-                  page.path.startsWith(`/${currentLanguage}/`) || 
-                  (!page.path.match(/^\/[a-z]{2}\//) && currentLanguage === 'it')
-                ));
+                fetchPages(currentLanguage);
                 setShowEditDialog(false);
               }}
               keywordToIconMap={{}}
