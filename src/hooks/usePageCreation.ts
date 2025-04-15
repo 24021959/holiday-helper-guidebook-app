@@ -1,10 +1,11 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTranslation } from "@/context/TranslationContext";
 import { v4 as uuidv4 } from "uuid";
 import { ImageItem } from "@/types/image.types";
-import { PageFormValues } from "@/types/form.types";
+import { PageFormValues, PageType } from "@/types/form.types";
 
 interface UsePageCreationProps {
   onPageCreated: (pages: any[]) => void;
@@ -46,7 +47,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
     path: string,
     imageUrl: string | null,
     icon: string,
-    pageType: "normal" | "submenu" | "parent",
+    pageType: PageType,
     parentPath: string | null,
     images: ImageItem[]
   ) => {
@@ -145,7 +146,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
 
   const handleTranslateAndCreate = async (
     values: PageFormValues,
-    uploadedImage: string | null,
+    imageUrl: string | null,
     pageImages: ImageItem[],
     onSuccess: () => void
   ) => {
@@ -171,7 +172,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         values.title,
         values.content,
         finalPath,
-        uploadedImage,
+        imageUrl,
         values.icon,
         values.pageType,
         values.pageType === "submenu" ? values.parentPath || null : null,
@@ -193,7 +194,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
               translations[lang].title,
               translations[lang].content,
               translatedPath,
-              uploadedImage,
+              imageUrl,
               values.icon,
               values.pageType,
               values.pageType === "submenu" ? 

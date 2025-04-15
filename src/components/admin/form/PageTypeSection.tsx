@@ -5,10 +5,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PageData } from "@/types/page.types";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { PageType } from "@/types/form.types";
 
 interface PageTypeSectionProps {
-  pageType: "normal" | "submenu" | "parent";
-  setPageType: (type: "normal" | "submenu" | "parent") => void;
+  pageType: PageType;
+  setPageType: (type: PageType) => void;
   parentPath: string;
   setParentPath: (path: string) => void;
   parentPages: PageData[];
@@ -32,7 +33,7 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
                           !page.path.startsWith('/es/');
     
     // Check if it's a parent page
-    const isParentPage = page.is_parent;
+    const isParentPage = page.is_parent === true;
     
     return isItalianPage && isParentPage;
   });
@@ -42,12 +43,15 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
       <FormField
         control={control}
         name="pageType"
-        render={() => (
+        render={({ field }) => (
           <FormItem>
             <FormLabel>Tipo di Pagina</FormLabel>
             <Select
-              onValueChange={(value) => setPageType(value as "normal" | "submenu" | "parent")}
-              defaultValue={pageType}
+              onValueChange={(value) => {
+                setPageType(value as PageType);
+                field.onChange(value);
+              }}
+              defaultValue={field.value}
             >
               <FormControl>
                 <SelectTrigger>
@@ -68,13 +72,16 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
       {pageType === "submenu" && (
         <FormField
           control={control}
-          name="parentPage"
-          render={() => (
+          name="parentPath"
+          render={({ field }) => (
             <FormItem>
               <FormLabel>Pagina Genitore</FormLabel>
               <Select
-                onValueChange={setParentPath}
-                defaultValue={parentPath}
+                onValueChange={(value) => {
+                  setParentPath(value);
+                  field.onChange(value);
+                }}
+                defaultValue={field.value || parentPath}
               >
                 <FormControl>
                   <SelectTrigger>

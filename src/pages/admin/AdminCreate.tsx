@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useState, useEffect } from "react";
 import { VisualEditor } from "@/components/admin/VisualEditor";
@@ -25,12 +24,13 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
+import { PageType } from "@/types/form.types";
 
 export interface PageContent {
   title: string;
   content: string;
   images: ImageItem[];
-  pageType: "normal" | "submenu" | "parent";
+  pageType: PageType;
   parentPath?: string;
 }
 
@@ -149,7 +149,7 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
     }));
   };
 
-  const handlePageTypeChange = (value: "normal" | "submenu" | "parent") => {
+  const handlePageTypeChange = (value: PageType) => {
     setPageContent(prev => ({
       ...prev,
       pageType: value,
@@ -181,10 +181,10 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
         {
           title: pageContent.title,
           content: pageContent.content,
-          icon: pageToEdit?.icon || "FileText"
+          icon: pageToEdit?.icon || "FileText",
+          pageType: pageContent.pageType,
+          parentPath: pageContent.parentPath
         },
-        pageContent.pageType,
-        pageContent.pageType === "submenu" ? (pageContent.parentPath || "") : "",
         uploadedImage,
         pageImages,
         () => {

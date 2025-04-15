@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useRouter } from '@/lib/next-router-mock';
 import { useForm } from "react-hook-form";
@@ -55,6 +56,7 @@ import ImagesUploader from "@/components/ImagesUploader";
 import { ImageItem, ImageUploadItem } from "@/types/image.types";
 import { useToast } from "@/hooks/use-toast";
 import { PageData } from "@/types/page.types";
+import { PageType } from "@/types/form.types";
 
 const pageFormSchema = z.object({
   title: z.string().min(2, {
@@ -62,9 +64,8 @@ const pageFormSchema = z.object({
   }),
   content: z.string().optional(),
   icon: z.string().optional(),
-  isParent: z.boolean().default(false).optional(),
-  parentPath: z.string().optional(),
   pageType: z.enum(["normal", "submenu", "parent"]).default("normal"),
+  parentPath: z.string().optional(),
 });
 
 interface CreatePageFormProps {
@@ -102,13 +103,12 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
       title: "",
       content: "",
       icon: "FileText",
-      isParent: false,
       pageType: "normal",
     },
   });
 
   const { watch, setValue } = form;
-  const pageType = watch("pageType");
+  const pageType = watch("pageType") as PageType;
   const isParentPage = pageType === "parent";
 
   const handleMainImageUpload = async (file: File) => {
@@ -160,10 +160,10 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
         { 
           title: values.title, 
           content: values.content || "", 
-          icon: values.icon 
+          icon: values.icon || "FileText",
+          pageType: values.pageType,
+          parentPath: selectedParentPath
         },
-        values.pageType,
-        selectedParentPath || "/",
         mainImage,
         convertedImages,
         () => {
