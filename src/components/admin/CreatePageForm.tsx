@@ -4,7 +4,6 @@ import { useRouter } from '@/lib/next-router-mock';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { v4 as uuidv4 } from 'uuid';
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -17,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { 
@@ -45,7 +44,6 @@ import {
   HelpCircle,
   LayoutGrid
 } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePageCreation } from "@/hooks/usePageCreation";
 import {
   ResizableHandle,
@@ -74,9 +72,10 @@ interface CreatePageFormProps {
   keywordToIconMap: Record<string, string>;
 }
 
+// Carefully defining the conversion function with explicit typing
 const convertToAdminImageItem = (images: UploaderImageItem[]): ImageItem[] => {
   return images.map(img => {
-    // Assicuriamoci che position sia solo uno dei valori consentiti
+    // Ensure position is only one of the allowed values with proper validation
     let position: "left" | "center" | "right" | "full";
     
     if (img.position === "left") {
@@ -86,7 +85,7 @@ const convertToAdminImageItem = (images: UploaderImageItem[]): ImageItem[] => {
     } else if (img.position === "full") {
       position = "full";
     } else {
-      // Default a center per altri valori
+      // Default to center for other values
       position = "center";
     }
     
@@ -99,13 +98,12 @@ const convertToAdminImageItem = (images: UploaderImageItem[]): ImageItem[] => {
   });
 };
 
-export default function CreatePageForm({ parentPages, onPageCreated, keywordToIconMap }: CreatePageFormProps) {
+const CreatePageForm: React.FC<CreatePageFormProps> = ({ parentPages, onPageCreated, keywordToIconMap }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [pageImages, setPageImages] = useState<UploaderImageItem[]>([]);
   const router = useRouter();
   const [selectedIcon, setSelectedIcon] = useState<string | undefined>(undefined);
-  const [isParent, setIsParent] = useState(false);
   const [selectedParentPath, setSelectedParentPath] = useState<string | undefined>(undefined);
   const { isCreating, isTranslating, handleTranslateAndCreate } = usePageCreation({ onPageCreated });
 
@@ -174,7 +172,6 @@ export default function CreatePageForm({ parentPages, onPageCreated, keywordToIc
           setPageImages([]);
           setSelectedIcon(undefined);
           setSelectedParentPath(undefined);
-          setIsParent(false);
         }
       );
     } catch (error) {
@@ -359,8 +356,7 @@ export default function CreatePageForm({ parentPages, onPageCreated, keywordToIc
                       <Button
                         variant="outline"
                         type="button"
-                        asChild={true}
-                        disabled={isSubmitting}
+                        asChild
                       >
                         <label htmlFor="image-upload" className="cursor-pointer">
                           {isSubmitting ? "Caricando..." : "Carica Immagine"}
@@ -380,6 +376,7 @@ export default function CreatePageForm({ parentPages, onPageCreated, keywordToIc
                             className="absolute top-0 right-0"
                             onClick={handleRemoveImage}
                           >
+                            <span className="sr-only">Rimuovi</span>
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               viewBox="0 0 20 20"
@@ -397,7 +394,6 @@ export default function CreatePageForm({ parentPages, onPageCreated, keywordToIc
                       )}
                     </div>
                   </FormControl>
-                  <FormMessage />
                 </div>
 
                 <div>
@@ -408,7 +404,6 @@ export default function CreatePageForm({ parentPages, onPageCreated, keywordToIc
                   <FormControl>
                     <ImagesUploader images={pageImages} onChange={setPageImages} />
                   </FormControl>
-                  <FormMessage />
                 </div>
               </div>
 
@@ -448,6 +443,6 @@ export default function CreatePageForm({ parentPages, onPageCreated, keywordToIc
       </Form>
     </div>
   );
-}
+};
 
-export { CreatePageForm };
+export default CreatePageForm;
