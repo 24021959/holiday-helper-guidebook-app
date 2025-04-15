@@ -10,7 +10,7 @@ export interface PageData {
   listItems?: { name: string; description?: string; phoneNumber?: string; mapsUrl?: string; }[];
   isSubmenu: boolean;
   parentPath?: string;
-  pageImages: { url: string; position: "top" | "center" | "bottom"; caption?: string; }[];
+  pageImages: { url: string; position: "left" | "center" | "right" | "full"; caption?: string; }[];
   published: boolean;
   is_parent: boolean;
 }

@@ -1,11 +1,10 @@
 
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { VisualEditor } from "@/components/admin/VisualEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Card, 
   CardContent, 
@@ -18,6 +17,7 @@ import { toast } from "sonner";
 import { usePageCreation } from "@/hooks/usePageCreation";
 import { ImageItem } from "@/types/image.types";
 import { PageData } from "@/types/page.types";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface PageContent {
   title: string;
@@ -36,11 +36,17 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
   const [pageContent, setPageContent] = useState<PageContent>(() => ({
     title: pageToEdit?.title || "",
     content: pageToEdit?.content || "",
-    images: pageToEdit?.pageImages || [],
+    images: pageToEdit?.pageImages.map(img => ({
+      url: img.url,
+      position: (img.position === "top" || img.position === "bottom") ? "center" : img.position as "left" | "center" | "right" | "full",
+      caption: img.caption || "",
+      type: "image" as const
+    })) || [],
     pageType: pageToEdit?.is_parent ? "parent" : pageToEdit?.isSubmenu ? "submenu" : "normal",
     parentPath: pageToEdit?.parentPath
   }));
 
+  const [parentPages, setParentPages] = useState<PageData[]>([]);
   const [uploadedImage, setUploadedImage] = useState<string | null>(pageToEdit?.imageUrl || null);
   const { handleTranslateAndCreate, isCreating, isTranslating } = usePageCreation({
     onPageCreated: (pages) => {
@@ -55,6 +61,44 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
       toast.success(pageToEdit ? "Pagina aggiornata con successo!" : "Pagina creata con successo!");
     }
   });
+
+  useEffect(() => {
+    const fetchParentPages = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('custom_pages')
+          .select('*')
+          .eq('is_submenu', false);
+        
+        if (error) throw error;
+        
+        if (data) {
+          const formattedPages = data.map(page => ({
+            id: page.id,
+            title: page.title,
+            content: page.content,
+            path: page.path,
+            imageUrl: page.image_url,
+            icon: page.icon,
+            listType: page.list_type as "locations" | "activities" | "restaurants" | undefined,
+            listItems: page.list_items as { name: string; description?: string; phoneNumber?: string; mapsUrl?: string; }[] | undefined,
+            isSubmenu: page.is_submenu || false,
+            parentPath: page.parent_path || undefined,
+            pageImages: [],
+            published: page.published || false,
+            is_parent: false
+          }));
+          
+          setParentPages(formattedPages);
+        }
+      } catch (error) {
+        console.error("Error fetching parent pages:", error);
+        toast.error("Errore nel caricamento delle pagine genitore");
+      }
+    };
+    
+    fetchParentPages();
+  }, []);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPageContent(prev => ({
@@ -155,23 +199,36 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
               />
             </div>
 
-            <div>
+            <div className="space-y-4">
               <Label htmlFor="pageType" className="text-base font-medium">
                 Tipo di pagina
               </Label>
-              <Select
-                value={pageContent.pageType}
-                onValueChange={handlePageTypeChange}
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Seleziona il tipo di pagina" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="normal">Pagina normale</SelectItem>
-                  <SelectItem value="submenu">Sottopagina</SelectItem>
-                  <SelectItem value="parent">Pagina master (con sottopagine)</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="grid grid-cols-3 gap-4">
+                <Button
+                  type="button"
+                  variant={pageContent.pageType === "normal" ? "default" : "outline"}
+                  className={pageContent.pageType === "normal" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                  onClick={() => handlePageTypeChange("normal")}
+                >
+                  Pagina normale
+                </Button>
+                <Button
+                  type="button"
+                  variant={pageContent.pageType === "submenu" ? "default" : "outline"}
+                  className={pageContent.pageType === "submenu" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                  onClick={() => handlePageTypeChange("submenu")}
+                >
+                  Sottopagina
+                </Button>
+                <Button
+                  type="button"
+                  variant={pageContent.pageType === "parent" ? "default" : "outline"}
+                  className={pageContent.pageType === "parent" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                  onClick={() => handlePageTypeChange("parent")}
+                >
+                  Pagina genitore
+                </Button>
+              </div>
             </div>
 
             {pageContent.pageType === "submenu" && (
@@ -179,19 +236,19 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
                 <Label htmlFor="parentPath" className="text-base font-medium">
                   Pagina principale
                 </Label>
-                <Select
-                  value={pageContent.parentPath}
-                  onValueChange={handleParentPathChange}
+                <select 
+                  id="parentPath"
+                  className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  value={pageContent.parentPath || ""}
+                  onChange={(e) => handleParentPathChange(e.target.value)}
                 >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Seleziona la pagina principale" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {/* We'll need to fetch and populate parent pages here */}
-                    <SelectItem value="/page1">Pagina 1</SelectItem>
-                    <SelectItem value="/page2">Pagina 2</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <option value="">Seleziona una pagina genitore</option>
+                  {parentPages.map((page) => (
+                    <option key={page.path} value={page.path}>
+                      {page.title}
+                    </option>
+                  ))}
+                </select>
               </div>
             )}
 

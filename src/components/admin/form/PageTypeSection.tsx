@@ -1,3 +1,4 @@
+
 import React from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,6 +12,7 @@ interface PageTypeSectionProps {
   parentPath: string;
   setParentPath: (path: string) => void;
   parentPages: PageData[];
+  control?: any;
 }
 
 export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
@@ -18,12 +20,13 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
   setPageType,
   parentPath,
   setParentPath,
-  parentPages
+  parentPages,
+  control
 }) => {
   return (
     <>
       <FormField
-        control={form => form.control}
+        control={control}
         name="pageType"
         render={() => (
           <FormItem>
@@ -50,7 +53,7 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
 
       {pageType === "submenu" && (
         <FormField
-          control={form => form.control}
+          control={control}
           name="parentPage"
           render={() => (
             <FormItem>
@@ -80,7 +83,7 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
 
       {pageType === "parent" && (
         <FormField
-          control={form => form.control}
+          control={control}
           name="parentPath"
           render={({ field }) => (
             <FormItem>

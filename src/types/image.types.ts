@@ -5,4 +5,6 @@ export interface ImageItem {
   caption?: string;
   type: "image";
   width?: string;
+  insertInContent?: boolean;
+  order?: number;
 }
