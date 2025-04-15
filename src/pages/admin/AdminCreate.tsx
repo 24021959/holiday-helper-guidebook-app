@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useState } from "react";
 import { VisualEditor } from "@/components/admin/VisualEditor";
@@ -15,6 +14,8 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { usePageCreation } from "@/hooks/usePageCreation";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TypeIcon, ImageIcon, Phone, MapPin } from "lucide-react";
 
 export interface PageContent {
   title: string;
@@ -38,7 +39,6 @@ const AdminCreate = () => {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const { handleTranslateAndCreate, isCreating, isTranslating } = usePageCreation({
     onPageCreated: (pages) => {
-      // Reset form after successful creation
       setPageContent({
         title: "",
         blocks: []
@@ -61,6 +61,20 @@ const AdminCreate = () => {
     }));
   };
 
+  const addContentBlock = (type: "text" | "image" | "phone" | "map") => {
+    const newBlock: ContentBlock = {
+      id: crypto.randomUUID(),
+      type,
+      content: "",
+      position: "full"
+    };
+    
+    setPageContent(prev => ({
+      ...prev,
+      blocks: [...prev.blocks, newBlock]
+    }));
+  };
+
   const handleSavePage = async () => {
     if (!pageContent.title) {
       toast.error("Inserisci un titolo per la pagina");
@@ -77,7 +91,6 @@ const AdminCreate = () => {
           type: "image" as const
         }));
 
-      // Format content removing image blocks as they will be handled separately
       let formattedContent = pageContent.blocks
         .filter(block => block.type !== "image")
         .map(block => {
@@ -138,19 +151,50 @@ const AdminCreate = () => {
               onChange={handleTitleChange}
             />
           </div>
-          
-          <div className="border rounded-lg overflow-hidden shadow-sm">
-            <div className="bg-blue-50 p-3 border-b flex items-center gap-2">
-              <span className="font-medium text-blue-800">Editor visuale</span>
-              <span className="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full">
-                Clicca su un blocco per visualizzare gli strumenti di formattazione
-              </span>
+
+          <Tabs defaultValue="editor" className="w-full space-y-4">
+            <TabsList className="grid w-full grid-cols-4 bg-blue-50">
+              <TabsTrigger 
+                value="text" 
+                onClick={() => addContentBlock("text")}
+                className="flex items-center gap-2 data-[state=active]:bg-blue-200"
+              >
+                <TypeIcon className="w-4 h-4" />
+                <span>Testo</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="image" 
+                onClick={() => addContentBlock("image")}
+                className="flex items-center gap-2 data-[state=active]:bg-green-200"
+              >
+                <ImageIcon className="w-4 h-4" />
+                <span>Immagine</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="phone" 
+                onClick={() => addContentBlock("phone")}
+                className="flex items-center gap-2 data-[state=active]:bg-yellow-200"
+              >
+                <Phone className="w-4 h-4" />
+                <span>Telefono</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="map" 
+                onClick={() => addContentBlock("map")}
+                className="flex items-center gap-2 data-[state=active]:bg-purple-200"
+              >
+                <MapPin className="w-4 h-4" />
+                <span>Mappa</span>
+              </TabsTrigger>
+            </TabsList>
+
+            <div className="border rounded-lg overflow-hidden shadow-sm">
+              <VisualEditor 
+                blocks={pageContent.blocks}
+                onChange={handleBlocksChange}
+              />
             </div>
-            <VisualEditor 
-              blocks={pageContent.blocks}
-              onChange={handleBlocksChange}
-            />
-          </div>
+          </Tabs>
         </CardContent>
         
         <CardFooter className="flex justify-end gap-2 bg-gray-50 rounded-b-lg">
