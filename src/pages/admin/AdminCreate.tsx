@@ -15,12 +15,6 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { usePageCreation } from "@/hooks/usePageCreation";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Bold, Italic, AlignLeft, AlignCenter, AlignRight, 
-  List, ListOrdered, Heading1, Heading2, Quote, Link as LinkIcon,
-  ImageIcon, Phone, MapPin, TypeIcon
-} from "lucide-react";
 
 export interface PageContent {
   title: string;
@@ -51,6 +45,7 @@ const AdminCreate = () => {
         images: []
       });
       setUploadedImage(null);
+      toast.success("Pagina creata con successo!");
     }
   });
 
@@ -109,20 +104,6 @@ const AdminCreate = () => {
     }
   };
 
-  const formatButtons = [
-    { icon: <Bold className="h-4 w-4" />, action: 'bold', label: 'Grassetto' },
-    { icon: <Italic className="h-4 w-4" />, action: 'italic', label: 'Corsivo' },
-    { icon: <Heading1 className="h-4 w-4" />, action: 'h1', label: 'Titolo 1' },
-    { icon: <Heading2 className="h-4 w-4" />, action: 'h2', label: 'Titolo 2' },
-    { icon: <List className="h-4 w-4" />, action: 'bullet', label: 'Elenco puntato' },
-    { icon: <ListOrdered className="h-4 w-4" />, action: 'number', label: 'Elenco numerato' },
-    { icon: <Quote className="h-4 w-4" />, action: 'quote', label: 'Citazione' },
-    { icon: <LinkIcon className="h-4 w-4" />, action: 'link', label: 'Link' },
-    { icon: <AlignLeft className="h-4 w-4" />, action: 'left', label: 'Allinea a sinistra' },
-    { icon: <AlignCenter className="h-4 w-4" />, action: 'center', label: 'Centra' },
-    { icon: <AlignRight className="h-4 w-4" />, action: 'right', label: 'Allinea a destra' },
-  ];
-
   return (
     <div className="container mx-auto px-4 py-6">
       <Card className="bg-white shadow-lg border-0">
@@ -149,50 +130,14 @@ const AdminCreate = () => {
             />
           </div>
 
-          <Tabs defaultValue="editor" className="w-full">
-            <TabsList className="w-full bg-blue-50 mb-2">
-              <TabsTrigger value="editor" className="flex-1">
-                <TypeIcon className="w-4 h-4 mr-2" />
-                Editor
-              </TabsTrigger>
-              <TabsTrigger value="image" className="flex-1">
-                <ImageIcon className="w-4 h-4 mr-2" />
-                Immagini
-              </TabsTrigger>
-              <TabsTrigger value="media" className="flex-1">
-                <Phone className="w-4 h-4 mr-2" />
-                Media
-              </TabsTrigger>
-              <TabsTrigger value="map" className="flex-1">
-                <MapPin className="w-4 h-4 mr-2" />
-                Mappa
-              </TabsTrigger>
-            </TabsList>
-
-            <div className="flex flex-wrap gap-2 p-2 bg-gray-50 border-b">
-              {formatButtons.map((btn, idx) => (
-                <Button
-                  key={idx}
-                  variant="outline"
-                  size="sm"
-                  className="h-8"
-                  onClick={() => {/* formatting logic */}}
-                >
-                  {btn.icon}
-                  <span className="sr-only">{btn.label}</span>
-                </Button>
-              ))}
-            </div>
-
-            <div className="border rounded-lg mt-2">
-              <VisualEditor 
-                content={pageContent.content}
-                images={pageContent.images}
-                onChange={handleContentChange}
-                onImageAdd={handleImageAdd}
-              />
-            </div>
-          </Tabs>
+          <div className="border rounded-lg mt-2">
+            <VisualEditor 
+              content={pageContent.content}
+              images={pageContent.images}
+              onChange={handleContentChange}
+              onImageAdd={handleImageAdd}
+            />
+          </div>
         </CardContent>
         
         <CardFooter className="flex justify-end gap-2 bg-gray-50 rounded-b-lg">
