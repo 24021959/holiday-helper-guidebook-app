@@ -3,16 +3,16 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// Otteniamo il riferimento all'elemento root
+// Get the root element
 const rootElement = document.getElementById('root')
 
-// Verifichiamo che l'elemento esista
+// Check if element exists
 if (!rootElement) {
   throw new Error('Failed to find the root element')
 }
 
-// Creiamo il root utilizzando il metodo createRoot di React 18
+// Create the root using React 18's createRoot method
 const root = createRoot(rootElement)
 
-// Effettuiamo il rendering dell'app
+// Render the app
 root.render(<App />)
