@@ -50,7 +50,7 @@ export const usePreviewWindow = ({
       // For normal dialog mode or when closed
       setShouldRenderDialog(isOpen);
     }
-  }, [isOpen, onClose, openInNewWindow]);
+  }, [isOpen, onClose, openInNewWindow, title]);
   
   return shouldRenderDialog;
 };
