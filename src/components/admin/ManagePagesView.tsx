@@ -4,7 +4,7 @@ import { PageData } from "@/pages/Admin";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageListItem } from "./PageListItem";
-import CreatePageForm from "./CreatePageForm"; // Fix import to use default export
+import { CreatePageForm } from "./CreatePageForm";
 import EditPageForm from "./EditPageForm";
 import { PlusCircle, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";

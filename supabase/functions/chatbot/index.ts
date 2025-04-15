@@ -8,19 +8,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const SYSTEM_PROMPT = `Sei un assistente virtuale specializzato della Locanda dell'Angelo, una struttura ricettiva in Italia. 
-Il tuo compito è fornire informazioni accurate e utili agli ospiti, rispondendo in modo naturale e cortese.
+const SYSTEM_PROMPT = `Sei un assistente virtuale della Locanda dell'Angelo, una struttura ricettiva. Il tuo compito è fornire informazioni accurate e complete agli ospiti, basandoti ESCLUSIVAMENTE sulla base di conoscenza fornita.
 
 ISTRUZIONI IMPORTANTI:
-1. Rispondi SEMPRE in italiano con uno stile cordiale, professionale e conversazionale.
-2. Usa le informazioni presenti nella base di conoscenza per informare le tue risposte, ma NON citare direttamente il testo o menzionare "la base di conoscenza".
-3. Formula risposte naturali e fluide, come se fossi un receptionist umano che conosce bene la struttura.
-4. Se la domanda è ambigua, cerca di capire l'intento dell'utente basandoti sul contesto della conversazione.
-5. Fornisci dettagli rilevanti e specifici quando possibile (orari, prezzi, posizioni, etc.), ma in modo conversazionale.
-6. Personalizza le risposte facendo riferimento alla "Locanda dell'Angelo" per creare un'esperienza autentica.
-7. Se non hai informazioni sufficienti per rispondere a una domanda specifica, sii onesto e suggerisci di contattare direttamente la reception.
+1. Rispondi SEMPRE in italiano con uno stile cordiale, professionale e dettagliato.
+2. Utilizza SOLO le informazioni presenti nella base di conoscenza fornita. Se trovi informazioni rilevanti, usa quelle per dare risposte precise e complete.
+3. Se NON trovi informazioni specifiche per rispondere a una domanda, NON INVENTARE. Invece rispondi: "Mi dispiace, non ho informazioni specifiche su questo argomento. Ti consiglio di chiedere direttamente alla reception, che sarà lieta di assisterti."
+4. Quando rispondi, includi tutti i dettagli disponibili nella base di conoscenza relativi alla domanda, come orari, prezzi, servizi, ecc.
+5. Personalizza le risposte menzionando il nome della struttura "Locanda dell'Angelo" quando appropriato.
+6. Se l'utente chiede informazioni su servizi o informazioni che dovrebbero esistere in un hotel (come WiFi, ristorante, colazione), ma non sono presenti nella base di conoscenza, rispondi con la frase standard di mancanza di informazioni, non inventare.
+7. Le informazioni nella base di conoscenza hanno sempre priorità assoluta su qualsiasi conoscenza generale.
+8. Cerca di essere il più utile possibile, analizzando tutte le informazioni disponibili prima di rispondere che non hai informazioni.
 
-IMPORTANTE: Non limitarti a ripetere il testo che trovi nella base di conoscenza. Usa quelle informazioni per creare una risposta originale, naturale e utile, come farebbe un receptionist umano competente e cordiale.`;
+Ricorda: il tuo scopo è assistere gli ospiti con informazioni accurate basate esclusivamente sulla base di conoscenza fornita. La precisione è fondamentale.`;
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -67,23 +67,6 @@ serve(async (req) => {
       supabaseKey || ''
     );
 
-    // Definizione delle query più comuni che potrebbero essere fatte dall'utente
-    const commonQueries = {
-      wifi: ["wifi", "internet", "connessione", "password wifi", "rete", "connessione internet", "wi-fi", "wi fi"],
-      colazione: ["colazione", "breakfast", "prima colazione", "orari colazione", "quando si fa colazione"],
-      reception: ["reception", "accoglienza", "check-in", "check-out", "orari reception", "banco"],
-      ristorante: ["ristorante", "restaurant", "cena", "pranzo", "mangiare", "orari ristorante", "orari pasti", "prenotare", "prenotazione"],
-      camere: ["camera", "camere", "stanza", "stanze", "alloggio", "dormire", "servizi in camera"],
-      minibar: ["minibar", "mini bar", "frigobar", "frigo", "bevande camera"],
-      orari: ["orario", "orari", "tempo", "quando", "a che ora", "dalle", "alle"],
-      deposito: ["deposito", "biciclette", "bici", "bike", "deposito biciclette"],
-      parcheggio: ["parcheggio", "parking", "auto", "macchina", "dove parcheggiare"],
-      pagamento: ["pagamento", "pagare", "costo", "prezzo", "carta di credito", "contanti"],
-      servizi: ["servizi", "facilities", "offerte", "cosa offrite", "servizi hotel"],
-      checkin: ["check in", "checkin", "check-in", "arrivo", "quando posso arrivare"],
-      checkout: ["check out", "checkout", "check-out", "partenza", "lasciare la stanza"]
-    };
-
     // Get relevant documents from the knowledge base
     let relevantContent = [];
     let knowledgeBaseEmpty = false;
@@ -102,17 +85,9 @@ serve(async (req) => {
         knowledgeBaseEmpty = true;
       } else {
         console.log(`Found ${count} documents in knowledge base`);
-
-        // Extract keyphrases from the query to improve search relevance
-        const cleanMessage = message.toLowerCase()
-          .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, " ")
-          .replace(/\s{2,}/g, " ")
-          .trim();
-          
-        // Use embeddings for semantic search if available
-        let foundRelevantContent = false;
         
-        // 1. FIRST SEARCH STRATEGY: Vector similarity search (semantic search)
+        // COMPREHENSIVE SEARCH STRATEGY:
+        // 1. First try using embeddings for semantic search if available
         if (openAIApiKey) {
           try {
             // Create embedding for search query
@@ -132,215 +107,196 @@ serve(async (req) => {
               const embeddingData = await embeddingResponse.json();
               const embedding = embeddingData.data[0].embedding;
               
-              // Use a relatively low threshold to catch more potentially relevant documents
+              // Search using vector similarity
               const { data: matchedDocs, error: matchError } = await supabaseClient.rpc(
                 'match_documents',
                 {
                   query_embedding: embedding,
                   match_threshold: 0.5,
-                  match_count: 10  // Get more documents to ensure we have comprehensive information
+                  match_count: 8  // Increase match count to get more potential matches
                 }
               );
 
               if (!matchError && matchedDocs && matchedDocs.length > 0) {
                 console.log(`Found ${matchedDocs.length} relevant documents using vector search`);
-                // Sort by similarity score
-                matchedDocs.sort((a, b) => b.similarity - a.similarity);
                 relevantContent = matchedDocs;
-                foundRelevantContent = true;
               } else {
                 console.log("No vector search results, falling back to keyword search");
               }
-            } else {
-              console.error("OpenAI API response error:", embeddingResponse.status);
             }
           } catch (embeddingError) {
             console.error("Error with embedding search:", embeddingError);
           }
         }
         
-        // 2. SECOND SEARCH STRATEGY: Check if the query matches any common query types
-        // This helps with functional categorization of queries
-        if (!foundRelevantContent || relevantContent.length < 3) {
-          console.log("Checking for common query types...");
-          
-          let matchedCategories = [];
-          for (const [category, keywords] of Object.entries(commonQueries)) {
-            if (keywords.some(keyword => cleanMessage.includes(keyword))) {
-              matchedCategories.push(category);
-            }
-          }
-          
-          if (matchedCategories.length > 0) {
-            console.log("Query matches these categories:", matchedCategories);
-            
-            // Gather keywords from all matched categories
-            const searchKeywords = matchedCategories.flatMap(category => commonQueries[category]);
-            
-            // Create a query with OR conditions for all the keywords
-            const queries = searchKeywords.map(keyword => {
-              return `content.ilike.%${keyword}%`;
-            });
-            
-            const { data: categoryMatches, error: categoryError } = await supabaseClient
-              .from('chatbot_knowledge')
-              .select('*')
-              .or(queries.join(','))
-              .limit(10);
-              
-            if (!categoryError && categoryMatches && categoryMatches.length > 0) {
-              console.log(`Found ${categoryMatches.length} documents matching common categories`);
-              
-              if (foundRelevantContent) {
-                // Add new documents only if they're not already included
-                const existingIds = new Set(relevantContent.map(doc => doc.id));
-                const newDocs = categoryMatches.filter(doc => !existingIds.has(doc.id));
-                relevantContent = [...relevantContent, ...newDocs];
-              } else {
-                relevantContent = categoryMatches;
-                foundRelevantContent = true;
-              }
-            }
+        // 2. Direct keyword search for specific terms that might be in the question
+        const keywordMap = {
+          'wifi': ['wifi', 'internet', 'connessione', 'rete'],
+          'colazione': ['colazione', 'breakfast', 'prima colazione', 'mangiare'],
+          'ristorante': ['ristorante', 'cena', 'pranzo', 'mangiare', 'restaurant'],
+          'reception': ['reception', 'accoglienza', 'check-in', 'check-out'],
+          'camera': ['camera', 'stanza', 'room', 'alloggio'],
+          'orari': ['orario', 'orari', 'aperto', 'chiuso', 'apre', 'chiude', 'disponibile'],
+          'servizi': ['servizio', 'servizi', 'facilities', 'service'],
+          'parcheggio': ['parcheggio', 'parking', 'auto', 'macchina'],
+          'biciclette': ['bici', 'biciclette', 'bicycle', 'bike', 'ciclabile'],
+          'bar': ['bar', 'drink', 'bevande', 'aperitivo'],
+          'pagamento': ['pagamento', 'pagare', 'costo', 'prezzo', 'payment', 'carta', 'contanti'],
+          'prenotazione': ['prenotazione', 'prenotare', 'booking', 'reserve', 'reservation']
+        };
+        
+        // Check if the message contains any keywords of interest
+        const lowercaseMessage = message.toLowerCase();
+        const matchedCategories = [];
+        
+        for (const [category, keywords] of Object.entries(keywordMap)) {
+          if (keywords.some(keyword => lowercaseMessage.includes(keyword))) {
+            matchedCategories.push(category);
           }
         }
         
-        // 3. THIRD SEARCH STRATEGY: Direct content search with extracted keywords
-        if (!foundRelevantContent || relevantContent.length < 3) {
-          console.log("Performing direct keyword search...");
+        // If we have categories, search for them specifically
+        if (matchedCategories.length > 0) {
+          console.log("Detected specific categories in question:", matchedCategories);
+          const additionalKeywords = matchedCategories.flatMap(category => keywordMap[category]);
           
-          // Extract significant words (exclude very common short words)
-          const excludeWords = new Set([
-            'a', 'e', 'i', 'o', 'u', 'di', 'a', 'da', 'in', 'con', 'su', 'per', 'tra', 'fra', 
-            'il', 'lo', 'la', 'i', 'gli', 'le', 'un', 'uno', 'una', 'che', 'chi', 'cui', 
-            'non', 'sì', 'ho', 'hai', 'ha', 'mi', 'ti', 'ci', 'vi', 'al', 'del', 'dal', 'nel', 
-            'sul', 'dall', 'dell', 'all'
-          ]);
-          
-          const words = cleanMessage.split(/\s+/)
-            .filter(word => word.length > 2 && !excludeWords.has(word))
-            .slice(0, 15); // Limit number of keywords to avoid overly broad queries
-            
-          console.log("Search keywords:", words);
-          
-          if (words.length > 0) {
-            // Build a query that will match any of these keywords
-            const wordQueries = words.map(word => `content.ilike.%${word}%`);
-            
+          // Build a comprehensive search with all relevant keywords for the categories
+          if (additionalKeywords.length > 0) {
             try {
-              const { data: keywordMatches, error: keywordError } = await supabaseClient
+              const searchConditions = additionalKeywords.map(term => `content.ilike.%${term}%`);
+              
+              const { data: categoryMatches, error: categoryError } = await supabaseClient
                 .from('chatbot_knowledge')
                 .select('*')
-                .or(wordQueries.join(','))
-                .limit(15);
+                .or(searchConditions.join(','))
+                .limit(10);
                 
-              if (!keywordError && keywordMatches && keywordMatches.length > 0) {
-                console.log(`Found ${keywordMatches.length} documents from keyword search`);
+              if (!categoryError && categoryMatches && categoryMatches.length > 0) {
+                console.log(`Found ${categoryMatches.length} documents related to specific categories`);
                 
-                if (foundRelevantContent) {
-                  // Add only new documents
-                  const existingIds = new Set(relevantContent.map(doc => doc.id));
-                  const newDocs = keywordMatches.filter(doc => !existingIds.has(doc.id));
-                  relevantContent = [...relevantContent, ...newDocs];
-                } else {
-                  relevantContent = keywordMatches;
-                  foundRelevantContent = true;
-                }
-              } else {
-                console.log("No results from combined keyword search");
+                // Add only new documents not already in relevantContent
+                const existingIds = new Set(relevantContent.map(doc => doc.id));
+                const newCategoryMatches = categoryMatches.filter(doc => !existingIds.has(doc.id));
+                
+                relevantContent = [...relevantContent, ...newCategoryMatches];
+                console.log(`Combined relevant content now has ${relevantContent.length} documents`);
               }
             } catch (error) {
-              console.error("Error in keyword search:", error);
+              console.error("Error in category search:", error);
             }
           }
         }
         
-        // 4. FOURTH SEARCH STRATEGY: Individual word search
-        // Try each word individually as a last resort
-        if (!foundRelevantContent || relevantContent.length < 2) {
-          console.log("Trying individual word search as last resort...");
+        // 3. If still limited or no results, perform a general keyword search from the message
+        if (relevantContent.length < 3) {
+          const cleanedMessage = message.toLowerCase()
+            .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, " ")
+            .replace(/\s{2,}/g, " ")
+            .trim();
+            
+          const searchTerms = cleanedMessage.split(/\s+/)
+            .filter(term => term.length > 2 && !['che', 'come', 'cosa', 'dove', 'chi', 'quando', 'perché', 'alla', 'della'].includes(term))
+            .slice(0, 10);  // Use more search terms
+            
+          console.log("General search terms:", searchTerms);
           
-          const significantWords = cleanMessage.split(/\s+/)
-            .filter(word => word.length > 3)
-            .slice(0, 8); // Limit to avoid too many queries
+          if (searchTerms.length > 0) {
+            // Try more flexible search with OR conditions
+            let searchConditions = [];
             
-          if (significantWords.length > 0) {
-            const allResults = [];
-            
-            for (const word of significantWords) {
-              const { data: wordMatches, error: wordError } = await supabaseClient
-                .from('chatbot_knowledge')
-                .select('*')
-                .ilike('content', `%${word}%`)
-                .limit(5);
-                
-              if (!wordError && wordMatches && wordMatches.length > 0) {
-                allResults.push(...wordMatches);
-              }
+            for (const term of searchTerms) {
+              searchConditions.push(`content.ilike.%${term}%`);
             }
             
-            if (allResults.length > 0) {
-              console.log(`Found ${allResults.length} documents from individual word search`);
+            const { data: keywordMatches, error: keywordError } = await supabaseClient
+              .from('chatbot_knowledge')
+              .select('*')
+              .or(searchConditions.join(','))
+              .limit(10);
               
-              // Remove duplicates
-              const uniqueIds = new Set();
-              const uniqueResults = [];
+            if (!keywordError && keywordMatches && keywordMatches.length > 0) {
+              console.log(`Found ${keywordMatches.length} documents using keyword search`);
               
-              for (const doc of allResults) {
-                if (!uniqueIds.has(doc.id)) {
-                  uniqueIds.add(doc.id);
-                  uniqueResults.push(doc);
+              // Combine results if we already have some from embedding search
+              if (relevantContent.length > 0) {
+                // Filter out duplicates
+                const existingIds = new Set(relevantContent.map(doc => doc.id));
+                const uniqueKeywordMatches = keywordMatches.filter(doc => !existingIds.has(doc.id));
+                
+                relevantContent = [...relevantContent, ...uniqueKeywordMatches];
+                console.log(`Combined results: ${relevantContent.length} documents`);
+              } else {
+                relevantContent = keywordMatches;
+              }
+            } else {
+              console.log("No keyword search results, trying another approach");
+              
+              // Try a more aggressive search by searching each term individually
+              if (relevantContent.length === 0) {
+                const allResults = [];
+                
+                for (const term of searchTerms) {
+                  if (term.length < 3) continue;
+                  
+                  const { data: termMatches, error: termError } = await supabaseClient
+                    .from('chatbot_knowledge')
+                    .select('*')
+                    .ilike('content', `%${term}%`)
+                    .limit(3);
+                    
+                  if (!termError && termMatches && termMatches.length > 0) {
+                    allResults.push(...termMatches);
+                  }
+                }
+                
+                // Remove duplicates
+                const uniqueIds = new Set();
+                const uniqueResults = [];
+                
+                for (const doc of allResults) {
+                  if (!uniqueIds.has(doc.id)) {
+                    uniqueIds.add(doc.id);
+                    uniqueResults.push(doc);
+                  }
+                }
+                
+                if (uniqueResults.length > 0) {
+                  console.log(`Found ${uniqueResults.length} documents using individual term search`);
+                  relevantContent = uniqueResults;
+                } else {
+                  console.log("No individual term search results, using most recent documents");
                 }
               }
-              
-              if (foundRelevantContent) {
-                const existingIds = new Set(relevantContent.map(doc => doc.id));
-                const newDocs = uniqueResults.filter(doc => !existingIds.has(doc.id));
-                relevantContent = [...relevantContent, ...newDocs];
-              } else {
-                relevantContent = uniqueResults;
-                foundRelevantContent = true;
-              }
             }
           }
         }
         
-        // 5. FINAL STRATEGY: Get the FAQ/common info document and some general docs
-        // Always include the general information document
-        try {
-          const { data: generalInfo, error: generalError } = await supabaseClient
-            .from('chatbot_knowledge')
-            .select('*')
-            .eq('page_id', '00000000-0000-0000-0000-000000000001')
-            .limit(1);
-            
-          if (!generalError && generalInfo && generalInfo.length > 0) {
-            console.log("Found general information document");
-            
-            // Add only if not already added
-            const existingIds = new Set(relevantContent.map(doc => doc.id));
-            if (!existingIds.has(generalInfo[0].id)) {
-              relevantContent.push(generalInfo[0]);
-            }
-          }
-        } catch (error) {
-          console.error("Error fetching general info document:", error);
-        }
-        
-        // If still empty, get the home page or any available document
+        // 4. If still no results, get some general documents as context
         if (relevantContent.length === 0) {
-          console.log("No relevant documents found, getting some default content");
-          
-          const { data: anyPages, error: anyError } = await supabaseClient
+          // Fetch home page content or general information
+          const { data: generalDocs, error: generalError } = await supabaseClient
             .from('chatbot_knowledge')
             .select('*')
+            .or('path.eq./,title.ilike.%welcome%,title.ilike.%benvenuto%,title.ilike.%hotel%,title.ilike.%locanda%')
             .limit(5);
             
-          if (!anyError && anyPages && anyPages.length > 0) {
-            relevantContent = anyPages;
+          if (!generalError && generalDocs && generalDocs.length > 0) {
+            console.log(`Using ${generalDocs.length} general documents as context`);
+            relevantContent = generalDocs;
+          } else {
+            // Last resort: get the most recent documents
+            const { data: recentDocs, error: recentError } = await supabaseClient
+              .from('chatbot_knowledge')
+              .select('*')
+              .order('created_at', { ascending: false })
+              .limit(5);
+              
+            if (!recentError && recentDocs && recentDocs.length > 0) {
+              console.log(`Using ${recentDocs.length} most recent documents as context`);
+              relevantContent = recentDocs;
+            }
           }
         }
-        
-        console.log(`Final search results: ${relevantContent.length} documents`);
       }
     } catch (error) {
       console.error("Error accessing knowledge base:", error);
@@ -363,26 +319,59 @@ serve(async (req) => {
         role: msg.role,
         content: msg.content
       }))
-      .slice(-10) : [];  // Include more messages for better context
+      .slice(-6) : [];  // Include last 6 messages for better context
 
     // Create context from knowledge base
     let knowledgeContext = "";
     if (knowledgeBaseEmpty) {
       knowledgeContext = "ATTENZIONE: La base di conoscenza è vuota. Non sono disponibili informazioni specifiche sulla struttura Locanda dell'Angelo.";
     } else if (relevantContent.length > 0) {
-      // Preparare i documenti per il contesto
-      knowledgeContext = "### INFORMAZIONI DISPONIBILI SULLA LOCANDA DELL'ANGELO:\n\n" + 
-        relevantContent.map(doc => {
-          return `DOCUMENTO: ${doc.title}\n${doc.content}\n`;
-        }).join("\n---\n\n");
+      // Score documents by relevance and order them
+      const scoredDocuments = relevantContent.map(doc => {
+        // Simple scoring based on content length and title match
+        let score = 5;  // Base score
+        
+        // Title matches add more weight
+        const lowerTitle = doc.title.toLowerCase();
+        const lowerMessage = message.toLowerCase();
+        
+        // Check for exact key phrases
+        if (lowerMessage.includes('wifi') && lowerTitle.includes('wifi')) score += 15;
+        if (lowerMessage.includes('colazione') && lowerTitle.includes('colazione')) score += 15;
+        if (lowerMessage.includes('ristorante') && lowerTitle.includes('ristorante')) score += 15;
+        if (lowerMessage.includes('reception') && lowerTitle.includes('reception')) score += 15;
+        if (lowerMessage.includes('camera') && lowerTitle.includes('camera')) score += 15;
+        if (lowerMessage.includes('orari') && (lowerTitle.includes('orari') || lowerTitle.includes('orario'))) score += 15;
+        if (lowerMessage.includes('biciclette') && (lowerTitle.includes('bici') || lowerTitle.includes('biciclette'))) score += 15;
+        if (lowerMessage.includes('parcheggio') && lowerTitle.includes('parcheggio')) score += 15;
+        
+        // Keywords in content
+        const content = doc.content.toLowerCase();
+        const messageWords = lowerMessage.split(/\s+/).filter(w => w.length > 3);
+        
+        for (const word of messageWords) {
+          const matches = (content.match(new RegExp(word, 'g')) || []).length;
+          score += matches * 2;  // 2 points per keyword match
+        }
+        
+        return { ...doc, score };
+      }).sort((a, b) => b.score - a.score);
       
-      // Troncare il contesto se troppo lungo
-      knowledgeContext = truncateContent(knowledgeContext, 7000);
+      // Use scored and ordered documents
+      knowledgeContext = "### INFORMAZIONI DALLA BASE DI CONOSCENZA DELLA LOCANDA DELL'ANGELO:\n\n" + 
+        scoredDocuments.map(doc => {
+          // Create a more structured format
+          const truncatedContent = truncateContent(doc.content, 2000);
+          return `DOCUMENTO: ${doc.title}\nURL: ${doc.path}\n\nCONTENUTO:\n${truncatedContent}\n`;
+        }).join("\n\n---\n\n");
+      
+      // Final safety check - truncate the entire context if still too large
+      knowledgeContext = truncateContent(knowledgeContext, 6000);
     } else {
       knowledgeContext = "ATTENZIONE: Non sono state trovate informazioni pertinenti nella base di conoscenza per rispondere alla domanda dell'utente.";
     }
 
-    const promptWithContext = `${knowledgeContext}\n\nDOMANDA DELL'UTENTE: ${message}\n\nRispondi in modo naturale e conversazionale come un receptionist umano, utilizzando le informazioni sopra riportate per guidare la tua risposta. Ricorda di essere cordiale, preciso e di NON citare direttamente la fonte delle informazioni o menzionare "la base di conoscenza". Elabora le informazioni e fornisci una risposta originale, utile e personale.`;
+    const promptWithContext = `${knowledgeContext}\n\nDOMANDA DELL'UTENTE: ${message}\n\nRispondi alla domanda dell'utente in italiano utilizzando SOLO le informazioni fornite sopra dalla base di conoscenza. Se non trovi informazioni specifiche per rispondere, NON INVENTARE ma rispondi che non hai quella informazione specifica e suggerisci di contattare la reception. Cerca di essere il più possibile preciso ed esaustivo utilizzando le informazioni disponibili.`;
     
     console.log("Number of relevant documents used for context:", relevantContent.length);
     
@@ -400,7 +389,7 @@ serve(async (req) => {
           ...formattedHistory,
           { role: 'user', content: promptWithContext }
         ],
-        temperature: 0.7, // Aumentata leggermente per risposte più naturali e meno prevedibili
+        temperature: 0.7,
         max_tokens: 1000,
       }),
     });

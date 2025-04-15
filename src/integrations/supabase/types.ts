@@ -39,48 +39,6 @@ export type Database = {
         }
         Relationships: []
       }
-      chatbot_conversations: {
-        Row: {
-          bot_response: string
-          conversation_id: string
-          corrected_response: string | null
-          created_at: string | null
-          feedback: string | null
-          id: string
-          matched_documents: Json | null
-          metadata: Json | null
-          updated_at: string | null
-          user_message: string
-          was_helpful: boolean | null
-        }
-        Insert: {
-          bot_response: string
-          conversation_id: string
-          corrected_response?: string | null
-          created_at?: string | null
-          feedback?: string | null
-          id?: string
-          matched_documents?: Json | null
-          metadata?: Json | null
-          updated_at?: string | null
-          user_message: string
-          was_helpful?: boolean | null
-        }
-        Update: {
-          bot_response?: string
-          conversation_id?: string
-          corrected_response?: string | null
-          created_at?: string | null
-          feedback?: string | null
-          id?: string
-          matched_documents?: Json | null
-          metadata?: Json | null
-          updated_at?: string | null
-          user_message?: string
-          was_helpful?: boolean | null
-        }
-        Relationships: []
-      }
       chatbot_knowledge: {
         Row: {
           content: string
@@ -134,42 +92,6 @@ export type Database = {
           code?: string | null
           created_at?: string | null
           id?: number
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      chatbot_stats: {
-        Row: {
-          average_response_time: number | null
-          created_at: string | null
-          date: string
-          helpful_responses: number | null
-          id: string
-          total_conversations: number | null
-          total_messages: number | null
-          unhelpful_responses: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          average_response_time?: number | null
-          created_at?: string | null
-          date?: string
-          helpful_responses?: number | null
-          id?: string
-          total_conversations?: number | null
-          total_messages?: number | null
-          unhelpful_responses?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          average_response_time?: number | null
-          created_at?: string | null
-          date?: string
-          helpful_responses?: number | null
-          id?: string
-          total_conversations?: number | null
-          total_messages?: number | null
-          unhelpful_responses?: number | null
           updated_at?: string | null
         }
         Relationships: []

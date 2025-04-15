@@ -1,4 +1,3 @@
-
 import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
 
@@ -17,15 +16,7 @@ Drawer.displayName = "Drawer"
 
 const DrawerTrigger = DrawerPrimitive.Trigger
 
-const DrawerPortal = ({ 
-  children, 
-  ...props 
-}: DrawerPrimitive.PortalProps) => (
-  <DrawerPrimitive.Portal {...props}>
-    {children}
-  </DrawerPrimitive.Portal>
-)
-DrawerPortal.displayName = DrawerPrimitive.Portal.displayName
+const DrawerPortal = DrawerPrimitive.Portal
 
 const DrawerClose = DrawerPrimitive.Close
 

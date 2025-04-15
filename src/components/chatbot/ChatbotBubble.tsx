@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useChatbot } from "@/hooks/useChatbot";
 import Chatbot from "./Chatbot";
 import { Bot, X } from 'lucide-react';
@@ -8,6 +8,7 @@ const ChatbotBubble: React.FC = () => {
   const { 
     isOpen, 
     toggleChat, 
+    closeChat, 
     config, 
     initializing 
   } = useChatbot();
