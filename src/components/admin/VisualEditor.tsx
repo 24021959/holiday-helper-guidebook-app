@@ -1,7 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Textarea } from "@/components/ui/textarea";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { cn } from "@/lib/utils";
 import { 
   ImageIcon, MapPin, Phone, AlignLeft, AlignCenter, AlignRight, AlignJustify,
@@ -10,7 +9,6 @@ import {
   ArrowUpRight, PanelLeft, PanelRight, X, Plus, ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
@@ -19,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import ImageInsertionDialog from './form/ImageInsertionDialog';
 
 interface ImageDetail {
   url: string;
@@ -53,6 +52,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const [formattedPreview, setFormattedPreview] = useState<string>('');
   const [selectedText, setSelectedText] = useState<{start: number, end: number, text: string} | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
+  const [showImageDialog, setShowImageDialog] = useState(false);
 
   // Format the content for preview
   useEffect(() => {
@@ -173,35 +173,13 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
-          const newImage: ImageDetail = {
-            url: event.target.result as string,
+          setShowImageDialog(true);
+          const imageUrl = event.target.result as string;
+          setSelectedImage({
+            url: imageUrl,
             width: "50%",
-            position: "center",
-          };
-          onImageAdd(newImage);
-          
-          // Insert image placeholder at cursor position
-          if (textareaRef.current && cursorPosition !== null) {
-            const imagePlaceholder = `[IMAGE_${images.length}]`;
-            const currentContent = textareaRef.current.value;
-            const newContent = 
-              currentContent.substring(0, cursorPosition) + 
-              imagePlaceholder + 
-              currentContent.substring(cursorPosition);
-            
-            onChange(newContent);
-            
-            // Set cursor position after the placeholder
-            setTimeout(() => {
-              if (textareaRef.current) {
-                const newPosition = cursorPosition + imagePlaceholder.length;
-                textareaRef.current.focus();
-                textareaRef.current.setSelectionRange(newPosition, newPosition);
-              }
-            }, 0);
-          }
-          
-          toast.success("Immagine aggiunta con successo");
+            position: "center"
+          });
         }
       };
       reader.readAsDataURL(file);
@@ -330,6 +308,46 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     toast.success("Link a Google Maps aggiunto con successo");
   };
 
+  const handleInsertImage = (imageUrl: string, position: "left" | "center" | "right" | "full" = "center", caption?: string) => {
+    try {
+      // Add the image to the images array
+      const newImage: ImageDetail = {
+        url: imageUrl,
+        width: "50%",
+        position,
+        caption
+      };
+      
+      onImageAdd(newImage);
+      
+      // Insert image placeholder at cursor position
+      if (textareaRef.current && cursorPosition !== null) {
+        const imagePlaceholder = `[IMAGE_${images.length}]`;
+        const newContent = 
+          content.substring(0, cursorPosition) + 
+          imagePlaceholder + 
+          content.substring(cursorPosition);
+        
+        onChange(newContent);
+        
+        // Set cursor position after the placeholder
+        setTimeout(() => {
+          if (textareaRef.current) {
+            const newPosition = cursorPosition + imagePlaceholder.length;
+            textareaRef.current.focus();
+            textareaRef.current.setSelectionRange(newPosition, newPosition);
+          }
+        }, 0);
+      }
+      
+      toast.success("Immagine aggiunta con successo");
+      setShowImageDialog(false);
+    } catch (error) {
+      console.error("Errore durante l'inserimento dell'immagine:", error);
+      toast.error("Errore durante l'inserimento dell'immagine");
+    }
+  };
+
   const handleImagePositionChange = (index: number, position: "left" | "center" | "right" | "full") => {
     const updatedImages = [...images];
     updatedImages[index] = { ...updatedImages[index], position };
@@ -419,62 +437,26 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     setShowImageControls(showImageControls === index ? null : index);
   };
 
+  const handleOpenImageDialog = () => {
+    if (textareaRef.current) {
+      setCursorPosition(textareaRef.current.selectionStart);
+      setShowImageDialog(true);
+    }
+  };
+
   return (
     <div className={`flex flex-col space-y-4 ${isFullscreen ? 'fixed inset-0 z-50 bg-white p-4' : ''}`}>
-      <Tabs defaultValue="content" className="w-full">
-        <TabsList className="w-full grid grid-cols-4 mb-2">
-          <TabsTrigger value="content">Contenuto</TabsTrigger>
-          <TabsTrigger value="insert">Inserisci</TabsTrigger>
-          <TabsTrigger value="format">Formattazione</TabsTrigger>
-          <TabsTrigger value="view">Visualizzazione</TabsTrigger>
-        </TabsList>
-
-        <div className="flex flex-wrap gap-2 p-2 bg-gray-50 border border-gray-200 rounded-md mb-4">
-          <div className="flex items-center gap-1 mr-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" onClick={handleUndo} disabled={historyIndex <= 0}>
-                    <Undo className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Annulla</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" onClick={handleRedo} disabled={historyIndex >= editHistory.length - 1}>
-                    <Redo className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Ripeti</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          
-          <div className="h-6 border-r border-gray-300"></div>
-          
-          {/* Text formatting options */}
+      <div className="flex flex-wrap gap-2 p-2 bg-gray-50 border border-gray-200 rounded-md mb-4 sticky top-0 z-10">
+        <div className="flex items-center gap-1 mr-2">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={() => handleTextFormat('bold')}
-                  disabled={!selectedText}
-                >
-                  <Bold className="h-4 w-4" />
+                <Button variant="outline" size="icon" onClick={handleUndo} disabled={historyIndex <= 0}>
+                  <Undo className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Grassetto</p>
+                <p>Annulla</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -482,267 +464,305 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={() => handleTextFormat('italic')}
-                  disabled={!selectedText}
-                >
-                  <Italic className="h-4 w-4" />
+                <Button variant="outline" size="icon" onClick={handleRedo} disabled={historyIndex >= editHistory.length - 1}>
+                  <Redo className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Corsivo</p>
+                <p>Ripeti</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={() => handleTextFormat('underline')}
-                  disabled={!selectedText}
-                >
-                  <Underline className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Sottolineato</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <div className="h-6 border-r border-gray-300"></div>
-          
-          {/* Text alignment */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={() => handleTextAlign('left')}
-                  disabled={!selectedText}
-                >
-                  <AlignLeft className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Allinea a sinistra</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={() => handleTextAlign('center')}
-                  disabled={!selectedText}
-                >
-                  <AlignCenter className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Centra</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={() => handleTextAlign('right')}
-                  disabled={!selectedText}
-                >
-                  <AlignRight className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Allinea a destra</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={() => handleTextAlign('justify')}
-                  disabled={!selectedText}
-                >
-                  <AlignJustify className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Giustifica</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <div className="h-6 border-r border-gray-300"></div>
-          
-          {/* Headings and lists */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" disabled={!selectedText}>
-                <Type className="h-4 w-4 mr-1" />
-                <span>Titoli</span>
-                <ChevronDown className="h-3 w-3 ml-1" />
+        </div>
+        
+        <div className="h-6 border-r border-gray-300"></div>
+        
+        {/* Text formatting options */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => handleTextFormat('bold')}
+                disabled={!selectedText}
+              >
+                <Bold className="h-4 w-4" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => handleTextFormat('h1')}>
-                <Heading1 className="h-4 w-4 mr-2" />
-                Titolo grande
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleTextFormat('h2')}>
-                <Heading2 className="h-4 w-4 mr-2" />
-                Sottotitolo
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={() => handleTextFormat('bullet')}
-                  disabled={!selectedText}
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Elenco puntato</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <div className="h-6 border-r border-gray-300"></div>
-          
-          {/* Insert options */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                    id="image-upload"
-                  />
-                  <Label htmlFor="image-upload" asChild>
-                    <Button variant="outline" size="sm" className="cursor-pointer">
-                      <ImageIcon className="h-4 w-4 mr-1" />
-                      Immagine
-                    </Button>
-                  </Label>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Inserisci immagine</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" onClick={handleInsertPhone}>
-                  <Phone className="h-4 w-4 mr-1" />
-                  Telefono
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Inserisci numero di telefono cliccabile</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" onClick={handleInsertMap}>
-                  <MapPin className="h-4 w-4 mr-1" />
-                  Mappa
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Inserisci collegamento a Google Maps</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <div className="h-6 border-r border-gray-300 ml-auto"></div>
-          
-          {/* View options */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={() => setEditMode(editMode === 'visual' ? 'preview' : 'visual')}
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{editMode === 'visual' ? 'Anteprima' : 'Modifica'}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="icon" onClick={handleFullscreen}>
-                  <Maximize2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Schermo intero</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Grassetto</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => handleTextFormat('italic')}
+                disabled={!selectedText}
+              >
+                <Italic className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Corsivo</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => handleTextFormat('underline')}
+                disabled={!selectedText}
+              >
+                <Underline className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Sottolineato</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <div className="h-6 border-r border-gray-300"></div>
+        
+        {/* Text alignment */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => handleTextAlign('left')}
+                disabled={!selectedText}
+              >
+                <AlignLeft className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Allinea a sinistra</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => handleTextAlign('center')}
+                disabled={!selectedText}
+              >
+                <AlignCenter className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Centra</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => handleTextAlign('right')}
+                disabled={!selectedText}
+              >
+                <AlignRight className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Allinea a destra</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => handleTextAlign('justify')}
+                disabled={!selectedText}
+              >
+                <AlignJustify className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Giustifica</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <div className="h-6 border-r border-gray-300"></div>
+        
+        {/* Headings and lists */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" disabled={!selectedText}>
+              <Type className="h-4 w-4 mr-1" />
+              <span>Titoli</span>
+              <ChevronDown className="h-3 w-3 ml-1" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => handleTextFormat('h1')}>
+              <Heading1 className="h-4 w-4 mr-2" />
+              Titolo grande
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleTextFormat('h2')}>
+              <Heading2 className="h-4 w-4 mr-2" />
+              Sottotitolo
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => handleTextFormat('bullet')}
+                disabled={!selectedText}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Elenco puntato</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <div className="h-6 border-r border-gray-300"></div>
+        
+        {/* Insert options */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleOpenImageDialog}
+                className="flex items-center gap-1"
+              >
+                <ImageIcon className="h-4 w-4" />
+                Immagine
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Inserisci immagine</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleInsertPhone}
+                className="flex items-center gap-1"
+              >
+                <Phone className="h-4 w-4" />
+                Telefono
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Inserisci numero di telefono cliccabile</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleInsertMap}
+                className="flex items-center gap-1"
+              >
+                <MapPin className="h-4 w-4" />
+                Mappa
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Inserisci collegamento a Google Maps</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <div className="h-6 border-r border-gray-300 ml-auto"></div>
+        
+        {/* View options */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => setEditMode(editMode === 'visual' ? 'preview' : 'visual')}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{editMode === 'visual' ? 'Anteprima' : 'Modifica'}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="icon" onClick={handleFullscreen}>
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Schermo intero</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
 
-        <div className="border rounded-lg overflow-hidden">
-          {editMode === 'visual' ? (
-            <div ref={editorRef} className="relative min-h-[500px] bg-white p-4">
-              <Textarea
-                ref={textareaRef}
-                value={content}
-                onChange={(e) => onChange(e.target.value)}
-                onSelect={handleTextareaSelect}
-                onClick={handleTextareaSelect}
-                className="w-full h-full min-h-[400px] resize-none border-0 focus-visible:ring-0"
-                placeholder="Inizia a scrivere qui..."
-              />
-            </div>
-          ) : (
-            <div 
-              ref={previewRef}
-              className="min-h-[500px] p-6 bg-white overflow-auto text-gray-800 prose max-w-none prose-headings:my-4 prose-p:my-2"
-              dangerouslySetInnerHTML={{ __html: formattedPreview }}
-            ></div>
-          )}
-        </div>
-      </Tabs>
+      <div className="border rounded-lg overflow-hidden">
+        {editMode === 'visual' ? (
+          <div ref={editorRef} className="relative min-h-[500px] bg-white p-4">
+            <Textarea
+              ref={textareaRef}
+              value={content}
+              onChange={(e) => onChange(e.target.value)}
+              onSelect={handleTextareaSelect}
+              onClick={handleTextareaSelect}
+              className="w-full h-full min-h-[400px] resize-none border-0 focus-visible:ring-0"
+              placeholder="Inizia a scrivere qui..."
+            />
+          </div>
+        ) : (
+          <div 
+            ref={previewRef}
+            className="min-h-[500px] p-6 bg-white overflow-auto text-gray-800 prose max-w-none prose-headings:my-4 prose-p:my-2"
+            dangerouslySetInnerHTML={{ __html: formattedPreview }}
+          ></div>
+        )}
+      </div>
 
       {/* Image Gallery / Inserted Images */}
       {images.length > 0 && (
@@ -873,6 +893,13 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           </div>
         </div>
       )}
+
+      {/* Image insertion dialog */}
+      <ImageInsertionDialog
+        isOpen={showImageDialog}
+        onClose={() => setShowImageDialog(false)}
+        onImageUpload={handleInsertImage}
+      />
     </div>
   );
 };

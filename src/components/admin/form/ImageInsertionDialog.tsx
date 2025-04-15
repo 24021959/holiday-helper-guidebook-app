@@ -4,11 +4,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import ImageUploader from "@/components/ImageUploader";
 import { Button } from "@/components/ui/button";
 import { AlignCenter, AlignLeft, AlignRight, Maximize, Image } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface ImageInsertionDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onImageUpload: (imageDataUrl: string, position: "left" | "center" | "right" | "full") => void;
+  onImageUpload: (imageDataUrl: string, position: "left" | "center" | "right" | "full", caption?: string) => void;
 }
 
 const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
@@ -26,8 +28,7 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
 
   const handleInsertImage = () => {
     if (selectedImage) {
-      onImageUpload(selectedImage, selectedPosition);
-      onClose();
+      onImageUpload(selectedImage, selectedPosition, caption);
       setSelectedImage(null);
       setCaption("");
     }
@@ -105,12 +106,12 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
               </div>
               <div className="clear-both"></div>
               <div className="mt-4">
-                <label className="block text-sm font-medium mb-2">Didascalia (opzionale):</label>
-                <input 
+                <Label className="block text-sm font-medium mb-2">Didascalia (opzionale):</Label>
+                <Input 
                   type="text" 
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
-                  className="w-full p-2 border rounded-md"
+                  className="w-full"
                   placeholder="Inserisci una didascalia"
                 />
               </div>
