@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useRouter } from '@/lib/next-router-mock';
 import { useForm } from "react-hook-form";
@@ -75,12 +76,20 @@ interface CreatePageFormProps {
 
 const convertToAdminImageItem = (images: UploaderImageItem[]): ImageItem[] => {
   return images.map(img => {
-    const position: "left" | "center" | "right" | "full" = 
-      img.position === "top" ? "center" : 
-      img.position === "bottom" ? "center" : 
-      img.position === "left" ? "left" : 
-      img.position === "right" ? "right" : "center";
-      
+    // Assicuriamoci che position sia solo uno dei valori consentiti
+    let position: "left" | "center" | "right" | "full";
+    
+    if (img.position === "left") {
+      position = "left";
+    } else if (img.position === "right") {
+      position = "right";
+    } else if (img.position === "full") {
+      position = "full";
+    } else {
+      // Default a center per altri valori
+      position = "center";
+    }
+    
     return {
       url: img.url,
       position: position,
