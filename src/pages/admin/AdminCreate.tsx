@@ -1,5 +1,6 @@
+
 import React from "react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { VisualEditor } from "@/components/admin/VisualEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,6 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { usePageCreation } from "@/hooks/usePageCreation";
-import { PageData } from "@/types/page.types";
 
 export interface PageContent {
   title: string;
@@ -29,12 +29,7 @@ interface ImageDetail {
   caption?: string;
 }
 
-interface AdminCreateProps {
-  initialPage?: PageData | null;
-  onPageCreated: (pages: any[]) => void;
-}
-
-const AdminCreate: React.FC<AdminCreateProps> = ({ initialPage, onPageCreated }) => {
+const AdminCreate = () => {
   const [pageContent, setPageContent] = useState<PageContent>({
     title: "",
     content: "",
@@ -53,17 +48,6 @@ const AdminCreate: React.FC<AdminCreateProps> = ({ initialPage, onPageCreated })
       toast.success("Pagina creata con successo!");
     }
   });
-
-  useEffect(() => {
-    if (initialPage) {
-      setPageContent({
-        title: initialPage.title,
-        content: initialPage.content,
-        images: initialPage.pageImages || []
-      });
-      setUploadedImage(initialPage.imageUrl);
-    }
-  }, [initialPage]);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPageContent(prev => ({
@@ -125,10 +109,10 @@ const AdminCreate: React.FC<AdminCreateProps> = ({ initialPage, onPageCreated })
       <Card className="bg-white shadow-lg border-0">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-gray-800">
-            {initialPage ? 'Modifica pagina' : 'Crea una nuova pagina'}
+            Crea una nuova pagina
           </CardTitle>
           <CardDescription>
-            {initialPage ? 'Modifica la pagina esistente' : 'Utilizza l\'editor visuale per creare una nuova pagina'}
+            Utilizza l'editor visuale per creare una nuova pagina
           </CardDescription>
         </CardHeader>
         

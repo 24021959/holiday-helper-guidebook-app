@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 import Index from "./pages/Index";
@@ -23,6 +24,7 @@ function App() {
           <Route path="/" element={<Index />} />
           <Route path="/home" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/admin/*" element={<AdminLayout />} />
           <Route path="/welcome" element={<Welcome />} />
           <Route path="/storia" element={<Storia />} />
           
