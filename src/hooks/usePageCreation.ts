@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -216,10 +217,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         ? `${values.parentPath}/${sanitizedTitle}`
         : `/${sanitizedTitle}`;
 
-      toast.info("Avvio traduzione automatica in tutte le lingue...");
-
-      const targetLangs: ("en" | "fr" | "es" | "de")[] = ['en', 'fr', 'es', 'de'];
-      
+      // Always save the Italian version first, regardless of page type
       await saveNewPage(
         values.title,
         values.content,
@@ -231,31 +229,36 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         pageImages
       );
 
-      if (values.pageType !== "parent") {
-        const translations = await translateSequential(
-          values.content,
-          values.title,
-          targetLangs
-        );
-        
-        for (const lang of targetLangs) {
-          if (translations[lang]) {
-            const translatedPath = `/${lang}${finalPath}`;
-            await saveNewPage(
-              translations[lang].title,
-              translations[lang].content,
-              translatedPath,
-              imageUrl,
-              values.icon,
-              values.pageType,
-              values.pageType === "submenu" ? 
-                (values.parentPath?.startsWith(`/${lang}`) ? values.parentPath : `/${lang}${values.parentPath}`) : 
-                null,
-              pageImages
-            );
-            
-            toast.success(`Pagina tradotta in ${lang.toUpperCase()} e salvata con successo`);
-          }
+      toast.info("Avvio traduzione automatica in tutte le lingue...");
+
+      // For all page types (including parent pages), translate to other languages
+      const targetLangs: ("en" | "fr" | "es" | "de")[] = ['en', 'fr', 'es', 'de'];
+      
+      const translations = await translateSequential(
+        values.content,
+        values.title,
+        targetLangs
+      );
+      
+      for (const lang of targetLangs) {
+        if (translations[lang]) {
+          const translatedPath = `/${lang}${finalPath}`;
+          const translatedParentPath = values.pageType === "submenu" ? 
+            (values.parentPath?.startsWith(`/${lang}`) ? values.parentPath : `/${lang}${values.parentPath}`) : 
+            null;
+          
+          await saveNewPage(
+            translations[lang].title,
+            translations[lang].content,
+            translatedPath,
+            imageUrl,
+            values.icon,
+            values.pageType,
+            translatedParentPath,
+            pageImages
+          );
+          
+          toast.success(`Pagina tradotta in ${lang.toUpperCase()} e salvata con successo`);
         }
       }
 
@@ -269,9 +272,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
       if (pagesData) {
         onPageCreated(pagesData);
         toast.success("Pagina creata con successo");
-        if (values.pageType !== "parent") {
-          toast.info("Traduzioni completate. Vai alla pagina menu per vedere tutte le pagine");
-        }
+        toast.info("Traduzioni completate. Vai alla pagina menu per vedere tutte le pagine");
         onSuccess();
       }
       
