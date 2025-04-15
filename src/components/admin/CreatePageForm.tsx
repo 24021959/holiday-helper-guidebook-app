@@ -79,6 +79,7 @@ const convertToImageItem = (images: ImageUploadItem[]): ImageItem[] => {
     position: img.position,
     caption: img.caption || "",
     type: "image" as const,
+    width: "100%"
   }));
 };
 

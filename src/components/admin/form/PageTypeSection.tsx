@@ -1,6 +1,6 @@
 
 import React from "react";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageData } from "@/types/page.types";
 import { Label } from "@/components/ui/label";
@@ -108,4 +108,3 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
     </>
   );
 };
-
