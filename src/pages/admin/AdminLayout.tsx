@@ -11,6 +11,7 @@ import {
 import AdminCreate from "./AdminCreate";
 import AdminManage from "./AdminManage";
 import { PageData } from "@/types/page.types";
+import { LayoutSettings } from "@/components/admin/LayoutSettings";
 
 const AdminLayout = () => {
   const isAuthenticated = true;
@@ -89,14 +90,9 @@ const AdminLayout = () => {
 
             <TabsContent 
               value="settings" 
-              className="p-6 bg-purple-50/50 rounded-lg border border-purple-100"
+              className="rounded-lg border border-purple-100"
             >
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                Impostazioni Header e Footer
-              </h2>
-              <div className="text-gray-600">
-                Form per personalizzare header e footer verrà aggiunto qui
-              </div>
+              <LayoutSettings />
             </TabsContent>
 
             <TabsContent 
