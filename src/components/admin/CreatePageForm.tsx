@@ -75,10 +75,10 @@ interface CreatePageFormProps {
 const convertToAdminImageItem = (images: UploaderImageItem[]) => {
   return images.map(img => ({
     url: img.url,
-    position: img.position === "top" ? "top" : 
-             img.position === "bottom" ? "bottom" : "center",
+    position: img.position === "top" ? "center" : 
+             img.position === "bottom" ? "center" : "center",
     caption: img.caption || "",
-    type: "image"
+    type: "image" as const
   }));
 };
 
