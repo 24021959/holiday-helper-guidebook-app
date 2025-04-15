@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +9,7 @@ import {
   BarChart3
 } from "lucide-react";
 import AdminCreate from "./AdminCreate";
+import AdminManage from "./AdminManage";
 
 const AdminLayout = () => {
   // We'll check for authentication here later
@@ -75,14 +75,9 @@ const AdminLayout = () => {
 
             <TabsContent 
               value="manage" 
-              className="p-6 bg-blue-50/50 rounded-lg border border-blue-100"
+              className="rounded-lg border border-blue-100"
             >
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                Gestisci le pagine esistenti
-              </h2>
-              <div className="text-gray-600">
-                Lista delle pagine e opzioni di gestione verranno aggiunte qui
-              </div>
+              <AdminManage />
             </TabsContent>
 
             <TabsContent 
