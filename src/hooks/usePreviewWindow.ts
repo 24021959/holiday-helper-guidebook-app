@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface PreviewWindowProps {
   isOpen: boolean;
@@ -14,42 +14,72 @@ export const usePreviewWindow = ({
   onClose,
   openInNewWindow = false
 }: PreviewWindowProps): boolean => {
-  const [shouldRenderDialog, setShouldRenderDialog] = useState(true);
+  const [shouldRenderDialog, setShouldRenderDialog] = useState<boolean>(false);
+  const windowRef = useRef<Window | null>(null);
+  const intervalRef = useRef<number | null>(null);
   
   useEffect(() => {
-    if (isOpen && openInNewWindow) {
-      // Open a new window for the preview
-      const previewWindow = window.open('', '_blank');
+    // Cleanup function to handle window closing
+    const cleanupWindow = () => {
+      if (intervalRef.current) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
       
-      if (previewWindow) {
-        // Set dialog rendering to false since we're opening in new window
-        setShouldRenderDialog(false);
+      if (windowRef.current && !windowRef.current.closed) {
+        try {
+          windowRef.current.close();
+        } catch (e) {
+          console.error("Error closing window:", e);
+        }
+      }
+      
+      windowRef.current = null;
+    };
+    
+    if (!isOpen) {
+      setShouldRenderDialog(false);
+      cleanupWindow();
+      return;
+    }
+    
+    if (openInNewWindow) {
+      try {
+        // Try to open a new window
+        const newWindow = window.open('', '_blank', 'width=1000,height=800,menubar=0,toolbar=0,location=0');
         
-        // When the preview window is closed, we need to notify our component
-        const checkIfClosed = setInterval(() => {
-          if (previewWindow.closed) {
-            clearInterval(checkIfClosed);
-            onClose();
-            setShouldRenderDialog(true); // Reset for future openings
-          }
-        }, 500);
-        
-        // Clean up on component unmount
-        return () => {
-          clearInterval(checkIfClosed);
-          if (!previewWindow.closed) {
-            previewWindow.close();
-          }
-        };
-      } else {
-        // If window couldn't be opened (popup blocked), fallback to dialog
-        console.warn("Cannot open a new window. Showing dialog instead.");
+        if (newWindow) {
+          windowRef.current = newWindow;
+          setShouldRenderDialog(false);
+          
+          // Set up monitoring for window closure
+          intervalRef.current = window.setInterval(() => {
+            if (newWindow.closed) {
+              cleanupWindow();
+              onClose();
+              setShouldRenderDialog(true);
+            }
+          }, 500) as unknown as number;
+          
+          // Set title and prepare window
+          newWindow.document.title = title || 'Anteprima';
+          
+          return cleanupWindow;
+        } else {
+          // Window creation failed, fallback to dialog
+          console.warn("Cannot open a new window. Showing dialog instead.");
+          setShouldRenderDialog(true);
+        }
+      } catch (error) {
+        console.error("Error opening preview window:", error);
         setShouldRenderDialog(true);
       }
     } else {
-      // For normal dialog mode or when closed
-      setShouldRenderDialog(isOpen);
+      // Normal dialog mode
+      setShouldRenderDialog(true);
     }
+    
+    return cleanupWindow;
   }, [isOpen, onClose, openInNewWindow, title]);
   
   return shouldRenderDialog;
