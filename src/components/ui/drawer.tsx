@@ -16,7 +16,14 @@ Drawer.displayName = "Drawer"
 
 const DrawerTrigger = DrawerPrimitive.Trigger
 
-const DrawerPortal = DrawerPrimitive.Portal
+const DrawerPortal = ({ children }: { children: React.ReactNode }) => (
+  <DrawerPrimitive.Portal>
+    <div className="fixed inset-0 z-50">
+      {children}
+    </div>
+  </DrawerPrimitive.Portal>
+)
+DrawerPortal.displayName = "DrawerPortal"
 
 const DrawerClose = DrawerPrimitive.Close
 
