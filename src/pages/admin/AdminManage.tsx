@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageData } from "@/types/page.types";
@@ -76,7 +77,7 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
           parentPath: page.parent_path || undefined,
           pageImages: [],
           published: page.published,
-          is_parent: false
+          is_parent: page.is_parent || false
         }));
         setPages(formattedPages);
       }
@@ -134,6 +135,13 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
       setShowDeleteDialog(false);
       setDeletingPage(null);
     }
+  };
+
+  // Function to determine the page type text based on page properties
+  const getPageTypeText = (page: PageData): string => {
+    if (page.isSubmenu) return "Sottopagina";
+    if (page.is_parent) return "Master";
+    return "Normale";
   };
 
   if (isLoading) {

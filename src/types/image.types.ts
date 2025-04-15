@@ -15,4 +15,6 @@ export interface ImageUploadItem {
   position: "left" | "center" | "right" | "full";
   caption: string;
   type?: string;
+  insertInContent?: boolean;
+  order?: number;
 }
