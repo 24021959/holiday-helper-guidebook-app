@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CreatePageForm } from "./CreatePageForm";
+import CreatePageForm from "./CreatePageForm"; // Fix import to use default export
 import ManagePagesView from "./ManagePagesView";
 import { HeaderSettingsView } from "./HeaderSettingsView";
 import MenuTranslationManager from "./MenuTranslationManager";

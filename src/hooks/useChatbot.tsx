@@ -1,183 +1,34 @@
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { useTranslation } from '@/context/TranslationContext';
+import { useLocation } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useLocation } from 'react-router-dom';
-
-interface Message {
-  id: string;
-  content: string;
-  role: 'user' | 'assistant';
-  timestamp: Date;
-}
-
-interface ChatbotConfig {
-  enabled: boolean;
-  welcomeMessage: Record<string, string>;
-  primaryColor: string;
-  secondaryColor: string;
-  botName: string;
-  position: 'right' | 'left';
-  iconType: 'default' | 'custom';
-  customIconUrl?: string;
-}
-
-const defaultConfig: ChatbotConfig = {
-  enabled: true,
-  welcomeMessage: {
-    it: "Ciao! Sono qui per aiutarti. Come posso assisterti oggi?",
-    en: "Hi! I'm here to help. How can I assist you today?",
-    fr: "Bonjour! Je suis là pour vous aider. Comment puis-je vous aider aujourd'hui?",
-    es: "¡Hola! Estoy aquí para ayudarte. ¿Cómo puedo ayudarte hoy?",
-    de: "Hallo! Ich bin hier um zu helfen. Wie kann ich Ihnen heute helfen?"
-  },
-  primaryColor: "#4ade80",
-  secondaryColor: "#ffffff",
-  botName: "Assistente Virtuale",
-  position: 'right',
-  iconType: 'default'
-};
+import { useChatbotConfig } from './chatbot/useChatbotConfig';
+import { useKnowledgeBase } from './chatbot/useKnowledgeBase';
+import { useChatMessages } from './chatbot/useChatMessages';
+import { ChatbotConfig, Message } from './chatbot/chatbotTypes';
 
 export const useChatbot = (previewConfig?: ChatbotConfig) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [config, setConfig] = useState<ChatbotConfig>(previewConfig || defaultConfig);
-  const [initializing, setInitializing] = useState(true);
-  const [knowledgeBaseExists, setKnowledgeBaseExists] = useState<boolean | null>(null);
-  const [knowledgeBaseCount, setKnowledgeBaseCount] = useState<number>(0);
-  const knowledgeBaseCheckedRef = useRef(false);
-  const { language } = useTranslation();
   const location = useLocation();
+  const { language } = useTranslation();
 
   // Determine if we're in the admin area
   const isAdminArea = useCallback(() => {
     return location.pathname.includes('/admin');
   }, [location]);
 
-  // Check if we're on the home page
-  const isHomePage = useCallback(() => {
-    return location.pathname === '/' || location.pathname === '';
-  }, [location]);
-
-  // Define refreshKnowledgeBase first before using it
-  const refreshKnowledgeBase = useCallback(async () => {
-    if (previewConfig) {
-      setKnowledgeBaseExists(true);
-      setKnowledgeBaseCount(10);
-      return true;
-    }
-    
-    try {
-      console.log("Refreshing knowledge base status...");
-      
-      // Check if the table exists and has records
-      const { count, error: countError } = await supabase
-        .from('chatbot_knowledge')
-        .select('*', { count: 'exact', head: true });
-        
-      if (countError) {
-        console.error("Error checking knowledge base count:", countError);
-        setKnowledgeBaseExists(false);
-        setKnowledgeBaseCount(0);
-        
-        // Only show toast notifications in admin area
-        if (isAdminArea() && !knowledgeBaseCheckedRef.current) {
-          toast.warning("Errore nella verifica della base di conoscenza");
-          knowledgeBaseCheckedRef.current = true;
-        }
-        
-        return false;
-      }
-      
-      const hasContent = count !== null && count > 0;
-      setKnowledgeBaseExists(hasContent);
-      setKnowledgeBaseCount(count || 0);
-      
-      console.log(`Knowledge base check result: ${count}`);
-      
-      // Only show toast notifications in admin area
-      if (isAdminArea() && !knowledgeBaseCheckedRef.current) {
-        if (hasContent) {
-          toast.success(`Base di conoscenza verificata: ${count} elementi`);
-          knowledgeBaseCheckedRef.current = true;
-        } else {
-          toast.warning("La base di conoscenza è vuota");
-          knowledgeBaseCheckedRef.current = true;
-        }
-      }
-      
-      return hasContent;
-    } catch (error) {
-      console.error("Error refreshing knowledge base status:", error);
-      setKnowledgeBaseExists(false);
-      setKnowledgeBaseCount(0);
-      return false;
-    }
-  }, [previewConfig, isAdminArea]);
-
-  useEffect(() => {
-    if (previewConfig) {
-      setConfig(previewConfig);
-      setInitializing(false);
-      return;
-    }
-    
-    const loadConfig = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('site_settings')
-          .select('*')
-          .eq('key', 'chatbot_config')
-          .single();
-
-        if (error) {
-          if (error.code !== 'PGRST116') { // Not found error
-            console.error("Error loading chatbot config:", error);
-          }
-        } else if (data) {
-          setConfig({
-            ...defaultConfig,
-            ...data.value as ChatbotConfig
-          });
-        }
-      } catch (error) {
-        console.error("Error in loading chatbot config:", error);
-      } finally {
-        setInitializing(false);
-      }
-    };
-
-    loadConfig();
-  }, [previewConfig]);
-
-  useEffect(() => {
-    if (!initializing) {
-      refreshKnowledgeBase();
-    }
-  }, [initializing, refreshKnowledgeBase]);
-
-  useEffect(() => {
-    if (previewConfig) {
-      setConfig(previewConfig);
-    }
-  }, [previewConfig]);
-
-  useEffect(() => {
-    if (!initializing && !messages.length) {
-      const welcomeMessage = config.welcomeMessage[language] || config.welcomeMessage.en || "Hi! How can I help you today?";
-      
-      setMessages([
-        {
-          id: 'welcome',
-          content: welcomeMessage,
-          role: 'assistant',
-          timestamp: new Date()
-        }
-      ]);
-    }
-  }, [language, initializing, config, messages.length]);
+  // Get chatbot configuration
+  const { config, initializing } = useChatbotConfig(previewConfig);
+  
+  // Get knowledge base status
+  const { knowledgeBaseExists, knowledgeBaseCount, refreshKnowledgeBase } = 
+    useKnowledgeBase(previewConfig, isAdminArea);
+  
+  // Get chat messages
+  const { messages, setMessages, addMessage, isLoading, setIsLoading } = 
+    useChatMessages(initializing, config.welcomeMessage);
 
   const sendMessage = useCallback(async (message: string) => {
     if (!message.trim()) return;
@@ -189,7 +40,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
       timestamp: new Date()
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    addMessage(userMessage);
     setIsLoading(true);
 
     try {
@@ -201,7 +52,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
             role: 'assistant',
             timestamp: new Date()
           };
-          setMessages(prev => [...prev, previewResponse]);
+          addMessage(previewResponse);
           setIsLoading(false);
         }, 1500);
         return;
@@ -250,7 +101,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
           timestamp: new Date()
         };
 
-        setMessages(prev => [...prev, botResponse]);
+        addMessage(botResponse);
       } catch (apiError) {
         console.error("API error:", apiError);
         
@@ -268,7 +119,7 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
           timestamp: new Date()
         };
 
-        setMessages(prev => [...prev, errorMessage]);
+        addMessage(errorMessage);
       }
     } catch (error) {
       console.error("Error sending message to chatbot:", error);
@@ -282,11 +133,11 @@ export const useChatbot = (previewConfig?: ChatbotConfig) => {
         timestamp: new Date()
       };
 
-      setMessages(prev => [...prev, errorMessage]);
+      addMessage(errorMessage);
     } finally {
       setIsLoading(false);
     }
-  }, [messages, language, previewConfig, refreshKnowledgeBase]);
+  }, [messages, language, previewConfig, refreshKnowledgeBase, addMessage, setIsLoading]);
 
   const toggleChat = useCallback(() => setIsOpen(prev => !prev), []);
   const closeChat = useCallback(() => setIsOpen(false), []);
