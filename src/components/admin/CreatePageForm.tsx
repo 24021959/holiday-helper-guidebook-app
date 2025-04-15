@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useRouter } from '@/lib/next-router-mock';
 import { useForm } from "react-hook-form";
@@ -75,15 +74,20 @@ interface CreatePageFormProps {
 }
 
 const convertToAdminImageItem = (images: UploaderImageItem[]): ImageItem[] => {
-  return images.map(img => ({
-    url: img.url,
-    position: img.position === "top" ? "center" : 
-             img.position === "bottom" ? "center" : 
-             img.position === "left" ? "left" : 
-             img.position === "right" ? "right" : "center",
-    caption: img.caption || "",
-    type: "image" as const
-  }));
+  return images.map(img => {
+    const position: "left" | "center" | "right" | "full" = 
+      img.position === "top" ? "center" : 
+      img.position === "bottom" ? "center" : 
+      img.position === "left" ? "left" : 
+      img.position === "right" ? "right" : "center";
+      
+    return {
+      url: img.url,
+      position: position,
+      caption: img.caption || "",
+      type: "image" as const
+    };
+  });
 };
 
 export default function CreatePageForm({ parentPages, onPageCreated, keywordToIconMap }: CreatePageFormProps) {
@@ -345,7 +349,8 @@ export default function CreatePageForm({ parentPages, onPageCreated, keywordToIc
                     <div className="flex items-center space-x-4">
                       <Button
                         variant="outline"
-                        asChild
+                        type="button"
+                        asChild={true}
                         disabled={isSubmitting}
                       >
                         <label htmlFor="image-upload" className="cursor-pointer">
@@ -362,6 +367,7 @@ export default function CreatePageForm({ parentPages, onPageCreated, keywordToIc
                           <Button
                             variant="ghost"
                             size="icon"
+                            type="button"
                             className="absolute top-0 right-0"
                             onClick={handleRemoveImage}
                           >
