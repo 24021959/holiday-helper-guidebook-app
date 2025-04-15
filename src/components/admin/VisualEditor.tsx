@@ -60,11 +60,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({ blocks, onChange }) 
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
     const target = e.currentTarget;
-    
-    // Add styling to show drop target
     target.classList.add("bg-blue-50");
-    
-    // Remove after a short delay
     setTimeout(() => {
       target.classList.remove("bg-blue-50");
     }, 100);
