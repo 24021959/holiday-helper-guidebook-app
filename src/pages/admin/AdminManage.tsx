@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageData } from "@/types/page.types";
@@ -25,6 +24,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import EditPageForm from "@/components/admin/EditPageForm";
 
+interface AdminManageProps {
+  onEditPage: (page: PageData) => void;
+}
+
 const languages = [
   { code: 'it', name: 'Italiano', flag: '🇮🇹' },
   { code: 'en', name: 'English', flag: '🇬🇧' },
@@ -33,7 +36,7 @@ const languages = [
   { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
 ];
 
-const AdminManage = () => {
+const AdminManage = ({ onEditPage }: AdminManageProps) => {
   const [pages, setPages] = useState<PageData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPage, setSelectedPage] = useState<PageData | null>(null);
@@ -48,10 +51,8 @@ const AdminManage = () => {
       let query = supabase.from('custom_pages').select('*');
       
       if (langCode === 'it') {
-        // For Italian, show pages without a language prefix and explicitly Italian pages
         query = query.or(`path.not.like./%/%, path.like./it/%`);
       } else {
-        // For other languages, only show pages with that language prefix
         query = query.like('path', `/${langCode}/%`);
       }
 
@@ -96,8 +97,7 @@ const AdminManage = () => {
   };
 
   const handleEdit = (page: PageData) => {
-    setSelectedPage(page);
-    setShowEditDialog(true);
+    onEditPage(page);
   };
 
   const handleDelete = async (page: PageData) => {

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useState } from "react";
 import { VisualEditor } from "@/components/admin/VisualEditor";
@@ -27,14 +26,19 @@ interface ImageDetail extends ImageItem {
   width: string;
 }
 
-const AdminCreate = () => {
-  const [pageContent, setPageContent] = useState<PageContent>({
-    title: "",
-    content: "",
-    images: []
-  });
+interface AdminCreateProps {
+  pageToEdit: PageData | null;
+  onEditComplete: () => void;
+}
 
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
+  const [pageContent, setPageContent] = useState<PageContent>(() => ({
+    title: pageToEdit?.title || "",
+    content: pageToEdit?.content || "",
+    images: pageToEdit?.pageImages || []
+  }));
+
+  const [uploadedImage, setUploadedImage] = useState<string | null>(pageToEdit?.imageUrl || null);
   const { handleTranslateAndCreate, isCreating, isTranslating } = usePageCreation({
     onPageCreated: (pages) => {
       setPageContent({
@@ -43,7 +47,8 @@ const AdminCreate = () => {
         images: []
       });
       setUploadedImage(null);
-      toast.success("Pagina creata con successo!");
+      onEditComplete();
+      toast.success(pageToEdit ? "Pagina aggiornata con successo!" : "Pagina creata con successo!");
     }
   });
 
@@ -85,14 +90,14 @@ const AdminCreate = () => {
         {
           title: pageContent.title,
           content: pageContent.content,
-          icon: "FileText"
+          icon: pageToEdit?.icon || "FileText"
         },
-        "normal",
-        "",
+        pageToEdit?.listType || "normal",
+        pageToEdit?.parentPath || "",
         uploadedImage,
         pageImages,
         () => {
-          toast.success("Pagina creata con successo!");
+          toast.success(pageToEdit ? "Pagina aggiornata con successo!" : "Pagina creata con successo!");
         }
       );
     } catch (error) {
@@ -106,10 +111,13 @@ const AdminCreate = () => {
       <Card className="bg-white shadow-lg border-0">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-gray-800">
-            Crea una nuova pagina
+            {pageToEdit ? "Modifica pagina" : "Crea una nuova pagina"}
           </CardTitle>
           <CardDescription>
-            Utilizza l'editor visuale per creare una nuova pagina
+            {pageToEdit 
+              ? "Modifica i contenuti della pagina esistente"
+              : "Utilizza l'editor visuale per creare una nuova pagina"
+            }
           </CardDescription>
         </CardHeader>
         
@@ -138,7 +146,22 @@ const AdminCreate = () => {
         </CardContent>
         
         <CardFooter className="flex justify-end gap-2 bg-gray-50 rounded-b-lg">
-          <Button variant="outline">Annulla</Button>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              if (pageToEdit) {
+                onEditComplete();
+              }
+              setPageContent({
+                title: "",
+                content: "",
+                images: []
+              });
+              setUploadedImage(null);
+            }}
+          >
+            Annulla
+          </Button>
           <Button 
             onClick={handleSavePage}
             disabled={isCreating || isTranslating}
@@ -147,6 +170,8 @@ const AdminCreate = () => {
               "Salvataggio in corso..."
             ) : isTranslating ? (
               "Traduzione in corso..."
+            ) : pageToEdit ? (
+              "Aggiorna Pagina"
             ) : (
               "Salva Pagina"
             )}
