@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Card,
@@ -13,7 +12,6 @@ import { UserManagementView } from "./UserManagementView";
 import ChatbotSettings from "./ChatbotSettings";
 import FooterSettingsView from "./FooterSettingsView";
 import { HeaderSettingsView } from "./HeaderSettingsView";
-import SiteSettingsView from "./SiteSettingsView";
 
 const MasterPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("user-management");
@@ -70,7 +68,15 @@ const MasterPanel: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="site-settings" className="mt-0">
-          <SiteSettingsView />
+          <div className="w-full max-w-full">
+            <h2 className="text-xl font-medium text-emerald-600 mb-4">
+              Impostazioni del Sito (WIP)
+            </h2>
+            <p className="text-gray-500">
+              Qui potrai gestire le impostazioni generali del sito, come il nome
+              del sito, la lingua predefinita, ecc.
+            </p>
+          </div>
         </TabsContent>
         
         <TabsContent value="chatbot-settings" className="mt-0">

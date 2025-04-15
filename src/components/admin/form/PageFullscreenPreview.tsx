@@ -33,7 +33,7 @@ const PageFullscreenPreview: React.FC<PageFullscreenPreviewProps> = ({
     return null;
   }
 
-  // Otherwise, show the normal dialog - wrapped in a single element to avoid React.Children.only errors
+  // Otherwise, show the normal dialog
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-full w-screen h-screen p-0 overflow-hidden inset-0 m-0 rounded-none border-0 fixed top-0 left-0">

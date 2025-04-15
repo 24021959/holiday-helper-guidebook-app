@@ -1,90 +1,49 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect } from "react";
+import { generatePreviewHTML } from "@/utils/previewHtmlTemplate";
 
-interface PreviewWindowProps {
+interface UsePreviewWindowProps {
   isOpen: boolean;
   title: string;
   onClose: () => void;
-  openInNewWindow?: boolean;
+  openInNewWindow: boolean;
 }
 
 /**
- * Hook per gestire l'apertura di un contenuto sia in un dialog che in una nuova finestra.
- * Restituisce true se il contenuto dovrebbe essere mostrato in un dialog, false altrimenti.
+ * Hook to manage opening content in a new window
  */
-export const usePreviewWindow = ({
-  isOpen,
-  title,
-  onClose,
-  openInNewWindow = false
-}: PreviewWindowProps): boolean => {
-  const [shouldRenderDialog, setShouldRenderDialog] = useState<boolean>(true);
-  const windowRef = useRef<Window | null>(null);
-  const intervalRef = useRef<number | null>(null);
-  
+export const usePreviewWindow = ({ 
+  isOpen, 
+  title, 
+  onClose, 
+  openInNewWindow 
+}: UsePreviewWindowProps) => {
   useEffect(() => {
-    // Funzione per ripulire risorse quando la finestra viene chiusa
-    const cleanupWindow = () => {
-      if (intervalRef.current) {
-        window.clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+    if (isOpen && openInNewWindow) {
+      // Get content from the prose element
+      const contentHtml = document.querySelector('.prose')?.innerHTML || '';
       
-      if (windowRef.current && !windowRef.current.closed) {
-        try {
-          windowRef.current.close();
-        } catch (e) {
-          console.error("Error closing window:", e);
-        }
-      }
+      // Generate the preview HTML
+      const previewHTML = generatePreviewHTML(title, contentHtml);
       
-      windowRef.current = null;
-    };
-    
-    // Se il dialog non è aperto, resettiamo tutto
-    if (!isOpen) {
-      setShouldRenderDialog(true);
-      cleanupWindow();
-      return;
-    }
-    
-    // Se richiesto di aprire in una nuova finestra
-    if (openInNewWindow) {
-      try {
-        // Tentiamo di aprire una nuova finestra
-        const newWindow = window.open('', '_blank', 'width=1000,height=800,menubar=0,toolbar=0,location=0');
+      // Open a new window and write the HTML
+      const previewWindow = window.open('', '_blank', 'width=1024,height=768');
+      if (previewWindow) {
+        previewWindow.document.write(previewHTML);
+        previewWindow.document.close();
         
-        if (newWindow) {
-          windowRef.current = newWindow;
-          setShouldRenderDialog(false);
-          
-          // Configura monitoraggio per chiusura finestra
-          intervalRef.current = window.setInterval(() => {
-            if (newWindow.closed) {
-              cleanupWindow();
-              onClose();
-              setShouldRenderDialog(true);
-            }
-          }, 500) as unknown as number;
-          
-          // Imposta titolo
-          newWindow.document.title = title || 'Anteprima';
-        } else {
-          // Fallback a dialog se la creazione finestra fallisce
-          console.warn("Cannot open a new window. Showing dialog instead.");
-          setShouldRenderDialog(true);
-        }
-      } catch (error) {
-        console.error("Error opening preview window:", error);
-        setShouldRenderDialog(true);
+        // Close the dialog in the main page
+        onClose();
+        
+        // When the window is closed, execute onClose
+        previewWindow.onbeforeunload = () => {
+          onClose();
+          return null;
+        };
       }
-    } else {
-      // Modalità dialog normale
-      setShouldRenderDialog(true);
     }
-    
-    return cleanupWindow;
-  }, [isOpen, onClose, openInNewWindow, title]);
-  
-  return shouldRenderDialog;
+  }, [isOpen, openInNewWindow, title, onClose]);
+
+  // Return true if we should render the dialog, false otherwise
+  return !openInNewWindow;
 };

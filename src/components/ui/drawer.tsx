@@ -1,4 +1,3 @@
-
 import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
 
@@ -17,16 +16,7 @@ Drawer.displayName = "Drawer"
 
 const DrawerTrigger = DrawerPrimitive.Trigger
 
-const DrawerPortal = ({ children }: { children: React.ReactNode }) => (
-  <DrawerPrimitive.Portal>
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {React.Children.map(children, child => 
-        React.isValidElement(child) ? child : null
-      )}
-    </div>
-  </DrawerPrimitive.Portal>
-)
-DrawerPortal.displayName = "DrawerPortal"
+const DrawerPortal = DrawerPrimitive.Portal
 
 const DrawerClose = DrawerPrimitive.Close
 
