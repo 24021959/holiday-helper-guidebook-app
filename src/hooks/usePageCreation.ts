@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -41,6 +40,41 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
     return enhancedContent;
   };
 
+  const deletePageAndTranslations = async (path: string) => {
+    try {
+      const basePath = path.replace(/^\/[a-z]{2}\//, '/');
+      
+      const { error: deleteError } = await supabase
+        .from('custom_pages')
+        .delete()
+        .or(`path.eq.${basePath},path.like./en${basePath},path.like./fr${basePath},path.like./es${basePath},path.like./de${basePath}`);
+
+      if (deleteError) throw deleteError;
+
+      const { error: menuError } = await supabase
+        .from('menu_icons')
+        .delete()
+        .or(`path.eq.${basePath},path.like./en${basePath},path.like./fr${basePath},path.like./es${basePath},path.like./de${basePath}`);
+
+      if (menuError) throw menuError;
+
+      toast.success("Pagina e traduzioni eliminate con successo");
+
+      const { data: updatedPages, error: fetchError } = await supabase
+        .from('custom_pages')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (fetchError) throw fetchError;
+      return updatedPages;
+
+    } catch (error) {
+      console.error("Error deleting page and translations:", error);
+      toast.error("Errore nell'eliminazione della pagina e delle traduzioni");
+      throw error;
+    }
+  };
+
   const saveNewPage = async (
     title: string,
     content: string,
@@ -55,7 +89,6 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
       const pageId = uuidv4();
       const formattedContent = formatPageContent(content, images);
 
-      // Check if page already exists
       const { data: existingPage } = await supabase
         .from('custom_pages')
         .select('id')
@@ -81,6 +114,28 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
           .eq('id', existingPage.id);
           
         if (updateError) throw updateError;
+
+        if (!path.match(/^\/[a-z]{2}\//)) {
+          const translations = await translateSequential(formattedContent, title, ['en', 'fr', 'es', 'de']);
+          
+          for (const lang of Object.keys(translations)) {
+            if (lang !== 'it') {
+              const translatedPath = `/${lang}${path}`;
+              const translatedParentPath = parentPath ? `/${lang}${parentPath}` : null;
+              
+              await saveNewPage(
+                translations[lang].title,
+                translations[lang].content,
+                translatedPath,
+                imageUrl,
+                icon,
+                pageType,
+                translatedParentPath,
+                images
+              );
+            }
+          }
+        }
       } else {
         const { error } = await supabase
           .from('custom_pages')
@@ -93,7 +148,6 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         if (error) throw error;
       }
 
-      // Update menu icons
       const { data: existingIcon } = await supabase
         .from('menu_icons')
         .select('*')
@@ -129,7 +183,6 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         if (iconError) throw iconError;
       }
 
-      // Fetch updated pages
       const { data: updatedPages, error: fetchError } = await supabase
         .from('custom_pages')
         .select('*')
@@ -167,7 +220,6 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
 
       const targetLangs: ("en" | "fr" | "es" | "de")[] = ['en', 'fr', 'es', 'de'];
       
-      // First save the Italian version
       await saveNewPage(
         values.title,
         values.content,
@@ -179,7 +231,6 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         pageImages
       );
 
-      // Then translate and save for each target language
       if (values.pageType !== "parent") {
         const translations = await translateSequential(
           values.content,
@@ -208,7 +259,6 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         }
       }
 
-      // Fetch final updated pages
       const { data: pagesData, error: fetchError } = await supabase
         .from('custom_pages')
         .select('*')
@@ -237,6 +287,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
   return {
     isCreating,
     isTranslating,
-    handleTranslateAndCreate
+    handleTranslateAndCreate,
+    deletePageAndTranslations
   };
 };
