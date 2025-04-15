@@ -1,28 +1,16 @@
 
-import { ImageItem } from "@/types/image.types";
-
-export interface CreatePageFormProps {
-  parentPages: {
-    id: string;
-    title: string;
-    content: string;
-    path: string;
-    imageUrl?: string;
-    icon?: string;
-    isSubmenu?: boolean;
-    parentPath?: string | null;
-    listItems?: any[];
-    listType?: 'restaurants' | 'activities' | 'locations';
-    pageImages?: ImageItem[];
-    published?: boolean;
-    is_parent?: boolean;
-  }[];
-  onPageCreated: (pages: any[]) => void;
-  keywordToIconMap: Record<string, string>;
-}
-
-export interface PageFormData {
+export interface PageData {
+  id: string;
   title: string;
   content: string;
-  icon: string;  // Changed from optional to required to fix build error
+  path: string;
+  imageUrl: string | null;
+  icon: string;
+  listType?: "locations" | "activities" | "restaurants";
+  listItems?: { name: string; description?: string; phoneNumber?: string; mapsUrl?: string; }[];
+  isSubmenu: boolean;
+  parentPath?: string;
+  pageImages: { url: string; position: "top" | "center" | "bottom"; caption?: string; }[];
+  published: boolean;
+  is_parent: boolean;
 }

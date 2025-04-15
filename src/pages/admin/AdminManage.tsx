@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { PageData } from "@/types/admin.types";
+import { PageData } from "@/types/page.types";
 import { 
   Table,
   TableBody,
@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Eye, Pencil, Trash2, Languages } from "lucide-react";
+import { Eye, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -23,9 +23,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import EditPageForm from "@/components/admin/EditPageForm";
-import { LanguageFlags } from "@/components/admin/LanguageFlags";
+
+const languages = [
+  { code: 'it', name: 'Italiano', flag: '🇮🇹' },
+  { code: 'en', name: 'English', flag: '🇬🇧' },
+  { code: 'fr', name: 'Français', flag: '🇫🇷' },
+  { code: 'es', name: 'Español', flag: '🇪🇸' },
+  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+];
 
 const AdminManage = () => {
   const [pages, setPages] = useState<PageData[]>([]);
@@ -34,14 +40,14 @@ const AdminManage = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [deletingPage, setDeletingPage] = useState<PageData | null>(null);
+  const [currentLanguage, setCurrentLanguage] = useState('it');
 
-  const fetchPages = async () => {
+  const fetchPages = async (langCode: string) => {
     try {
       const { data, error } = await supabase
         .from('custom_pages')
         .select('*')
-        .or('path.not.ilike.%/en%,path.not.ilike.%/fr%,path.not.ilike.%/es%,path.not.ilike.%/de%')
-        .order('created_at', { ascending: false });
+        .like('path', `/${langCode}/%`);
 
       if (error) throw error;
 
@@ -72,8 +78,8 @@ const AdminManage = () => {
   };
 
   useEffect(() => {
-    fetchPages();
-  }, []);
+    fetchPages(currentLanguage);
+  }, [currentLanguage]);
 
   const handleView = (page: PageData) => {
     window.open(`/preview${page.path}`, '_blank');
@@ -120,16 +126,6 @@ const AdminManage = () => {
     }
   };
 
-  const onPageUpdated = (updatedPages: PageData[]) => {
-    setPages(updatedPages.filter(page => 
-      !page.path.includes('/en/') && 
-      !page.path.includes('/fr/') && 
-      !page.path.includes('/es/') && 
-      !page.path.includes('/de/')
-    ));
-    setShowEditDialog(false);
-  };
-
   if (isLoading) {
     return <div className="flex justify-center items-center h-64">
       <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-emerald-500"></div>
@@ -139,17 +135,26 @@ const AdminManage = () => {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800">Gestione Pagine</h2>
-        <p className="text-gray-600">Gestisci le pagine del tuo sito</p>
+        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Gestione Pagine</h2>
+        <div className="flex gap-2 mb-6">
+          {languages.map((lang) => (
+            <Button
+              key={lang.code}
+              variant={currentLanguage === lang.code ? "default" : "outline"}
+              onClick={() => setCurrentLanguage(lang.code)}
+              className={currentLanguage === lang.code ? "bg-emerald-100 text-emerald-800" : ""}
+            >
+              <span className="mr-2">{lang.flag}</span>
+              {lang.name}
+            </Button>
+          ))}
+        </div>
       </div>
 
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Titolo</TableHead>
-            <TableHead>Percorso</TableHead>
-            <TableHead>Traduzioni</TableHead>
-            <TableHead>Stato</TableHead>
             <TableHead className="text-right">Azioni</TableHead>
           </TableRow>
         </TableHeader>
@@ -157,18 +162,6 @@ const AdminManage = () => {
           {pages.map((page) => (
             <TableRow key={page.id}>
               <TableCell className="font-medium">{page.title}</TableCell>
-              <TableCell>{page.path}</TableCell>
-              <TableCell>
-                <LanguageFlags path={page.path} />
-              </TableCell>
-              <TableCell>
-                <Badge 
-                  variant={page.published ? "default" : "secondary"}
-                  className={page.published ? "bg-emerald-100 text-emerald-800" : ""}
-                >
-                  {page.published ? "Pubblicata" : "Bozza"}
-                </Badge>
-              </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
                   <Button
@@ -233,7 +226,13 @@ const AdminManage = () => {
             <EditPageForm
               selectedPage={selectedPage}
               parentPages={pages.filter(p => p.is_parent)}
-              onPageUpdated={onPageUpdated}
+              onPageUpdated={(updatedPages) => {
+                setPages(updatedPages.filter(page => 
+                  page.path.startsWith(`/${currentLanguage}/`) || 
+                  (!page.path.match(/^\/[a-z]{2}\//) && currentLanguage === 'it')
+                ));
+                setShowEditDialog(false);
+              }}
               keywordToIconMap={{}}
               allPages={pages}
             />
