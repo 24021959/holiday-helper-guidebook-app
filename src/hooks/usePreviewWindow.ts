@@ -18,7 +18,7 @@ export const usePreviewWindow = ({
   
   useEffect(() => {
     if (isOpen && openInNewWindow) {
-      // Apre una nuova finestra per l'anteprima
+      // Open a new window for the preview
       const previewWindow = window.open('', '_blank');
       
       if (previewWindow) {
@@ -43,7 +43,7 @@ export const usePreviewWindow = ({
         };
       } else {
         // If window couldn't be opened (popup blocked), fallback to dialog
-        console.warn("Impossibile aprire una nuova finestra. Mostrando il dialog invece.");
+        console.warn("Cannot open a new window. Showing dialog instead.");
         setShouldRenderDialog(true);
       }
     } else {
