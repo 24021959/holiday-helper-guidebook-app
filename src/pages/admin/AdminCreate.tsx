@@ -1,9 +1,11 @@
+
 import React from "react";
 import { useState } from "react";
 import { VisualEditor } from "@/components/admin/VisualEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Card, 
   CardContent, 
@@ -15,15 +17,14 @@ import {
 import { toast } from "sonner";
 import { usePageCreation } from "@/hooks/usePageCreation";
 import { ImageItem } from "@/types/image.types";
+import { PageData } from "@/types/page.types";
 
 export interface PageContent {
   title: string;
   content: string;
   images: ImageItem[];
-}
-
-interface ImageDetail extends ImageItem {
-  width: string;
+  pageType: "normal" | "submenu" | "parent";
+  parentPath?: string;
 }
 
 interface AdminCreateProps {
@@ -35,7 +36,9 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
   const [pageContent, setPageContent] = useState<PageContent>(() => ({
     title: pageToEdit?.title || "",
     content: pageToEdit?.content || "",
-    images: pageToEdit?.pageImages || []
+    images: pageToEdit?.pageImages || [],
+    pageType: pageToEdit?.is_parent ? "parent" : pageToEdit?.isSubmenu ? "submenu" : "normal",
+    parentPath: pageToEdit?.parentPath
   }));
 
   const [uploadedImage, setUploadedImage] = useState<string | null>(pageToEdit?.imageUrl || null);
@@ -44,7 +47,8 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
       setPageContent({
         title: "",
         content: "",
-        images: []
+        images: [],
+        pageType: "normal"
       });
       setUploadedImage(null);
       onEditComplete();
@@ -73,6 +77,21 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
     }));
   };
 
+  const handlePageTypeChange = (value: "normal" | "submenu" | "parent") => {
+    setPageContent(prev => ({
+      ...prev,
+      pageType: value,
+      parentPath: value === "normal" ? undefined : prev.parentPath
+    }));
+  };
+
+  const handleParentPathChange = (value: string) => {
+    setPageContent(prev => ({
+      ...prev,
+      parentPath: value
+    }));
+  };
+
   const handleSavePage = async () => {
     if (!pageContent.title) {
       toast.error("Inserisci un titolo per la pagina");
@@ -92,8 +111,8 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
           content: pageContent.content,
           icon: pageToEdit?.icon || "FileText"
         },
-        pageToEdit?.listType || "normal",
-        pageToEdit?.parentPath || "",
+        pageContent.pageType,
+        pageContent.pageType === "submenu" ? (pageContent.parentPath || "") : "",
         uploadedImage,
         pageImages,
         () => {
@@ -122,26 +141,70 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
         </CardHeader>
         
         <CardContent>
-          <div className="mb-6">
-            <Label htmlFor="pageTitle" className="text-base font-medium">
-              Titolo della pagina
-            </Label>
-            <Input 
-              id="pageTitle" 
-              placeholder="Inserisci il titolo della pagina" 
-              className="mt-1 text-lg font-medium"
-              value={pageContent.title}
-              onChange={handleTitleChange}
-            />
-          </div>
+          <div className="space-y-6">
+            <div>
+              <Label htmlFor="pageTitle" className="text-base font-medium">
+                Titolo della pagina
+              </Label>
+              <Input 
+                id="pageTitle" 
+                placeholder="Inserisci il titolo della pagina" 
+                className="mt-1 text-lg font-medium"
+                value={pageContent.title}
+                onChange={handleTitleChange}
+              />
+            </div>
 
-          <div className="border rounded-lg mt-2">
-            <VisualEditor 
-              content={pageContent.content}
-              images={pageContent.images}
-              onChange={handleContentChange}
-              onImageAdd={handleImageAdd}
-            />
+            <div>
+              <Label htmlFor="pageType" className="text-base font-medium">
+                Tipo di pagina
+              </Label>
+              <Select
+                value={pageContent.pageType}
+                onValueChange={handlePageTypeChange}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Seleziona il tipo di pagina" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="normal">Pagina normale</SelectItem>
+                  <SelectItem value="submenu">Sottopagina</SelectItem>
+                  <SelectItem value="parent">Pagina master (con sottopagine)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {pageContent.pageType === "submenu" && (
+              <div>
+                <Label htmlFor="parentPath" className="text-base font-medium">
+                  Pagina principale
+                </Label>
+                <Select
+                  value={pageContent.parentPath}
+                  onValueChange={handleParentPathChange}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Seleziona la pagina principale" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {/* We'll need to fetch and populate parent pages here */}
+                    <SelectItem value="/page1">Pagina 1</SelectItem>
+                    <SelectItem value="/page2">Pagina 2</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {pageContent.pageType !== "parent" && (
+              <div className="border rounded-lg mt-2">
+                <VisualEditor 
+                  content={pageContent.content}
+                  images={pageContent.images}
+                  onChange={handleContentChange}
+                  onImageAdd={handleImageAdd}
+                />
+              </div>
+            )}
           </div>
         </CardContent>
         
@@ -155,7 +218,8 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
               setPageContent({
                 title: "",
                 content: "",
-                images: []
+                images: [],
+                pageType: "normal"
               });
               setUploadedImage(null);
             }}

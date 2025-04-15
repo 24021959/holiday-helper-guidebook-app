@@ -170,6 +170,7 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
           <TableHeader>
             <TableRow>
               <TableHead>Titolo</TableHead>
+              <TableHead>Tipo</TableHead>
               <TableHead className="text-right">Azioni</TableHead>
             </TableRow>
           </TableHeader>
@@ -178,6 +179,21 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
               <TableRow key={page.id}>
                 <TableCell className="font-medium">
                   {page.title}
+                </TableCell>
+                <TableCell>
+                  {page.is_parent ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      Master
+                    </span>
+                  ) : page.isSubmenu ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      Sottopagina
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      Normale
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
