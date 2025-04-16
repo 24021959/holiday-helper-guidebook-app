@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -48,11 +49,11 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
       const basePath = path.replace(/^\/[a-z]{2}\//, '/');
       console.log(`Normalized path for deletion: ${basePath}`);
       
-      // If the original request is for a non-Italian version, we shouldn't delete all translations
+      // Determine if we're dealing with a non-Italian version
       const isNonItalianPath = path.match(/^\/[a-z]{2}\//);
       
       if (isNonItalianPath) {
-        // Only delete the specific language version
+        // For non-Italian pages, only delete the specific page
         const { error: deleteError } = await supabase
           .from('custom_pages')
           .delete()
@@ -71,43 +72,52 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
 
         if (menuError) {
           console.error("Error deleting menu icon:", menuError);
-          throw menuError;
+          // Don't throw here, just log the error and continue
         }
 
         toast.success("Pagina eliminata con successo");
       } else {
-        // For Italian pages, delete all translations as well
-        // Build an OR condition to find both the main page and all translations
-        const pathCondition = `path.eq.${basePath},path.like./??${basePath}`;
-        console.log(`Path condition for deletion: ${pathCondition}`);
+        // For Italian pages, delete all translations
         
-        // Delete all related pages from the custom_pages table
-        const { error: deleteError, data: deletedPages } = await supabase
+        // First, find all translations that match this base path
+        const { data: translatedPages, error: findError } = await supabase
           .from('custom_pages')
-          .delete()
-          .or(pathCondition)
-          .select();
-
-        if (deleteError) {
-          console.error("Error deleting pages:", deleteError);
-          throw deleteError;
+          .select('path')
+          .or(`path.eq.${basePath},path.like./??${basePath}`);
+          
+        if (findError) {
+          console.error("Error finding translated pages:", findError);
+          throw findError;
         }
-
-        console.log(`Deleted ${deletedPages?.length || 0} pages from custom_pages`);
-
-        // Delete all related menu icons
-        const { error: menuError, data: deletedMenuItems } = await supabase
-          .from('menu_icons')
-          .delete()
-          .or(pathCondition)
-          .select();
-
-        if (menuError) {
-          console.error("Error deleting menu icons:", menuError);
-          throw menuError;
+        
+        console.log(`Found ${translatedPages?.length || 0} pages to delete:`, translatedPages);
+        
+        // Delete each page individually to ensure we catch all translations
+        if (translatedPages && translatedPages.length > 0) {
+          for (const page of translatedPages) {
+            // Delete the page
+            const { error: pageDeleteError } = await supabase
+              .from('custom_pages')
+              .delete()
+              .eq('path', page.path);
+              
+            if (pageDeleteError) {
+              console.error(`Error deleting page ${page.path}:`, pageDeleteError);
+              // Continue with other deletions even if one fails
+            }
+            
+            // Delete corresponding menu icon
+            const { error: menuDeleteError } = await supabase
+              .from('menu_icons')
+              .delete()
+              .eq('path', page.path);
+              
+            if (menuDeleteError) {
+              console.error(`Error deleting menu icon for ${page.path}:`, menuDeleteError);
+              // Continue with other deletions even if one fails
+            }
+          }
         }
-
-        console.log(`Deleted ${deletedMenuItems?.length || 0} menu icons from menu_icons`);
 
         toast.success("Pagina e traduzioni eliminate con successo");
       }

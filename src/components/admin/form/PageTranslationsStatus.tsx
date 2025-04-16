@@ -89,6 +89,18 @@ export const PageTranslationsStatus = ({
           </Badge>
           <h3 className="text-lg font-medium">{title}</h3>
           <p className="text-sm text-gray-600">{path}</p>
+          
+          {currentLanguage !== 'it' && (
+            <p className="text-xs text-amber-600 mt-1">
+              <span className="font-bold">Nota:</span> Questa è una traduzione. Le modifiche alla versione italiana influenzeranno questa pagina.
+            </p>
+          )}
+          
+          {currentLanguage === 'it' && (
+            <p className="text-xs text-emerald-600 mt-1">
+              <span className="font-bold">Nota:</span> Questa è la versione principale. Le modifiche qui influenzeranno tutte le traduzioni.
+            </p>
+          )}
         </div>
         
         {currentLanguage === 'it' && (

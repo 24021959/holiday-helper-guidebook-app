@@ -152,8 +152,15 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
     try {
       const updatedPages = await deletePageAndTranslations(deletingPage.path);
       if (updatedPages) {
+        // Make sure to refresh the page list to show the current state
         fetchPages(currentLanguage);
-        toast.success("Pagina e traduzioni eliminate con successo");
+        
+        // Show different messages based on the language
+        if (currentLanguage === 'it') {
+          toast.success("Pagina e traduzioni eliminate con successo");
+        } else {
+          toast.success("Pagina eliminata con successo");
+        }
       }
     } catch (error) {
       console.error("Error in confirmDelete:", error);

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { PageData } from "@/types/page.types";
 import { EditForm } from './form/EditForm';
@@ -59,6 +60,11 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
         if (!values.parentPath.startsWith(`/${currentLanguage}/`)) {
           values.parentPath = `/${currentLanguage}${values.parentPath.replace(/^\/[a-z]{2}\//, '/')}`;
         }
+      }
+      
+      // When editing Italian pages, make it clear that translations will be affected
+      if (currentLanguage === 'it') {
+        toast.info("Modifiche alla versione italiana aggiorneranno anche le traduzioni");
       }
       
       return await handleTranslateAndCreate(values, imageUrl, pageImages, onSuccess);
