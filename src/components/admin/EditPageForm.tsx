@@ -1,11 +1,13 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageData } from "@/types/page.types";
-import { EditForm } from './form/EditForm';
 import { usePageCreation } from "@/hooks/usePageCreation";
 import { ImageItem } from "@/types/image.types";
 import { PageFormValues } from "@/types/form.types";
 import { toast } from "sonner";
+import { uploadImage } from "@/integrations/supabase/storage";
+import { pageFormSchema } from './schemas/pageFormSchema';
+import { z } from "zod";
+import { PageForm } from './form/PageForm';
 
 interface EditPageFormProps {
   selectedPage: PageData;
@@ -14,6 +16,12 @@ interface EditPageFormProps {
   keywordToIconMap: Record<string, string>;
   allPages?: PageData[];
 }
+
+// Helper function to extract language from path
+const getLanguageFromPath = (path: string): string => {
+  const match = path.match(/^\/([a-z]{2})\//);
+  return match ? match[1] : 'it';
+};
 
 const EditPageForm: React.FC<EditPageFormProps> = ({ 
   selectedPage,
@@ -32,11 +40,14 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
     );
   }
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mainImage, setMainImage] = useState<string | null>(selectedPage.imageUrl || null);
+
   // Extract current language from the path
   const currentLanguage = getLanguageFromPath(selectedPage.path);
   console.log(`Editing page in language: ${currentLanguage}`);
 
-  const { handleTranslateAndCreate, deletePageAndTranslations } = usePageCreation({ 
+  const { handleTranslateAndCreate, isCreating, isTranslating } = usePageCreation({ 
     onPageCreated: onPageUpdated 
   });
 
@@ -46,14 +57,37 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
     return pageLanguage === currentLanguage;
   });
 
-  // Wrapper to adapt the function signature of handleTranslateAndCreate
-  const handleFormSubmit = async (
-    values: PageFormValues,
-    imageUrl: string | null,
-    pageImages: ImageItem[],
-    onSuccess: () => void
-  ) => {
+  // Initialize values from selectedPage
+  const initialValues = {
+    title: selectedPage.title,
+    content: selectedPage.content,
+    icon: selectedPage.icon || "FileText",
+    pageType: selectedPage.is_parent ? "parent" : selectedPage.isSubmenu ? "submenu" : "normal",
+    parentPath: selectedPage.parentPath,
+  };
+
+  const handleMainImageUpload = async (file: File) => {
     try {
+      setIsSubmitting(true);
+      const imageUrl = await uploadImage(file);
+      setMainImage(imageUrl);
+      toast.success("Immagine principale caricata con successo");
+    } catch (error) {
+      console.error("Errore durante il caricamento dell'immagine:", error);
+      toast.error("Errore durante il caricamento dell'immagine");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleMainImageRemove = () => {
+    setMainImage(null);
+  };
+
+  const handleFormSubmit = async (values: z.infer<typeof pageFormSchema>, pageImages: ImageItem[]) => {
+    try {
+      setIsSubmitting(true);
+      
       // If we're editing a translated version, make sure we keep the language prefix in parent path
       if (currentLanguage !== 'it' && values.parentPath) {
         // Ensure the parent path has the correct language prefix
@@ -67,28 +101,51 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
         toast.info("Modifiche alla versione italiana aggiorneranno anche le traduzioni");
       }
       
-      return await handleTranslateAndCreate(values, imageUrl, pageImages, onSuccess);
+      await handleTranslateAndCreate(
+        { 
+          title: values.title, 
+          content: values.content || "", 
+          icon: values.icon || "FileText",
+          pageType: values.pageType,
+          parentPath: values.parentPath
+        },
+        mainImage,
+        pageImages,
+        () => {
+          toast.success("Modifiche salvate con successo");
+        }
+      );
     } catch (error) {
       console.error("Error in form submission:", error);
       toast.error("Si è verificato un errore durante il salvataggio della pagina");
-      throw error;
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  return (
-    <EditForm
-      selectedPage={selectedPage}
-      parentPages={filteredParentPages}
-      onPageUpdated={onPageUpdated}
-      handleTranslateAndCreate={handleFormSubmit}
-    />
-  );
-};
+  const handleCancel = () => {
+    // Just close or reset the form
+  };
 
-// Helper function to extract language from path
-const getLanguageFromPath = (path: string): string => {
-  const match = path.match(/^\/([a-z]{2})\//);
-  return match ? match[1] : 'it';
+  return (
+    <div className="container max-w-4xl mx-auto">
+      <h2 className="text-xl font-medium text-emerald-600 mb-4">Modifica Pagina</h2>
+      
+      <PageForm
+        initialValues={initialValues}
+        parentPages={filteredParentPages}
+        isCreating={isCreating}
+        isTranslating={isTranslating}
+        isSubmitting={isSubmitting}
+        mainImage={mainImage}
+        onMainImageUpload={handleMainImageUpload}
+        onMainImageRemove={handleMainImageRemove}
+        onCancel={handleCancel}
+        onSubmit={handleFormSubmit}
+        submitButtonText="Salva Modifiche"
+      />
+    </div>
+  );
 };
 
 export default EditPageForm;

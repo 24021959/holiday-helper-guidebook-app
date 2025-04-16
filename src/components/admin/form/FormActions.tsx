@@ -8,6 +8,8 @@ interface FormActionsProps {
   isCreating: boolean;
   isTranslating: boolean;
   onCancel: () => void;
+  submitText?: string;
+  cancelText?: string;
 }
 
 export const FormActions: React.FC<FormActionsProps> = ({
@@ -15,12 +17,14 @@ export const FormActions: React.FC<FormActionsProps> = ({
   isCreating,
   isTranslating,
   onCancel,
+  submitText,
+  cancelText = "Annulla"
 }) => {
   const getButtonText = () => {
     if (isSubmitting) return "Salvataggio in corso...";
     if (isCreating) return "Creazione pagina...";
     if (isTranslating) return "Traduzione in corso...";
-    return "Crea Pagina";
+    return submitText || "Crea Pagina";
   };
 
   return (
@@ -30,7 +34,7 @@ export const FormActions: React.FC<FormActionsProps> = ({
         onClick={onCancel}
         type="button"
       >
-        Annulla
+        {cancelText}
       </Button>
       <Button 
         type="submit"
