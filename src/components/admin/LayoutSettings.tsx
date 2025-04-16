@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Form } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
@@ -11,6 +10,9 @@ import Footer from "@/components/Footer";
 import { ThemeColorPicker } from "./layout/ThemeColorPicker";
 import { LogoSettings } from "./layout/LogoSettings";
 import { FooterSettings } from "./layout/FooterSettings";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlignLeft, AlignCenter, AlignRight } from "lucide-react";
 
 export interface LayoutSettingsForm extends HeaderSettings {
   footerText: string;
@@ -22,6 +24,7 @@ export interface LayoutSettingsForm extends HeaderSettings {
   headerColor: string;
   footerColor: string;
   footerTextAlignment: "left" | "center" | "right";
+  establishmentNameAlignment: "left" | "center" | "right";
 }
 
 export const LayoutSettings = () => {
@@ -61,27 +64,27 @@ export const LayoutSettings = () => {
         facebookUrl: footerData.facebook_url || '',
         instagramUrl: footerData.instagram_url || '',
         twitterUrl: footerData.twitter_url || '',
-        footerTextAlignment: footerData.text_alignment || 'left'
+        footerTextAlignment: footerData.text_alignment || 'left',
+        establishmentNameAlignment: headerData.establishment_name_alignment || 'left'
       };
     }
   });
 
   const onSubmit = async (data: LayoutSettingsForm) => {
     try {
-      // Update header settings
       const { error: headerError } = await supabase
         .from('header_settings')
         .upsert({
           logo_url: data.logoUrl,
           header_color: data.headerColor,
           establishment_name: data.establishmentName,
+          establishment_name_alignment: data.establishmentNameAlignment,
           logo_position: data.logoPosition,
           logo_size: data.logoSize
         });
 
       if (headerError) throw headerError;
 
-      // Update footer settings
       const { error: footerError } = await supabase
         .from('site_settings')
         .upsert({
@@ -131,6 +134,60 @@ export const LayoutSettings = () => {
     <div className="p-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <div className="space-y-4">
+            <div>
+              <FormField
+                control={form.control}
+                name="establishmentName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome Azienda</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Inserisci il nome della tua azienda" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div>
+              <FormField
+                control={form.control}
+                name="establishmentNameAlignment"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Allineamento Nome Azienda</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="left">
+                          <span className="flex items-center gap-2">
+                            <AlignLeft className="w-4 h-4" />
+                            Sinistra
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="center">
+                          <span className="flex items-center gap-2">
+                            <AlignCenter className="w-4 h-4" />
+                            Centro
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="right">
+                          <span className="flex items-center gap-2">
+                            <AlignRight className="w-4 h-4" />
+                            Destra
+                          </span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
           <ThemeColorPicker
             form={form}
             tempColor={tempHeaderColor}
@@ -141,7 +198,6 @@ export const LayoutSettings = () => {
           
           <LogoSettings form={form} />
 
-          {/* Header Preview */}
           <div className="border rounded-lg p-4 bg-gray-50">
             <h3 className="text-sm font-medium mb-2 text-gray-700">Anteprima Header</h3>
             <div className="rounded-lg overflow-hidden shadow-sm">
@@ -151,6 +207,7 @@ export const LayoutSettings = () => {
                 logoPosition={form.watch('logoPosition')}
                 logoSize={form.watch('logoSize')}
                 establishmentName={form.watch('establishmentName')}
+                establishmentNameAlignment={form.watch('establishmentNameAlignment')}
               />
             </div>
           </div>
@@ -165,7 +222,6 @@ export const LayoutSettings = () => {
 
           <FooterSettings form={form} />
 
-          {/* Footer Preview */}
           <div className="border rounded-lg p-4 bg-gray-50">
             <h3 className="text-sm font-medium mb-2 text-gray-700">Anteprima Footer</h3>
             <div className="rounded-lg overflow-hidden shadow-sm">

@@ -1,4 +1,3 @@
-
 import React from "react";
 
 interface HeaderProps {
@@ -8,6 +7,7 @@ interface HeaderProps {
   logoSize?: "small" | "medium" | "large";
   logoPosition?: "left" | "center" | "right";
   establishmentName?: string;
+  establishmentNameAlignment?: "left" | "center" | "right";
   showAdminButton?: boolean;
 }
 
@@ -18,6 +18,7 @@ const Header: React.FC<HeaderProps> = ({
   logoSize = "medium",
   logoPosition = "left",
   establishmentName,
+  establishmentNameAlignment = "left",
   showAdminButton = false
 }) => {
   // Determine if we should use dark or light text based on background color
@@ -43,6 +44,14 @@ const Header: React.FC<HeaderProps> = ({
 
   // Additional margin for centered layout (logo above, name below)
   const nameMarginClass = logoPosition === "center" && logoUrl ? "mt-2" : "mt-0";
+
+  const getTextAlignmentClass = () => {
+    switch (establishmentNameAlignment) {
+      case "center": return "text-center";
+      case "right": return "text-right";
+      default: return "text-left";
+    }
+  };
 
   return (
     <div
@@ -77,8 +86,10 @@ const Header: React.FC<HeaderProps> = ({
         
         {/* Title - only show if provided */}
         {establishmentName && (
-          <div className={nameMarginClass}>
-            <h1 className={`text-xl md:text-2xl font-bold ${textColorClass}`}>{establishmentName}</h1>
+          <div className={`${nameMarginClass} w-full`}>
+            <h1 className={`text-xl md:text-2xl font-bold ${textColorClass} ${getTextAlignmentClass()}`}>
+              {establishmentName}
+            </h1>
           </div>
         )}
       </div>
