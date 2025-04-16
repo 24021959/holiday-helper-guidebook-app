@@ -1,14 +1,13 @@
+
 import React, { useState, useEffect } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  FileText, 
   FolderOpen, 
   Settings, 
   MessageSquare, 
   BarChart3
 } from "lucide-react";
-import AdminCreate from "./AdminCreate";
 import AdminManage from "./AdminManage";
 import { PageData } from "@/types/page.types";
 import { LayoutSettings } from "@/components/admin/LayoutSettings";
@@ -17,18 +16,17 @@ import ChatbotSettings from "@/components/admin/chatbot/ChatbotSettings";
 
 const AdminLayout = () => {
   const isAuthenticated = true;
-  const [activeTab, setActiveTab] = useState("create");
-  const [pageToEdit, setPageToEdit] = useState<PageData | null>(null);
+  const [activeTab, setActiveTab] = useState("manage");
 
   useEffect(() => {
     const hash = window.location.hash.replace('#', '');
-    if (hash && ['create', 'manage', 'settings', 'chatbot', 'analytics'].includes(hash)) {
+    if (hash && ['manage', 'settings', 'chatbot', 'analytics'].includes(hash)) {
       setActiveTab(hash);
     }
     
     window.addEventListener('hashchange', () => {
       const newHash = window.location.hash.replace('#', '');
-      if (newHash && ['create', 'manage', 'settings', 'chatbot', 'analytics'].includes(newHash)) {
+      if (newHash && ['manage', 'settings', 'chatbot', 'analytics'].includes(newHash)) {
         setActiveTab(newHash);
       }
     });
@@ -41,11 +39,6 @@ const AdminLayout = () => {
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
-
-  const handleEditPage = (page: PageData) => {
-    setPageToEdit(page);
-    setActiveTab("create");
-  };
 
   const handleLayoutSaved = () => {
     toast.success("Impostazioni layout salvate con successo");
@@ -60,13 +53,6 @@ const AdminLayout = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full bg-white/50 backdrop-blur-sm border border-gray-200">
-            <TabsTrigger 
-              value="create" 
-              className="flex items-center gap-2 data-[state=active]:bg-green-100"
-            >
-              <FileText className="w-4 h-4" />
-              <span>Crea Pagina</span>
-            </TabsTrigger>
             <TabsTrigger 
               value="manage" 
               className="flex items-center gap-2 data-[state=active]:bg-blue-100"
@@ -99,17 +85,10 @@ const AdminLayout = () => {
 
           <div className="mt-6">
             <TabsContent 
-              value="create" 
-              className="rounded-lg border border-green-100"
-            >
-              <AdminCreate pageToEdit={pageToEdit} onEditComplete={() => setPageToEdit(null)} />
-            </TabsContent>
-
-            <TabsContent 
               value="manage" 
               className="rounded-lg border border-blue-100"
             >
-              <AdminManage onEditPage={handleEditPage} />
+              <AdminManage />
             </TabsContent>
 
             <TabsContent 
