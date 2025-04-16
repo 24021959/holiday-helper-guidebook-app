@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { X, Maximize2 } from "lucide-react";
@@ -24,7 +25,7 @@ const PageFullscreenPreview: React.FC<PageFullscreenPreviewProps> = ({
           <div className="flex justify-between items-center p-3 border-b bg-white z-10 sticky top-0">
             <h2 className="text-lg font-medium flex items-center">
               <Maximize2 className="h-4 w-4 mr-2" />
-              <TranslatedText text={`Anteprima: ${title}`} />
+              <TranslatedText text={`Anteprima: ${title}`} disableAutoTranslation={true} />
             </h2>
             <Button variant="ghost" size="sm" onClick={onClose} className="hover:bg-gray-100">
               <X className="h-5 w-5" />
