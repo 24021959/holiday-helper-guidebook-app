@@ -1,10 +1,8 @@
 
 import React from 'react';
-import { FormatButtons } from './toolbar/EditorToolbarButtons';
-import { AlignmentButtons } from './toolbar/EditorToolbarButtons';
-import { InsertButtons } from './toolbar/EditorToolbarButtons';
-import { ViewButtons } from './toolbar/EditorToolbarButtons';
-import { HistoryButtons } from './toolbar/EditorToolbarButtons';
+import { Button } from "@/components/ui/button";
+import { ImageIcon, Maximize2, Minimize2, Eye, EyeOff } from "lucide-react";
+import TranslatedText from '@/components/TranslatedText';
 
 interface EditorToolbarProps {
   expanded: boolean;
@@ -40,40 +38,108 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
   onRedo
 }) => {
   return (
-    <div className="flex flex-wrap gap-2 p-2 bg-white border border-gray-200 rounded-lg shadow-sm">
+    <div className="flex flex-wrap gap-2 p-2 bg-white border-b">
       <div className="flex flex-wrap items-center gap-2">
-        <FormatButtons
-          selectedText={selectedText}
-          onTextFormat={onTextFormat}
-        />
-        <div className="h-6 border-r border-gray-200" />
+        <Button 
+          variant="ghost"
+          size="sm"
+          onClick={() => onTextFormat('bold')}
+          disabled={!selectedText}
+        >
+          <span className="font-bold">B</span>
+        </Button>
         
-        <AlignmentButtons
-          selectedText={selectedText}
-          onTextAlign={onTextAlign}
-        />
+        <Button 
+          variant="ghost"
+          size="sm"
+          onClick={() => onTextFormat('italic')}
+          disabled={!selectedText}
+        >
+          <span className="italic">I</span>
+        </Button>
+
         <div className="h-6 border-r border-gray-200" />
+
+        <Button 
+          variant="ghost"
+          size="sm"
+          onClick={() => onTextAlign('left')}
+          disabled={!selectedText}
+        >
+          ⟵
+        </Button>
         
-        <InsertButtons
-          onOpenImageDialog={onInsertImage}
-          onInsertPhone={onInsertPhone}
-          onInsertMap={onInsertMap}
-        />
+        <Button 
+          variant="ghost"
+          size="sm"
+          onClick={() => onTextAlign('center')}
+          disabled={!selectedText}
+        >
+          ⟷
+        </Button>
+        
+        <Button 
+          variant="ghost"
+          size="sm"
+          onClick={() => onTextAlign('right')}
+          disabled={!selectedText}
+        >
+          ⟶
+        </Button>
+
         <div className="h-6 border-r border-gray-200" />
-        
-        <HistoryButtons
-          historyIndex={historyIndex}
-          editHistory={editHistory}
-          onUndo={onUndo}
-          onRedo={onRedo}
-        />
+
+        <Button 
+          variant="ghost"
+          size="sm"
+          onClick={onInsertImage}
+        >
+          <ImageIcon className="h-4 w-4 mr-1" />
+          <TranslatedText text="Inserisci Immagine" disableAutoTranslation={true} />
+        </Button>
+
         <div className="h-6 border-r border-gray-200" />
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onUndo}
+          disabled={historyIndex === 0}
+        >
+          ↩
+        </Button>
         
-        <ViewButtons
-          editMode={previewMode ? 'preview' : 'visual'}
-          onToggleEditMode={onTogglePreview}
-          onToggleFullscreen={onToggleExpand}
-        />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onRedo}
+          disabled={historyIndex === editHistory.length - 1}
+        >
+          ↪
+        </Button>
+
+        <div className="h-6 border-r border-gray-200" />
+      </div>
+
+      <div className="flex items-center ml-auto gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onTogglePreview}
+          className="h-8 w-8"
+          title={previewMode ? "Modalità modifica" : "Modalità anteprima"}
+        >
+          {previewMode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onToggleExpand}
+          className="h-8 w-8"
+          title={expanded ? "Riduci editor" : "Espandi editor"}
+        >
+          {expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+        </Button>
       </div>
     </div>
   );
