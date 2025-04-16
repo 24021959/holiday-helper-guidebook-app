@@ -38,9 +38,9 @@ export const FormContentSection: React.FC<FormContentSectionProps> = ({
   onMainImageRemove,
   setPageImages
 }) => {
-  // Se control è null o undefined, mostra un messaggio di errore
+  // If control is null or undefined, show an error message
   if (!control) {
-    console.error("FormContentSection: control è null o undefined");
+    console.error("FormContentSection: control is null or undefined");
     return (
       <div className="p-4 border border-red-300 rounded bg-red-50">
         <p className="text-red-500">Errore: form non inizializzato correttamente</p>
@@ -129,28 +129,55 @@ export const FormContentSection: React.FC<FormContentSectionProps> = ({
 
       <Separator />
 
-      <FormField
-        control={control}
-        name="content"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Contenuto</FormLabel>
-            <FormDescription>
-              Scrivi il contenuto della pagina. Puoi usare Markdown per formattare
-              il testo.
-            </FormDescription>
-            <FormControl>
-              <div className="border rounded-lg">
-                <Editor
-                  value={field.value || ""}
-                  onChange={field.onChange}
-                />
+      {/* Wrap the editor field in a try-catch to handle potential context errors */}
+      <div className="mt-4">
+        {(() => {
+          try {
+            return (
+              <FormField
+                control={control}
+                name="content"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contenuto</FormLabel>
+                    <FormDescription>
+                      Scrivi il contenuto della pagina. Puoi usare Markdown per formattare
+                      il testo.
+                    </FormDescription>
+                    <FormControl>
+                      <div className="border rounded-lg">
+                        <Editor
+                          value={field.value || ""}
+                          onChange={field.onChange}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            );
+          } catch (error) {
+            console.error("Error rendering content editor:", error);
+            return (
+              <div className="p-4 border border-red-300 rounded bg-red-50">
+                <FormLabel>Contenuto</FormLabel>
+                <FormDescription>
+                  Scrivi il contenuto della pagina. Puoi usare Markdown per formattare
+                  il testo.
+                </FormDescription>
+                <div className="border rounded-lg">
+                  <Editor
+                    value=""
+                    onChange={() => {}}
+                  />
+                </div>
+                <p className="text-red-500 text-sm mt-1">Errore nel form: {String(error)}</p>
               </div>
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+            );
+          }
+        })()}
+      </div>
     </>
   );
 };

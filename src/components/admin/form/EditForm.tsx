@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, FormProvider } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,7 +38,7 @@ export const EditForm = ({
   const [selectedIcon, setSelectedIcon] = useState(selectedPage.icon || "FileText");
   const [uploadedImage, setUploadedImage] = useState<string | null>(selectedPage.imageUrl || null);
   
-  // Assicuriamoci che pageImages abbia il formato corretto con type e width
+  // Ensure pageImages has the correct format with type and width
   const initialPageImages = selectedPage.pageImages 
     ? selectedPage.pageImages.map(img => ({
         url: img.url,
@@ -57,7 +57,7 @@ export const EditForm = ({
   
   const currentLanguage = getLanguageFromPath(selectedPage.path);
   
-  // Inizializza il form con i valori della pagina selezionata
+  // Initialize the form with the selected page values
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -68,6 +68,23 @@ export const EditForm = ({
       parentPath: selectedPage.parentPath || "",
     },
   });
+
+  useEffect(() => {
+    // Ensure form is reset whenever selectedPage changes
+    form.reset({
+      title: selectedPage.title,
+      content: selectedPage.content,
+      icon: selectedPage.icon || "FileText",
+      pageType: initialPageType,
+      parentPath: selectedPage.parentPath || "",
+    });
+    
+    setSelectedIcon(selectedPage.icon || "FileText");
+    setUploadedImage(selectedPage.imageUrl || null);
+    setPageImages(initialPageImages);
+    setPageType(initialPageType);
+    setParentPath(selectedPage.parentPath || "");
+  }, [selectedPage]);
 
   const handleOnSubmit = async (formValues: z.infer<typeof formSchema>) => {
     const formattedValues: PageFormValues = {
@@ -107,7 +124,7 @@ export const EditForm = ({
     }
   };
 
-  // Funzione per gestire il cambio delle immagini mantenendo il formato corretto
+  // Handle page images change while maintaining the correct format
   const handlePageImagesChange = (newImages: ImageItem[]) => {
     setPageImages(newImages);
   };

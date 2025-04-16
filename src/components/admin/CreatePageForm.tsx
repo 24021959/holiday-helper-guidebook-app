@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from '@/lib/next-router-mock';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -47,6 +47,7 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
   const [selectedParentPath, setSelectedParentPath] = useState<string | undefined>(undefined);
   const { isCreating, isTranslating, handleTranslateAndCreate } = usePageCreation({ onPageCreated });
 
+  // Initialize the form with useForm
   const form = useForm<z.infer<typeof pageFormSchema>>({
     resolver: zodResolver(pageFormSchema),
     defaultValues: {
@@ -56,6 +57,16 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
       pageType: "normal",
     },
   });
+
+  // Ensure form is always initialized with consistent values
+  useEffect(() => {
+    form.reset({
+      title: "",
+      content: "",
+      icon: "FileText",
+      pageType: "normal",
+    });
+  }, []);
 
   const { watch } = form;
   const pageType = watch("pageType") as PageType;
@@ -141,9 +152,11 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
 
   return (
     <div className="container max-w-4xl mx-auto py-10">
+      {/* Ensure the form and FormProvider are properly connected */}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <div className="grid grid-cols-1 gap-4">
+            {/* Ensure control prop is never null */}
             <FormHeader control={form.control} />
 
             <PageTypeSection

@@ -19,9 +19,9 @@ interface FormHeaderProps {
 }
 
 export const FormHeader = ({ control }: FormHeaderProps) => {
-  // Se control non è definito, restituisci null o un componente di fallback
+  // If control isn't defined, return a fallback component
   if (!control) {
-    console.error("FormHeader: control è null o undefined");
+    console.error("FormHeader: control is null or undefined");
     return (
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700">Titolo</label>
@@ -31,19 +31,31 @@ export const FormHeader = ({ control }: FormHeaderProps) => {
     );
   }
   
-  return (
-    <FormField
-      control={control}
-      name="title"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>Titolo</FormLabel>
-          <FormControl>
-            <Input placeholder="Titolo della pagina" {...field} />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  );
+  // Wrap the form field in a try-catch block to handle potential context errors
+  try {
+    return (
+      <FormField
+        control={control}
+        name="title"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Titolo</FormLabel>
+            <FormControl>
+              <Input placeholder="Titolo della pagina" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    );
+  } catch (error) {
+    console.error("Error rendering FormHeader:", error);
+    return (
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700">Titolo</label>
+        <Input placeholder="Titolo della pagina" disabled />
+        <p className="text-red-500 text-sm mt-1">Errore nel form: {String(error)}</p>
+      </div>
+    );
+  }
 };
