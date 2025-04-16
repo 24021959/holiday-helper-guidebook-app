@@ -19,9 +19,16 @@ interface FormHeaderProps {
 }
 
 export const FormHeader = ({ control }: FormHeaderProps) => {
+  // Se control non è definito, restituisci null o un componente di fallback
   if (!control) {
-    console.error("FormHeader: control è null");
-    return null;
+    console.error("FormHeader: control è null o undefined");
+    return (
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700">Titolo</label>
+        <Input placeholder="Titolo della pagina" disabled />
+        <p className="text-red-500 text-sm mt-1">Errore: form non inizializzato correttamente</p>
+      </div>
+    );
   }
   
   return (

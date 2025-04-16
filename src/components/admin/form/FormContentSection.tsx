@@ -38,6 +38,16 @@ export const FormContentSection: React.FC<FormContentSectionProps> = ({
   onMainImageRemove,
   setPageImages
 }) => {
+  // Se control è null o undefined, mostra un messaggio di errore
+  if (!control) {
+    console.error("FormContentSection: control è null o undefined");
+    return (
+      <div className="p-4 border border-red-300 rounded bg-red-50">
+        <p className="text-red-500">Errore: form non inizializzato correttamente</p>
+      </div>
+    );
+  }
+
   return (
     <>
       <Separator />

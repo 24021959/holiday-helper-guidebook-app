@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useState, useEffect } from "react";
 import { VisualEditor } from "@/components/admin/VisualEditor";
@@ -27,6 +28,7 @@ import { useForm, FormProvider } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { formSchema } from "@/components/admin/schemas/pageFormSchema";
+import { Form } from "@/components/ui/form";
 
 export interface PageContent {
   title: string;
@@ -73,6 +75,18 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
     }
   });
 
+  // Inizializziamo il form correttamente con useForm
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: pageToEdit?.title || "",
+      content: pageToEdit?.content || "",
+      icon: pageToEdit?.icon || "FileText",
+      pageType: pageToEdit?.is_parent ? "parent" : pageToEdit?.isSubmenu ? "submenu" : "normal",
+      parentPath: pageToEdit?.parentPath || "",
+    },
+  });
+
   useEffect(() => {
     const fetchParentPages = async () => {
       try {
@@ -117,6 +131,8 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
       ...prev,
       title: e.target.value
     }));
+    // Aggiorniamo anche il form
+    form.setValue("title", e.target.value);
   };
 
   const handleContentChange = (newContent: string) => {
@@ -124,6 +140,8 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
       ...prev,
       content: newContent
     }));
+    // Aggiorniamo anche il form
+    form.setValue("content", newContent);
   };
 
   const handleImageAdd = (imageDetail: ImageDetail) => {
@@ -145,6 +163,8 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
       pageType: value,
       parentPath: value === "normal" ? undefined : prev.parentPath
     }));
+    // Aggiorniamo anche il form
+    form.setValue("pageType", value);
   };
 
   const handleParentPathChange = (value: string) => {
@@ -152,14 +172,11 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
       ...prev,
       parentPath: value
     }));
+    // Aggiorniamo anche il form
+    form.setValue("parentPath", value);
   };
 
   const handleSavePage = async () => {
-    if (!pageContent.title) {
-      toast.error("Inserisci un titolo per la pagina");
-      return;
-    }
-
     try {
       const pageImages = pageContent.images.map(img => ({
         ...img,
@@ -169,11 +186,11 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
 
       await handleTranslateAndCreate(
         {
-          title: pageContent.title,
-          content: pageContent.content,
+          title: form.getValues("title"),
+          content: form.getValues("content"),
           icon: selectedIcon || "FileText",
-          pageType: pageContent.pageType,
-          parentPath: pageContent.parentPath
+          pageType: form.getValues("pageType") as PageType,
+          parentPath: form.getValues("parentPath")
         },
         uploadedImage,
         pageImages,
@@ -186,17 +203,6 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
       toast.error("Errore nel salvare la pagina");
     }
   };
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: pageToEdit?.title || "",
-      content: pageToEdit?.content || "",
-      icon: pageToEdit?.icon || "FileText",
-      pageType: pageToEdit?.is_parent ? "parent" : pageToEdit?.isSubmenu ? "submenu" : "normal",
-      parentPath: pageToEdit?.parentPath || "",
-    },
-  });
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -214,50 +220,56 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
         </CardHeader>
         
         <CardContent>
-          <div className="space-y-6">
-            <FormHeader control={form.control} />
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSavePage)} className="space-y-6">
+              <div className="space-y-6">
+                <FormHeader control={form.control} />
 
-            <PageTypeSection
-              pageType={pageContent.pageType}
-              setPageType={(type) => setPageContent(prev => ({ ...prev, pageType: type }))}
-              parentPath={pageContent.parentPath || ""}
-              setParentPath={(path) => setPageContent(prev => ({ ...prev, parentPath: path }))}
-              icon={selectedIcon}
-              setIcon={setSelectedIcon}
-              parentPages={parentPages}
-            />
+                <PageTypeSection
+                  pageType={pageContent.pageType}
+                  setPageType={handlePageTypeChange}
+                  parentPath={pageContent.parentPath || ""}
+                  setParentPath={handleParentPathChange}
+                  icon={selectedIcon}
+                  setIcon={setSelectedIcon}
+                  parentPages={parentPages}
+                  control={form.control}
+                />
 
-            <SelectedIconDisplay iconName={selectedIcon} />
+                <SelectedIconDisplay iconName={selectedIcon} />
 
-            {pageContent.pageType !== "parent" && (
-              <div className="border rounded-lg">
-                <VisualEditor 
-                  content={pageContent.content}
-                  images={pageContent.images}
-                  onChange={handleContentChange}
-                  onImageAdd={handleImageAdd}
+                {pageContent.pageType !== "parent" && (
+                  <div className="border rounded-lg">
+                    <VisualEditor 
+                      content={pageContent.content}
+                      images={pageContent.images}
+                      onChange={handleContentChange}
+                      onImageAdd={handleImageAdd}
+                    />
+                  </div>
+                )}
+
+                <FormActions
+                  isSubmitting={isCreating || isTranslating}
+                  isCreating={isCreating}
+                  isTranslating={isTranslating}
+                  onCancel={() => {
+                    if (pageToEdit) {
+                      onEditComplete();
+                    }
+                    setPageContent({
+                      title: "",
+                      content: "",
+                      images: [],
+                      pageType: "normal"
+                    });
+                    setUploadedImage(null);
+                    form.reset();
+                  }}
                 />
               </div>
-            )}
-
-            <FormActions
-              isSubmitting={isCreating || isTranslating}
-              isCreating={isCreating}
-              isTranslating={isTranslating}
-              onCancel={() => {
-                if (pageToEdit) {
-                  onEditComplete();
-                }
-                setPageContent({
-                  title: "",
-                  content: "",
-                  images: [],
-                  pageType: "normal"
-                });
-                setUploadedImage(null);
-              }}
-            />
-          </div>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>

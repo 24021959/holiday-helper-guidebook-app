@@ -35,6 +35,16 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
     return handleTranslateAndCreate(values, imageUrl, pageImages, onSuccess);
   };
 
+  // Verificare che selectedPage non sia null o undefined prima di renderizzare EditForm
+  if (!selectedPage) {
+    console.error("EditPageForm: selectedPage è null o undefined");
+    return (
+      <div className="p-4 border border-red-300 rounded bg-red-50">
+        <p className="text-red-500">Errore: nessuna pagina selezionata per la modifica</p>
+      </div>
+    );
+  }
+
   return (
     <EditForm
       selectedPage={selectedPage}
