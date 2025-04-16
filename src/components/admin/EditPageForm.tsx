@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { PageData } from "@/types/page.types";
 import { usePageCreation } from "@/hooks/usePageCreation";
 import { ImageItem } from "@/types/image.types";
-import { PageFormValues } from "@/types/form.types";
+import { PageFormValues, PageType } from "@/types/form.types";
 import { toast } from "sonner";
 import { uploadImage } from "@/integrations/supabase/storage";
 import { pageFormSchema } from './schemas/pageFormSchema';
@@ -62,7 +62,7 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
     title: selectedPage.title,
     content: selectedPage.content,
     icon: selectedPage.icon || "FileText",
-    pageType: selectedPage.is_parent ? "parent" : selectedPage.isSubmenu ? "submenu" : "normal",
+    pageType: (selectedPage.is_parent ? "parent" : selectedPage.isSubmenu ? "submenu" : "normal") as PageType,
     parentPath: selectedPage.parentPath,
   };
 

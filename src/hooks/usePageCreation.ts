@@ -36,8 +36,8 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
       let finalPath = values.pageType === "submenu" && values.parentPath
         ? `${values.parentPath}/${sanitizedTitle}`
         : `/${sanitizedTitle}`;
-      
-      // Save the Italian version first (main version)
+
+      // Save only the Italian version first
       const pageId = await saveNewPage(
         values.title,
         values.content,
@@ -49,31 +49,33 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         pageImages
       );
 
-      toast.success("Pagina creata con successo");
+      toast.success("Pagina in italiano creata con successo");
 
-      // Start translations
-      await translatePages(
-        values.content,
-        values.title,
-        finalPath,
-        imageUrl,
-        values.icon,
-        values.pageType,
-        values.pageType === "submenu" ? values.parentPath || null : null,
-        pageImages
-      );
+      // Only after the Italian page is created successfully, start translations
+      if (pageId) {
+        await translatePages(
+          values.content,
+          values.title,
+          finalPath,
+          imageUrl,
+          values.icon,
+          values.pageType,
+          values.pageType === "submenu" ? values.parentPath || null : null,
+          pageImages
+        );
       
-      const { data: pagesData, error: fetchError } = await supabase
-        .from('custom_pages')
-        .select('*')
-        .order('created_at', { ascending: false });
+        const { data: pagesData, error: fetchError } = await supabase
+          .from('custom_pages')
+          .select('*')
+          .order('created_at', { ascending: false });
       
-      if (fetchError) throw fetchError;
+        if (fetchError) throw fetchError;
       
-      if (pagesData) {
-        onPageCreated(pagesData);
-        toast.success("Traduzioni completate con successo");
-        onSuccess();
+        if (pagesData) {
+          onPageCreated(pagesData);
+          toast.success("Traduzioni completate con successo");
+          onSuccess();
+        }
       }
       
     } catch (error) {

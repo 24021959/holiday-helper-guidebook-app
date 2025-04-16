@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
-import { toast } from "sonner";
 import { ImageItem, ImageUploadItem } from "@/types/image.types";
 import { PageType } from "@/types/form.types";
 import { pageFormSchema } from '../schemas/pageFormSchema';
@@ -40,7 +39,7 @@ export const PageForm: React.FC<PageFormProps> = ({
     title: "", 
     content: "", 
     icon: "FileText", 
-    pageType: "normal",
+    pageType: "normal" as PageType,
     parentPath: ""
   },
   parentPages,
@@ -55,11 +54,8 @@ export const PageForm: React.FC<PageFormProps> = ({
   submitButtonText
 }) => {
   const [pageImages, setPageImages] = useState<ImageUploadItem[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
   const [selectedIcon, setSelectedIcon] = useState<string>(initialValues.icon);
-  const [selectedParentPath, setSelectedParentPath] = useState<string | undefined>(initialValues.parentPath);
 
-  // Initialize the form with useForm
   const form = useForm<z.infer<typeof pageFormSchema>>({
     resolver: zodResolver(pageFormSchema),
     defaultValues: {
@@ -71,45 +67,16 @@ export const PageForm: React.FC<PageFormProps> = ({
     },
   });
 
-  const { watch } = form;
-  const pageType = watch("pageType") as PageType;
-  const isParentPage = pageType === "parent";
-
   const handleFormSubmit = async (values: z.infer<typeof pageFormSchema>) => {
-    try {
-      if (values.pageType === "submenu" && !selectedParentPath) {
-        toast({
-          title: "Errore",
-          description: "Seleziona una pagina padre per il sottomenu",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      const formValues = {
-        ...values,
-        icon: selectedIcon,
-        parentPath: selectedParentPath
-      };
-      
-      const convertedImages = pageImages.map(img => ({
-        url: img.url,
-        position: img.position,
-        caption: img.caption || "",
-        type: "image" as const,
-        width: "100%" as const
-      }));
-      
-      await onSubmit(formValues, convertedImages);
-      
-    } catch (error) {
-      console.error("Errore durante la sottomissione del form:", error);
-      toast({
-        title: "Errore",
-        description: "Si è verificato un errore durante il salvataggio",
-        variant: "destructive",
-      });
-    }
+    const formattedImages = pageImages.map(img => ({
+      url: img.url,
+      position: img.position,
+      caption: img.caption || "",
+      type: "image" as const,
+      width: "100%" as const
+    }));
+    
+    await onSubmit(values, formattedImages);
   };
 
   return (
@@ -119,10 +86,10 @@ export const PageForm: React.FC<PageFormProps> = ({
           <FormHeader control={form.control} />
 
           <PageTypeSection
-            pageType={pageType}
+            pageType={form.watch("pageType")}
             setPageType={(type) => form.setValue("pageType", type)}
-            parentPath={selectedParentPath || ""}
-            setParentPath={setSelectedParentPath}
+            parentPath={form.watch("parentPath") || ""}
+            setParentPath={(path) => form.setValue("parentPath", path)}
             icon={selectedIcon}
             setIcon={setSelectedIcon}
             parentPages={parentPages}
@@ -132,12 +99,12 @@ export const PageForm: React.FC<PageFormProps> = ({
           <SelectedIconDisplay iconName={selectedIcon} />
         </div>
 
-        {!isParentPage && (
+        {form.watch("pageType") !== "parent" && (
           <FormContentSection
             control={form.control}
             mainImage={mainImage}
             pageImages={pageImages}
-            isUploading={isUploading}
+            isUploading={isSubmitting}
             onMainImageUpload={onMainImageUpload}
             onMainImageRemove={onMainImageRemove}
             setPageImages={setPageImages}
