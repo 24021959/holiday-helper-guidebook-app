@@ -4,16 +4,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save } from "lucide-react";
 import { VisualEditor } from "@/components/admin/VisualEditor";
 import { ImageDetail } from "@/types/image.types";
 import { useToast } from "@/hooks/use-toast";
 import { usePageCreation } from "@/hooks/usePageCreation";
+import { PageType } from "@/types/form.types";
 
 const PageCreator = () => {
   const [pageTitle, setPageTitle] = useState<string>("");
   const [pageContent, setPageContent] = useState<string>("");
   const [pageImages, setPageImages] = useState<ImageDetail[]>([]);
+  const [pageType, setPageType] = useState<PageType>("normal");
   
   const { toast } = useToast();
   const { handlePageCreation, isCreating } = usePageCreation({
@@ -40,7 +43,7 @@ const PageCreator = () => {
         title: pageTitle,
         content: pageContent,
         icon: "FileText",
-        pageType: "normal",
+        pageType: pageType,
         parentPath: "",
       },
       null,
@@ -76,6 +79,34 @@ const PageCreator = () => {
             </div>
 
             <div>
+              <Label className="text-lg font-medium text-emerald-800 mb-2 block">
+                Tipo di Pagina
+              </Label>
+              <Tabs value={pageType} onValueChange={(value: PageType) => setPageType(value)} className="w-full">
+                <TabsList className="w-full bg-white/50 backdrop-blur-sm border border-emerald-200">
+                  <TabsTrigger 
+                    value="normal" 
+                    className="flex-1 data-[state=active]:bg-emerald-100"
+                  >
+                    Normale
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="submenu" 
+                    className="flex-1 data-[state=active]:bg-emerald-100"
+                  >
+                    Sottopagina
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="parent" 
+                    className="flex-1 data-[state=active]:bg-emerald-100"
+                  >
+                    Master
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+
+            <div>
               <Label className="text-lg font-medium text-emerald-800">
                 Contenuto della Pagina
               </Label>
@@ -107,4 +138,3 @@ const PageCreator = () => {
 };
 
 export default PageCreator;
-
