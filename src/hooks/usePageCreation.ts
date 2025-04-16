@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -44,45 +43,76 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
   const deletePageAndTranslations = async (path: string) => {
     try {
       console.log(`Attempting to delete page and all translations for path: ${path}`);
-      // Normalizza il percorso rimuovendo il prefisso della lingua se presente
+      
+      // Normalize the path by removing the language prefix if present
       const basePath = path.replace(/^\/[a-z]{2}\//, '/');
       console.log(`Normalized path for deletion: ${basePath}`);
       
-      // Costruisci una condizione OR per trovare sia la pagina principale che tutte le traduzioni
-      const pathCondition = `path.eq.${basePath},path.like./??${basePath}`;
-      console.log(`Path condition for deletion: ${pathCondition}`);
+      // If the original request is for a non-Italian version, we shouldn't delete all translations
+      const isNonItalianPath = path.match(/^\/[a-z]{2}\//);
       
-      // Elimina tutte le pagine correlate dalla tabella custom_pages
-      const { error: deleteError, data: deletedPages } = await supabase
-        .from('custom_pages')
-        .delete()
-        .or(pathCondition)
-        .select();
+      if (isNonItalianPath) {
+        // Only delete the specific language version
+        const { error: deleteError } = await supabase
+          .from('custom_pages')
+          .delete()
+          .eq('path', path);
 
-      if (deleteError) {
-        console.error("Error deleting pages:", deleteError);
-        throw deleteError;
+        if (deleteError) {
+          console.error("Error deleting page:", deleteError);
+          throw deleteError;
+        }
+
+        // Also delete the menu icon for this specific path
+        const { error: menuError } = await supabase
+          .from('menu_icons')
+          .delete()
+          .eq('path', path);
+
+        if (menuError) {
+          console.error("Error deleting menu icon:", menuError);
+          throw menuError;
+        }
+
+        toast.success("Pagina eliminata con successo");
+      } else {
+        // For Italian pages, delete all translations as well
+        // Build an OR condition to find both the main page and all translations
+        const pathCondition = `path.eq.${basePath},path.like./??${basePath}`;
+        console.log(`Path condition for deletion: ${pathCondition}`);
+        
+        // Delete all related pages from the custom_pages table
+        const { error: deleteError, data: deletedPages } = await supabase
+          .from('custom_pages')
+          .delete()
+          .or(pathCondition)
+          .select();
+
+        if (deleteError) {
+          console.error("Error deleting pages:", deleteError);
+          throw deleteError;
+        }
+
+        console.log(`Deleted ${deletedPages?.length || 0} pages from custom_pages`);
+
+        // Delete all related menu icons
+        const { error: menuError, data: deletedMenuItems } = await supabase
+          .from('menu_icons')
+          .delete()
+          .or(pathCondition)
+          .select();
+
+        if (menuError) {
+          console.error("Error deleting menu icons:", menuError);
+          throw menuError;
+        }
+
+        console.log(`Deleted ${deletedMenuItems?.length || 0} menu icons from menu_icons`);
+
+        toast.success("Pagina e traduzioni eliminate con successo");
       }
 
-      console.log(`Deleted ${deletedPages?.length || 0} pages from custom_pages`);
-
-      // Elimina tutte le icone di menu correlate
-      const { error: menuError, data: deletedMenuItems } = await supabase
-        .from('menu_icons')
-        .delete()
-        .or(pathCondition)
-        .select();
-
-      if (menuError) {
-        console.error("Error deleting menu icons:", menuError);
-        throw menuError;
-      }
-
-      console.log(`Deleted ${deletedMenuItems?.length || 0} menu icons from menu_icons`);
-
-      toast.success("Pagina e traduzioni eliminate con successo");
-
-      // Recupera le pagine aggiornate dopo l'eliminazione
+      // Retrieve updated pages after deletion
       const { data: updatedPages, error: fetchError } = await supabase
         .from('custom_pages')
         .select('*')
@@ -209,15 +239,57 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
       setIsCreating(true);
       setIsTranslating(true);
       
+      // Check if we're working on a translated version by examining the path
+      const isTranslatedVersion = values.parentPath && values.parentPath.match(/^\/[a-z]{2}\//);
+      const originalLanguage = isTranslatedVersion ? 'it' : undefined;
+      
+      // Create path based on the page type
       const sanitizedTitle = values.title
         .toLowerCase()
         .replace(/[^\w\s]/gi, '')
         .replace(/\s+/g, '-');
       
-      const finalPath = values.pageType === "submenu" && values.parentPath
+      let finalPath = values.pageType === "submenu" && values.parentPath
         ? `${values.parentPath}/${sanitizedTitle}`
         : `/${sanitizedTitle}`;
-
+        
+      // If we're working with a translated version, keep the language prefix
+      if (isTranslatedVersion) {
+        const langPrefix = values.parentPath?.match(/^\/([a-z]{2})\//)?.[1];
+        
+        if (langPrefix && langPrefix !== 'it') {
+          // This is a non-Italian page, just save this version
+          console.log(`Saving only ${langPrefix} version of the page`);
+          
+          await saveNewPage(
+            values.title,
+            values.content,
+            finalPath,
+            imageUrl,
+            values.icon,
+            values.pageType,
+            values.pageType === "submenu" ? values.parentPath || null : null,
+            pageImages
+          );
+          
+          toast.success(`Pagina in ${langPrefix.toUpperCase()} salvata con successo`);
+          
+          const { data: pagesData, error: fetchError } = await supabase
+            .from('custom_pages')
+            .select('*')
+            .order('created_at', { ascending: false });
+          
+          if (fetchError) throw fetchError;
+          
+          if (pagesData) {
+            onPageCreated(pagesData);
+            onSuccess();
+          }
+          
+          return;
+        }
+      }
+      
       console.log(`Creating page with path: ${finalPath}, type: ${values.pageType}, parentPath: ${values.parentPath || 'none'}`);
       
       // Save the Italian version first (main version)
@@ -249,7 +321,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
           let translatedParentPath = null;
           
           if (values.pageType === "submenu" && values.parentPath) {
-            translatedParentPath = `/${lang}${values.parentPath}`;
+            translatedParentPath = `/${lang}${values.parentPath.replace(/^\/[a-z]{2}\//, '/')}`;
           }
           
           console.log(`Creating translated page: ${lang}, path: ${translatedPath}, parentPath: ${translatedParentPath || 'none'}`);

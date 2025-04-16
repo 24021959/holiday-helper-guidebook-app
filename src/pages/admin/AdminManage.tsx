@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageData } from "@/types/page.types";
@@ -53,11 +54,13 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
       let query = supabase.from('custom_pages').select('*');
       
       if (langCode === 'it') {
+        // For Italian, get pages that don't have a language prefix in the path
         query = query.not('path', 'like', '/en/%')
                      .not('path', 'like', '/fr/%')
                      .not('path', 'like', '/es/%')
                      .not('path', 'like', '/de/%');
       } else {
+        // For other languages, get only pages with the specific language prefix
         query = query.like('path', `/${langCode}/%`);
       }
 
@@ -79,7 +82,7 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
           listItems: page.list_items,
           isSubmenu: page.is_submenu || false,
           parentPath: page.parent_path || undefined,
-          pageImages: [],
+          pageImages: page.content ? extractImagesFromContent(page.content) : [],
           published: page.published,
           is_parent: page.is_parent || false
         }));
@@ -90,6 +93,39 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
       toast.error("Errore nel caricamento delle pagine");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const extractImagesFromContent = (content: string): { url: string; position: "left" | "center" | "right" | "full"; caption?: string; }[] => {
+    try {
+      const images: { url: string; position: "left" | "center" | "right" | "full"; caption?: string; }[] = [];
+      if (!content.includes('<!-- IMAGES -->')) return [];
+      
+      const imagesSection = content.split('<!-- IMAGES -->')[1];
+      if (!imagesSection) return [];
+      
+      const imageObjects = imagesSection.match(/\n(\{.*?\})\n/g);
+      if (!imageObjects) return [];
+      
+      imageObjects.forEach(imgStr => {
+        try {
+          const img = JSON.parse(imgStr.trim());
+          if (img.type === 'image' && img.url) {
+            images.push({
+              url: img.url,
+              position: img.position || 'center',
+              caption: img.caption || ''
+            });
+          }
+        } catch (e) {
+          console.error('Error parsing image JSON:', e);
+        }
+      });
+      
+      return images;
+    } catch (error) {
+      console.error('Error extracting images:', error);
+      return [];
     }
   };
 
@@ -116,7 +152,8 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
     try {
       const updatedPages = await deletePageAndTranslations(deletingPage.path);
       if (updatedPages) {
-        setPages(updatedPages as PageData[]);
+        fetchPages(currentLanguage);
+        toast.success("Pagina e traduzioni eliminate con successo");
       }
     } catch (error) {
       console.error("Error in confirmDelete:", error);
@@ -127,10 +164,9 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
     }
   };
 
-  const getPageTypeText = (page: PageData): string => {
-    if (page.isSubmenu) return "Sottopagina";
-    if (page.is_parent) return "Master";
-    return "Normale";
+  const getLanguageLabel = (langCode: string): string => {
+    const lang = languages.find(l => l.code === langCode);
+    return lang ? `${lang.flag} ${lang.name}` : langCode;
   };
 
   if (isLoading) {
@@ -229,7 +265,9 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
           <AlertDialogHeader>
             <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
             <AlertDialogDescription>
-              Sei sicuro di voler eliminare questa pagina? L'azione non può essere annullata.
+              {currentLanguage === 'it' 
+                ? "Sei sicuro di voler eliminare questa pagina e tutte le sue traduzioni? L'azione non può essere annullata."
+                : "Sei sicuro di voler eliminare questa pagina? L'azione non può essere annullata. Le pagine in italiano non verranno eliminate."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
