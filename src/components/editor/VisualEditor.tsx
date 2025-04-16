@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { ImageDetail } from '@/types/image.types';
 import { EditorToolbar } from './toolbar/EditorToolbar';
@@ -126,6 +125,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         formattedPreview={formattedPreview}
         onContentChange={handleContentChange}
         onSelect={handleTextareaSelect}
+        images={images}
       />
 
       {images.length > 0 && (
