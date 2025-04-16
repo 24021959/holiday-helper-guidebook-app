@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PageData } from "@/types/page.types";
 import { AdminPageForm } from "@/components/admin/create/AdminPageForm";
+import { ImageItem } from "@/types/image.types";
+import { PageType } from "@/types/form.types";
 
 export interface PageContent {
   title: string;

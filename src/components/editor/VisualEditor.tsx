@@ -84,6 +84,19 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     updateHistory(newContent);
   };
 
+  const handleImageUpload = (url: string, position: "left" | "center" | "right" | "full", caption?: string) => {
+    const imageDetail: ImageDetail = {
+      url,
+      position,
+      caption,
+      width: "50%",
+      type: "image"
+    };
+
+    handleInsertImage(imageDetail);
+    onImageAdd(imageDetail);
+  };
+
   return (
     <div className={`flex flex-col space-y-4 ${isFullscreen ? 'fixed inset-0 z-50 bg-white p-4' : ''}`}>
       <EditorToolbar
@@ -113,10 +126,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       <ImageInsertionDialog
         isOpen={showImageDialog}
         onClose={() => setShowImageDialog(false)}
-        onImageUpload={(url, position, caption) => {
-          handleInsertImage({ url, position, caption, width: "50%" });
-          onImageAdd({ url, position, caption, width: "50%", type: "image" });
-        }}
+        onImageUpload={handleImageUpload}
       />
     </div>
   );

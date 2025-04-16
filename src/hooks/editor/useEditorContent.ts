@@ -1,89 +1,164 @@
 
 import { useState } from 'react';
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { v4 as uuidv4 } from "uuid";
+import { ImageDetail } from '@/types/image.types';
 
-export const useEditorContent = () => {
+export const useEditorContent = (content: string, onChange: (content: string) => void) => {
   const [cursorPosition, setCursorPosition] = useState<number | null>(null);
-  
-  // Function to parse and render the content with previews
-  const parseContent = (content: string) => {
-    if (!content) return '';
-    
-    let parsedContent = content;
-    
-    // Replace image JSON objects with actual image previews
-    const imageRegex = /\n\n({.*?"type":"image".*?})\n\n/g;
-    parsedContent = parsedContent.replace(imageRegex, (match, jsonStr) => {
-      try {
-        const imageData = JSON.parse(jsonStr);
-        if (imageData.type === "image") {
-          const positionClass = 
-            imageData.position === 'left' ? 'float-left mr-4 w-1/3' :
-            imageData.position === 'right' ? 'float-right ml-4 w-1/3' :
-            imageData.position === 'full' ? 'w-full my-4' :
-            'mx-auto my-4 w-2/3';
-          
-          return `
-            <div class="image-preview ${positionClass}" style="margin: 1rem 0; position: relative;">
-              <img src="${imageData.url}" alt="${imageData.caption || 'Image'}" style="max-width: 100%; border-radius: 4px;" />
-              ${imageData.caption ? `<div style="text-align: center; font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem;">${imageData.caption}</div>` : ''}
-            </div>
-          `;
-        }
-      } catch (e) {
-        console.error("Error parsing image data", e);
-      }
-      return match;
-    });
-    
-    // Format paragraphs
-    parsedContent = parsedContent.replace(/\n\n/g, '</p><p>');
-    parsedContent = `<p>${parsedContent}</p>`;
-    
-    return parsedContent;
-  };
-  
-  const uploadImageToSupabase = async (file: File): Promise<string> => {
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${uuidv4()}.${fileExt}`;
-      const filePath = `lovable-uploads/${fileName}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('public')
-        .upload(filePath, file);
+  const [selectedText, setSelectedText] = useState<{ start: number; end: number; text: string; } | null>(null);
+  const [editHistory, setEditHistory] = useState<string[]>([content]);
+  const [historyIndex, setHistoryIndex] = useState(0);
 
-      if (uploadError) {
-        throw uploadError;
-      }
-
-      const { data } = supabase.storage.from('public').getPublicUrl(filePath);
-      
-      return data.publicUrl;
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      toast.error("Errore durante il caricamento dell'immagine");
-      throw error;
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1;
+      setHistoryIndex(newIndex);
+      onChange(editHistory[newIndex]);
     }
   };
-  
-  const insertImageAtCursor = (content: string, imageData: string, position: number | null) => {
-    if (position === null && position !== 0) return content;
+
+  const handleRedo = () => {
+    if (historyIndex < editHistory.length - 1) {
+      const newIndex = historyIndex + 1;
+      setHistoryIndex(newIndex);
+      onChange(editHistory[newIndex]);
+    }
+  };
+
+  const handleTextFormat = (format: string) => {
+    if (!selectedText) return;
     
-    return (
-      content.substring(0, position) + 
-      "\n\n" + imageData + "\n\n" + 
-      content.substring(position)
-    );
+    const { start, end, text } = selectedText;
+    let formattedText = text;
+    
+    switch (format) {
+      case 'bold':
+        formattedText = `**${text}**`;
+        break;
+      case 'italic':
+        formattedText = `*${text}*`;
+        break;
+      case 'underline':
+        formattedText = `__${text}__`;
+        break;
+      case 'h1':
+        formattedText = `# ${text}`;
+        break;
+      case 'h2':
+        formattedText = `## ${text}`;
+        break;
+      case 'bullet':
+        formattedText = text.split('\n').map(line => `- ${line}`).join('\n');
+        break;
+      default:
+        return;
+    }
+    
+    const newContent = 
+      content.substring(0, start) + 
+      formattedText + 
+      content.substring(end);
+    
+    onChange(newContent);
+    updateHistory(newContent);
+  };
+
+  const handleTextAlign = (alignment: 'left' | 'center' | 'right' | 'justify') => {
+    if (!selectedText) return;
+    
+    const { start, end, text } = selectedText;
+    const alignedText = `[ALIGN:${alignment}]${text}[/ALIGN]`;
+    
+    const newContent = 
+      content.substring(0, start) + 
+      alignedText + 
+      content.substring(end);
+    
+    onChange(newContent);
+    updateHistory(newContent);
+  };
+
+  const insertAtCursor = (text: string) => {
+    if (cursorPosition === null) return;
+    
+    const newContent = 
+      content.substring(0, cursorPosition) + 
+      text + 
+      content.substring(cursorPosition);
+    
+    onChange(newContent);
+    updateHistory(newContent);
+  };
+
+  const handleInsertPhone = () => {
+    const phoneNumber = window.prompt("Inserisci il numero di telefono (formato: +39 123 456 7890):");
+    if (!phoneNumber) return;
+    
+    const label = window.prompt("Inserisci l'etichetta per il numero di telefono:", phoneNumber);
+    const displayLabel = label || phoneNumber;
+    
+    const formattedPhone = phoneNumber.replace(/\s+/g, '');
+    insertAtCursor(`[PHONE:${formattedPhone}:${displayLabel}]`);
+    
+    toast.success("Numero di telefono aggiunto con successo");
+  };
+
+  const handleInsertMap = () => {
+    const mapUrl = window.prompt("Inserisci l'URL di Google Maps:");
+    if (!mapUrl) return;
+    
+    const label = window.prompt("Inserisci l'etichetta per la posizione:", "Visualizza su Google Maps");
+    const displayLabel = label || "Visualizza su Google Maps";
+    
+    insertAtCursor(`[MAP:${mapUrl}:${displayLabel}]`);
+    
+    toast.success("Link a Google Maps aggiunto con successo");
+  };
+
+  const handleInsertImage = (imageDetail: ImageDetail) => {
+    if (cursorPosition === null) return;
+    
+    const imageMarkup = JSON.stringify({
+      type: "image",
+      url: imageDetail.url,
+      position: imageDetail.position,
+      caption: imageDetail.caption || ""
+    });
+    
+    const newContent = 
+      content.substring(0, cursorPosition) + 
+      "\n\n" + imageMarkup + "\n\n" + 
+      content.substring(cursorPosition);
+    
+    onChange(newContent);
+    updateHistory(newContent);
+    toast.success("Immagine aggiunta con successo");
+  };
+
+  // Update history when content changes
+  const updateHistory = (newContent: string) => {
+    if (newContent !== editHistory[historyIndex]) {
+      const newHistory = editHistory.slice(0, historyIndex + 1);
+      newHistory.push(newContent);
+      setEditHistory(newHistory);
+      setHistoryIndex(newHistory.length - 1);
+    }
   };
 
   return {
     cursorPosition,
     setCursorPosition,
-    parseContent,
-    uploadImageToSupabase,
-    insertImageAtCursor
+    selectedText,
+    setSelectedText,
+    historyIndex,
+    editHistory,
+    handleUndo,
+    handleRedo,
+    handleTextFormat,
+    handleTextAlign,
+    handleInsertPhone,
+    handleInsertMap,
+    handleInsertImage,
+    updateHistory
   };
 };
