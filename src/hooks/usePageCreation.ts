@@ -19,8 +19,9 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
   const { deletePageAndTranslations } = usePageDeletion();
 
   /**
-   * Questa funzione viene chiamata SOLO quando l'utente clicca su "Salva Pagina"
+   * ⚠️ IMPORTANTE: Questa funzione viene chiamata SOLO quando l'utente clicca su "Salva Pagina"
    * È l'UNICO punto in cui viene avviata la traduzione
+   * La traduzione NON deve MAI essere avviata in nessun altro punto dell'applicazione
    */
   const handleTranslateAndCreate = async (
     values: PageFormValues,
@@ -42,6 +43,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         : `/${sanitizedTitle}`;
 
       console.log("CREAZIONE PAGINA INIZIATA - Solo versione italiana");
+      console.log("⚠️ LA TRADUZIONE SARÀ AVVIATA SOLO DOPO IL SALVATAGGIO DELLA PAGINA ITALIANA");
       
       // Salva solo la versione italiana prima
       const pageId = await saveNewPage(

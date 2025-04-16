@@ -32,29 +32,45 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
   useEffect(() => {
     // BLOCCO CATEGORICO: In QUALSIASI contesto amministrativo o di editing,
     // NON eseguire mai traduzioni automatiche
+    
+    // 1. Force block any translation in admin section
     if (window.location.pathname.includes('/admin')) {
       setTranslatedText(text);
       return;
     }
 
-    // Verifica se siamo in un contesto di editor (qualsiasi elemento parent con attributo data-no-translation)
-    const isInEditorContext = (() => {
-      // Check ALL parent elements for data-no-translation attribute
-      let node = document.activeElement;
-      while (node) {
-        if (node.getAttribute && node.getAttribute('data-no-translation') === 'true') {
+    // 2. Force block any translation if disableAutoTranslation is true
+    if (disableAutoTranslation) {
+      setTranslatedText(text);
+      return;
+    }
+
+    // 3. Check for global translation blocking attribute on body or any parent
+    const bodyHasNoTranslation = document.body.getAttribute('data-no-translation') === 'true';
+    if (bodyHasNoTranslation) {
+      setTranslatedText(text);
+      return;
+    }
+
+    // 4. Check for any parent element with data-no-translation attribute
+    const isInNoTranslationContext = (() => {
+      let currentElement = document.activeElement;
+      while (currentElement) {
+        if (currentElement.getAttribute && currentElement.getAttribute('data-no-translation') === 'true') {
           return true;
         }
-        
-        if (node.parentElement) {
-          node = node.parentElement;
-        } else if (node.parentNode) {
-          node = node.parentNode as Element;
-        } else {
-          break;
-        }
+        currentElement = currentElement.parentElement;
       }
-      
+      return false;
+    })();
+
+    if (isInNoTranslationContext) {
+      setTranslatedText(text);
+      return;
+    }
+
+    // 5. Additional check for forms, editors, or any input context
+    const isInEditorContext = (() => {
       // Verifica anche l'esistenza di form o modali di editing
       const isInPageForm = document.querySelector('form') !== null;
       
@@ -64,13 +80,12 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
       return isInPageForm || isInDialog;
     })();
 
-    // If automatic translation is disabled, or we're in an editor context, use only the original text
-    if (disableAutoTranslation || isInEditorContext) {
+    if (isInEditorContext) {
       setTranslatedText(text);
       return;
     }
 
-    // Check if a new translation is needed
+    // Only proceed with translation if none of the blocking conditions are met
     const needsTranslation = 
       language !== 'it' && 
       (text !== prevTextRef.current || 

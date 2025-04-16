@@ -23,14 +23,32 @@ interface AdminCreateProps {
 const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
   const [parentPages, setParentPages] = useState<PageData[]>([]);
 
-  // Imposta un attributo globale per disabilitare le traduzioni quando questa pagina è montata
+  // Imposta attributi globali per disabilitare le traduzioni
   useEffect(() => {
-    // Aggiungi attributo al body per bloccare traduzioni automatiche a livello globale
+    // 1. Aggiungi attributo al body per bloccare traduzioni automatiche a livello globale
     document.body.setAttribute('data-no-translation', 'true');
     
-    // Rimuovi l'attributo quando il componente viene smontato
+    // 2. Aggiungi attributo anche all'elemento root dell'app
+    const rootElement = document.getElementById('root');
+    if (rootElement) {
+      rootElement.setAttribute('data-no-translation', 'true');
+    }
+    
+    // 3. Aggiungi un attributo anche al div del container principale
+    const mainContainer = document.querySelector('.container');
+    if (mainContainer) {
+      mainContainer.setAttribute('data-no-translation', 'true');
+    }
+    
+    // Rimuovi tutti gli attributi quando il componente viene smontato
     return () => {
       document.body.removeAttribute('data-no-translation');
+      if (rootElement) {
+        rootElement.removeAttribute('data-no-translation');
+      }
+      if (mainContainer) {
+        mainContainer.removeAttribute('data-no-translation');
+      }
     };
   }, []);
 

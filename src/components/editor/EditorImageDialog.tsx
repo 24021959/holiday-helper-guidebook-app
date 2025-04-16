@@ -56,7 +56,10 @@ export const EditorImageDialog: React.FC<EditorImageDialogProps> = ({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent 
+        className="sm:max-w-[500px]"
+        data-no-translation="true"
+      >
         <DialogHeader>
           <DialogTitle><TranslatedText text="Inserisci Immagine" disableAutoTranslation={true} /></DialogTitle>
           <DialogDescription>
@@ -64,9 +67,9 @@ export const EditorImageDialog: React.FC<EditorImageDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid gap-4 py-4">
-          <div className="flex flex-col gap-2">
-            <label htmlFor="file-upload" className="text-sm font-medium">
+        <div className="grid gap-4 py-4" data-no-translation="true">
+          <div className="flex flex-col gap-2" data-no-translation="true">
+            <label htmlFor="file-upload" className="text-sm font-medium" data-no-translation="true">
               <TranslatedText text="Carica immagine" disableAutoTranslation={true} />
             </label>
             <input
@@ -75,11 +78,12 @@ export const EditorImageDialog: React.FC<EditorImageDialogProps> = ({
               accept="image/*"
               onChange={handleImageFileChange}
               className="border p-2 rounded-md text-sm"
+              data-no-translation="true"
             />
           </div>
           
-          <div className="flex flex-col gap-2">
-            <label htmlFor="image-url" className="text-sm font-medium">
+          <div className="flex flex-col gap-2" data-no-translation="true">
+            <label htmlFor="image-url" className="text-sm font-medium" data-no-translation="true">
               <TranslatedText text="URL Immagine (opzionale)" disableAutoTranslation={true} />
             </label>
             <input
@@ -90,11 +94,12 @@ export const EditorImageDialog: React.FC<EditorImageDialogProps> = ({
               placeholder="https://example.com/image.jpg"
               className="border p-2 rounded-md"
               disabled={!!imageFile}
+              data-no-translation="true"
             />
           </div>
           
-          <div className="flex flex-col gap-2">
-            <label htmlFor="image-caption" className="text-sm font-medium">
+          <div className="flex flex-col gap-2" data-no-translation="true">
+            <label htmlFor="image-caption" className="text-sm font-medium" data-no-translation="true">
               <TranslatedText text="Didascalia (opzionale)" disableAutoTranslation={true} />
             </label>
             <input
@@ -104,19 +109,21 @@ export const EditorImageDialog: React.FC<EditorImageDialogProps> = ({
               onChange={(e) => setImageCaption(e.target.value)}
               placeholder="Descrizione dell'immagine"
               className="border p-2 rounded-md"
+              data-no-translation="true"
             />
           </div>
           
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium">
+          <div className="flex flex-col gap-2" data-no-translation="true">
+            <label className="text-sm font-medium" data-no-translation="true">
               <TranslatedText text="Posizione" disableAutoTranslation={true} />
             </label>
-            <div className="flex space-x-2">
+            <div className="flex space-x-2" data-no-translation="true">
               <Button
                 type="button"
                 variant={imagePosition === 'left' ? 'default' : 'outline'}
                 onClick={() => setImagePosition('left')}
                 className="flex-1"
+                data-no-translation="true"
               >
                 <TranslatedText text="Sinistra" disableAutoTranslation={true} />
               </Button>
@@ -125,6 +132,7 @@ export const EditorImageDialog: React.FC<EditorImageDialogProps> = ({
                 variant={imagePosition === 'center' ? 'default' : 'outline'}
                 onClick={() => setImagePosition('center')}
                 className="flex-1"
+                data-no-translation="true"
               >
                 <TranslatedText text="Centro" disableAutoTranslation={true} />
               </Button>
@@ -133,6 +141,7 @@ export const EditorImageDialog: React.FC<EditorImageDialogProps> = ({
                 variant={imagePosition === 'right' ? 'default' : 'outline'}
                 onClick={() => setImagePosition('right')}
                 className="flex-1"
+                data-no-translation="true"
               >
                 <TranslatedText text="Destra" disableAutoTranslation={true} />
               </Button>
@@ -141,6 +150,7 @@ export const EditorImageDialog: React.FC<EditorImageDialogProps> = ({
                 variant={imagePosition === 'full' ? 'default' : 'outline'}
                 onClick={() => setImagePosition('full')}
                 className="flex-1"
+                data-no-translation="true"
               >
                 <TranslatedText text="Intera" disableAutoTranslation={true} />
               </Button>
@@ -148,21 +158,27 @@ export const EditorImageDialog: React.FC<EditorImageDialogProps> = ({
           </div>
           
           {(imageFile || imageUrl) && (
-            <div className="mt-2 border rounded-md p-2">
-              <p className="text-sm font-medium mb-2"><TranslatedText text="Anteprima:" disableAutoTranslation={true} /></p>
-              <div className={`
-                ${imagePosition === 'left' ? 'float-left mr-4' : ''}
-                ${imagePosition === 'right' ? 'float-right ml-4' : ''}
-                ${imagePosition === 'center' ? 'mx-auto' : ''}
-                ${imagePosition === 'full' ? 'w-full' : 'max-w-[60%]'}
-              `}>
+            <div className="mt-2 border rounded-md p-2" data-no-translation="true">
+              <p className="text-sm font-medium mb-2" data-no-translation="true">
+                <TranslatedText text="Anteprima:" disableAutoTranslation={true} />
+              </p>
+              <div 
+                className={`
+                  ${imagePosition === 'left' ? 'float-left mr-4' : ''}
+                  ${imagePosition === 'right' ? 'float-right ml-4' : ''}
+                  ${imagePosition === 'center' ? 'mx-auto' : ''}
+                  ${imagePosition === 'full' ? 'w-full' : 'max-w-[60%]'}
+                `}
+                data-no-translation="true"
+              >
                 <img
                   src={imageFile ? URL.createObjectURL(imageFile) : imageUrl}
                   alt="Anteprima"
                   className="max-w-full h-auto rounded-md"
+                  data-no-translation="true"
                 />
                 {imageCaption && (
-                  <p className="text-xs text-center text-gray-500 mt-1">{imageCaption}</p>
+                  <p className="text-xs text-center text-gray-500 mt-1" data-no-translation="true">{imageCaption}</p>
                 )}
               </div>
               <div className="clear-both"></div>
@@ -170,13 +186,18 @@ export const EditorImageDialog: React.FC<EditorImageDialogProps> = ({
           )}
         </div>
         
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <div className="flex justify-end gap-2" data-no-translation="true">
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            data-no-translation="true"
+          >
             <TranslatedText text="Annulla" disableAutoTranslation={true} />
           </Button>
           <Button
             onClick={handleInsertClick}
             disabled={(!imageFile && !imageUrl) || uploadingImage}
+            data-no-translation="true"
           >
             {uploadingImage ? 
               <TranslatedText text="Inserimento..." disableAutoTranslation={true} /> : 
