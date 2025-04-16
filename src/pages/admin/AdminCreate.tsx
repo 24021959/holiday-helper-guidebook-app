@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useState, useEffect } from "react";
 import { VisualEditor } from "@/components/admin/VisualEditor";
@@ -25,6 +26,7 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { PageType } from "@/types/form.types";
+import IconRenderer from "@/components/IconRenderer";
 
 export interface PageContent {
   title: string;
@@ -56,6 +58,7 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
 
   const [parentPages, setParentPages] = useState<PageData[]>([]);
   const [uploadedImage, setUploadedImage] = useState<string | null>(pageToEdit?.imageUrl || null);
+  const [selectedIcon, setSelectedIcon] = useState<string>(pageToEdit?.icon || "FileText");
   const { handleTranslateAndCreate, isCreating, isTranslating } = usePageCreation({
     onPageCreated: (pages) => {
       setPageContent({
@@ -69,6 +72,30 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
       toast.success(pageToEdit ? "Pagina aggiornata con successo!" : "Pagina creata con successo!");
     }
   });
+
+  const iconOptions = [
+    { value: 'FileText', label: 'Documento' },
+    { value: 'Image', label: 'Immagine' },
+    { value: 'MessageCircle', label: 'Messaggio' },
+    { value: 'Info', label: 'Informazioni' },
+    { value: 'Map', label: 'Mappa' },
+    { value: 'Utensils', label: 'Ristorante' },
+    { value: 'Landmark', label: 'Monumento' },
+    { value: 'Hotel', label: 'Hotel' },
+    { value: 'Wifi', label: 'WiFi' },
+    { value: 'Bus', label: 'Bus' },
+    { value: 'ShoppingBag', label: 'Shopping' },
+    { value: 'Calendar', label: 'Calendario' },
+    { value: 'Phone', label: 'Telefono' },
+    { value: 'Book', label: 'Libro' },
+    { value: 'Coffee', label: 'Caffè' },
+    { value: 'Home', label: 'Casa' },
+    { value: 'Bike', label: 'Bicicletta' },
+    { value: 'Camera', label: 'Fotocamera' },
+    { value: 'Globe', label: 'Mondo' },
+    { value: 'Mountain', label: 'Montagna' },
+    { value: 'MapPin', label: 'Posizione' },
+  ];
 
   useEffect(() => {
     const fetchParentPages = async () => {
@@ -129,6 +156,10 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
     }));
   };
 
+  const handleIconChange = (value: string) => {
+    setSelectedIcon(value);
+  };
+
   const handleContentChange = (newContent: string) => {
     setPageContent(prev => ({
       ...prev,
@@ -181,7 +212,7 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
         {
           title: pageContent.title,
           content: pageContent.content,
-          icon: pageToEdit?.icon || "FileText",
+          icon: selectedIcon || "FileText",
           pageType: pageContent.pageType,
           parentPath: pageContent.parentPath
         },
@@ -225,6 +256,51 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
                 value={pageContent.title}
                 onChange={handleTitleChange}
               />
+            </div>
+            
+            {/* Nuovo campo per selezionare l'icona */}
+            <div>
+              <Label htmlFor="pageIcon" className="text-base font-medium">
+                Icona della pagina
+              </Label>
+              <Select
+                value={selectedIcon}
+                onValueChange={handleIconChange}
+              >
+                <SelectTrigger className="w-full mt-1">
+                  <SelectValue placeholder="Seleziona un'icona">
+                    <div className="flex items-center gap-2">
+                      <IconRenderer iconName={selectedIcon} size="small" />
+                      <span>{iconOptions.find(opt => opt.value === selectedIcon)?.label || selectedIcon}</span>
+                    </div>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px] overflow-y-auto">
+                  {iconOptions.map((iconOption) => (
+                    <SelectItem key={iconOption.value} value={iconOption.value}>
+                      <div className="flex items-center gap-2">
+                        <IconRenderer iconName={iconOption.value} size="small" />
+                        <span>{iconOption.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Card per mostrare l'icona selezionata */}
+            <div>
+              <Card className="mt-2">
+                <CardContent className="pt-6">
+                  <div className="mb-2">
+                    <strong>Icona selezionata:</strong>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-md border">
+                    <IconRenderer iconName={selectedIcon} size="medium" />
+                    <span className="text-sm">{selectedIcon}</span>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             <div className="space-y-4">
