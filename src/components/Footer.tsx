@@ -1,6 +1,11 @@
+
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Facebook, Instagram, Twitter } from "lucide-react";
+
+interface FooterProps {
+  backgroundColor?: string;
+}
 
 interface FooterSettings {
   custom_text: string;
@@ -22,7 +27,9 @@ const defaultFooterSettings: FooterSettings = {
   text_alignment: "left"
 };
 
-const Footer: React.FC = () => {
+const Footer: React.FC<FooterProps> = ({ 
+  backgroundColor 
+}) => {
   const [settings, setSettings] = useState<FooterSettings>(defaultFooterSettings);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -66,6 +73,9 @@ const Footer: React.FC = () => {
     }
   };
 
+  // Determine background color - prioritize prop over stored settings
+  const bgColor = backgroundColor || settings.background_color || defaultFooterSettings.background_color;
+
   if (isLoading) {
     return (
       <div className={`w-full ${defaultFooterSettings.background_color} py-3 border-t border-gray-200`}>
@@ -79,7 +89,7 @@ const Footer: React.FC = () => {
   }
 
   return (
-    <div className={`w-full ${settings.background_color} py-3 border-t border-gray-200`}>
+    <div className={`w-full ${bgColor} py-3 border-t border-gray-200`}>
       <div className="container mx-auto px-4">
         <div className={`flex flex-col md:flex-row ${settings.show_social_links ? 'justify-between' : 'justify-center'} items-center`}>
           <div className={`${getTextAlignClass()} text-gray-500 text-xs md:text-sm w-full`}>

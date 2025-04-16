@@ -12,6 +12,7 @@ interface ThemeColorPickerProps {
   tempColor: string;
   onColorChange: (color: string) => void;
   onApplyColor: () => void;
+  label?: string;
 }
 
 export const ThemeColorPicker = ({
@@ -19,6 +20,7 @@ export const ThemeColorPicker = ({
   tempColor,
   onColorChange,
   onApplyColor,
+  label = "Colore Sfondo"
 }: ThemeColorPickerProps) => {
   return (
     <FormField
@@ -28,7 +30,7 @@ export const ThemeColorPicker = ({
         <FormItem>
           <FormLabel className="flex items-center gap-2">
             <Palette className="w-4 h-4" />
-            Colore Tema
+            {label}
           </FormLabel>
           <div className="flex gap-4 items-end">
             <div className="flex-1">

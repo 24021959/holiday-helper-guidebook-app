@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Form } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -18,11 +19,14 @@ export interface LayoutSettingsForm extends HeaderSettings {
   instagramUrl: string;
   twitterUrl: string;
   themeColor: string;
+  headerColor: string;
+  footerColor: string;
   footerTextAlignment: "left" | "center" | "right";
 }
 
 export const LayoutSettings = () => {
-  const [tempColor, setTempColor] = useState("#FFFFFF");
+  const [tempHeaderColor, setTempHeaderColor] = useState("#FFFFFF");
+  const [tempFooterColor, setTempFooterColor] = useState("#FFFFFF");
 
   const form = useForm<LayoutSettingsForm>({
     defaultValues: async () => {
@@ -34,15 +38,20 @@ export const LayoutSettings = () => {
       const headerData = headerResult.data || {};
       const footerData = footerResult.data?.value || {};
 
-      const initialColor = headerData.header_color || '#FFFFFF';
-      setTempColor(initialColor);
+      const initialHeaderColor = headerData.header_color || '#FFFFFF';
+      const initialFooterColor = footerData.background_color || '#FFFFFF';
+      
+      setTempHeaderColor(initialHeaderColor);
+      setTempFooterColor(initialFooterColor);
 
       return {
         logoUrl: headerData.logo_url || '',
         establishmentName: headerData.establishment_name || '',
         logoPosition: headerData.logo_position || 'left',
         logoSize: headerData.logo_size || 'medium',
-        themeColor: initialColor,
+        themeColor: initialHeaderColor,
+        headerColor: initialHeaderColor,
+        footerColor: initialFooterColor,
         footerText: footerData.custom_text || '',
         showSocialLinks: footerData.show_social_links || false,
         facebookUrl: footerData.facebook_url || '',
@@ -60,7 +69,7 @@ export const LayoutSettings = () => {
         .from('header_settings')
         .upsert({
           logo_url: data.logoUrl,
-          header_color: data.themeColor,
+          header_color: data.headerColor,
           establishment_name: data.establishmentName,
           logo_position: data.logoPosition,
           logo_size: data.logoSize
@@ -79,7 +88,7 @@ export const LayoutSettings = () => {
             facebook_url: data.facebookUrl,
             instagram_url: data.instagramUrl,
             twitter_url: data.twitterUrl,
-            background_color: data.themeColor,
+            background_color: data.footerColor,
             text_alignment: data.footerTextAlignment
           }
         });
@@ -93,19 +102,29 @@ export const LayoutSettings = () => {
     }
   };
 
-  const handleColorChange = (color: string) => {
-    setTempColor(color);
+  const handleHeaderColorChange = (color: string) => {
+    setTempHeaderColor(color);
   };
 
-  const applyColor = () => {
-    form.setValue('themeColor', tempColor);
-    toast.success("Colore applicato");
+  const applyHeaderColor = () => {
+    form.setValue('headerColor', tempHeaderColor);
+    form.setValue('themeColor', tempHeaderColor);
+    toast.success("Colore header applicato");
+  };
+
+  const handleFooterColorChange = (color: string) => {
+    setTempFooterColor(color);
+  };
+
+  const applyFooterColor = () => {
+    form.setValue('footerColor', tempFooterColor);
+    toast.success("Colore footer applicato");
   };
 
   // Watch form values for live preview
   const headerPreviewValues = form.watch([
     'logoUrl',
-    'themeColor',
+    'headerColor',
     'establishmentName',
     'logoPosition',
     'logoSize'
@@ -117,7 +136,7 @@ export const LayoutSettings = () => {
     'facebookUrl',
     'instagramUrl',
     'twitterUrl',
-    'themeColor',
+    'footerColor',
     'footerTextAlignment'
   ]);
 
@@ -127,9 +146,10 @@ export const LayoutSettings = () => {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <ThemeColorPicker
             form={form}
-            tempColor={tempColor}
-            onColorChange={handleColorChange}
-            onApplyColor={applyColor}
+            tempColor={tempHeaderColor}
+            onColorChange={handleHeaderColorChange}
+            onApplyColor={applyHeaderColor}
+            label="Colore Sfondo Header"
           />
           
           <LogoSettings form={form} />
@@ -148,13 +168,23 @@ export const LayoutSettings = () => {
             </div>
           </div>
 
+          <ThemeColorPicker
+            form={form}
+            tempColor={tempFooterColor}
+            onColorChange={handleFooterColorChange}
+            onApplyColor={applyFooterColor}
+            label="Colore Sfondo Footer"
+          />
+
           <FooterSettings form={form} />
 
           {/* Footer Preview */}
           <div className="border rounded-lg p-4 bg-gray-50">
             <h3 className="text-sm font-medium mb-2 text-gray-700">Anteprima Footer</h3>
             <div className="rounded-lg overflow-hidden shadow-sm">
-              <Footer />
+              <Footer 
+                backgroundColor={footerPreviewValues[5]}
+              />
             </div>
           </div>
 
