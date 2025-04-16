@@ -99,8 +99,9 @@ export const Editor: React.FC<EditorProps> = ({ value, onChange }) => {
         onToggleExpand={toggleExpanded}
         onTogglePreview={togglePreviewMode}
         onInsertImage={handleOpenImageDialog}
-        onTextFormat={handleTextFormat}
-        onTextAlign={handleTextAlign}
+        onTextFormat={(format: string) => selectedText && handleTextFormat(format, selectedText)}
+        onTextAlign={(alignment: 'left' | 'center' | 'right' | 'justify') => 
+          selectedText && handleTextAlign(alignment, selectedText)}
         onInsertPhone={handleInsertPhone}
         onInsertMap={handleInsertMap}
         onUndo={handleUndo}
@@ -129,7 +130,6 @@ export const Editor: React.FC<EditorProps> = ({ value, onChange }) => {
         onOpenChange={setImageDialogOpen}
         onInsertImage={async (imageUrl, imagePosition, imageCaption, file) => {
           try {
-            // Insert image at cursor position or at the end
             const pos = cursorPosition ?? value.length;
             const imageMarkup = `\n[IMAGE:${imageUrl}:${imagePosition}:${imageCaption}]\n`;
             const newContent = 

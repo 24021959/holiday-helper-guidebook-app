@@ -3,9 +3,10 @@ export const useTextFormatting = (
   content: string,
   updateContent: (newContent: string) => void
 ) => {
-  const handleTextFormat = (format: string, selectedText: { start: number; end: number; text: string }) => {
-    if (!selectedText) return;
-    
+  const handleTextFormat = (
+    format: string, 
+    selectedText: { start: number; end: number; text: string }
+  ) => {
     const { start, end, text } = selectedText;
     let formattedText = text;
     
@@ -40,9 +41,10 @@ export const useTextFormatting = (
     updateContent(newContent);
   };
 
-  const handleTextAlign = (alignment: 'left' | 'center' | 'right' | 'justify', selectedText: { start: number; end: number; text: string }) => {
-    if (!selectedText) return;
-    
+  const handleTextAlign = (
+    alignment: 'left' | 'center' | 'right' | 'justify',
+    selectedText: { start: number; end: number; text: string }
+  ) => {
     const { start, end, text } = selectedText;
     const alignedText = `[ALIGN:${alignment}]${text}[/ALIGN]`;
     
