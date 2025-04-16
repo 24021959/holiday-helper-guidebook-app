@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useRouter } from '@/lib/next-router-mock';
 import { useForm } from "react-hook-form";
@@ -16,35 +15,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { 
-  FileText, 
-  FolderOpen, 
-  Home, 
-  Calendar, 
-  Map, 
-  Info, 
-  Phone, 
-  Mail, 
-  Image, 
-  Star, 
-  Coffee, 
-  Utensils, 
-  Bed, 
-  Wifi, 
-  Car, 
-  CreditCard, 
-  MapPin, 
-  Key, 
-  Bell, 
-  Users, 
-  Clock, 
-  HelpCircle,
-  LayoutGrid
-} from 'lucide-react';
-import { usePageCreation } from "@/hooks/usePageCreation";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -57,6 +29,8 @@ import { ImageItem, ImageUploadItem } from "@/types/image.types";
 import { useToast } from "@/hooks/use-toast";
 import { PageData } from "@/types/page.types";
 import { PageType } from "@/types/form.types";
+import { PageTypeSection } from "@/components/admin/form/PageTypeSection";
+import { usePageCreation } from "@/hooks/usePageCreation";
 
 const pageFormSchema = z.object({
   title: z.string().min(2, {
@@ -93,7 +67,7 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
-  const [selectedIcon, setSelectedIcon] = useState<string | undefined>(undefined);
+  const [selectedIcon, setSelectedIcon] = useState<string>("FileText");
   const [selectedParentPath, setSelectedParentPath] = useState<string | undefined>(undefined);
   const { isCreating, isTranslating, handleTranslateAndCreate } = usePageCreation({ onPageCreated });
 
@@ -136,11 +110,6 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
     setMainImage(null);
   };
 
-  const handleIconSelect = (icon: string) => {
-    setSelectedIcon(icon);
-    setValue("icon", icon);
-  };
-
   const onSubmit = async (values: z.infer<typeof pageFormSchema>) => {
     try {
       setIsSubmitting(true);
@@ -160,7 +129,7 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
         { 
           title: values.title, 
           content: values.content || "", 
-          icon: values.icon || "FileText",
+          icon: selectedIcon || "FileText",
           pageType: values.pageType,
           parentPath: selectedParentPath
         },
@@ -170,7 +139,7 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
           form.reset();
           setMainImage(null);
           setPageImages([]);
-          setSelectedIcon(undefined);
+          setSelectedIcon("FileText");
           setSelectedParentPath(undefined);
         }
       );
@@ -185,46 +154,6 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
       setIsSubmitting(false);
     }
   };
-
-  const iconOptions = [
-    { value: "FileText", label: "File Text", icon: <FileText className="h-4 w-4 mr-2" /> },
-    { value: "FolderOpen", label: "Folder Open", icon: <FolderOpen className="h-4 w-4 mr-2" /> },
-    { value: "Home", label: "Home", icon: <Home className="h-4 w-4 mr-2" /> },
-    { value: "Calendar", label: "Calendar", icon: <Calendar className="h-4 w-4 mr-2" /> },
-    { value: "Map", label: "Map", icon: <Map className="h-4 w-4 mr-2" /> },
-    { value: "Info", label: "Info", icon: <Info className="h-4 w-4 mr-2" /> },
-    { value: "Phone", label: "Phone", icon: <Phone className="h-4 w-4 mr-2" /> },
-    { value: "Mail", label: "Mail", icon: <Mail className="h-4 w-4 mr-2" /> },
-    { value: "Image", label: "Image", icon: <Image className="h-4 w-4 mr-2" /> },
-    { value: "Star", label: "Star", icon: <Star className="h-4 w-4 mr-2" /> },
-    { value: "Coffee", label: "Coffee", icon: <Coffee className="h-4 w-4 mr-2" /> },
-    { value: "Utensils", label: "Utensils", icon: <Utensils className="h-4 w-4 mr-2" /> },
-    { value: "Bed", label: "Bed", icon: <Bed className="h-4 w-4 mr-2" /> },
-    { value: "Wifi", label: "Wifi", icon: <Wifi className="h-4 w-4 mr-2" /> },
-    { value: "Car", label: "Car", icon: <Car className="h-4 w-4 mr-2" /> },
-    { value: "CreditCard", label: "Credit Card", icon: <CreditCard className="h-4 w-4 mr-2" /> },
-    { value: "MapPin", label: "Map Pin", icon: <MapPin className="h-4 w-4 mr-2" /> },
-    { value: "Key", label: "Key", icon: <Key className="h-4 w-4 mr-2" /> },
-    { value: "Bell", label: "Bell", icon: <Bell className="h-4 w-4 mr-2" /> },
-    { value: "Users", label: "Users", icon: <Users className="h-4 w-4 mr-2" /> },
-    { value: "Clock", label: "Clock", icon: <Clock className="h-4 w-4 mr-2" /> },
-    { value: "HelpCircle", label: "Help Circle", icon: <HelpCircle className="h-4 w-4 mr-2" /> },
-    { value: "LayoutGrid", label: "Layout Grid", icon: <LayoutGrid className="h-4 w-4 mr-2" /> },
-  ];
-
-  const filteredParentPages = parentPages.filter(page => {
-    const isItalianPage = !page.path.startsWith('/en/') && 
-                          !page.path.startsWith('/de/') && 
-                          !page.path.startsWith('/fr/') && 
-                          !page.path.startsWith('/es/');
-    
-    const isParentPage = page.is_parent === true;
-    
-    return isItalianPage && isParentPage;
-  });
-
-  console.log("All parent pages:", parentPages);
-  console.log("Filtered Italian parent pages:", filteredParentPages);
 
   return (
     <div className="container max-w-4xl mx-auto py-10">
@@ -245,112 +174,15 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
               )}
             />
 
-            <FormField
+            <PageTypeSection
+              pageType={pageType}
+              setPageType={(type) => setValue("pageType", type)}
+              parentPath={selectedParentPath || ""}
+              setParentPath={setSelectedParentPath}
+              icon={selectedIcon}
+              setIcon={setSelectedIcon}
+              parentPages={parentPages}
               control={form.control}
-              name="pageType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo di Pagina</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleziona un tipo di pagina" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="normal">Normale</SelectItem>
-                      <SelectItem value="submenu">Sottomenu</SelectItem>
-                      <SelectItem value="parent">Pagina Genitore</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Seleziona il tipo di pagina che stai creando.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {pageType === "submenu" && (
-              <FormField
-                control={form.control}
-                name="parentPath"
-                render={() => (
-                  <FormItem>
-                    <FormLabel>Pagina Genitore</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        setSelectedParentPath(value);
-                        setValue("parentPath", value);
-                      }}
-                      defaultValue={selectedParentPath}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleziona la pagina genitore" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent className="max-h-[300px] overflow-auto z-50">
-                        {filteredParentPages.length > 0 ? (
-                          filteredParentPages.map((page) => (
-                            <SelectItem key={page.id} value={page.path}>
-                              {page.title}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="none" disabled>
-                            Nessuna pagina genitore disponibile
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Seleziona la pagina genitore per questo sottomenu.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            <FormField
-              control={form.control}
-              name="icon"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Icona</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      handleIconSelect(value);
-                      field.onChange(value);
-                    }}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleziona un'icona" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="max-h-80 overflow-auto">
-                      {iconOptions.map((icon) => (
-                        <SelectItem key={icon.value} value={icon.value}>
-                          <div className="flex items-center">
-                            {icon.icon}
-                            <span>{icon.label}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Seleziona l'icona da visualizzare nel menu.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
             />
           </div>
 
