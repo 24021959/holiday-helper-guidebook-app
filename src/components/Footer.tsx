@@ -5,6 +5,7 @@ import { Facebook, Instagram, Twitter } from "lucide-react";
 
 interface FooterProps {
   backgroundColor?: string;
+  textColor?: string;
 }
 
 interface FooterSettings {
@@ -14,6 +15,7 @@ interface FooterSettings {
   instagram_url: string;
   twitter_url: string;
   background_color: string;
+  text_color: string;
   text_alignment: "left" | "center" | "right";
 }
 
@@ -24,11 +26,13 @@ const defaultFooterSettings: FooterSettings = {
   instagram_url: "",
   twitter_url: "",
   background_color: "bg-gradient-to-r from-teal-50 to-emerald-50",
+  text_color: "#555555",
   text_alignment: "left"
 };
 
 const Footer: React.FC<FooterProps> = ({ 
-  backgroundColor 
+  backgroundColor,
+  textColor
 }) => {
   const [settings, setSettings] = useState<FooterSettings>(defaultFooterSettings);
   const [isLoading, setIsLoading] = useState(true);
@@ -75,6 +79,9 @@ const Footer: React.FC<FooterProps> = ({
 
   // Determine background color - prioritize prop over stored settings
   const bgColor = backgroundColor || settings.background_color || defaultFooterSettings.background_color;
+  
+  // Determine text color - prioritize prop over stored settings
+  const txtColor = textColor || settings.text_color || defaultFooterSettings.text_color;
 
   if (isLoading) {
     return (
@@ -89,10 +96,19 @@ const Footer: React.FC<FooterProps> = ({
   }
 
   return (
-    <div className={`w-full ${bgColor} py-3 border-t border-gray-200`}>
+    <div 
+      className={`w-full py-3 border-t border-gray-200`}
+      style={{ 
+        backgroundColor: bgColor.startsWith('#') ? bgColor : '',
+        background: !bgColor.startsWith('#') ? bgColor : ''
+      }}
+    >
       <div className="container mx-auto px-4">
         <div className={`flex flex-col md:flex-row ${settings.show_social_links ? 'justify-between' : 'justify-center'} items-center`}>
-          <div className={`${getTextAlignClass()} text-gray-500 text-xs md:text-sm w-full`}>
+          <div 
+            className={`${getTextAlignClass()} text-xs md:text-sm w-full`}
+            style={{ color: txtColor }}
+          >
             {settings.custom_text}
           </div>
           
@@ -103,7 +119,8 @@ const Footer: React.FC<FooterProps> = ({
                   href={settings.facebook_url} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-gray-500 hover:text-gray-700"
+                  style={{ color: txtColor }}
+                  className="hover:opacity-70"
                 >
                   <Facebook size={16} />
                 </a>
@@ -114,7 +131,8 @@ const Footer: React.FC<FooterProps> = ({
                   href={settings.instagram_url} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-gray-500 hover:text-gray-700"
+                  style={{ color: txtColor }}
+                  className="hover:opacity-70"
                 >
                   <Instagram size={16} />
                 </a>
@@ -125,7 +143,8 @@ const Footer: React.FC<FooterProps> = ({
                   href={settings.twitter_url} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-gray-500 hover:text-gray-700"
+                  style={{ color: txtColor }}
+                  className="hover:opacity-70"
                 >
                   <Twitter size={16} />
                 </a>

@@ -10,13 +10,15 @@ interface LayoutPreviewProps {
   previewHeaderColor: string;
   previewFooterColor: string;
   previewEstablishmentNameColor: string;
+  previewFooterTextColor: string;
 }
 
 export const LayoutPreview = ({
   watch,
   previewHeaderColor,
   previewFooterColor,
-  previewEstablishmentNameColor
+  previewEstablishmentNameColor,
+  previewFooterTextColor
 }: LayoutPreviewProps) => {
   return (
     <div className="space-y-4">
@@ -38,7 +40,10 @@ export const LayoutPreview = ({
       <div className="border rounded-lg p-4 bg-gray-50">
         <h3 className="text-sm font-medium mb-2 text-gray-700">Anteprima Footer</h3>
         <div className="rounded-lg overflow-hidden shadow-sm">
-          <Footer backgroundColor={previewFooterColor} />
+          <Footer 
+            backgroundColor={previewFooterColor} 
+            textColor={previewFooterTextColor}
+          />
         </div>
       </div>
     </div>

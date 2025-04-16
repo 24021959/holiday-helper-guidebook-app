@@ -14,6 +14,7 @@ export interface LayoutSettingsForm {
   themeColor: string;
   headerColor: string;
   footerColor: string;
+  footerTextColor: string;
   footerTextAlignment: "left" | "center" | "right";
   establishmentName: string;
   establishmentNameAlignment: "left" | "center" | "right";
@@ -26,6 +27,7 @@ export const useLayoutSettings = () => {
   const [previewHeaderColor, setPreviewHeaderColor] = useState("#FFFFFF");
   const [previewFooterColor, setPreviewFooterColor] = useState("#FFFFFF");
   const [previewEstablishmentNameColor, setPreviewEstablishmentNameColor] = useState("#000000");
+  const [previewFooterTextColor, setPreviewFooterTextColor] = useState("#555555");
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<LayoutSettingsForm>({
@@ -42,10 +44,12 @@ export const useLayoutSettings = () => {
         const initialHeaderColor = headerData.header_color || '#FFFFFF';
         const initialFooterColor = footerData.background_color || '#FFFFFF';
         const initialNameColor = headerData.establishment_name_color || '#000000';
+        const initialFooterTextColor = footerData.text_color || '#555555';
         
         setPreviewHeaderColor(initialHeaderColor);
         setPreviewFooterColor(initialFooterColor);
         setPreviewEstablishmentNameColor(initialNameColor);
+        setPreviewFooterTextColor(initialFooterTextColor);
 
         return {
           logoUrl: headerData.logo_url || '',
@@ -55,6 +59,7 @@ export const useLayoutSettings = () => {
           themeColor: initialHeaderColor,
           headerColor: initialHeaderColor,
           footerColor: initialFooterColor,
+          footerTextColor: initialFooterTextColor,
           establishmentNameColor: initialNameColor,
           footerText: footerData.custom_text || '',
           showSocialLinks: footerData.show_social_links || false,
@@ -75,6 +80,7 @@ export const useLayoutSettings = () => {
           themeColor: '#FFFFFF',
           headerColor: '#FFFFFF',
           footerColor: '#FFFFFF',
+          footerTextColor: '#555555',
           establishmentNameColor: '#000000',
           footerText: '',
           showSocialLinks: false,
@@ -92,10 +98,12 @@ export const useLayoutSettings = () => {
     setPreviewHeaderColor(form.watch('headerColor'));
     setPreviewFooterColor(form.watch('footerColor'));
     setPreviewEstablishmentNameColor(form.watch('establishmentNameColor'));
+    setPreviewFooterTextColor(form.watch('footerTextColor'));
   }, [
     form.watch('headerColor'),
     form.watch('footerColor'),
-    form.watch('establishmentNameColor')
+    form.watch('establishmentNameColor'),
+    form.watch('footerTextColor')
   ]);
 
   const onSubmit = async (data: LayoutSettingsForm) => {
@@ -153,6 +161,7 @@ export const useLayoutSettings = () => {
             instagram_url: data.instagramUrl,
             twitter_url: data.twitterUrl,
             background_color: data.footerColor,
+            text_color: data.footerTextColor,
             text_alignment: data.footerTextAlignment
           }
         } : 
@@ -165,6 +174,7 @@ export const useLayoutSettings = () => {
             instagram_url: data.instagramUrl,
             twitter_url: data.twitterUrl,
             background_color: data.footerColor,
+            text_color: data.footerTextColor,
             text_alignment: data.footerTextAlignment
           }
         };
@@ -189,6 +199,7 @@ export const useLayoutSettings = () => {
     previewHeaderColor,
     previewFooterColor,
     previewEstablishmentNameColor,
+    previewFooterTextColor,
     isLoading,
     onSubmit
   };

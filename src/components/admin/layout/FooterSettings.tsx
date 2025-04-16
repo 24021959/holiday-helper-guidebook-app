@@ -80,6 +80,23 @@ export const FooterSettings = ({ form }: FooterSettingsProps) => {
 
       <FormField
         control={form.control}
+        name="footerTextColor"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Colore Testo Footer</FormLabel>
+            <FormControl>
+              <Input 
+                type="color" 
+                className="h-10 w-full p-1 cursor-pointer" 
+                {...field}
+              />
+            </FormControl>
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
         name="showSocialLinks"
         render={({ field }) => (
           <FormItem>

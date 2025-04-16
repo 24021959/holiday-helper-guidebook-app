@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Check, Palette } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
-import { LayoutSettingsForm } from "../LayoutSettings";
+import { LayoutSettingsForm } from "@/hooks/useLayoutSettings";
 
 interface ThemeColorPickerProps {
   form: UseFormReturn<LayoutSettingsForm>;

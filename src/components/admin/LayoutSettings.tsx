@@ -13,7 +13,8 @@ export const LayoutSettings = () => {
     form, 
     previewHeaderColor, 
     previewFooterColor, 
-    previewEstablishmentNameColor, 
+    previewEstablishmentNameColor,
+    previewFooterTextColor,
     isLoading,
     onSubmit 
   } = useLayoutSettings();
@@ -49,6 +50,7 @@ export const LayoutSettings = () => {
                   previewHeaderColor={previewHeaderColor}
                   previewFooterColor={previewFooterColor}
                   previewEstablishmentNameColor={previewEstablishmentNameColor}
+                  previewFooterTextColor={previewFooterTextColor}
                 />
               </div>
             </div>
