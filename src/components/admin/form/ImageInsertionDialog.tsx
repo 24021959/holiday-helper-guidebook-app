@@ -60,10 +60,10 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(isOpen) => !isOpen && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(isOpen) => !isOpen && onClose()} data-no-translation="true">
       <DialogContent className="sm:max-w-[500px]" data-no-translation="true">
-        <DialogHeader>
-          <DialogTitle>
+        <DialogHeader data-no-translation="true">
+          <DialogTitle data-no-translation="true">
             <TranslatedText text="Inserisci immagine" disableAutoTranslation={true} />
           </DialogTitle>
         </DialogHeader>
@@ -71,17 +71,18 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
         <div className="py-4" data-no-translation="true">
           {previewUrl ? (
             <div className="space-y-4" data-no-translation="true">
-              <div className="border rounded-md overflow-hidden">
+              <div className="border rounded-md overflow-hidden" data-no-translation="true">
                 <img 
                   src={previewUrl} 
                   alt="Preview" 
                   className="w-full h-auto max-h-[300px] object-contain"
+                  data-no-translation="true"
                 />
               </div>
               
               <div className="space-y-3" data-no-translation="true">
-                <div className="space-y-1.5">
-                  <Label htmlFor="position">
+                <div className="space-y-1.5" data-no-translation="true">
+                  <Label htmlFor="position" data-no-translation="true">
                     <TranslatedText text="Posizione dell'immagine" disableAutoTranslation={true} />
                   </Label>
                   <RadioGroup 
@@ -90,35 +91,35 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
                     className="flex space-x-2"
                     data-no-translation="true"
                   >
-                    <div className="flex items-center space-x-1">
-                      <RadioGroupItem value="left" id="left" />
-                      <Label htmlFor="left">
+                    <div className="flex items-center space-x-1" data-no-translation="true">
+                      <RadioGroupItem value="left" id="left" data-no-translation="true" />
+                      <Label htmlFor="left" data-no-translation="true">
                         <TranslatedText text="Sinistra" disableAutoTranslation={true} />
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <RadioGroupItem value="center" id="center" />
-                      <Label htmlFor="center">
+                    <div className="flex items-center space-x-1" data-no-translation="true">
+                      <RadioGroupItem value="center" id="center" data-no-translation="true" />
+                      <Label htmlFor="center" data-no-translation="true">
                         <TranslatedText text="Centro" disableAutoTranslation={true} />
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <RadioGroupItem value="right" id="right" />
-                      <Label htmlFor="right">
+                    <div className="flex items-center space-x-1" data-no-translation="true">
+                      <RadioGroupItem value="right" id="right" data-no-translation="true" />
+                      <Label htmlFor="right" data-no-translation="true">
                         <TranslatedText text="Destra" disableAutoTranslation={true} />
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <RadioGroupItem value="full" id="full" />
-                      <Label htmlFor="full">
+                    <div className="flex items-center space-x-1" data-no-translation="true">
+                      <RadioGroupItem value="full" id="full" data-no-translation="true" />
+                      <Label htmlFor="full" data-no-translation="true">
                         <TranslatedText text="Intera" disableAutoTranslation={true} />
                       </Label>
                     </div>
                   </RadioGroup>
                 </div>
                 
-                <div className="space-y-1.5">
-                  <Label htmlFor="caption">
+                <div className="space-y-1.5" data-no-translation="true">
+                  <Label htmlFor="caption" data-no-translation="true">
                     <TranslatedText text="Didascalia (opzionale)" disableAutoTranslation={true} />
                   </Label>
                   <Input 
@@ -134,11 +135,11 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
           ) : (
             <div className="flex flex-col items-center justify-center h-[200px] border-2 border-dashed rounded-md border-gray-300 p-4" data-no-translation="true">
               <ImageIcon className="h-10 w-10 text-gray-400 mb-2" />
-              <p className="text-sm text-gray-500 mb-4">
+              <p className="text-sm text-gray-500 mb-4" data-no-translation="true">
                 <TranslatedText text="Carica un'immagine (JPG, PNG, GIF)" disableAutoTranslation={true} />
               </p>
-              <label htmlFor="image-upload" className="cursor-pointer">
-                <div className="flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+              <label htmlFor="image-upload" className="cursor-pointer" data-no-translation="true">
+                <div className="flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700" data-no-translation="true">
                   <Upload className="h-4 w-4 mr-2" />
                   <TranslatedText text="Seleziona file" disableAutoTranslation={true} />
                 </div>

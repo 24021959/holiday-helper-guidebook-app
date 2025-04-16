@@ -18,6 +18,10 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
   const { isTranslating, translatePages } = usePageTranslation();
   const { deletePageAndTranslations } = usePageDeletion();
 
+  /**
+   * Questa funzione viene chiamata SOLO quando l'utente clicca su "Salva Pagina"
+   * È l'UNICO punto in cui viene avviata la traduzione
+   */
   const handleTranslateAndCreate = async (
     values: PageFormValues,
     imageUrl: string | null,
@@ -37,6 +41,8 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         ? `${values.parentPath}/${sanitizedTitle}`
         : `/${sanitizedTitle}`;
 
+      console.log("CREAZIONE PAGINA INIZIATA - Solo versione italiana");
+      
       // Salva solo la versione italiana prima
       const pageId = await saveNewPage(
         values.title,
@@ -52,8 +58,9 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
       toast.success("Pagina in italiano creata con successo");
 
       // Solo dopo il salvataggio della pagina italiana, avvia le traduzioni
-      // QUESTO SUCCEDE SOLO DOPO IL CLIC SU "SALVA PAGINA"
+      // QUESTO SUCCEDE SOLO DOPO IL CLIC SU "SALVA PAGINA" - È L'UNICO PUNTO DOVE AVVIENE LA TRADUZIONE
       if (pageId) {
+        console.log("INIZIO TRADUZIONE PAGINA - Solo dopo salvataggio");
         try {
           await translatePages(
             values.content,

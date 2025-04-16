@@ -8,7 +8,7 @@ interface TranslatedTextProps {
   as?: keyof JSX.IntrinsicElements;
   className?: string;
   showLoadingState?: boolean;
-  disableAutoTranslation?: boolean; // Parameter to disable automatic translation
+  disableAutoTranslation?: boolean;
 }
 
 // Use memo to prevent unnecessary re-renders
@@ -17,7 +17,7 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
   as: Component = "span", 
   className = "",
   showLoadingState = true,
-  disableAutoTranslation = false // Default to false for backward compatibility
+  disableAutoTranslation = false
 }) => {
   const { language, translate } = useTranslation();
   const [translatedText, setTranslatedText] = useState(text);
@@ -30,23 +30,38 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
   const cacheKey = `${language}:${text}`;
 
   useEffect(() => {
+    // BLOCCO CATEGORICO: In QUALSIASI contesto amministrativo o di editing,
+    // NON eseguire mai traduzioni automatiche
+    if (window.location.pathname.includes('/admin')) {
+      setTranslatedText(text);
+      return;
+    }
+
     // Verifica se siamo in un contesto di editor (qualsiasi elemento parent con attributo data-no-translation)
     const isInEditorContext = (() => {
-      // Check if any parent element has the data-no-translation attribute
-      let currentElement = document.activeElement;
-      while (currentElement) {
-        if (currentElement.getAttribute && currentElement.getAttribute('data-no-translation') === 'true') {
+      // Check ALL parent elements for data-no-translation attribute
+      let node = document.activeElement;
+      while (node) {
+        if (node.getAttribute && node.getAttribute('data-no-translation') === 'true') {
           return true;
         }
-        currentElement = currentElement.parentElement;
+        
+        if (node.parentElement) {
+          node = node.parentElement;
+        } else if (node.parentNode) {
+          node = node.parentNode as Element;
+        } else {
+          break;
+        }
       }
       
-      // Anche il form di creazione pagina dovrebbe essere escluso dalla traduzione automatica
-      const isInPageForm = !!document.querySelector('form') && 
-                          (document.activeElement?.tagName === 'INPUT' || 
-                           document.activeElement?.tagName === 'TEXTAREA');
+      // Verifica anche l'esistenza di form o modali di editing
+      const isInPageForm = document.querySelector('form') !== null;
       
-      return isInPageForm;
+      // Verifica se siamo in qualsiasi dialogo o modale
+      const isInDialog = document.querySelector('dialog, [role="dialog"]') !== null;
+      
+      return isInPageForm || isInDialog;
     })();
 
     // If automatic translation is disabled, or we're in an editor context, use only the original text

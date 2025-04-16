@@ -23,6 +23,17 @@ interface AdminCreateProps {
 const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
   const [parentPages, setParentPages] = useState<PageData[]>([]);
 
+  // Imposta un attributo globale per disabilitare le traduzioni quando questa pagina è montata
+  useEffect(() => {
+    // Aggiungi attributo al body per bloccare traduzioni automatiche a livello globale
+    document.body.setAttribute('data-no-translation', 'true');
+    
+    // Rimuovi l'attributo quando il componente viene smontato
+    return () => {
+      document.body.removeAttribute('data-no-translation');
+    };
+  }, []);
+
   useEffect(() => {
     const fetchParentPages = async () => {
       try {
@@ -62,7 +73,7 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
   }, []);
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="container mx-auto px-4 py-6" data-no-translation="true">
       <AdminPageForm
         pageToEdit={pageToEdit}
         onEditComplete={onEditComplete}
