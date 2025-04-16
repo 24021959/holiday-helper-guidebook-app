@@ -1,13 +1,13 @@
 
 import React, { useRef } from 'react';
 import { ImageDetail } from '@/types/image.types';
-import { EditorToolbar } from './EditorToolbar';
-import { EditorContent } from './EditorContent';
 import { useEditorContent } from './hooks/useEditorContent';
 import { useEditorPreview } from './hooks/useEditorPreview';
 import { useEditorState } from './hooks/useEditorState';
 import { useImageControls } from './hooks/useImageControls';
-import { ImageGallery } from './ImageGallery';
+import { useVisualEditorState } from './hooks/useVisualEditorState';
+import { EditorSection } from './EditorSection';
+import { EditorImageGallery } from './EditorImageGallery';
 import ImageInsertionDialog from '../admin/form/ImageInsertionDialog';
 
 interface VisualEditorProps {
@@ -23,7 +23,12 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   onChange,
   onImageAdd
 }) => {
-  const editorRef = useRef<HTMLDivElement>(null);
+  const {
+    showImageDialog,
+    setShowImageDialog,
+    handleOpenImageDialog
+  } = useVisualEditorState(content, images);
+
   const {
     cursorPosition,
     setCursorPosition,
@@ -44,8 +49,6 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const {
     editMode,
     isFullscreen,
-    showImageDialog,
-    setShowImageDialog,
     toggleEditMode,
     toggleFullscreen
   } = useEditorState();
@@ -83,14 +86,6 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     }
   };
 
-  const handleOpenImageDialog = () => {
-    const textarea = document.querySelector('textarea');
-    if (textarea) {
-      setCursorPosition(textarea.selectionStart);
-      setShowImageDialog(true);
-    }
-  };
-
   const handleContentChange = (newContent: string) => {
     onChange(newContent);
     updateHistory(newContent);
@@ -111,47 +106,41 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
   return (
     <div className={`flex flex-col space-y-4 ${isFullscreen ? 'fixed inset-0 z-50 bg-white p-4' : ''}`}>
-      <EditorToolbar
-        expanded={isFullscreen}
-        previewMode={editMode === 'preview'}
+      <EditorSection 
+        content={content}
+        editMode={editMode}
+        isFullscreen={isFullscreen}
+        formattedPreview={formattedPreview}
         selectedText={selectedText}
         historyIndex={historyIndex}
         editHistory={editHistory}
-        onToggleExpand={toggleFullscreen}
-        onTogglePreview={toggleEditMode}
-        onInsertImage={handleOpenImageDialog}
+        onContentChange={handleContentChange}
+        onToggleFullscreen={toggleFullscreen}
+        onToggleEditMode={toggleEditMode}
+        onOpenImageDialog={handleOpenImageDialog}
+        onTextSelect={handleTextareaSelect}
         onTextFormat={handleTextFormat}
         onTextAlign={handleTextAlign}
         onInsertPhone={handleInsertPhone}
         onInsertMap={handleInsertMap}
         onUndo={handleUndo}
         onRedo={handleRedo}
-      />
-
-      <EditorContent
-        content={content}
-        editMode={editMode}
-        formattedPreview={formattedPreview}
-        onContentChange={handleContentChange}
-        onSelect={handleTextareaSelect}
         images={images}
       />
 
-      {images.length > 0 && (
-        <ImageGallery
-          images={images}
-          content={content}
-          hoveredImageIndex={hoveredImageIndex}
-          showImageControls={showImageControls}
-          onImageMouseEnter={setHoveredImageIndex}
-          onImageMouseLeave={() => showImageControls === null && setHoveredImageIndex(null)}
-          onToggleControls={(index) => setShowImageControls(showImageControls === index ? null : index)}
-          onPositionChange={handleImagePositionChange}
-          onWidthChange={handleImageWidthChange}
-          onCaptionChange={handleImageCaptionChange}
-          onDeleteImage={(index) => handleDeleteImage(index, content)}
-        />
-      )}
+      <EditorImageGallery 
+        images={images}
+        content={content}
+        hoveredImageIndex={hoveredImageIndex}
+        showImageControls={showImageControls}
+        onImageMouseEnter={setHoveredImageIndex}
+        onImageMouseLeave={() => showImageControls === null && setHoveredImageIndex(null)}
+        onToggleControls={(index) => setShowImageControls(showImageControls === index ? null : index)}
+        onPositionChange={handleImagePositionChange}
+        onWidthChange={handleImageWidthChange}
+        onCaptionChange={handleImageCaptionChange}
+        onDeleteImage={(index) => handleDeleteImage(index, content)}
+      />
 
       <ImageInsertionDialog
         isOpen={showImageDialog}
