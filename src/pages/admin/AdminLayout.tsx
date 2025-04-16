@@ -6,27 +6,29 @@ import {
   FolderOpen, 
   Settings, 
   MessageSquare, 
-  BarChart3
+  BarChart3,
+  FilePlus
 } from "lucide-react";
 import AdminManage from "./AdminManage";
 import { PageData } from "@/types/page.types";
 import { LayoutSettings } from "@/components/admin/LayoutSettings";
 import { toast } from "sonner";
 import ChatbotSettings from "@/components/admin/chatbot/ChatbotSettings";
+import PageCreator from "./PageCreator";
 
 const AdminLayout = () => {
   const isAuthenticated = true;
-  const [activeTab, setActiveTab] = useState("manage");
+  const [activeTab, setActiveTab] = useState("create");
 
   useEffect(() => {
     const hash = window.location.hash.replace('#', '');
-    if (hash && ['manage', 'settings', 'chatbot', 'analytics'].includes(hash)) {
+    if (hash && ['create', 'manage', 'settings', 'chatbot', 'analytics'].includes(hash)) {
       setActiveTab(hash);
     }
     
     window.addEventListener('hashchange', () => {
       const newHash = window.location.hash.replace('#', '');
-      if (newHash && ['manage', 'settings', 'chatbot', 'analytics'].includes(newHash)) {
+      if (newHash && ['create', 'manage', 'settings', 'chatbot', 'analytics'].includes(newHash)) {
         setActiveTab(newHash);
       }
     });
@@ -53,6 +55,13 @@ const AdminLayout = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full bg-white/50 backdrop-blur-sm border border-gray-200">
+            <TabsTrigger 
+              value="create" 
+              className="flex items-center gap-2 data-[state=active]:bg-teal-100"
+            >
+              <FilePlus className="w-4 h-4" />
+              <span>Crea Pagina</span>
+            </TabsTrigger>
             <TabsTrigger 
               value="manage" 
               className="flex items-center gap-2 data-[state=active]:bg-blue-100"
@@ -84,6 +93,13 @@ const AdminLayout = () => {
           </TabsList>
 
           <div className="mt-6">
+            <TabsContent 
+              value="create" 
+              className="rounded-lg border border-teal-100"
+            >
+              <PageCreator />
+            </TabsContent>
+            
             <TabsContent 
               value="manage" 
               className="rounded-lg border border-blue-100"
