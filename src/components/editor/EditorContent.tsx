@@ -2,6 +2,7 @@
 import React, { useRef } from 'react';
 import { Textarea } from "@/components/ui/textarea";
 import { ImageDetail } from '@/types/image.types';
+import TranslatedText from '@/components/TranslatedText';
 
 interface EditorContentProps {
   content: string;
@@ -56,7 +57,11 @@ export const EditorContent: React.FC<EditorContentProps> = ({
     <div className="border rounded-lg overflow-hidden">
       {editMode === 'visual' ? (
         <div className="relative min-h-[500px] bg-white p-4">
-          <div className="absolute inset-0 pointer-events-none prose max-w-none p-4" dangerouslySetInnerHTML={{ __html: renderInlineImages() }} />
+          <div 
+            className="absolute inset-0 pointer-events-none prose max-w-none p-4" 
+            dangerouslySetInnerHTML={{ __html: renderInlineImages() }} 
+            data-no-translation="true" // Add this attribute to help prevent translations
+          />
           <Textarea
             ref={textareaRef}
             value={content}
@@ -65,6 +70,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
             onClick={onSelect}
             className="w-full h-full min-h-[400px] resize-none border-0 focus-visible:ring-0 bg-transparent relative z-10"
             placeholder="Inizia a scrivere qui..."
+            data-no-translation="true" // Add this attribute to help prevent translations
           />
         </div>
       ) : (
@@ -72,6 +78,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
           ref={previewRef}
           className="min-h-[500px] p-6 bg-white overflow-auto text-gray-800 prose max-w-none prose-headings:my-4 prose-p:my-2"
           dangerouslySetInnerHTML={{ __html: formattedPreview }}
+          data-no-translation="true" // Add this attribute to help prevent translations
         />
       )}
     </div>

@@ -8,16 +8,16 @@ interface TranslatedTextProps {
   as?: keyof JSX.IntrinsicElements;
   className?: string;
   showLoadingState?: boolean;
-  disableAutoTranslation?: boolean; // Parametro per disattivare la traduzione automatica
+  disableAutoTranslation?: boolean; // Parameter to disable automatic translation
 }
 
-// Usa memo per prevenire re-render non necessari
+// Use memo to prevent unnecessary re-renders
 const TranslatedText: React.FC<TranslatedTextProps> = memo(({ 
   text, 
   as: Component = "span", 
   className = "",
   showLoadingState = true,
-  disableAutoTranslation = false // Default a false per retrocompatibilità
+  disableAutoTranslation = false // Default to false for backward compatibility
 }) => {
   const { language, translate } = useTranslation();
   const [translatedText, setTranslatedText] = useState(text);
@@ -25,18 +25,23 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
   const prevTextRef = useRef(text);
   const prevLanguageRef = useRef(language);
   
-  // Cache di traduzione in memoria del componente
+  // Translation cache in component memory
   const translationCacheRef = useRef<Record<string, string>>({});
   const cacheKey = `${language}:${text}`;
 
   useEffect(() => {
-    // Se la traduzione automatica è disattivata, usa solo il testo originale
-    if (disableAutoTranslation) {
+    // Check if we're inside an editor context (parent with data-no-translation attribute)
+    const isInEditorContext = document.querySelector('[data-no-translation="true"]')?.contains(
+      document.activeElement
+    );
+
+    // If automatic translation is disabled, or we're in an editor context, use only the original text
+    if (disableAutoTranslation || isInEditorContext) {
       setTranslatedText(text);
       return;
     }
 
-    // Controlla se è necessaria una nuova traduzione
+    // Check if a new translation is needed
     const needsTranslation = 
       language !== 'it' && 
       (text !== prevTextRef.current || 
@@ -45,13 +50,13 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
     let isMounted = true;
     
     const fetchTranslation = async () => {
-      // Se siamo in italiano o la traduzione è già in cache, usala direttamente
+      // If we're in Italian or the translation is already in cache, use it directly
       if (language === 'it') {
         setTranslatedText(text);
         return;
       }
       
-      // Controlla se la traduzione è in cache
+      // Check if the translation is in cache
       if (translationCacheRef.current[cacheKey]) {
         setTranslatedText(translationCacheRef.current[cacheKey]);
         return;
@@ -65,13 +70,13 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
         if (isMounted) {
           console.log(`Risultato traduzione: "${result}"`);
           setTranslatedText(result);
-          // Salva in cache
+          // Save to cache
           translationCacheRef.current[cacheKey] = result;
         }
       } catch (error) {
         console.error("Errore di traduzione:", error);
         if (isMounted) {
-          setTranslatedText(text); // Fallback al testo originale in caso di errore
+          setTranslatedText(text); // Fallback to original text in case of error
         }
       } finally {
         if (isMounted) {
@@ -83,11 +88,11 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
     if (needsTranslation) {
       fetchTranslation();
     } else if (language === 'it') {
-      // Usa sempre il testo originale per l'italiano
+      // Always use the original text for Italian
       setTranslatedText(text);
     }
     
-    // Aggiorna i riferimenti per il prossimo render
+    // Update references for the next render
     prevTextRef.current = text;
     prevLanguageRef.current = language;
     
