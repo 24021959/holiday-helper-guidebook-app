@@ -95,7 +95,7 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
         onMainImageRemove={handleMainImageRemove}
         onCancel={handleCancel}
         onSubmit={handleFormSubmit}
-        submitButtonText="Crea Pagina"
+        submitButtonText="Salva Pagina"
       />
     </div>
   );

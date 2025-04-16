@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useState, useEffect } from "react";
 import { VisualEditor } from "@/components/admin/VisualEditor";
@@ -75,7 +74,6 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
     }
   });
 
-  // Inizializziamo il form correttamente con useForm
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -131,7 +129,6 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
       ...prev,
       title: e.target.value
     }));
-    // Aggiorniamo anche il form
     form.setValue("title", e.target.value);
   };
 
@@ -140,7 +137,6 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
       ...prev,
       content: newContent
     }));
-    // Aggiorniamo anche il form
     form.setValue("content", newContent);
   };
 
@@ -163,7 +159,6 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
       pageType: value,
       parentPath: value === "normal" ? undefined : prev.parentPath
     }));
-    // Aggiorniamo anche il form
     form.setValue("pageType", value);
   };
 
@@ -172,7 +167,6 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
       ...prev,
       parentPath: value
     }));
-    // Aggiorniamo anche il form
     form.setValue("parentPath", value);
   };
 
@@ -227,9 +221,22 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
 
                 <PageTypeSection
                   pageType={pageContent.pageType}
-                  setPageType={handlePageTypeChange}
+                  setPageType={(type) => {
+                    setPageContent(prev => ({
+                      ...prev,
+                      pageType: type,
+                      parentPath: type === "normal" ? undefined : prev.parentPath
+                    }));
+                    form.setValue("pageType", type);
+                  }}
                   parentPath={pageContent.parentPath || ""}
-                  setParentPath={handleParentPathChange}
+                  setParentPath={(path) => {
+                    setPageContent(prev => ({
+                      ...prev,
+                      parentPath: path
+                    }));
+                    form.setValue("parentPath", path);
+                  }}
                   icon={selectedIcon}
                   setIcon={setSelectedIcon}
                   parentPages={parentPages}
@@ -243,8 +250,24 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
                     <VisualEditor 
                       content={pageContent.content}
                       images={pageContent.images}
-                      onChange={handleContentChange}
-                      onImageAdd={handleImageAdd}
+                      onChange={(newContent) => {
+                        setPageContent(prev => ({
+                          ...prev,
+                          content: newContent
+                        }));
+                        form.setValue("content", newContent);
+                      }}
+                      onImageAdd={(imageDetail) => {
+                        const newImage: ImageItem = {
+                          ...imageDetail,
+                          type: "image",
+                          width: imageDetail.width || "100%"
+                        };
+                        setPageContent(prev => ({
+                          ...prev,
+                          images: [...prev.images, newImage]
+                        }));
+                      }}
                     />
                   </div>
                 )}
@@ -266,6 +289,7 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
                     setUploadedImage(null);
                     form.reset();
                   }}
+                  submitText="Salva Pagina"
                 />
               </div>
             </form>

@@ -24,7 +24,7 @@ export const FormActions: React.FC<FormActionsProps> = ({
     if (isSubmitting) return "Salvataggio in corso...";
     if (isCreating) return "Creazione pagina...";
     if (isTranslating) return "Traduzione in corso...";
-    return submitText || "Crea Pagina";
+    return submitText || "Salva Pagina";
   };
 
   return (
