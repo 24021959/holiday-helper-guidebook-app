@@ -1,21 +1,21 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Bot } from "lucide-react";
+import { Bot, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "@/context/TranslationContext";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import Chatbot from "@/components/chatbot/Chatbot";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChatbotConfig, defaultConfig } from "@/hooks/chatbot/chatbotTypes";
 
-// Import new components
+// Import components
 import GeneralSettings from "./GeneralSettings";
 import VisualSettings from "./VisualSettings";
 import WelcomeMessageManager from "./WelcomeMessageManager";
 import SuggestedQuestions from "./SuggestedQuestions";
 import KnowledgeBaseManager from "./KnowledgeBaseManager";
+import ChatPreview from "./ChatPreview";
+import AnalyticsDashboard from "./AnalyticsDashboard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ChatbotSettings: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -66,7 +66,6 @@ const ChatbotSettings: React.FC = () => {
         }, { onConflict: 'key' });
 
       if (error) throw error;
-
       toast.success("Configurazione del chatbot salvata con successo");
     } catch (error) {
       console.error("Errore nel salvataggio della configurazione del chatbot:", error);
@@ -123,22 +122,7 @@ const ChatbotSettings: React.FC = () => {
           <Bot className="h-6 w-6 text-emerald-600" />
           <h2 className="text-xl font-medium text-emerald-600">Impostazioni Chatbot</h2>
         </div>
-        
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
-              Anteprima Chatbot
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="sm:max-w-lg">
-            <div className="h-full flex flex-col">
-              <h3 className="text-lg font-medium mb-4">Anteprima Chatbot</h3>
-              <div className="flex-1">
-                <Chatbot previewConfig={chatbotConfig} />
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
+        <ChatPreview previewConfig={chatbotConfig} />
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -148,6 +132,7 @@ const ChatbotSettings: React.FC = () => {
           <TabsTrigger value="messages">Messaggi</TabsTrigger>
           <TabsTrigger value="questions">Domande Suggerite</TabsTrigger>
           <TabsTrigger value="knowledge">Base di Conoscenza</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
         
         <TabsContent value="general">
@@ -183,6 +168,10 @@ const ChatbotSettings: React.FC = () => {
         <TabsContent value="knowledge">
           <KnowledgeBaseManager />
         </TabsContent>
+
+        <TabsContent value="analytics">
+          <AnalyticsDashboard />
+        </TabsContent>
       </Tabs>
 
       <div className="mt-6">
@@ -191,6 +180,7 @@ const ChatbotSettings: React.FC = () => {
           disabled={isSaving || isLoading}
           className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
         >
+          <Settings2 className="mr-2 h-4 w-4" />
           {isSaving ? 'Salvataggio...' : 'Salva Configurazione'}
         </Button>
       </div>
