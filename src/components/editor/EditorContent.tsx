@@ -34,12 +34,11 @@ export const EditorContent: React.FC<EditorContentProps> = ({
         image.position === "full" ? "w-full block" : 
         "mx-auto block";
       
-      const placeholder = `[IMAGE_${index}]`;
       const imageHtml = `
         <figure class="${positionClass}" style="width: ${image.width}; margin-bottom: 1rem;">
           <img 
             src="${image.url}" 
-            alt="${image.caption || `Image ${index+1}`}" 
+            alt="${image.caption || `Image ${index + 1}`}" 
             class="w-full h-auto rounded-md" 
             data-image-index="${index}"
           />
@@ -47,7 +46,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
         </figure>
       `;
       
-      htmlContent = htmlContent.replace(placeholder, imageHtml);
+      htmlContent = htmlContent.replace(`[IMAGE_${index}]`, imageHtml);
     });
 
     return htmlContent;
@@ -78,4 +77,3 @@ export const EditorContent: React.FC<EditorContentProps> = ({
     </div>
   );
 };
-
