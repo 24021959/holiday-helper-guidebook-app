@@ -1,12 +1,13 @@
 
 import React, { useRef } from 'react';
-import { toast } from "sonner";
 import { ImageDetail } from '@/types/image.types';
 import { EditorToolbar } from './toolbar/EditorToolbar';
 import { EditorContent } from './EditorContent';
 import { useEditorContent } from './hooks/useEditorContent';
 import { useEditorPreview } from './hooks/useEditorPreview';
 import { useEditorState } from './hooks/useEditorState';
+import { useImageControls } from './hooks/useImageControls';
+import { ImageGallery } from './ImageGallery';
 import ImageInsertionDialog from '../admin/form/ImageInsertionDialog';
 
 interface VisualEditorProps {
@@ -48,6 +49,17 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     toggleEditMode,
     toggleFullscreen
   } = useEditorState();
+
+  const {
+    hoveredImageIndex,
+    setHoveredImageIndex,
+    showImageControls,
+    setShowImageControls,
+    handleImagePositionChange,
+    handleImageWidthChange,
+    handleImageCaptionChange,
+    handleDeleteImage
+  } = useImageControls(images, onImageAdd, onChange);
 
   const { formattedPreview } = useEditorPreview(content, images);
 
@@ -122,6 +134,22 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         onContentChange={handleContentChange}
         onSelect={handleTextareaSelect}
       />
+
+      {images.length > 0 && (
+        <ImageGallery
+          images={images}
+          content={content}
+          hoveredImageIndex={hoveredImageIndex}
+          showImageControls={showImageControls}
+          onImageMouseEnter={setHoveredImageIndex}
+          onImageMouseLeave={() => showImageControls === null && setHoveredImageIndex(null)}
+          onToggleControls={(index) => setShowImageControls(showImageControls === index ? null : index)}
+          onPositionChange={handleImagePositionChange}
+          onWidthChange={handleImageWidthChange}
+          onCaptionChange={handleImageCaptionChange}
+          onDeleteImage={(index) => handleDeleteImage(index, content)}
+        />
+      )}
 
       <ImageInsertionDialog
         isOpen={showImageDialog}
