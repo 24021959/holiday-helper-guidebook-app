@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -53,7 +52,6 @@ export const useLayoutSettings = () => {
     }
   });
 
-  // Load settings when component mounts
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -61,7 +59,6 @@ export const useLayoutSettings = () => {
         setLoadError(null);
         console.log("Loading layout settings...");
         
-        // Try to load settings from localStorage first as a fallback
         let headerData = null;
         let footerData = null;
         
@@ -81,7 +78,6 @@ export const useLayoutSettings = () => {
           console.warn("Error reading from localStorage:", e);
         }
         
-        // Then try to load from database (this will override local cache if successful)
         try {
           const [dbHeaderData, dbFooterData] = await Promise.all([
             fetchHeaderSettings(),
@@ -107,9 +103,8 @@ export const useLayoutSettings = () => {
           }
         } catch (error) {
           console.error("Error loading settings from database:", error);
-          // We'll continue with localStorage data if available
           if (!headerData && !footerData) {
-            throw error; // Only throw if we have no data at all
+            throw error;
           }
         }
         
@@ -150,10 +145,8 @@ export const useLayoutSettings = () => {
     loadSettings();
   }, [form]);
 
-  // Get color preview values
   const colorPreview = useColorPreview(form.watch);
 
-  // Save settings
   const onSubmit = async (data: LayoutSettingsForm) => {
     console.log("Submitting layout settings:", data);
     setIsLoading(true);
@@ -163,7 +156,6 @@ export const useLayoutSettings = () => {
     try {
       toast.info("Salvataggio impostazioni in corso...");
       
-      // Prepare header data
       const headerData: HeaderData = {
         logo_url: data.logoUrl,
         header_color: data.headerColor,
@@ -174,7 +166,6 @@ export const useLayoutSettings = () => {
         logo_size: data.logoSize
       };
       
-      // Prepare footer data
       const footerData: FooterData = {
         custom_text: data.footerText,
         show_social_links: data.showSocialLinks,
@@ -189,13 +180,11 @@ export const useLayoutSettings = () => {
       console.log("Saving header data:", headerData);
       console.log("Saving footer data:", footerData);
       
-      // Use Promise.all to save both settings concurrently
       const results = await Promise.allSettled([
         saveHeaderSettings(headerData),
         saveFooterSettings(footerData)
       ]);
       
-      // Check results
       const headerResult = results[0];
       const footerResult = results[1];
       
@@ -214,7 +203,6 @@ export const useLayoutSettings = () => {
       console.log("Header settings saved:", headerResult.status === 'fulfilled' ? headerResult.value : 'N/A');
       console.log("Footer settings saved:", footerResult.status === 'fulfilled' ? footerResult.value : 'N/A');
 
-      // Update cache for immediate access
       try {
         localStorage.setItem("headerSettings", JSON.stringify({
           logoUrl: data.logoUrl,
