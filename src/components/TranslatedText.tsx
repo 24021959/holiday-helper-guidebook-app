@@ -29,6 +29,7 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
   const cacheKey = `${language}:${text}`;
 
   useEffect(() => {
+    // CRITICAL: Always disable translations in admin area or editor
     if (
       window.location.pathname.includes('/admin') || 
       document.body.hasAttribute('data-no-translation') ||
@@ -75,6 +76,7 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
       return;
     }
 
+    // Handle Italian language case
     if (language === 'it') {
       setTranslatedText(text);
       return;

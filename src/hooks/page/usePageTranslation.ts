@@ -6,7 +6,7 @@ import { usePageSaving } from "./usePageSaving";
 
 /**
  * Hook per la gestione delle traduzioni delle pagine
- * IMPORTANTE: La traduzione avviene SOLO quando l'utente fa clic su "Salva Pagina"
+ * IMPORTANTE: La traduzione avviene SOLO quando l'utente fa clic sul pulsante di traduzione manuale
  */
 export const usePageTranslation = () => {
   const [isTranslating, setIsTranslating] = useState(false);
@@ -15,7 +15,7 @@ export const usePageTranslation = () => {
 
   /**
    * Traduce e crea pagine in tutte le lingue supportate
-   * Questa funzione deve essere chiamata SOLO quando l'utente fa clic su "Salva Pagina"
+   * Questa funzione deve essere chiamata SOLO quando l'utente fa clic sul pulsante di traduzione manuale
    */
   const translatePages = async (
     content: string,
@@ -29,7 +29,7 @@ export const usePageTranslation = () => {
   ) => {
     try {
       setIsTranslating(true);
-      toast.info("Avvio traduzione automatica in tutte le lingue...");
+      toast.info("Avvio traduzione manuale in tutte le lingue...");
 
       // CRITICAL: Force disable the no-translation flag ONLY for this operation
       const wasNoTranslation = document.body.hasAttribute('data-no-translation');

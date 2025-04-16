@@ -2,12 +2,13 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { uploadImage } from "@/integrations/supabase/storage";
 import { toast } from "sonner";
 import { PageData } from "@/types/page.types";
-import { z } from "zod";
-import { pageFormSchema } from '@/components/admin/schemas/pageFormSchema';
-import { PageContent } from "@/pages/admin/AdminCreate";
-import { usePageCreation } from "@/hooks/usePageCreation";
+import { ImageItem } from "@/types/image.types";
+import { PageFormValues, PageType } from "@/types/form.types";
+import { pageFormSchema } from "@/components/admin/schemas/pageFormSchema";
+import { usePageCreation } from "../usePageCreation";
 
 interface UseAdminPageFormProps {
   pageToEdit: PageData | null;
@@ -15,96 +16,112 @@ interface UseAdminPageFormProps {
 }
 
 export const useAdminPageForm = ({ pageToEdit, onEditComplete }: UseAdminPageFormProps) => {
-  const [pageContent, setPageContent] = useState<PageContent>(() => ({
+  const [uploadedImage, setUploadedImage] = useState<string | null>(pageToEdit?.imageUrl || null);
+  const [pageImages, setPageImages] = useState<ImageItem[]>(pageToEdit?.pageImages || []);
+  const [pageContent, setPageContent] = useState({
     title: pageToEdit?.title || "",
     content: pageToEdit?.content || "",
-    images: pageToEdit?.pageImages.map(img => ({
-      url: img.url,
-      position: img.position,
-      caption: img.caption || "",
-      type: "image" as const,
-      width: "100%"
-    })) || [],
-    pageType: pageToEdit?.is_parent ? "parent" : pageToEdit?.isSubmenu ? "submenu" : "normal",
-    parentPath: pageToEdit?.parentPath
-  }));
+    pageType: (pageToEdit?.is_parent ? "parent" : pageToEdit?.isSubmenu ? "submenu" : "normal") as PageType,
+    parentPath: pageToEdit?.parentPath || "",
+    icon: pageToEdit?.icon || "FileText"
+  });
 
-  const [uploadedImage, setUploadedImage] = useState<string | null>(pageToEdit?.imageUrl || null);
-  const { handleTranslateAndCreate, isCreating, isTranslating } = usePageCreation({
-    onPageCreated: (pages) => {
-      setPageContent({
-        title: "",
-        content: "",
-        images: [],
-        pageType: "normal"
-      });
-      setUploadedImage(null);
-      onEditComplete();
-      toast.success(pageToEdit ? "Pagina aggiornata con successo!" : "Pagina creata con successo!");
+  const { handlePageCreation, isCreating, isTranslating, handleManualTranslation } = usePageCreation({
+    onPageCreated: () => {
+      // Refresh page list or handle success
     }
   });
 
-  const form = useForm<z.infer<typeof pageFormSchema>>({
+  const form = useForm({
     resolver: zodResolver(pageFormSchema),
     defaultValues: {
       title: pageToEdit?.title || "",
       content: pageToEdit?.content || "",
-      icon: pageToEdit?.icon || "FileText",
-      pageType: pageToEdit?.is_parent ? "parent" : pageToEdit?.isSubmenu ? "submenu" : "normal",
+      pageType: (pageToEdit?.is_parent ? "parent" : pageToEdit?.isSubmenu ? "submenu" : "normal") as PageType,
       parentPath: pageToEdit?.parentPath || "",
-    },
+      icon: pageToEdit?.icon || "FileText"
+    }
   });
 
-  const handleSavePage = async (values: z.infer<typeof pageFormSchema>) => {
+  const handleSavePage = async (values: any) => {
     try {
-      const pageImages = pageContent.images.map(img => ({
-        ...img,
-        type: "image" as const,
-        width: img.width || "100%"
-      }));
-
-      await handleTranslateAndCreate(
+      // Process and save the page
+      const sanitizedTitle = values.title
+        .toLowerCase()
+        .replace(/[^\w\s]/gi, '')
+        .replace(/\s+/g, '-');
+      
+      const finalPath = values.pageType === "submenu" && values.parentPath
+        ? `${values.parentPath}/${sanitizedTitle}`
+        : `/${sanitizedTitle}`;
+      
+      await handlePageCreation(
         {
           title: values.title,
-          content: values.content || "",
-          icon: values.icon || "FileText",
+          content: pageContent.content,
+          icon: pageContent.icon,
           pageType: values.pageType,
           parentPath: values.parentPath
         },
         uploadedImage,
         pageImages,
         () => {
-          toast.success(pageToEdit ? "Pagina aggiornata con successo!" : "Pagina creata con successo!");
+          toast.success(pageToEdit ? "Pagina aggiornata con successo" : "Pagina creata con successo");
+          onEditComplete();
         }
       );
     } catch (error) {
-      console.error("Error saving page:", error);
-      toast.error("Errore nel salvare la pagina");
+      console.error("Errore durante il salvataggio:", error);
+      toast.error("Si è verificato un errore durante il salvataggio");
+    }
+  };
+
+  // Add the missing function to fix the TypeScript error
+  const handleTranslateAndCreate = async (
+    values: PageFormValues,
+    imageUrl: string | null,
+    pageImages: ImageItem[],
+    onSuccess: () => void
+  ) => {
+    try {
+      // Process and save the page
+      const sanitizedTitle = values.title
+        .toLowerCase()
+        .replace(/[^\w\s]/gi, '')
+        .replace(/\s+/g, '-');
+      
+      const finalPath = values.pageType === "submenu" && values.parentPath
+        ? `${values.parentPath}/${sanitizedTitle}`
+        : `/${sanitizedTitle}`;
+      
+      await handlePageCreation(
+        values,
+        imageUrl,
+        pageImages,
+        onSuccess
+      );
+    } catch (error) {
+      console.error("Errore durante il salvataggio:", error);
+      toast.error("Si è verificato un errore durante il salvataggio");
     }
   };
 
   const handleCancel = () => {
-    if (pageToEdit) {
-      onEditComplete();
-    }
-    setPageContent({
-      title: "",
-      content: "",
-      images: [],
-      pageType: "normal"
-    });
-    setUploadedImage(null);
-    form.reset();
+    onEditComplete();
   };
 
   return {
     form,
     pageContent,
+    setPageContent,
     uploadedImage,
+    setUploadedImage,
+    pageImages,
+    setPageImages,
     isCreating,
     isTranslating,
     handleSavePage,
     handleCancel,
-    setPageContent,
+    handleTranslateAndCreate
   };
 };

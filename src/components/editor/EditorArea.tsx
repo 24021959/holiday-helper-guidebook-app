@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from 'react';
 import { Textarea } from "@/components/ui/textarea";
 
@@ -23,8 +22,9 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
   const previewRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // CRITICAL: Add this effect to force disable translations
+  // CRITICAL: Aggressive disabling of translations throughout the editor
   useEffect(() => {
+    // Ensure all editor elements are protected from translation
     if (editorRef.current) {
       editorRef.current.setAttribute('data-no-translation', 'true');
     }
@@ -35,17 +35,29 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
       textareaRef.current.setAttribute('data-no-translation', 'true');
     }
     
-    // Also set the parent elements
+    // Set attributes on parent elements
     const parent = editorRef.current?.parentElement;
     if (parent) {
       parent.setAttribute('data-no-translation', 'true');
       parent.setAttribute('data-editor', 'true');
     }
     
+    // Set global flags
+    document.body.setAttribute('data-no-translation', 'true');
+    
+    // Add attributes to all content-editable elements
+    document.querySelectorAll('[contenteditable="true"]').forEach(el => {
+      el.setAttribute('data-no-translation', 'true');
+    });
+    
+    // Add attributes to all form elements
+    document.querySelectorAll('form, textarea, input').forEach(el => {
+      el.setAttribute('data-no-translation', 'true');
+    });
+    
     return () => {
-      if (parent) {
-        parent.removeAttribute('data-editor');
-      }
+      // Keep the no-translation attribute on the body when unmounting
+      // Just in case other editor components are still active
     };
   }, []);
 

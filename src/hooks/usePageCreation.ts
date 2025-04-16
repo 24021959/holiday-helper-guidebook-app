@@ -39,10 +39,10 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         ? `${values.parentPath}/${sanitizedTitle}`
         : `/${sanitizedTitle}`;
 
-      // Force disable translations during page creation
+      // CRITICAL: Force disable translations during page creation
       document.body.setAttribute('data-no-translation', 'true');
       
-      // Save only Italian version
+      // Save only Italian version - no translation prompts
       const pageId = await saveNewPage(
         values.title,
         values.content,
