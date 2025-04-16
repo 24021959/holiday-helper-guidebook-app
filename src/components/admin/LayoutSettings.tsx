@@ -7,6 +7,7 @@ import { FooterSettings } from "./layout/FooterSettings";
 import { LogoSettings } from "./layout/LogoSettings";
 import { EstablishmentSettings } from "./layout/EstablishmentSettings";
 import { LayoutPreview } from "./layout/LayoutPreview";
+import { CheckCircle2 } from "lucide-react";
 
 export const LayoutSettings = () => {
   const { 
@@ -16,6 +17,7 @@ export const LayoutSettings = () => {
     previewEstablishmentNameColor,
     previewFooterTextColor,
     isLoading,
+    isSuccess,
     onSubmit 
   } = useLayoutSettings();
 
@@ -61,7 +63,16 @@ export const LayoutSettings = () => {
             className="w-full" 
             disabled={isLoading}
           >
-            {isLoading ? "Salvataggio in corso..." : "Salva Impostazioni"}
+            {isLoading ? (
+              "Salvataggio in corso..."
+            ) : isSuccess ? (
+              <span className="flex items-center">
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                Impostazioni Salvate
+              </span>
+            ) : (
+              "Salva Impostazioni"
+            )}
           </Button>
         </form>
       </Form>

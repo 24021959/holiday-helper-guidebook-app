@@ -24,26 +24,36 @@ export const saveHeaderSettings = async (headerData: HeaderData) => {
       throw headerCheckError;
     }
 
+    let result;
     if (existingHeaderData && existingHeaderData.length > 0) {
-      const { error: updateError } = await supabase
+      console.log("Updating existing header settings:", headerData);
+      const { data, error: updateError } = await supabase
         .from('header_settings')
         .update(headerData)
-        .eq('id', existingHeaderData[0].id);
+        .eq('id', existingHeaderData[0].id)
+        .select();
       
       if (updateError) {
         console.error("Error updating header settings:", updateError);
         throw updateError;
       }
+      result = data;
     } else {
-      const { error: insertError } = await supabase
+      console.log("Inserting new header settings:", headerData);
+      const { data, error: insertError } = await supabase
         .from('header_settings')
-        .insert(headerData);
+        .insert(headerData)
+        .select();
       
       if (insertError) {
         console.error("Error inserting header settings:", insertError);
         throw insertError;
       }
+      result = data;
     }
+    
+    console.log("Header settings saved successfully:", result);
+    return result;
   } catch (error) {
     console.error("Error saving header settings:", error);
     throw error;
@@ -51,15 +61,21 @@ export const saveHeaderSettings = async (headerData: HeaderData) => {
 };
 
 export const fetchHeaderSettings = async () => {
-  const { data, error } = await supabase
-    .from('header_settings')
-    .select('*')
-    .maybeSingle();
+  try {
+    const { data, error } = await supabase
+      .from('header_settings')
+      .select('*')
+      .maybeSingle();
 
-  if (error) {
-    console.error("Error loading header settings:", error);
+    if (error) {
+      console.error("Error loading header settings:", error);
+      throw error;
+    }
+
+    console.log("Fetched header settings:", data);
+    return data;
+  } catch (error) {
+    console.error("Error fetching header settings:", error);
     throw error;
   }
-
-  return data;
 };

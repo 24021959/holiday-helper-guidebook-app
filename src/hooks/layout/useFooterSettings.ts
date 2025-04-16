@@ -24,26 +24,36 @@ export const saveFooterSettings = async (footerValue: FooterValue) => {
       throw footerCheckError;
     }
 
+    let result;
     if (existingFooterData && existingFooterData.length > 0) {
-      const { error: updateError } = await supabase
+      console.log("Updating existing footer settings:", footerValue);
+      const { data, error: updateError } = await supabase
         .from('site_settings')
         .update({ value: footerValue })
-        .eq('id', existingFooterData[0].id);
+        .eq('id', existingFooterData[0].id)
+        .select();
       
       if (updateError) {
         console.error("Error updating footer settings:", updateError);
         throw updateError;
       }
+      result = data;
     } else {
-      const { error: insertError } = await supabase
+      console.log("Inserting new footer settings:", footerValue);
+      const { data, error: insertError } = await supabase
         .from('site_settings')
-        .insert({ key: 'footer_settings', value: footerValue });
+        .insert({ key: 'footer_settings', value: footerValue })
+        .select();
       
       if (insertError) {
         console.error("Error inserting footer settings:", insertError);
         throw insertError;
       }
+      result = data;
     }
+    
+    console.log("Footer settings saved successfully:", result);
+    return result;
   } catch (error) {
     console.error("Error saving footer settings:", error);
     throw error;
@@ -51,16 +61,22 @@ export const saveFooterSettings = async (footerValue: FooterValue) => {
 };
 
 export const fetchFooterSettings = async () => {
-  const { data, error } = await supabase
-    .from('site_settings')
-    .select('*')
-    .eq('key', 'footer_settings')
-    .maybeSingle();
+  try {
+    const { data, error } = await supabase
+      .from('site_settings')
+      .select('*')
+      .eq('key', 'footer_settings')
+      .maybeSingle();
 
-  if (error) {
-    console.error("Error loading footer settings:", error);
+    if (error) {
+      console.error("Error loading footer settings:", error);
+      throw error;
+    }
+
+    console.log("Fetched footer settings:", data?.value);
+    return data?.value;
+  } catch (error) {
+    console.error("Error fetching footer settings:", error);
     throw error;
   }
-
-  return data?.value;
 };
