@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 interface FormActionsProps {
   isSubmitting: boolean;
@@ -15,6 +16,13 @@ export const FormActions: React.FC<FormActionsProps> = ({
   isTranslating,
   onCancel,
 }) => {
+  const getButtonText = () => {
+    if (isSubmitting) return "Salvataggio in corso...";
+    if (isCreating) return "Creazione pagina...";
+    if (isTranslating) return "Traduzione in corso...";
+    return "Crea Pagina";
+  };
+
   return (
     <div className="flex justify-end gap-2">
       <Button 
@@ -26,19 +34,14 @@ export const FormActions: React.FC<FormActionsProps> = ({
       </Button>
       <Button 
         type="submit"
+        className="bg-emerald-600 hover:bg-emerald-700"
         disabled={isSubmitting || isCreating || isTranslating}
       >
-        {isSubmitting ? (
-          "Salvataggio in corso..."
-        ) : isCreating ? (
-          "Creazione in corso..."
-        ) : isTranslating ? (
-          "Traduzione in corso..."
-        ) : (
-          "Crea Pagina"
+        {(isSubmitting || isCreating || isTranslating) && (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         )}
+        {getButtonText()}
       </Button>
     </div>
   );
 };
-

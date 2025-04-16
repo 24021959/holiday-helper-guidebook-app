@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -213,6 +212,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         if (error) throw error;
       }
 
+      // Save menu icon
       const { data: existingIcon } = await supabase
         .from('menu_icons')
         .select('*')
@@ -248,14 +248,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         if (iconError) throw iconError;
       }
 
-      const { data: updatedPages, error: fetchError } = await supabase
-        .from('custom_pages')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (fetchError) throw fetchError;
-      return updatedPages;
-      
+      return pageId;
     } catch (error) {
       console.error("Error saving page:", error);
       throw error;
@@ -270,11 +263,6 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
   ) => {
     try {
       setIsCreating(true);
-      setIsTranslating(true);
-      
-      // Check if we're working on a translated version by examining the path
-      const isTranslatedVersion = values.parentPath && values.parentPath.match(/^\/[a-z]{2}\//);
-      const originalLanguage = isTranslatedVersion ? 'it' : undefined;
       
       // Create path based on the page type
       const sanitizedTitle = values.title
@@ -285,48 +273,9 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
       let finalPath = values.pageType === "submenu" && values.parentPath
         ? `${values.parentPath}/${sanitizedTitle}`
         : `/${sanitizedTitle}`;
-        
-      // If we're working with a translated version, keep the language prefix
-      if (isTranslatedVersion) {
-        const langPrefix = values.parentPath?.match(/^\/([a-z]{2})\//)?.[1];
-        
-        if (langPrefix && langPrefix !== 'it') {
-          // This is a non-Italian page, just save this version
-          console.log(`Saving only ${langPrefix} version of the page`);
-          
-          await saveNewPage(
-            values.title,
-            values.content,
-            finalPath,
-            imageUrl,
-            values.icon,
-            values.pageType,
-            values.pageType === "submenu" ? values.parentPath || null : null,
-            pageImages
-          );
-          
-          toast.success(`Pagina in ${langPrefix.toUpperCase()} salvata con successo`);
-          
-          const { data: pagesData, error: fetchError } = await supabase
-            .from('custom_pages')
-            .select('*')
-            .order('created_at', { ascending: false });
-          
-          if (fetchError) throw fetchError;
-          
-          if (pagesData) {
-            onPageCreated(pagesData);
-            onSuccess();
-          }
-          
-          return;
-        }
-      }
-      
-      console.log(`Creating page with path: ${finalPath}, type: ${values.pageType}, parentPath: ${values.parentPath || 'none'}`);
       
       // Save the Italian version first (main version)
-      await saveNewPage(
+      const pageId = await saveNewPage(
         values.title,
         values.content,
         finalPath,
@@ -337,9 +286,13 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         pageImages
       );
 
+      toast.success("Pagina creata con successo");
+
+      // Start translations
+      setIsTranslating(true);
       toast.info("Avvio traduzione automatica in tutte le lingue...");
 
-      // Translate to all other languages for all page types
+      // Translate to all other languages
       const targetLangs: ("en" | "fr" | "es" | "de")[] = ['en', 'fr', 'es', 'de'];
       
       const translations = await translateSequential(
@@ -383,8 +336,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
       
       if (pagesData) {
         onPageCreated(pagesData);
-        toast.success("Pagina creata con successo");
-        toast.info("Traduzioni completate. Vai alla pagina menu per vedere tutte le pagine");
+        toast.success("Traduzioni completate con successo");
         onSuccess();
       }
       
