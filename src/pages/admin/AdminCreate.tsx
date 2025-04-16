@@ -6,6 +6,7 @@ import { PageData } from "@/types/page.types";
 import { AdminPageForm } from "@/components/admin/create/AdminPageForm";
 import { ImageItem } from "@/types/image.types";
 import { PageType } from "@/types/form.types";
+import { usePageCreation } from "@/hooks/usePageCreation";
 
 export interface PageContent {
   title: string;
@@ -13,6 +14,7 @@ export interface PageContent {
   images: ImageItem[];
   pageType: PageType;
   parentPath?: string;
+  icon: string;
 }
 
 interface AdminCreateProps {
@@ -22,6 +24,11 @@ interface AdminCreateProps {
 
 const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
   const [parentPages, setParentPages] = useState<PageData[]>([]);
+  const { handleManualTranslation } = usePageCreation({
+    onPageCreated: (pages) => {
+      console.log("Pages updated after manual translation", pages);
+    }
+  });
 
   // CRITICAL: Imposta attributi globali per disabilitare le traduzioni
   useEffect(() => {
@@ -123,12 +130,43 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
     fetchParentPages();
   }, []);
 
+  // Handler for manual translation
+  const handlePageManualTranslation = async (
+    content: string,
+    title: string,
+    finalPath: string,
+    imageUrl: string | null,
+    icon: string,
+    pageType: string,
+    parentPath: string | null,
+    pageImages: ImageItem[]
+  ) => {
+    try {
+      await handleManualTranslation(
+        content,
+        title,
+        finalPath,
+        imageUrl,
+        icon,
+        pageType as PageType,
+        parentPath,
+        pageImages
+      );
+      
+      toast.success("Pagina tradotta con successo in tutte le lingue");
+    } catch (error) {
+      console.error("Error translating page:", error);
+      toast.error("Errore durante la traduzione della pagina");
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-6" data-no-translation="true" data-editor="true">
       <AdminPageForm
         pageToEdit={pageToEdit}
         onEditComplete={onEditComplete}
         parentPages={parentPages}
+        onManualTranslate={handlePageManualTranslation}
       />
     </div>
   );

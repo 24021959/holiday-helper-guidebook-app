@@ -5,6 +5,8 @@ export const useEditorState = () => {
   const [editMode, setEditMode] = useState<'visual' | 'preview'>('visual');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showImageDialog, setShowImageDialog] = useState(false);
+  const [showMapDialog, setShowMapDialog] = useState(false);
+  const [showPhoneDialog, setShowPhoneDialog] = useState(false);
 
   const toggleEditMode = () => setEditMode(editMode === 'visual' ? 'preview' : 'visual');
 
@@ -26,7 +28,11 @@ export const useEditorState = () => {
     editMode,
     isFullscreen,
     showImageDialog,
+    showMapDialog,
+    showPhoneDialog,
     setShowImageDialog,
+    setShowMapDialog,
+    setShowPhoneDialog,
     toggleEditMode,
     toggleFullscreen
   };

@@ -23,7 +23,8 @@ export const useAdminPageForm = ({ pageToEdit, onEditComplete }: UseAdminPageFor
     content: pageToEdit?.content || "",
     pageType: (pageToEdit?.is_parent ? "parent" : pageToEdit?.isSubmenu ? "submenu" : "normal") as PageType,
     parentPath: pageToEdit?.parentPath || "",
-    icon: pageToEdit?.icon || "FileText"
+    icon: pageToEdit?.icon || "FileText",
+    images: pageToEdit?.pageImages || [] 
   });
 
   const { handlePageCreation, isCreating, isTranslating, handleManualTranslation } = usePageCreation({
@@ -64,7 +65,7 @@ export const useAdminPageForm = ({ pageToEdit, onEditComplete }: UseAdminPageFor
           parentPath: values.parentPath
         },
         uploadedImage,
-        pageImages,
+        pageContent.images,
         () => {
           toast.success(pageToEdit ? "Pagina aggiornata con successo" : "Pagina creata con successo");
           onEditComplete();
@@ -76,7 +77,6 @@ export const useAdminPageForm = ({ pageToEdit, onEditComplete }: UseAdminPageFor
     }
   };
 
-  // Add the missing function to fix the TypeScript error
   const handleTranslateAndCreate = async (
     values: PageFormValues,
     imageUrl: string | null,
@@ -110,6 +110,35 @@ export const useAdminPageForm = ({ pageToEdit, onEditComplete }: UseAdminPageFor
     onEditComplete();
   };
 
+  const handleManualTranslate = async (
+    content: string,
+    title: string,
+    finalPath: string,
+    imageUrl: string | null,
+    icon: string,
+    pageType: PageType,
+    parentPath: string | null,
+    pageImages: ImageItem[]
+  ) => {
+    try {
+      await handleManualTranslation(
+        content,
+        title,
+        finalPath,
+        imageUrl,
+        icon,
+        pageType,
+        parentPath,
+        pageImages
+      );
+      
+      toast.success("Traduzioni completate con successo");
+    } catch (error) {
+      console.error("Errore durante la traduzione:", error);
+      toast.error("Errore durante la traduzione delle pagine");
+    }
+  };
+
   return {
     form,
     pageContent,
@@ -122,6 +151,7 @@ export const useAdminPageForm = ({ pageToEdit, onEditComplete }: UseAdminPageFor
     isTranslating,
     handleSavePage,
     handleCancel,
-    handleTranslateAndCreate
+    handleTranslateAndCreate,
+    handleManualTranslate
   };
 };

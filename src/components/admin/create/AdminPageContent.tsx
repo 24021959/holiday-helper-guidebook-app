@@ -2,10 +2,18 @@
 import React from "react";
 import { VisualEditor } from "@/components/admin/VisualEditor";
 import { ImageItem } from "@/types/image.types";
-import { PageContent } from "@/pages/admin/AdminCreate";
 import { UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 import { pageFormSchema } from '../schemas/pageFormSchema';
+
+interface PageContent {
+  title: string;
+  content: string;
+  pageType: string;
+  parentPath?: string;
+  icon: string;
+  images: ImageItem[];
+}
 
 interface AdminPageContentProps {
   pageContent: PageContent;
@@ -26,7 +34,7 @@ export const AdminPageContent: React.FC<AdminPageContentProps> = ({
     <div className="border rounded-lg">
       <VisualEditor 
         content={pageContent.content}
-        images={pageContent.images}
+        images={pageContent.images || []}
         onChange={(newContent) => {
           setPageContent(prev => ({
             ...prev,

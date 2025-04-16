@@ -42,7 +42,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
       // CRITICAL: Force disable translations during page creation
       document.body.setAttribute('data-no-translation', 'true');
       
-      // Save only Italian version - no translation prompts
+      // Save only Italian version - no automatic translation
       const pageId = await saveNewPage(
         values.title,
         values.content,
