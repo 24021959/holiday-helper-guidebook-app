@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { AlignCenter, AlignLeft, AlignRight, Maximize, Image } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import TranslatedText from '@/components/TranslatedText';
 
 interface ImageInsertionDialogProps {
   isOpen: boolean;
@@ -38,14 +39,18 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Inserisci immagine</DialogTitle>
+          <DialogTitle>
+            <TranslatedText text="Inserisci immagine" disableAutoTranslation={true} />
+          </DialogTitle>
           <DialogDescription>
-            L'immagine verrà inserita nella posizione corrente del cursore.
+            <TranslatedText text="L'immagine verrà inserita nella posizione corrente del cursore." disableAutoTranslation={true} />
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Posizione dell'immagine:</label>
+            <label className="block text-sm font-medium mb-2">
+              <TranslatedText text="Posizione dell'immagine:" disableAutoTranslation={true} />
+            </label>
             <div className="flex space-x-2">
               <Button
                 type="button"
@@ -55,7 +60,7 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
                 className="flex items-center"
               >
                 <AlignLeft className="h-4 w-4 mr-2" />
-                Sinistra
+                <TranslatedText text="Sinistra" disableAutoTranslation={true} />
               </Button>
               <Button
                 type="button"
@@ -65,7 +70,7 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
                 className="flex items-center"
               >
                 <AlignCenter className="h-4 w-4 mr-2" />
-                Centro
+                <TranslatedText text="Centro" disableAutoTranslation={true} />
               </Button>
               <Button
                 type="button"
@@ -75,7 +80,7 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
                 className="flex items-center"
               >
                 <AlignRight className="h-4 w-4 mr-2" />
-                Destra
+                <TranslatedText text="Destra" disableAutoTranslation={true} />
               </Button>
               <Button
                 type="button"
@@ -85,7 +90,7 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
                 className="flex items-center"
               >
                 <Maximize className="h-4 w-4 mr-2" />
-                Intera
+                <TranslatedText text="Intera" disableAutoTranslation={true} />
               </Button>
             </div>
           </div>
@@ -106,7 +111,9 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
               </div>
               <div className="clear-both"></div>
               <div className="mt-4">
-                <Label className="block text-sm font-medium mb-2">Didascalia (opzionale):</Label>
+                <Label className="block text-sm font-medium mb-2">
+                  <TranslatedText text="Didascalia (opzionale):" disableAutoTranslation={true} />
+                </Label>
                 <Input 
                   type="text" 
                   value={caption}
@@ -122,12 +129,12 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
                   onClick={() => setSelectedImage(null)}
                   className="mr-2"
                 >
-                  Cambia immagine
+                  <TranslatedText text="Cambia immagine" disableAutoTranslation={true} />
                 </Button>
                 <Button
                   onClick={handleInsertImage}
                 >
-                  Inserisci
+                  <TranslatedText text="Inserisci" disableAutoTranslation={true} />
                 </Button>
               </div>
             </div>

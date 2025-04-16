@@ -3,7 +3,7 @@ import React, { useRef } from 'react';
 import { ImageDetail } from '@/types/image.types';
 import { EditorToolbar } from './toolbar/EditorToolbar';
 import { EditorContent } from './EditorContent';
-import { useEditorContent } from '../editor/hooks/useEditorContent';
+import { useEditorContent } from './hooks/useEditorContent';
 import { useEditorPreview } from './hooks/useEditorPreview';
 import { useEditorState } from './hooks/useEditorState';
 import { useImageControls } from './hooks/useImageControls';
@@ -113,19 +113,11 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   return (
     <div className={`flex flex-col space-y-4 ${isFullscreen ? 'fixed inset-0 z-50 bg-white p-4' : ''}`}>
       <EditorToolbar
-        historyIndex={historyIndex}
-        editHistory={editHistory}
-        selectedText={selectedText}
-        editMode={editMode}
-        onUndo={handleUndo}
-        onRedo={handleRedo}
-        onTextFormat={handleTextFormat}
-        onTextAlign={handleTextAlign}
-        onOpenImageDialog={handleOpenImageDialog}
-        onInsertPhone={handleInsertPhone}
-        onInsertMap={handleInsertMap}
-        onToggleEditMode={toggleEditMode}
-        onToggleFullscreen={toggleFullscreen}
+        expanded={isFullscreen}
+        previewMode={editMode === 'preview'}
+        onToggleExpand={toggleFullscreen}
+        onTogglePreview={toggleEditMode}
+        onInsertImage={handleOpenImageDialog}
       />
 
       <EditorContent
