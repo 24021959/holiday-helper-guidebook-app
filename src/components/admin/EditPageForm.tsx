@@ -36,7 +36,7 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
   const currentLanguage = getLanguageFromPath(selectedPage.path);
   console.log(`Editing page in language: ${currentLanguage}`);
 
-  const { handleTranslateAndCreate } = usePageCreation({ 
+  const { handleTranslateAndCreate, deletePageAndTranslations } = usePageCreation({ 
     onPageCreated: onPageUpdated 
   });
 

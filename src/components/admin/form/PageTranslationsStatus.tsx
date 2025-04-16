@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Badge } from "@/components/ui/badge";
-import { Languages, Loader2 } from "lucide-react";
+import { Languages, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -91,15 +91,23 @@ export const PageTranslationsStatus = ({
           <p className="text-sm text-gray-600">{path}</p>
           
           {currentLanguage !== 'it' && (
-            <p className="text-xs text-amber-600 mt-1">
-              <span className="font-bold">Nota:</span> Questa è una traduzione. Le modifiche alla versione italiana influenzeranno questa pagina.
-            </p>
+            <div className="flex items-center mt-2 text-xs text-amber-600">
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              <p>
+                <span className="font-bold">Nota:</span> Questa è una traduzione. Le modifiche alla versione italiana influenzeranno questa pagina.
+                Se la versione italiana viene eliminata, anche questa traduzione verrà eliminata.
+              </p>
+            </div>
           )}
           
           {currentLanguage === 'it' && (
-            <p className="text-xs text-emerald-600 mt-1">
-              <span className="font-bold">Nota:</span> Questa è la versione principale. Le modifiche qui influenzeranno tutte le traduzioni.
-            </p>
+            <div className="flex items-center mt-2 text-xs text-emerald-600">
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              <p>
+                <span className="font-bold">Nota:</span> Questa è la versione principale. Le modifiche qui influenzeranno tutte le traduzioni.
+                Se elimini questa pagina, verranno eliminate anche tutte le sue traduzioni.
+              </p>
+            </div>
           )}
         </div>
         

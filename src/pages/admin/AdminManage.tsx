@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -46,6 +46,7 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [deletingPage, setDeletingPage] = useState<PageData | null>(null);
   const [currentLanguage, setCurrentLanguage] = useState('it');
+  const [isDeleting, setIsDeleting] = useState(false);
   const { deletePageAndTranslations } = usePageCreation({ onPageCreated: setPages });
 
   const fetchPages = async (langCode: string) => {
@@ -148,26 +149,31 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
 
   const confirmDelete = async () => {
     if (!deletingPage) return;
-
+    
     try {
-      const updatedPages = await deletePageAndTranslations(deletingPage.path);
-      if (updatedPages) {
-        // Make sure to refresh the page list to show the current state
-        fetchPages(currentLanguage);
-        
-        // Show different messages based on the language
-        if (currentLanguage === 'it') {
-          toast.success("Pagina e traduzioni eliminate con successo");
-        } else {
-          toast.success("Pagina eliminata con successo");
-        }
+      setIsDeleting(true);
+      
+      // Get language of the page being deleted
+      const isItalianPage = !deletingPage.path.match(/^\/[a-z]{2}\//);
+      
+      await deletePageAndTranslations(deletingPage.path);
+      
+      // Make sure to refresh the page list to show the current state
+      await fetchPages(currentLanguage);
+      
+      if (isItalianPage) {
+        toast.success("Pagina italiana e tutte le sue traduzioni eliminate con successo");
+      } else {
+        toast.success("Pagina tradotta eliminata con successo");
       }
+      
     } catch (error) {
       console.error("Error in confirmDelete:", error);
       toast.error("Errore nell'eliminazione della pagina");
     } finally {
       setShowDeleteDialog(false);
       setDeletingPage(null);
+      setIsDeleting(false);
     }
   };
 
@@ -198,6 +204,29 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
               {lang.name}
             </Button>
           ))}
+        </div>
+      </div>
+
+      {/* Language info banner */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div className="flex items-start">
+          <div className="flex-shrink-0 mt-0.5">
+            <AlertTriangle className="h-5 w-5 text-blue-500" />
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-blue-800">
+              {currentLanguage === 'it' 
+                ? "Stai visualizzando le pagine in italiano (lingua principale)" 
+                : `Stai visualizzando le pagine in ${getLanguageLabel(currentLanguage)}`
+              }
+            </h3>
+            <div className="mt-2 text-sm text-blue-700">
+              {currentLanguage === 'it' 
+                ? "Quando elimini una pagina in italiano, verranno eliminate anche tutte le sue traduzioni."
+                : "Le pagine in questa lingua sono traduzioni. Eliminando una pagina italiana verranno eliminate anche tutte le sue traduzioni."
+              }
+            </div>
+          </div>
         </div>
       </div>
 
@@ -256,6 +285,7 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
                       size="icon"
                       className="text-red-600 hover:text-red-700"
                       onClick={() => handleDelete(page)}
+                      disabled={isDeleting}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -272,9 +302,10 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
           <AlertDialogHeader>
             <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
             <AlertDialogDescription>
-              {currentLanguage === 'it' 
-                ? "Sei sicuro di voler eliminare questa pagina e tutte le sue traduzioni? L'azione non può essere annullata."
-                : "Sei sicuro di voler eliminare questa pagina? L'azione non può essere annullata. Le pagine in italiano non verranno eliminate."}
+              {!deletingPage ? "Caricamento..." : deletingPage.path.match(/^\/[a-z]{2}\//) 
+                ? `Sei sicuro di voler eliminare questa pagina tradotta in ${getLanguageLabel(deletingPage.path.match(/^\/([a-z]{2})\//)?.[1] || '')}? L'azione non può essere annullata.`
+                : "Sei sicuro di voler eliminare questa pagina italiana e TUTTE le sue traduzioni? L'azione non può essere annullata e rimuoverà la pagina in tutte le lingue."
+              }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -282,8 +313,9 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
             <AlertDialogAction
               onClick={confirmDelete}
               className="bg-red-600 hover:bg-red-700"
+              disabled={isDeleting}
             >
-              Elimina
+              {isDeleting ? "Eliminazione in corso..." : "Elimina"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

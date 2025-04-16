@@ -54,6 +54,8 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
       
       if (isNonItalianPath) {
         // For non-Italian pages, only delete the specific page
+        console.log(`Deleting only the specified non-Italian page: ${path}`);
+        
         const { error: deleteError } = await supabase
           .from('custom_pages')
           .delete()
@@ -78,12 +80,27 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         toast.success("Pagina eliminata con successo");
       } else {
         // For Italian pages, delete all translations
+        console.log("Deleting Italian page and all its translations");
         
-        // First, find all translations that match this base path
+        // Build a comprehensive query to find all related pages
+        // This improved query will catch all translations including those with language prefixes
+        const translationPatterns = [
+          basePath,                       // Italian version (no language prefix)
+          `/en${basePath}`,               // English version
+          `/fr${basePath}`,               // French version
+          `/es${basePath}`,               // Spanish version
+          `/de${basePath}`                // German version
+        ];
+        
+        console.log("Looking for pages with these paths:", translationPatterns);
+        
+        // First, find all translations that match this base path with proper OR conditions
         const { data: translatedPages, error: findError } = await supabase
           .from('custom_pages')
-          .select('path')
-          .or(`path.eq.${basePath},path.like./??${basePath}`);
+          .select('id, path')
+          .or(
+            translationPatterns.map(p => `path.eq.${p}`).join(',')
+          );
           
         if (findError) {
           console.error("Error finding translated pages:", findError);
@@ -95,11 +112,13 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         // Delete each page individually to ensure we catch all translations
         if (translatedPages && translatedPages.length > 0) {
           for (const page of translatedPages) {
+            console.log(`Deleting page: ${page.path}`);
+            
             // Delete the page
             const { error: pageDeleteError } = await supabase
               .from('custom_pages')
               .delete()
-              .eq('path', page.path);
+              .eq('id', page.id);
               
             if (pageDeleteError) {
               console.error(`Error deleting page ${page.path}:`, pageDeleteError);
@@ -117,9 +136,13 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
               // Continue with other deletions even if one fails
             }
           }
+          
+          console.log("All pages and their translations have been deleted");
+          toast.success("Pagina e traduzioni eliminate con successo");
+        } else {
+          console.log("No pages found to delete. This is unexpected.");
+          toast.error("Nessuna pagina trovata da eliminare");
         }
-
-        toast.success("Pagina e traduzioni eliminate con successo");
       }
 
       // Retrieve updated pages after deletion
