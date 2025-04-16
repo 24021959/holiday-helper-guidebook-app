@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { EditorToolbar } from './EditorToolbar';
@@ -10,13 +10,13 @@ interface EditorProps {
 }
 
 export const Editor: React.FC<EditorProps> = ({ value, onChange }) => {
-  const [expanded, setExpanded] = useState(false);
-  const [previewMode, setPreviewMode] = useState<boolean>(false);
-  const [imageDialogOpen, setImageDialogOpen] = useState(false);
-  const [cursorPosition, setCursorPosition] = useState<number | null>(null);
-  const [selectedText, setSelectedText] = useState<{ start: number; end: number; text: string; } | null>(null);
-  const [editHistory, setEditHistory] = useState<string[]>([value]);
-  const [historyIndex, setHistoryIndex] = useState(0);
+  const [expanded, setExpanded] = React.useState(false);
+  const [previewMode, setPreviewMode] = React.useState<boolean>(false);
+  const [imageDialogOpen, setImageDialogOpen] = React.useState(false);
+  const [cursorPosition, setCursorPosition] = React.useState<number | null>(null);
+  const [selectedText, setSelectedText] = React.useState<{ start: number; end: number; text: string; } | null>(null);
+  const [editHistory, setEditHistory] = React.useState<string[]>([value]);
+  const [historyIndex, setHistoryIndex] = React.useState(0);
 
   const toggleExpanded = () => setExpanded(!expanded);
   const togglePreviewMode = () => setPreviewMode(!previewMode);
