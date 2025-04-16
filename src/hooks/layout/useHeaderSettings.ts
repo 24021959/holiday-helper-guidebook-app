@@ -21,6 +21,7 @@ export const saveHeaderSettings = async (headerData: HeaderData) => {
 
     if (headerCheckError) {
       console.error("Error checking header settings:", headerCheckError);
+      toast.error("Errore durante il controllo delle impostazioni dell'header");
       throw headerCheckError;
     }
 
@@ -35,6 +36,7 @@ export const saveHeaderSettings = async (headerData: HeaderData) => {
       
       if (updateError) {
         console.error("Error updating header settings:", updateError);
+        toast.error("Errore durante l'aggiornamento delle impostazioni dell'header");
         throw updateError;
       }
       result = data;
@@ -47,15 +49,18 @@ export const saveHeaderSettings = async (headerData: HeaderData) => {
       
       if (insertError) {
         console.error("Error inserting header settings:", insertError);
+        toast.error("Errore durante l'inserimento delle impostazioni dell'header");
         throw insertError;
       }
       result = data;
     }
     
     console.log("Header settings saved successfully:", result);
+    toast.success("Impostazioni dell'header salvate con successo");
     return result;
   } catch (error) {
     console.error("Error saving header settings:", error);
+    toast.error("Errore durante il salvataggio delle impostazioni dell'header");
     throw error;
   }
 };
@@ -69,6 +74,7 @@ export const fetchHeaderSettings = async () => {
 
     if (error) {
       console.error("Error loading header settings:", error);
+      toast.error("Errore durante il caricamento delle impostazioni dell'header");
       throw error;
     }
 
@@ -76,6 +82,7 @@ export const fetchHeaderSettings = async () => {
     return data;
   } catch (error) {
     console.error("Error fetching header settings:", error);
+    toast.error("Errore durante il recupero delle impostazioni dell'header");
     throw error;
   }
 };

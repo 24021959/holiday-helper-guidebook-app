@@ -7,11 +7,12 @@ import { FooterSettings } from "./layout/FooterSettings";
 import { LogoSettings } from "./layout/LogoSettings";
 import { EstablishmentSettings } from "./layout/EstablishmentSettings";
 import { LayoutPreview } from "./layout/LayoutPreview";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 
 export const LayoutSettings = () => {
   const { 
     form, 
+    formLoaded,
     previewHeaderColor, 
     previewFooterColor, 
     previewEstablishmentNameColor,
@@ -20,6 +21,15 @@ export const LayoutSettings = () => {
     isSuccess,
     onSubmit 
   } = useLayoutSettings();
+
+  if (!formLoaded) {
+    return (
+      <div className="p-6 flex flex-col items-center justify-center min-h-[300px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="mt-4 text-muted-foreground">Caricamento impostazioni...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -64,7 +74,10 @@ export const LayoutSettings = () => {
             disabled={isLoading}
           >
             {isLoading ? (
-              "Salvataggio in corso..."
+              <span className="flex items-center">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Salvataggio in corso...
+              </span>
             ) : isSuccess ? (
               <span className="flex items-center">
                 <CheckCircle2 className="mr-2 h-4 w-4" />

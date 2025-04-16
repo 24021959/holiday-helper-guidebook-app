@@ -1,6 +1,6 @@
 
 import { useForm } from "react-hook-form";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { saveHeaderSettings, fetchHeaderSettings } from "./layout/useHeaderSettings";
 import { saveFooterSettings, fetchFooterSettings } from "./layout/useFooterSettings";
@@ -28,17 +28,42 @@ export interface LayoutSettingsForm {
 export const useLayoutSettings = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [formLoaded, setFormLoaded] = useState(false);
 
   const form = useForm<LayoutSettingsForm>({
-    defaultValues: async () => {
+    defaultValues: {
+      logoUrl: '',
+      establishmentName: '',
+      logoPosition: 'left',
+      logoSize: 'medium',
+      themeColor: '#FFFFFF',
+      headerColor: '#FFFFFF',
+      footerColor: '#FFFFFF',
+      footerTextColor: '#555555',
+      establishmentNameColor: '#000000',
+      footerText: '',
+      showSocialLinks: false,
+      facebookUrl: '',
+      instagramUrl: '',
+      twitterUrl: '',
+      footerTextAlignment: 'left',
+      establishmentNameAlignment: 'left'
+    }
+  });
+
+  useEffect(() => {
+    const loadSettings = async () => {
       try {
-        const headerData = await fetchHeaderSettings();
-        const footerData = await fetchFooterSettings();
+        setIsLoading(true);
+        const [headerData, footerData] = await Promise.all([
+          fetchHeaderSettings(),
+          fetchFooterSettings()
+        ]);
 
         console.log("Loaded header data:", headerData);
         console.log("Loaded footer data:", footerData);
 
-        return {
+        const formValues = {
           logoUrl: headerData?.logo_url || '',
           establishmentName: headerData?.establishment_name || '',
           logoPosition: headerData?.logo_position || 'left',
@@ -56,39 +81,31 @@ export const useLayoutSettings = () => {
           footerTextAlignment: footerData?.text_alignment || 'left',
           establishmentNameAlignment: headerData?.establishment_name_alignment || 'left'
         };
+
+        console.log("Setting form values:", formValues);
+        form.reset(formValues);
+        setFormLoaded(true);
       } catch (error) {
         console.error("Error loading layout settings:", error);
         toast.error("Errore nel caricamento delle impostazioni");
-        return {
-          logoUrl: '',
-          establishmentName: '',
-          logoPosition: 'left',
-          logoSize: 'medium',
-          themeColor: '#FFFFFF',
-          headerColor: '#FFFFFF',
-          footerColor: '#FFFFFF',
-          footerTextColor: '#555555',
-          establishmentNameColor: '#000000',
-          footerText: '',
-          showSocialLinks: false,
-          facebookUrl: '',
-          instagramUrl: '',
-          twitterUrl: '',
-          footerTextAlignment: 'left',
-          establishmentNameAlignment: 'left'
-        };
+      } finally {
+        setIsLoading(false);
       }
-    }
-  });
+    };
+
+    loadSettings();
+  }, [form]);
 
   const colorPreview = useColorPreview(form.watch);
 
   const onSubmit = async (data: LayoutSettingsForm) => {
     console.log("Submitting layout settings:", data);
     setIsLoading(true);
+    setIsSuccess(false);
+    
     try {
       // Save header settings
-      const headerResult = await saveHeaderSettings({
+      const headerData = {
         logo_url: data.logoUrl,
         header_color: data.headerColor,
         establishment_name: data.establishmentName,
@@ -96,12 +113,10 @@ export const useLayoutSettings = () => {
         establishment_name_color: data.establishmentNameColor,
         logo_position: data.logoPosition,
         logo_size: data.logoSize
-      });
-      
-      console.log("Header settings saved:", headerResult);
+      };
       
       // Save footer settings
-      const footerResult = await saveFooterSettings({
+      const footerData = {
         custom_text: data.footerText,
         show_social_links: data.showSocialLinks,
         facebook_url: data.facebookUrl,
@@ -110,8 +125,15 @@ export const useLayoutSettings = () => {
         background_color: data.footerColor,
         text_color: data.footerTextColor,
         text_alignment: data.footerTextAlignment
-      });
+      };
       
+      // Use Promise.all to save both settings concurrently
+      const [headerResult, footerResult] = await Promise.all([
+        saveHeaderSettings(headerData),
+        saveFooterSettings(footerData)
+      ]);
+      
+      console.log("Header settings saved:", headerResult);
       console.log("Footer settings saved:", footerResult);
 
       setIsSuccess(true);
@@ -119,6 +141,7 @@ export const useLayoutSettings = () => {
     } catch (error) {
       console.error("Error saving layout settings:", error);
       toast.error("Errore nel salvataggio delle impostazioni");
+      setIsSuccess(false);
     } finally {
       setIsLoading(false);
     }
@@ -126,6 +149,7 @@ export const useLayoutSettings = () => {
 
   return {
     form,
+    formLoaded,
     isLoading,
     isSuccess,
     onSubmit,

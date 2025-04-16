@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface FooterValue {
   custom_text: string;
@@ -21,6 +22,7 @@ export const saveFooterSettings = async (footerValue: FooterValue) => {
 
     if (footerCheckError) {
       console.error("Error checking footer settings:", footerCheckError);
+      toast.error("Errore durante il controllo delle impostazioni del footer");
       throw footerCheckError;
     }
 
@@ -35,9 +37,11 @@ export const saveFooterSettings = async (footerValue: FooterValue) => {
       
       if (updateError) {
         console.error("Error updating footer settings:", updateError);
+        toast.error("Errore durante l'aggiornamento delle impostazioni del footer");
         throw updateError;
       }
       result = data;
+      console.log("Footer settings saved:", result);
     } else {
       console.log("Inserting new footer settings:", footerValue);
       const { data, error: insertError } = await supabase
@@ -47,15 +51,19 @@ export const saveFooterSettings = async (footerValue: FooterValue) => {
       
       if (insertError) {
         console.error("Error inserting footer settings:", insertError);
+        toast.error("Errore durante l'inserimento delle impostazioni del footer");
         throw insertError;
       }
       result = data;
+      console.log("Footer settings inserted:", result);
     }
     
     console.log("Footer settings saved successfully:", result);
+    toast.success("Impostazioni del footer salvate con successo");
     return result;
   } catch (error) {
     console.error("Error saving footer settings:", error);
+    toast.error("Errore durante il salvataggio delle impostazioni del footer");
     throw error;
   }
 };
@@ -70,6 +78,7 @@ export const fetchFooterSettings = async () => {
 
     if (error) {
       console.error("Error loading footer settings:", error);
+      toast.error("Errore durante il caricamento delle impostazioni del footer");
       throw error;
     }
 
@@ -77,6 +86,7 @@ export const fetchFooterSettings = async () => {
     return data?.value;
   } catch (error) {
     console.error("Error fetching footer settings:", error);
+    toast.error("Errore durante il recupero delle impostazioni del footer");
     throw error;
   }
 };
