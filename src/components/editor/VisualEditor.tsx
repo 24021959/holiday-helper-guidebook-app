@@ -7,7 +7,6 @@ import { useEditorState } from './hooks/useEditorState';
 import { useImageControls } from './hooks/useImageControls';
 import { useVisualEditorState } from './hooks/useVisualEditorState';
 import { EditorSection } from './EditorSection';
-import { EditorImageGallery } from './EditorImageGallery';
 import ImageInsertionDialog from '../admin/form/ImageInsertionDialog';
 import { toast } from "sonner";
 
@@ -188,20 +187,6 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         onImageDelete={handleEditorImageDelete}
       />
 
-      <EditorImageGallery 
-        images={images}
-        content={content}
-        hoveredImageIndex={hoveredImageIndex}
-        showImageControls={showImageControls}
-        onImageMouseEnter={setHoveredImageIndex}
-        onImageMouseLeave={() => showImageControls === null && setHoveredImageIndex(null)}
-        onToggleControls={(index) => setShowImageControls(showImageControls === index ? null : index)}
-        onPositionChange={handleImagePositionChange}
-        onWidthChange={handleImageWidthChange}
-        onCaptionChange={handleImageCaptionChange}
-        onDeleteImage={(index) => handleDeleteImage(index, content)}
-      />
-
       {showImageDialog && (
         <ImageInsertionDialog
           isOpen={showImageDialog}
@@ -210,13 +195,9 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         />
       )}
 
-      {showPhoneDialog && (
-        handlePhoneInsert()
-      )}
+      {showPhoneDialog && handlePhoneInsert()}
       
-      {showMapDialog && (
-        handleMapInsert()
-      )}
+      {showMapDialog && handleMapInsert()}
     </div>
   );
 };

@@ -12,7 +12,6 @@ export const useEditorPreview = (content: string, images: ImageDetail[]) => {
       // Process image JSON objects in content
       const regex = /\{\"type\":\"image\",.*?\}/g;
       let match;
-      let index = 0;
       
       while ((match = regex.exec(formatted)) !== null) {
         try {
@@ -25,13 +24,16 @@ export const useEditorPreview = (content: string, images: ImageDetail[]) => {
           
           const imageHtml = `
             <figure class="${positionClass}" style="width: ${imageData.width || '50%'}; margin-bottom: 1rem; position: relative;">
-              <span class="image-placeholder" data-image-index="${index}"></span>
+              <img 
+                src="${imageData.url}" 
+                alt="${imageData.caption || 'Image'}" 
+                class="w-full h-auto rounded-md" 
+              />
               ${imageData.caption ? `<figcaption class="text-sm text-gray-500 mt-1">${imageData.caption}</figcaption>` : ''}
             </figure>
           `;
           
           formatted = formatted.replace(match[0], imageHtml);
-          index++;
         } catch (e) {
           console.error("Failed to parse image data:", e);
         }

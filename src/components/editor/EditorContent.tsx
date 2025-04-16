@@ -136,12 +136,6 @@ export const EditorContent: React.FC<EditorContentProps> = ({
               );
             })}
           </div>
-          <div 
-            className="absolute inset-0 pointer-events-none p-4 prose max-w-none overflow-hidden"
-            dangerouslySetInnerHTML={{ __html: formattedPreview }}
-            data-no-translation="true"
-            style={{ zIndex: 5 }}
-          />
         </div>
       ) : (
         <div 
