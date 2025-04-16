@@ -43,6 +43,7 @@ export const LayoutPreview = ({
           <Footer 
             backgroundColor={previewFooterColor} 
             textColor={previewFooterTextColor}
+            textAlignment={watch('footerTextAlignment')}
           />
         </div>
       </div>

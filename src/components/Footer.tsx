@@ -6,6 +6,7 @@ import { Facebook, Instagram, Twitter } from "lucide-react";
 interface FooterProps {
   backgroundColor?: string;
   textColor?: string;
+  textAlignment?: "left" | "center" | "right";
 }
 
 interface FooterSettings {
@@ -32,7 +33,8 @@ const defaultFooterSettings: FooterSettings = {
 
 const Footer: React.FC<FooterProps> = ({ 
   backgroundColor,
-  textColor
+  textColor,
+  textAlignment
 }) => {
   const [settings, setSettings] = useState<FooterSettings>(defaultFooterSettings);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,7 +72,9 @@ const Footer: React.FC<FooterProps> = ({
 
   // Helper function to get text alignment class
   const getTextAlignClass = () => {
-    switch (settings.text_alignment) {
+    // Prioritize prop over stored settings
+    const alignment = textAlignment || settings.text_alignment || defaultFooterSettings.text_alignment;
+    switch (alignment) {
       case "center": return "text-center";
       case "right": return "text-right";
       default: return "text-left";
