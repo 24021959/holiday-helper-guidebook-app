@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { uploadImage } from "@/integrations/supabase/storage";
 import { toast } from "sonner";
 import { PageData } from "@/types/page.types";
 import { ImageItem } from "@/types/image.types";
@@ -17,14 +16,29 @@ interface UseAdminPageFormProps {
 
 export const useAdminPageForm = ({ pageToEdit, onEditComplete }: UseAdminPageFormProps) => {
   const [uploadedImage, setUploadedImage] = useState<string | null>(pageToEdit?.imageUrl || null);
-  const [pageImages, setPageImages] = useState<ImageItem[]>(pageToEdit?.pageImages || []);
+  const [pageImages, setPageImages] = useState<ImageItem[]>(
+    pageToEdit?.pageImages?.map(img => ({
+      url: img.url,
+      position: img.position,
+      caption: img.caption || "",
+      type: "image" as const,
+      width: "100%" as const
+    })) || []
+  );
+  
   const [pageContent, setPageContent] = useState({
     title: pageToEdit?.title || "",
     content: pageToEdit?.content || "",
     pageType: (pageToEdit?.is_parent ? "parent" : pageToEdit?.isSubmenu ? "submenu" : "normal") as PageType,
     parentPath: pageToEdit?.parentPath || "",
     icon: pageToEdit?.icon || "FileText",
-    images: pageToEdit?.pageImages || [] 
+    images: pageToEdit?.pageImages?.map(img => ({
+      url: img.url,
+      position: img.position,
+      caption: img.caption || "",
+      type: "image" as const,
+      width: "100%" as const
+    })) || [] 
   });
 
   const { handlePageCreation, isCreating, isTranslating, handleManualTranslation } = usePageCreation({
@@ -56,6 +70,14 @@ export const useAdminPageForm = ({ pageToEdit, onEditComplete }: UseAdminPageFor
         ? `${values.parentPath}/${sanitizedTitle}`
         : `/${sanitizedTitle}`;
       
+      const formattedImages: ImageItem[] = pageContent.images.map(img => ({
+        url: img.url,
+        position: img.position,
+        caption: img.caption || "",
+        type: "image" as const,
+        width: "100%" as const
+      }));
+      
       await handlePageCreation(
         {
           title: values.title,
@@ -65,7 +87,7 @@ export const useAdminPageForm = ({ pageToEdit, onEditComplete }: UseAdminPageFor
           parentPath: values.parentPath
         },
         uploadedImage,
-        pageContent.images,
+        formattedImages,
         () => {
           toast.success(pageToEdit ? "Pagina aggiornata con successo" : "Pagina creata con successo");
           onEditComplete();

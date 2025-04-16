@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -30,6 +29,12 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
     try {
       setIsCreating(true);
       
+      // Add translation safeguard
+      const originalNoTranslationValue = document.body.getAttribute('data-no-translation');
+      
+      // CRITICAL: Force disable translations during page creation
+      document.body.setAttribute('data-no-translation', 'true');
+      
       const sanitizedTitle = values.title
         .toLowerCase()
         .replace(/[^\w\s]/gi, '')
@@ -38,9 +43,6 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
       let finalPath = values.pageType === "submenu" && values.parentPath
         ? `${values.parentPath}/${sanitizedTitle}`
         : `/${sanitizedTitle}`;
-
-      // CRITICAL: Force disable translations during page creation
-      document.body.setAttribute('data-no-translation', 'true');
       
       // Save only Italian version - no automatic translation
       const pageId = await saveNewPage(
@@ -72,6 +74,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
       toast.error("Errore nel salvare la pagina");
     } finally {
       setIsCreating(false);
+      // Keep translation disabled to prevent any automatic translation
       document.body.setAttribute('data-no-translation', 'true');
     }
   };

@@ -76,7 +76,7 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
       return;
     }
 
-    // Handle Italian language case (fixed type comparison)
+    // Handle Italian language case
     if (language === "it") {
       setTranslatedText(text);
       return;

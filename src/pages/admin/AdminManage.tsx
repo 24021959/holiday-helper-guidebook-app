@@ -23,12 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import EditPageForm from "@/components/admin/EditPageForm";
 import { usePageCreation } from "@/hooks/usePageCreation";
-
-interface AdminManageProps {
-  onEditPage: (page: PageData) => void;
-}
 
 const languages = [
   { code: 'it', name: 'Italiano', flag: '🇮🇹' },
@@ -38,12 +33,10 @@ const languages = [
   { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
 ];
 
-const AdminManage = ({ onEditPage }: AdminManageProps) => {
+const AdminManage = () => {
   const [pages, setPages] = useState<PageData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedPage, setSelectedPage] = useState<PageData | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
   const [deletingPage, setDeletingPage] = useState<PageData | null>(null);
   const [currentLanguage, setCurrentLanguage] = useState('it');
   const [isDeleting, setIsDeleting] = useState(false);
@@ -97,9 +90,9 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
     }
   };
 
-  const extractImagesFromContent = (content: string): { url: string; position: "left" | "center" | "right" | "full"; caption?: string; }[] => {
+  const extractImagesFromContent = (content: string): { url: string; position: "left" | "center" | "right" | "full"; caption?: string; type: "image"; width: "100%" }[] => {
     try {
-      const images: { url: string; position: "left" | "center" | "right" | "full"; caption?: string; }[] = [];
+      const images: { url: string; position: "left" | "center" | "right" | "full"; caption?: string; type: "image"; width: "100%" }[] = [];
       if (!content.includes('<!-- IMAGES -->')) return [];
       
       const imagesSection = content.split('<!-- IMAGES -->')[1];
@@ -115,7 +108,9 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
             images.push({
               url: img.url,
               position: img.position || 'center',
-              caption: img.caption || ''
+              caption: img.caption || '',
+              type: 'image',
+              width: '100%'
             });
           }
         } catch (e) {
@@ -136,10 +131,6 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
 
   const handleView = (page: PageData) => {
     window.open(`/preview${page.path}`, '_blank');
-  };
-
-  const handleEdit = (page: PageData) => {
-    onEditPage(page);
   };
 
   const handleDelete = async (page: PageData) => {
@@ -276,13 +267,6 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => handleEdit(page)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
                       className="text-red-600 hover:text-red-700"
                       onClick={() => handleDelete(page)}
                       disabled={isDeleting}
@@ -320,30 +304,6 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {showEditDialog && selectedPage && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="relative bg-white rounded-lg w-full max-w-4xl p-6 max-h-[90vh] overflow-y-auto">
-            <Button
-              variant="ghost"
-              className="absolute right-4 top-4"
-              onClick={() => setShowEditDialog(false)}
-            >
-              ✕
-            </Button>
-            <EditPageForm
-              selectedPage={selectedPage}
-              parentPages={pages.filter(p => p.is_parent)}
-              onPageUpdated={(updatedPages) => {
-                fetchPages(currentLanguage);
-                setShowEditDialog(false);
-              }}
-              keywordToIconMap={{}}
-              allPages={pages}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 };
