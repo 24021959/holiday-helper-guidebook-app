@@ -274,7 +274,7 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
       
       const targetLangs: Language[] = ['en', 'fr', 'es', 'de'];
       
-      toast.info("Avvio traduzione in tutte le lingue...");
+      toast.info("Avvio traduzione e sincronizzazione in tutte le lingue...");
       
       const translations = await translateSequential(
         contentToTranslate,
@@ -305,7 +305,8 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
           icon: selectedIcon,
           is_submenu: pageType === "submenu",
           parent_path: pageType === "submenu" ? parentPath.replace(/^\/[a-z]{2}/, `/${lang}`) : null,
-          published: true
+          published: true,
+          is_parent: pageType === "parent"
         };
         
         if (existingPage) {
@@ -324,8 +325,10 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
             .from('menu_icons')
             .update({
               label: translation.title,
+              icon: selectedIcon,
               parent_path: pageType === "submenu" ? parentPath.replace(/^\/[a-z]{2}/, `/${lang}`) : null,
-              is_submenu: pageType === "submenu"
+              is_submenu: pageType === "submenu",
+              is_parent: pageType === "parent"
             })
             .eq('path', targetPath);
             
@@ -357,6 +360,7 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
               bg_color: "bg-blue-200",
               parent_path: pageType === "submenu" ? parentPath.replace(/^\/[a-z]{2}/, `/${lang}`) : null,
               is_submenu: pageType === "submenu",
+              is_parent: pageType === "parent",
               published: true
             });
             
@@ -373,7 +377,7 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
         }));
       }
       
-      toast.success("Traduzioni completate con successo");
+      toast.success("Traduzioni completate e sincronizzate con successo");
       
       const { data: updatedPagesData, error: fetchError } = await supabase
         .from('custom_pages')
@@ -412,7 +416,7 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
       
     } catch (error) {
       console.error("Errore nella traduzione:", error);
-      toast.error("Errore nella traduzione delle pagine");
+      toast.error("Errore nella traduzione e sincronizzazione delle pagine");
     } finally {
       setIsTranslating(false);
     }
@@ -427,13 +431,16 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
       const isSubmenu = pageType === "submenu";
       const isParent = pageType === "parent";
       
+      const isItalian = !selectedPage.path.match(/^\/[a-z]{2}\//);
+      
       const updateData = {
         title: values.title,
         content: formattedContent,
         image_url: uploadedImage,
         icon: selectedIcon,
         is_submenu: isSubmenu,
-        parent_path: isSubmenu ? parentPath : null
+        parent_path: isSubmenu ? parentPath : null,
+        is_parent: isParent
       };
       
       const { error: pageError } = await supabase
@@ -450,7 +457,8 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
         icon: selectedIcon,
         bg_color: "bg-blue-200",
         parent_path: isSubmenu ? parentPath : null,
-        is_submenu: isSubmenu
+        is_submenu: isSubmenu,
+        is_parent: isParent
       };
       
       const { error: iconError } = await supabase
@@ -460,6 +468,11 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
       
       if (iconError) {
         console.error("Errore nell'aggiornamento dell'icona:", iconError);
+      }
+      
+      if (isItalian) {
+        toast.info("Pagina italiana aggiornata. Avvio sincronizzazione automatica delle traduzioni...");
+        await handleTranslateToAllLanguages();
       }
       
       const { data: pagesData, error: fetchError } = await supabase

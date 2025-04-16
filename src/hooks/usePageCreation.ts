@@ -43,24 +43,46 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
 
   const deletePageAndTranslations = async (path: string) => {
     try {
+      console.log(`Attempting to delete page and all translations for path: ${path}`);
+      // Normalizza il percorso rimuovendo il prefisso della lingua se presente
       const basePath = path.replace(/^\/[a-z]{2}\//, '/');
+      console.log(`Normalized path for deletion: ${basePath}`);
       
-      const { error: deleteError } = await supabase
+      // Costruisci una condizione OR per trovare sia la pagina principale che tutte le traduzioni
+      const pathCondition = `path.eq.${basePath},path.like./??${basePath}`;
+      console.log(`Path condition for deletion: ${pathCondition}`);
+      
+      // Elimina tutte le pagine correlate dalla tabella custom_pages
+      const { error: deleteError, data: deletedPages } = await supabase
         .from('custom_pages')
         .delete()
-        .or(`path.eq.${basePath},path.like./en${basePath},path.like./fr${basePath},path.like./es${basePath},path.like./de${basePath}`);
+        .or(pathCondition)
+        .select();
 
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        console.error("Error deleting pages:", deleteError);
+        throw deleteError;
+      }
 
-      const { error: menuError } = await supabase
+      console.log(`Deleted ${deletedPages?.length || 0} pages from custom_pages`);
+
+      // Elimina tutte le icone di menu correlate
+      const { error: menuError, data: deletedMenuItems } = await supabase
         .from('menu_icons')
         .delete()
-        .or(`path.eq.${basePath},path.like./en${basePath},path.like./fr${basePath},path.like./es${basePath},path.like./de${basePath}`);
+        .or(pathCondition)
+        .select();
 
-      if (menuError) throw menuError;
+      if (menuError) {
+        console.error("Error deleting menu icons:", menuError);
+        throw menuError;
+      }
+
+      console.log(`Deleted ${deletedMenuItems?.length || 0} menu icons from menu_icons`);
 
       toast.success("Pagina e traduzioni eliminate con successo");
 
+      // Recupera le pagine aggiornate dopo l'eliminazione
       const { data: updatedPages, error: fetchError } = await supabase
         .from('custom_pages')
         .select('*')

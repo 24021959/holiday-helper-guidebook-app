@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageData } from "@/types/page.types";
@@ -24,6 +23,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import EditPageForm from "@/components/admin/EditPageForm";
+import { usePageCreation } from "@/hooks/usePageCreation";
 
 interface AdminManageProps {
   onEditPage: (page: PageData) => void;
@@ -45,6 +45,7 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [deletingPage, setDeletingPage] = useState<PageData | null>(null);
   const [currentLanguage, setCurrentLanguage] = useState('it');
+  const { deletePageAndTranslations } = usePageCreation({ onPageCreated: setPages });
 
   const fetchPages = async (langCode: string) => {
     try {
@@ -52,13 +53,11 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
       let query = supabase.from('custom_pages').select('*');
       
       if (langCode === 'it') {
-        // For Italian, filter out pages that have language prefix
         query = query.not('path', 'like', '/en/%')
                      .not('path', 'like', '/fr/%')
                      .not('path', 'like', '/es/%')
                      .not('path', 'like', '/de/%');
       } else {
-        // For other languages, get pages with that language prefix
         query = query.like('path', `/${langCode}/%`);
       }
 
@@ -115,71 +114,12 @@ const AdminManage = ({ onEditPage }: AdminManageProps) => {
     if (!deletingPage) return;
 
     try {
-      // If it's an Italian page, delete all related translations
-      if (currentLanguage === 'it') {
-        const normalizedPath = deletingPage.path;
-        
-        // Get all translations of this page
-        const { data: allTranslations, error: translationsError } = await supabase
-          .from('custom_pages')
-          .select('id, path')
-          .or(`path.eq.${normalizedPath}, path.like./??${normalizedPath}`);
-        
-        if (translationsError) throw translationsError;
-        
-        console.log("Found translations to delete:", allTranslations);
-        
-        // Delete all translations from custom_pages and menu_icons
-        if (allTranslations && allTranslations.length > 0) {
-          const translationIds = allTranslations.map(p => p.id);
-          const translationPaths = allTranslations.map(p => p.path);
-          
-          const { error: bulkDeleteError } = await supabase
-            .from('custom_pages')
-            .delete()
-            .in('id', translationIds);
-          
-          if (bulkDeleteError) throw bulkDeleteError;
-          
-          // Delete all corresponding menu entries
-          for (const path of translationPaths) {
-            const { error: menuError } = await supabase
-              .from('menu_icons')
-              .delete()
-              .eq('path', path);
-            
-            if (menuError) {
-              console.error(`Error deleting menu icon for path ${path}:`, menuError);
-              throw menuError;
-            }
-          }
-          
-          // Refresh the page list after deletion
-          await fetchPages(currentLanguage);
-          toast.success("Pagina e tutte le sue traduzioni eliminate con successo");
-        }
-      } else {
-        // For non-Italian pages, just delete the specific page
-        const { error: pageError } = await supabase
-          .from('custom_pages')
-          .delete()
-          .eq('id', deletingPage.id);
-
-        if (pageError) throw pageError;
-
-        const { error: menuError } = await supabase
-          .from('menu_icons')
-          .delete()
-          .eq('path', deletingPage.path);
-
-        if (menuError) throw menuError;
-        
-        // Refresh the page list after deletion
-        await fetchPages(currentLanguage);
-        toast.success("Pagina eliminata con successo");
+      const updatedPages = await deletePageAndTranslations(deletingPage.path);
+      if (updatedPages) {
+        setPages(updatedPages as PageData[]);
       }
     } catch (error) {
-      console.error("Error deleting page:", error);
+      console.error("Error in confirmDelete:", error);
       toast.error("Errore nell'eliminazione della pagina");
     } finally {
       setShowDeleteDialog(false);
