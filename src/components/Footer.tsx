@@ -42,26 +42,53 @@ const Footer: React.FC<FooterProps> = ({
   useEffect(() => {
     const fetchFooterSettings = async () => {
       try {
+        // First try localStorage for immediate display
+        let localSettings = null;
+        try {
+          const savedFooterSettings = localStorage.getItem("footerSettings");
+          if (savedFooterSettings) {
+            localSettings = JSON.parse(savedFooterSettings);
+            setSettings(localSettings);
+            console.log("Using cached footer settings:", localSettings);
+          }
+        } catch (err) {
+          console.error("Error parsing footer settings from localStorage:", err);
+        }
+        
+        // Then try to get from database
         const { data, error } = await supabase
           .from('site_settings')
           .select('value')
           .eq('key', 'footer_settings')
-          .single();
+          .maybeSingle();
 
         if (error) {
           if (error.code !== 'PGRST116') { // Not found error
             console.error('Error loading footer settings:', error);
           }
-          // If settings not found, use defaults
-          setSettings(defaultFooterSettings);
+          
+          // If we don't have local settings, use defaults
+          if (!localSettings) {
+            setSettings(defaultFooterSettings);
+          }
         } else if (data && data.value) {
-          setSettings(data.value as FooterSettings);
-        } else {
+          const dbSettings = data.value as FooterSettings;
+          setSettings(dbSettings);
+          
+          // Update localStorage with latest from DB
+          try {
+            localStorage.setItem("footerSettings", JSON.stringify(dbSettings));
+          } catch (e) {
+            console.warn("Could not cache footer settings in localStorage:", e);
+          }
+        } else if (!localSettings) {
           setSettings(defaultFooterSettings);
         }
       } catch (error) {
-        console.error('Error:', error);
-        setSettings(defaultFooterSettings);
+        console.error('Error fetching footer settings:', error);
+        if (!localSettings) {
+          setSettings(defaultFooterSettings);
+        }
       } finally {
         setIsLoading(false);
       }

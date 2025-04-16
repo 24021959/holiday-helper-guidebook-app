@@ -24,17 +24,16 @@ export const useHeaderSettings = () => {
     
     try {
       // First check localStorage as immediate fallback
-      const savedHeaderSettings = localStorage.getItem("headerSettings");
       let localSettings = null;
-      
-      if (savedHeaderSettings) {
-        try {
+      try {
+        const savedHeaderSettings = localStorage.getItem("headerSettings");
+        if (savedHeaderSettings) {
           localSettings = JSON.parse(savedHeaderSettings);
           setHeaderSettings(localSettings);
           console.log("Using cached header settings:", localSettings);
-        } catch (err) {
-          console.error("Error parsing settings from localStorage:", err);
         }
+      } catch (err) {
+        console.error("Error parsing settings from localStorage:", err);
       }
       
       // Then try to fetch from Supabase
@@ -68,19 +67,31 @@ export const useHeaderSettings = () => {
         setHeaderSettings(newSettings);
         
         // Save in localStorage as backup
-        localStorage.setItem("headerSettings", JSON.stringify(newSettings));
-        console.log("Updated header settings from database:", newSettings);
+        try {
+          localStorage.setItem("headerSettings", JSON.stringify(newSettings));
+          console.log("Updated header settings from database:", newSettings);
+        } catch (e) {
+          console.warn("Could not cache settings in localStorage:", e);
+        }
       } else if (!localSettings) {
-        // No data found and no local settings
-        console.log("No header settings found");
-        setHeaderSettings({
+        // No data found and no local settings, set defaults
+        console.log("No header settings found, using defaults");
+        const defaultSettings = {
           headerColor: "bg-white",
           establishmentName: "Locanda dell'Angelo",
           logoPosition: "left",
           logoSize: "medium",
           establishmentNameAlignment: "left",
           establishmentNameColor: "#000000"
-        });
+        };
+        setHeaderSettings(defaultSettings);
+        
+        // Try to save defaults to localStorage
+        try {
+          localStorage.setItem("headerSettings", JSON.stringify(defaultSettings));
+        } catch (e) {
+          console.warn("Could not cache settings in localStorage:", e);
+        }
       }
     } catch (error) {
       console.error("Error loading header settings:", error);

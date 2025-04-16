@@ -1,8 +1,9 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Table } from "@/types/database.types";
 
-interface HeaderData {
+export interface HeaderData {
   logo_url: string | null;
   header_color: string;
   establishment_name: string;
@@ -12,8 +13,16 @@ interface HeaderData {
   logo_size: "small" | "medium" | "large";
 }
 
-export const saveHeaderSettings = async (headerData: HeaderData) => {
+/**
+ * Saves header settings to the database
+ * @param headerData The header settings to save
+ * @returns The saved header settings
+ */
+export const saveHeaderSettings = async (headerData: HeaderData): Promise<Table["header_settings"] | null> => {
   try {
+    console.log("Attempting to save header settings:", headerData);
+    
+    // Check if header settings already exist
     const { data: existingHeaderData, error: headerCheckError } = await supabase
       .from('header_settings')
       .select('*')
@@ -26,11 +35,23 @@ export const saveHeaderSettings = async (headerData: HeaderData) => {
     }
 
     let result;
+    
+    // Upsert pattern: If data exists, update it; otherwise, insert new record
     if (existingHeaderData && existingHeaderData.length > 0) {
-      console.log("Updating existing header settings:", headerData);
+      console.log("Updating existing header settings with ID:", existingHeaderData[0].id);
+      
       const { data, error: updateError } = await supabase
         .from('header_settings')
-        .update(headerData)
+        .update({
+          logo_url: headerData.logo_url,
+          header_color: headerData.header_color,
+          establishment_name: headerData.establishment_name,
+          establishment_name_alignment: headerData.establishment_name_alignment,
+          establishment_name_color: headerData.establishment_name_color,
+          logo_position: headerData.logo_position,
+          logo_size: headerData.logo_size,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', existingHeaderData[0].id)
         .select();
       
@@ -39,12 +60,23 @@ export const saveHeaderSettings = async (headerData: HeaderData) => {
         toast.error("Errore durante l'aggiornamento delle impostazioni dell'header");
         throw updateError;
       }
+      
       result = data;
+      console.log("Header settings updated successfully:", result);
     } else {
-      console.log("Inserting new header settings:", headerData);
+      console.log("No existing header settings found, inserting new record");
+      
       const { data, error: insertError } = await supabase
         .from('header_settings')
-        .insert(headerData)
+        .insert({
+          logo_url: headerData.logo_url,
+          header_color: headerData.header_color,
+          establishment_name: headerData.establishment_name,
+          establishment_name_alignment: headerData.establishment_name_alignment,
+          establishment_name_color: headerData.establishment_name_color,
+          logo_position: headerData.logo_position,
+          logo_size: headerData.logo_size
+        })
         .select();
       
       if (insertError) {
@@ -52,12 +84,19 @@ export const saveHeaderSettings = async (headerData: HeaderData) => {
         toast.error("Errore durante l'inserimento delle impostazioni dell'header");
         throw insertError;
       }
+      
       result = data;
+      console.log("New header settings inserted successfully:", result);
     }
     
-    console.log("Header settings saved successfully:", result);
-    toast.success("Impostazioni dell'header salvate con successo");
-    return result;
+    // Cache in localStorage as backup
+    try {
+      localStorage.setItem("headerSettings", JSON.stringify(headerData));
+    } catch (e) {
+      console.warn("Could not cache header settings in localStorage:", e);
+    }
+    
+    return result?.length ? result[0] : null;
   } catch (error) {
     console.error("Error saving header settings:", error);
     toast.error("Errore durante il salvataggio delle impostazioni dell'header");
@@ -65,11 +104,18 @@ export const saveHeaderSettings = async (headerData: HeaderData) => {
   }
 };
 
-export const fetchHeaderSettings = async () => {
+/**
+ * Fetches header settings from the database
+ * @returns The header settings
+ */
+export const fetchHeaderSettings = async (): Promise<Table["header_settings"] | null> => {
   try {
+    console.log("Fetching header settings from database");
+    
     const { data, error } = await supabase
       .from('header_settings')
       .select('*')
+      .limit(1)
       .maybeSingle();
 
     if (error) {
@@ -78,7 +124,27 @@ export const fetchHeaderSettings = async () => {
       throw error;
     }
 
-    console.log("Fetched header settings:", data);
+    if (data) {
+      console.log("Header settings fetched successfully:", data);
+      
+      // Cache in localStorage as backup
+      try {
+        localStorage.setItem("headerSettings", JSON.stringify({
+          logoUrl: data.logo_url,
+          headerColor: data.header_color,
+          establishmentName: data.establishment_name,
+          logoPosition: data.logo_position,
+          logoSize: data.logo_size,
+          establishmentNameAlignment: data.establishment_name_alignment,
+          establishmentNameColor: data.establishment_name_color
+        }));
+      } catch (e) {
+        console.warn("Could not cache header settings in localStorage:", e);
+      }
+    } else {
+      console.log("No header settings found in database");
+    }
+
     return data;
   } catch (error) {
     console.error("Error fetching header settings:", error);
