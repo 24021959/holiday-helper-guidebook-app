@@ -11,12 +11,14 @@ import { ImageDetail } from "@/types/image.types";
 import { useToast } from "@/hooks/use-toast";
 import { usePageCreation } from "@/hooks/usePageCreation";
 import { PageType } from "@/types/form.types";
+import { PageIconSection } from "@/components/admin/form/PageIconSection";
 
 const PageCreator = () => {
   const [pageTitle, setPageTitle] = useState<string>("");
   const [pageContent, setPageContent] = useState<string>("");
   const [pageImages, setPageImages] = useState<ImageDetail[]>([]);
   const [pageType, setPageType] = useState<PageType>("normal");
+  const [icon, setIcon] = useState<string>("FileText");
   
   const { toast } = useToast();
   const { handlePageCreation, isCreating } = usePageCreation({
@@ -42,7 +44,7 @@ const PageCreator = () => {
       {
         title: pageTitle,
         content: pageContent,
-        icon: "FileText",
+        icon: icon,
         pageType: pageType,
         parentPath: "",
       },
@@ -52,6 +54,7 @@ const PageCreator = () => {
         setPageTitle("");
         setPageContent("");
         setPageImages([]);
+        setIcon("FileText");
       }
     );
   };
@@ -104,6 +107,13 @@ const PageCreator = () => {
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
+            </div>
+
+            <div>
+              <PageIconSection
+                icon={icon}
+                setIcon={setIcon}
+              />
             </div>
 
             <div>
