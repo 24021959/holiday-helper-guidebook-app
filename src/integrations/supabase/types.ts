@@ -230,6 +230,7 @@ export type Database = {
           created_at: string | null
           establishment_name: string | null
           establishment_name_alignment: string
+          establishment_name_color: string | null
           header_color: string | null
           id: number
           logo_position: string | null
@@ -241,6 +242,7 @@ export type Database = {
           created_at?: string | null
           establishment_name?: string | null
           establishment_name_alignment?: string
+          establishment_name_color?: string | null
           header_color?: string | null
           id?: number
           logo_position?: string | null
@@ -252,6 +254,7 @@ export type Database = {
           created_at?: string | null
           establishment_name?: string | null
           establishment_name_alignment?: string
+          establishment_name_color?: string | null
           header_color?: string | null
           id?: number
           logo_position?: string | null

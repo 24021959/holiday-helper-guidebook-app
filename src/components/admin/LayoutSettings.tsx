@@ -1,25 +1,17 @@
-
-import React, { useState, useEffect } from "react";
-import { 
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl 
-} from "@/components/ui/form";
+import React from "react";
+import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { HeaderSettings } from "@/hooks/useHeaderSettings";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { ThemeColorPicker } from "./layout/ThemeColorPicker";
-import { LogoSettings } from "./layout/LogoSettings";
-import { FooterSettings } from "./layout/FooterSettings";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlignLeft, AlignCenter, AlignRight } from "lucide-react";
+import { FooterSettings } from "./layout/FooterSettings";
+import { LogoSettings } from "./layout/LogoSettings";
 
 export interface LayoutSettingsForm extends HeaderSettings {
   footerText: string;
@@ -36,9 +28,9 @@ export interface LayoutSettingsForm extends HeaderSettings {
 }
 
 export const LayoutSettings = () => {
-  const [previewHeaderColor, setPreviewHeaderColor] = useState("#FFFFFF");
-  const [previewFooterColor, setPreviewFooterColor] = useState("#FFFFFF");
-  const [previewEstablishmentNameColor, setPreviewEstablishmentNameColor] = useState("#000000");
+  const [previewHeaderColor, setPreviewHeaderColor] = React.useState("#FFFFFF");
+  const [previewFooterColor, setPreviewFooterColor] = React.useState("#FFFFFF");
+  const [previewEstablishmentNameColor, setPreviewEstablishmentNameColor] = React.useState("#000000");
 
   const form = useForm<LayoutSettingsForm>({
     defaultValues: async () => {
@@ -78,13 +70,13 @@ export const LayoutSettings = () => {
     }
   });
 
-  // Update previews in real-time when form values change
-  useEffect(() => {
+  // Effect to update previews in real-time
+  React.useEffect(() => {
     setPreviewHeaderColor(form.watch('headerColor'));
     setPreviewFooterColor(form.watch('footerColor'));
     setPreviewEstablishmentNameColor(form.watch('establishmentNameColor'));
   }, [
-    form.watch('headerColor'), 
+    form.watch('headerColor'),
     form.watch('footerColor'),
     form.watch('establishmentNameColor')
   ]);
@@ -134,59 +126,20 @@ export const LayoutSettings = () => {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <div className="space-y-4">
-            <div>
-              <FormField
-                control={form.control}
-                name="establishmentName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome Azienda</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Inserisci il nome della tua azienda" {...field} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <div>
-              <FormField
-                control={form.control}
-                name="establishmentNameAlignment"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Allineamento Nome Azienda</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="left">
-                          <span className="flex items-center gap-2">
-                            <AlignLeft className="w-4 h-4" />
-                            Sinistra
-                          </span>
-                        </SelectItem>
-                        <SelectItem value="center">
-                          <span className="flex items-center gap-2">
-                            <AlignCenter className="w-4 h-4" />
-                            Centro
-                          </span>
-                        </SelectItem>
-                        <SelectItem value="right">
-                          <span className="flex items-center gap-2">
-                            <AlignRight className="w-4 h-4" />
-                            Destra
-                          </span>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="establishmentName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome Azienda</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Inserisci il nome della tua azienda" {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
-            <div>
+            <div className="space-y-4">
               <FormField
                 control={form.control}
                 name="establishmentNameColor"
@@ -200,6 +153,7 @@ export const LayoutSettings = () => {
                         value={field.value}
                         onChange={(e) => {
                           field.onChange(e.target.value);
+                          setPreviewEstablishmentNameColor(e.target.value);
                         }}
                       />
                     </FormControl>
@@ -207,6 +161,41 @@ export const LayoutSettings = () => {
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="establishmentNameAlignment"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Allineamento Nome Azienda</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="left">
+                        <span className="flex items-center gap-2">
+                          <AlignLeft className="w-4 h-4" />
+                          Sinistra
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="center">
+                        <span className="flex items-center gap-2">
+                          <AlignCenter className="w-4 h-4" />
+                          Centro
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="right">
+                        <span className="flex items-center gap-2">
+                          <AlignRight className="w-4 h-4" />
+                          Destra
+                        </span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
           </div>
 
           <FormField

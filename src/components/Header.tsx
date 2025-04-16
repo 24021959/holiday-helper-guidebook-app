@@ -1,4 +1,3 @@
-
 import React from "react";
 
 interface HeaderProps {
@@ -57,13 +56,12 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <div
       className={`w-full py-5 px-4 shadow-md relative overflow-hidden rounded-xl`}
-      style={
-        backgroundImage
+      style={{
+        ...(backgroundImage
           ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: "cover", backgroundPosition: "center" }
-          : { backgroundColor }
-      }
+          : { backgroundColor })
+      }}
     >
-      {/* Decorative elements (only for colored headers, not for white background) */}
       {backgroundColor !== "bg-white" && backgroundColor !== "#FFFFFF" && (
         <div className="absolute top-0 left-0 w-full h-full opacity-20">
           <div className="absolute top-6 left-6 w-16 h-16 rounded-full bg-white"></div>
@@ -72,9 +70,7 @@ const Header: React.FC<HeaderProps> = ({
         </div>
       )}
       
-      {/* Logo and Title - responsive layout */}
       <div className={`relative z-10 flex ${layoutClass}`}>
-        {/* Logo - only show if provided */}
         {logoUrl && (
           <div className="flex-shrink-0 mb-2 sm:mb-0">
             <img 
@@ -85,12 +81,11 @@ const Header: React.FC<HeaderProps> = ({
           </div>
         )}
         
-        {/* Title - only show if provided */}
         {establishmentName && (
           <div className={`${nameMarginClass} w-full`}>
             <h1 
               className={`text-xl md:text-2xl font-bold ${getTextAlignmentClass()}`}
-              style={{ color: establishmentNameColor }}
+              style={{ color: establishmentNameColor || '#000000' }}
             >
               {establishmentName}
             </h1>
