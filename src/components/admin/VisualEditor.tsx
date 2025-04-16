@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useEditorContent } from '@/components/editor/hooks/useEditorContent';
 import { useEditorPreview } from '@/components/editor/hooks/useEditorPreview';
@@ -38,6 +39,9 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const [phoneLabel, setPhoneLabel] = useState('');
   const [mapUrl, setMapUrl] = useState('');
   const [mapLabel, setMapLabel] = useState('');
+  const [showImageDialog, setShowImageDialog] = useState(false);
+  const [showPhoneDialog, setShowPhoneDialog] = useState(false);
+  const [showMapDialog, setShowMapDialog] = useState(false);
 
   const {
     cursorPosition,
@@ -56,12 +60,68 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     updateHistory
   } = useEditorContent(content, onChange);
 
-  const handleInsertPhone = (phone: string, label: string) => {
-    originalHandleInsertPhone();
+  const {
+    editMode,
+    isFullscreen,
+    toggleEditMode,
+    toggleFullscreen
+  } = useEditorState();
+
+  const {
+    hoveredImageIndex,
+    setHoveredImageIndex,
+    showImageControls,
+    setShowImageControls,
+    handleImagePositionChange,
+    handleImageWidthChange,
+    handleImageCaptionChange,
+    handleDeleteImage
+  } = useImageControls(images, onImageAdd, onChange);
+
+  const { formattedPreview } = useEditorPreview(content, images);
+
+  const handleTextareaSelect = () => {
+    const textarea = document.querySelector('textarea');
+    if (textarea) {
+      setCursorPosition(textarea.selectionStart);
+      
+      if (textarea.selectionStart !== textarea.selectionEnd) {
+        setSelectedText({
+          start: textarea.selectionStart,
+          end: textarea.selectionEnd,
+          text: textarea.value.substring(
+            textarea.selectionStart,
+            textarea.selectionEnd
+          )
+        });
+      } else {
+        setSelectedText(null);
+      }
+    }
   };
 
-  const handleInsertMap = (url: string, label: string) => {
-    originalHandleInsertMap();
+  const handleOpenImageDialog = () => {
+    const textarea = document.querySelector('textarea');
+    if (textarea) {
+      setCursorPosition(textarea.selectionStart);
+      setShowImageDialog(true);
+    }
+  };
+
+  const handleOpenPhoneDialog = () => {
+    const textarea = document.querySelector('textarea');
+    if (textarea) {
+      setCursorPosition(textarea.selectionStart);
+      setShowPhoneDialog(true);
+    }
+  };
+
+  const handleOpenMapDialog = () => {
+    const textarea = document.querySelector('textarea');
+    if (textarea) {
+      setCursorPosition(textarea.selectionStart);
+      setShowMapDialog(true);
+    }
   };
 
   const handleImageUpload = (imageUrl: string, position: "left" | "center" | "right" | "full", caption?: string) => {
@@ -80,7 +140,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
   const handlePhoneInsert = () => {
     if (phoneNumber && phoneLabel) {
-      handleInsertPhone(phoneNumber, phoneLabel);
+      originalHandleInsertPhone(phoneNumber, phoneLabel);
       setPhoneNumber('');
       setPhoneLabel('');
       setShowPhoneDialog(false);
@@ -89,7 +149,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
   const handleMapInsert = () => {
     if (mapUrl && mapLabel) {
-      handleInsertMap(mapUrl, mapLabel);
+      originalHandleInsertMap(mapUrl, mapLabel);
       setMapUrl('');
       setMapLabel('');
       setShowMapDialog(false);
