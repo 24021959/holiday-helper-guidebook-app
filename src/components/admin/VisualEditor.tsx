@@ -96,6 +96,20 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     }
   };
 
+  // This function correctly handles the image upload and insertion
+  const handleImageUpload = (imageUrl: string, position: "left" | "center" | "right" | "full", caption?: string) => {
+    const imageDetail: ImageDetail = {
+      url: imageUrl,
+      position,
+      caption,
+      width: "50%",
+      type: "image"
+    };
+
+    handleInsertImage(imageDetail);
+    onImageAdd(imageDetail);
+  };
+
   return (
     <div className={`flex flex-col space-y-4 ${isFullscreen ? 'fixed inset-0 z-50 bg-white p-4' : ''}`}>
       <div className="flex flex-wrap gap-2 p-2 bg-gray-50 border border-gray-200 rounded-md mb-4 sticky top-0 z-10">
@@ -161,7 +175,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       <ImageInsertionDialog
         isOpen={showImageDialog}
         onClose={() => setShowImageDialog(false)}
-        onImageUpload={handleInsertImage}
+        onImageUpload={handleImageUpload}
       />
     </div>
   );

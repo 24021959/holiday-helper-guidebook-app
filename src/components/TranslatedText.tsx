@@ -31,7 +31,7 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
 
   useEffect(() => {
     // Check if we're inside an editor context (parent with data-no-translation attribute)
-    const isInEditorContext = document.querySelector('[data-no-translation="true"]')?.contains(
+    const isInEditorContext = !!document.querySelector('[data-no-translation="true"]')?.contains(
       document.activeElement
     );
 

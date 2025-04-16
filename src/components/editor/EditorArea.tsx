@@ -25,7 +25,7 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
   return (
     <div className={`border rounded-lg overflow-hidden ${className}`}>
       {editMode === 'visual' ? (
-        <div ref={editorRef} className="relative min-h-[500px] bg-white p-4">
+        <div ref={editorRef} className="relative min-h-[500px] bg-white p-4" data-no-translation="true">
           <Textarea
             value={content}
             onChange={(e) => onContentChange(e.target.value)}
