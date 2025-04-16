@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useRouter } from '@/lib/next-router-mock';
 import { useForm } from "react-hook-form";
@@ -31,6 +32,11 @@ import { PageData } from "@/types/page.types";
 import { PageType } from "@/types/form.types";
 import { PageTypeSection } from "@/components/admin/form/PageTypeSection";
 import { usePageCreation } from "@/hooks/usePageCreation";
+import IconRenderer from "@/components/IconRenderer";
+import { 
+  Card, 
+  CardContent 
+} from "@/components/ui/card";
 
 const pageFormSchema = z.object({
   title: z.string().min(2, {
@@ -184,6 +190,18 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
               parentPages={parentPages}
               control={form.control}
             />
+
+            <Card className="mt-4">
+              <CardContent className="pt-6">
+                <div className="mb-2">
+                  <strong>Icona selezionata:</strong>
+                </div>
+                <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-md border">
+                  <IconRenderer iconName={selectedIcon} size="medium" />
+                  <span className="text-sm">{selectedIcon}</span>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {!isParentPage && (
