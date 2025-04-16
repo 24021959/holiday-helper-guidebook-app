@@ -27,6 +27,8 @@ export interface LayoutSettingsForm extends HeaderSettings {
 export const LayoutSettings = () => {
   const [tempHeaderColor, setTempHeaderColor] = useState("#FFFFFF");
   const [tempFooterColor, setTempFooterColor] = useState("#FFFFFF");
+  const [previewHeaderColor, setPreviewHeaderColor] = useState("#FFFFFF");
+  const [previewFooterColor, setPreviewFooterColor] = useState("#FFFFFF");
 
   const form = useForm<LayoutSettingsForm>({
     defaultValues: async () => {
@@ -43,6 +45,8 @@ export const LayoutSettings = () => {
       
       setTempHeaderColor(initialHeaderColor);
       setTempFooterColor(initialFooterColor);
+      setPreviewHeaderColor(initialHeaderColor);
+      setPreviewFooterColor(initialFooterColor);
 
       return {
         logoUrl: headerData.logo_url || '',
@@ -109,6 +113,7 @@ export const LayoutSettings = () => {
   const applyHeaderColor = () => {
     form.setValue('headerColor', tempHeaderColor);
     form.setValue('themeColor', tempHeaderColor);
+    setPreviewHeaderColor(tempHeaderColor);
     toast.success("Colore header applicato");
   };
 
@@ -118,27 +123,9 @@ export const LayoutSettings = () => {
 
   const applyFooterColor = () => {
     form.setValue('footerColor', tempFooterColor);
+    setPreviewFooterColor(tempFooterColor);
     toast.success("Colore footer applicato");
   };
-
-  // Watch form values for live preview
-  const headerPreviewValues = form.watch([
-    'logoUrl',
-    'headerColor',
-    'establishmentName',
-    'logoPosition',
-    'logoSize'
-  ]);
-
-  const footerPreviewValues = form.watch([
-    'footerText',
-    'showSocialLinks',
-    'facebookUrl',
-    'instagramUrl',
-    'twitterUrl',
-    'footerColor',
-    'footerTextAlignment'
-  ]);
 
   return (
     <div className="p-6">
@@ -159,11 +146,11 @@ export const LayoutSettings = () => {
             <h3 className="text-sm font-medium mb-2 text-gray-700">Anteprima Header</h3>
             <div className="rounded-lg overflow-hidden shadow-sm">
               <Header
-                backgroundColor={headerPreviewValues[1]}
-                logoUrl={headerPreviewValues[0]}
-                logoPosition={headerPreviewValues[3]}
-                logoSize={headerPreviewValues[4]}
-                establishmentName={headerPreviewValues[2]}
+                backgroundColor={previewHeaderColor}
+                logoUrl={form.watch('logoUrl')}
+                logoPosition={form.watch('logoPosition')}
+                logoSize={form.watch('logoSize')}
+                establishmentName={form.watch('establishmentName')}
               />
             </div>
           </div>
@@ -183,7 +170,7 @@ export const LayoutSettings = () => {
             <h3 className="text-sm font-medium mb-2 text-gray-700">Anteprima Footer</h3>
             <div className="rounded-lg overflow-hidden shadow-sm">
               <Footer 
-                backgroundColor={footerPreviewValues[5]}
+                backgroundColor={previewFooterColor}
               />
             </div>
           </div>
