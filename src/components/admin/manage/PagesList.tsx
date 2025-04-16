@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Eye, Trash2 } from "lucide-react";
+import { PageTypeBadge } from "./PageTypeBadge";
 
 interface PagesListProps {
   pages: PageData[];
@@ -43,19 +44,7 @@ export const PagesList = ({ pages, onView, onDelete, isDeleting }: PagesListProp
               {page.title}
             </TableCell>
             <TableCell>
-              {page.is_parent ? (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                  Master
-                </span>
-              ) : page.isSubmenu ? (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  Sottopagina
-                </span>
-              ) : (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                  Normale
-                </span>
-              )}
+              <PageTypeBadge isParent={page.is_parent} isSubmenu={page.isSubmenu} />
             </TableCell>
             <TableCell className="text-right">
               <div className="flex justify-end gap-2">
