@@ -80,11 +80,11 @@ export const HeadingsDropdown: React.FC<FormatButtonsProps> = ({ selectedText, o
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent>
-      <DropdownMenuItem onClick={() => onTextFormat('h1')}>
+      <DropdownMenuItem onClick={() => selectedText && onTextFormat('h1', selectedText)}>
         <Heading1 className="h-4 w-4 mr-2" />
         <TranslatedText text="Titolo grande" disableAutoTranslation={true} />
       </DropdownMenuItem>
-      <DropdownMenuItem onClick={() => onTextFormat('h2')}>
+      <DropdownMenuItem onClick={() => selectedText && onTextFormat('h2', selectedText)}>
         <Heading2 className="h-4 w-4 mr-2" />
         <TranslatedText text="Sottotitolo" disableAutoTranslation={true} />
       </DropdownMenuItem>
