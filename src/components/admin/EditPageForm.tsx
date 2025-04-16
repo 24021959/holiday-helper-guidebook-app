@@ -1,15 +1,11 @@
-import React, { useState } from 'react';
+
+import React from 'react';
 import { PageData } from "@/types/page.types";
-import { usePageCreation } from "@/hooks/usePageCreation";
-import { ImageItem } from "@/types/image.types";
-import { PageFormValues, PageType } from "@/types/form.types";
-import { toast } from "sonner";
-import { uploadImage } from "@/integrations/supabase/storage";
-import { pageFormSchema } from './schemas/pageFormSchema';
 import { z } from "zod";
 import { PageForm } from './form/PageForm';
-import { Button } from "@/components/ui/button";
-import { Globe } from "lucide-react";
+import { TranslationButton } from './form/TranslationButton';
+import { useEditPageForm } from '@/hooks/admin/useEditPageForm';
+import { pageFormSchema } from './schemas/pageFormSchema';
 
 interface EditPageFormProps {
   selectedPage: PageData;
@@ -18,12 +14,6 @@ interface EditPageFormProps {
   keywordToIconMap: Record<string, string>;
   allPages?: PageData[];
 }
-
-// Helper function to extract language from path
-const getLanguageFromPath = (path: string): string => {
-  const match = path.match(/^\/([a-z]{2})\//);
-  return match ? match[1] : 'it';
-};
 
 const EditPageForm: React.FC<EditPageFormProps> = ({ 
   selectedPage,
@@ -42,22 +32,21 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
     );
   }
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [mainImage, setMainImage] = useState<string | null>(selectedPage.imageUrl || null);
-
-  // Extract current language from the path
-  const currentLanguage = getLanguageFromPath(selectedPage.path);
-  console.log(`Editing page in language: ${currentLanguage}`);
-
-  const [lastSavedValues, setLastSavedValues] = useState<any>(null);
-  const { handlePageCreation, isCreating, isTranslating, handleManualTranslation } = usePageCreation({ 
-    onPageCreated: onPageUpdated 
-  });
-
-  // Get filtered parent pages for the current language
-  const filteredParentPages = parentPages.filter(page => {
-    const pageLanguage = getLanguageFromPath(page.path);
-    return pageLanguage === currentLanguage;
+  const {
+    isSubmitting,
+    mainImage,
+    currentLanguage,
+    lastSavedValues,
+    isCreating,
+    isTranslating,
+    handleMainImageUpload,
+    handleMainImageRemove,
+    handleFormSubmit,
+    handleManualTranslate
+  } = useEditPageForm({
+    selectedPage,
+    parentPages,
+    onPageUpdated
   });
 
   // Initialize values from selectedPage
@@ -65,101 +54,8 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
     title: selectedPage.title,
     content: selectedPage.content,
     icon: selectedPage.icon || "FileText",
-    pageType: (selectedPage.is_parent ? "parent" : selectedPage.isSubmenu ? "submenu" : "normal") as PageType,
+    pageType: (selectedPage.is_parent ? "parent" : selectedPage.isSubmenu ? "submenu" : "normal"),
     parentPath: selectedPage.parentPath,
-  };
-
-  const handleMainImageUpload = async (file: File) => {
-    try {
-      setIsSubmitting(true);
-      const imageUrl = await uploadImage(file);
-      setMainImage(imageUrl);
-      toast.success("Immagine principale caricata con successo");
-    } catch (error) {
-      console.error("Errore durante il caricamento dell'immagine:", error);
-      toast.error("Errore durante il caricamento dell'immagine");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleMainImageRemove = () => {
-    setMainImage(null);
-  };
-
-  const handleFormSubmit = async (values: z.infer<typeof pageFormSchema>, pageImages: ImageItem[]) => {
-    try {
-      setIsSubmitting(true);
-      
-      if (currentLanguage !== 'it' && values.parentPath) {
-        if (!values.parentPath.startsWith(`/${currentLanguage}/`)) {
-          values.parentPath = `/${currentLanguage}${values.parentPath.replace(/^\/[a-z]{2}\//, '/')}`;
-        }
-      }
-      
-      // Save the values for translation
-      setLastSavedValues({
-        content: values.content,
-        title: values.title,
-        icon: values.icon || "FileText",
-        pageType: values.pageType,
-        parentPath: values.parentPath,
-        mainImage,
-        pageImages
-      });
-      
-      await handlePageCreation(
-        { 
-          title: values.title, 
-          content: values.content || "", 
-          icon: values.icon || "FileText",
-          pageType: values.pageType,
-          parentPath: values.parentPath
-        },
-        mainImage,
-        pageImages,
-        () => {
-          toast.success("Modifiche salvate con successo");
-        }
-      );
-    } catch (error) {
-      console.error("Error in form submission:", error);
-      toast.error("Si è verificato un errore durante il salvataggio della pagina");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleManualTranslate = async () => {
-    if (!lastSavedValues) {
-      toast.error("Devi prima salvare la pagina prima di poterla tradurre");
-      return;
-    }
-
-    try {
-      const sanitizedTitle = lastSavedValues.title
-        .toLowerCase()
-        .replace(/[^\w\s]/gi, '')
-        .replace(/\s+/g, '-');
-      
-      const finalPath = lastSavedValues.pageType === "submenu" && lastSavedValues.parentPath
-        ? `${lastSavedValues.parentPath}/${sanitizedTitle}`
-        : `/${sanitizedTitle}`;
-
-      await handleManualTranslation(
-        lastSavedValues.content,
-        lastSavedValues.title,
-        finalPath,
-        lastSavedValues.mainImage,
-        lastSavedValues.icon,
-        lastSavedValues.pageType,
-        lastSavedValues.pageType === "submenu" ? lastSavedValues.parentPath : null,
-        lastSavedValues.pageImages
-      );
-    } catch (error) {
-      console.error("Error during translation:", error);
-      toast.error("Errore durante la traduzione");
-    }
   };
 
   const handleCancel = () => {
@@ -171,13 +67,7 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
       <h2 className="text-xl font-medium text-emerald-600 mb-4">Modifica Pagina</h2>
       
       <PageForm
-        initialValues={{
-          title: selectedPage.title,
-          content: selectedPage.content,
-          icon: selectedPage.icon || "FileText",
-          pageType: selectedPage.is_parent ? "parent" : selectedPage.isSubmenu ? "submenu" : "normal",
-          parentPath: selectedPage.parentPath,
-        }}
+        initialValues={initialValues}
         parentPages={parentPages.filter(page => page.id !== selectedPage.id)}
         isCreating={isCreating}
         isTranslating={isTranslating}
@@ -186,22 +76,17 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
         onMainImageUpload={handleMainImageUpload}
         onMainImageRemove={handleMainImageRemove}
         onCancel={handleCancel}
-        onSubmit={handleFormSubmit}
+        onSubmit={(values: z.infer<typeof pageFormSchema>, pageImages) => 
+          handleFormSubmit(values, pageImages)
+        }
         submitButtonText="Salva Modifiche"
       />
 
-      {lastSavedValues && currentLanguage === 'it' && (
-        <div className="mt-6 flex justify-center">
-          <Button
-            onClick={handleManualTranslate}
-            disabled={isTranslating}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            <Globe className="w-4 h-4 mr-2" />
-            {isTranslating ? "Traduzione in corso..." : "Traduci la pagina"}
-          </Button>
-        </div>
-      )}
+      <TranslationButton 
+        isTranslating={isTranslating}
+        onTranslate={handleManualTranslate}
+        isVisible={!!lastSavedValues && currentLanguage === 'it'}
+      />
     </div>
   );
 };
