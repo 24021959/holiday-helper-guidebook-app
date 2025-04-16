@@ -14,5 +14,5 @@ export interface ImageItem extends ImageDetail {
 
 export interface ImageUploadItem extends ImageDetail {
   file?: File;
-  id?: string; // Added id property to fix build errors
+  id?: string;
 }

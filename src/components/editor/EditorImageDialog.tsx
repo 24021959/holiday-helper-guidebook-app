@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import TranslatedText from '@/components/TranslatedText';
 
 interface EditorImageDialogProps {
   open: boolean;
@@ -57,16 +58,16 @@ export const EditorImageDialog: React.FC<EditorImageDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Inserisci Immagine</DialogTitle>
+          <DialogTitle><TranslatedText text="Inserisci Immagine" disableAutoTranslation={true} /></DialogTitle>
           <DialogDescription>
-            Carica un'immagine o inserisci l'URL di un'immagine esistente
+            <TranslatedText text="Carica un'immagine o inserisci l'URL di un'immagine esistente" disableAutoTranslation={true} />
           </DialogDescription>
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
           <div className="flex flex-col gap-2">
             <label htmlFor="file-upload" className="text-sm font-medium">
-              Carica immagine
+              <TranslatedText text="Carica immagine" disableAutoTranslation={true} />
             </label>
             <input
               id="file-upload"
@@ -79,7 +80,7 @@ export const EditorImageDialog: React.FC<EditorImageDialogProps> = ({
           
           <div className="flex flex-col gap-2">
             <label htmlFor="image-url" className="text-sm font-medium">
-              URL Immagine (opzionale)
+              <TranslatedText text="URL Immagine (opzionale)" disableAutoTranslation={true} />
             </label>
             <input
               id="image-url"
@@ -94,7 +95,7 @@ export const EditorImageDialog: React.FC<EditorImageDialogProps> = ({
           
           <div className="flex flex-col gap-2">
             <label htmlFor="image-caption" className="text-sm font-medium">
-              Didascalia (opzionale)
+              <TranslatedText text="Didascalia (opzionale)" disableAutoTranslation={true} />
             </label>
             <input
               id="image-caption"
@@ -107,7 +108,9 @@ export const EditorImageDialog: React.FC<EditorImageDialogProps> = ({
           </div>
           
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium">Posizione</label>
+            <label className="text-sm font-medium">
+              <TranslatedText text="Posizione" disableAutoTranslation={true} />
+            </label>
             <div className="flex space-x-2">
               <Button
                 type="button"
@@ -115,7 +118,7 @@ export const EditorImageDialog: React.FC<EditorImageDialogProps> = ({
                 onClick={() => setImagePosition('left')}
                 className="flex-1"
               >
-                Sinistra
+                <TranslatedText text="Sinistra" disableAutoTranslation={true} />
               </Button>
               <Button
                 type="button"
@@ -123,7 +126,7 @@ export const EditorImageDialog: React.FC<EditorImageDialogProps> = ({
                 onClick={() => setImagePosition('center')}
                 className="flex-1"
               >
-                Centro
+                <TranslatedText text="Centro" disableAutoTranslation={true} />
               </Button>
               <Button
                 type="button"
@@ -131,7 +134,7 @@ export const EditorImageDialog: React.FC<EditorImageDialogProps> = ({
                 onClick={() => setImagePosition('right')}
                 className="flex-1"
               >
-                Destra
+                <TranslatedText text="Destra" disableAutoTranslation={true} />
               </Button>
               <Button
                 type="button"
@@ -139,14 +142,14 @@ export const EditorImageDialog: React.FC<EditorImageDialogProps> = ({
                 onClick={() => setImagePosition('full')}
                 className="flex-1"
               >
-                Intera
+                <TranslatedText text="Intera" disableAutoTranslation={true} />
               </Button>
             </div>
           </div>
           
           {(imageFile || imageUrl) && (
             <div className="mt-2 border rounded-md p-2">
-              <p className="text-sm font-medium mb-2">Anteprima:</p>
+              <p className="text-sm font-medium mb-2"><TranslatedText text="Anteprima:" disableAutoTranslation={true} /></p>
               <div className={`
                 ${imagePosition === 'left' ? 'float-left mr-4' : ''}
                 ${imagePosition === 'right' ? 'float-right ml-4' : ''}
@@ -169,13 +172,16 @@ export const EditorImageDialog: React.FC<EditorImageDialogProps> = ({
         
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Annulla
+            <TranslatedText text="Annulla" disableAutoTranslation={true} />
           </Button>
           <Button
             onClick={handleInsertClick}
             disabled={(!imageFile && !imageUrl) || uploadingImage}
           >
-            {uploadingImage ? "Inserimento..." : "Inserisci Immagine"}
+            {uploadingImage ? 
+              <TranslatedText text="Inserimento..." disableAutoTranslation={true} /> : 
+              <TranslatedText text="Inserisci Immagine" disableAutoTranslation={true} />
+            }
           </Button>
         </div>
       </DialogContent>

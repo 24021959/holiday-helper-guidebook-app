@@ -3,12 +3,13 @@ import React, { useRef } from 'react';
 import { ImageDetail } from '@/types/image.types';
 import { EditorToolbar } from './toolbar/EditorToolbar';
 import { EditorContent } from './EditorContent';
-import { useEditorContent } from './hooks/useEditorContent';
+import { useEditorContent } from '../editor/hooks/useEditorContent';
 import { useEditorPreview } from './hooks/useEditorPreview';
 import { useEditorState } from './hooks/useEditorState';
 import { useImageControls } from './hooks/useImageControls';
 import { ImageGallery } from './ImageGallery';
 import ImageInsertionDialog from '../admin/form/ImageInsertionDialog';
+import TranslatedText from '@/components/TranslatedText';
 
 interface VisualEditorProps {
   content: string;

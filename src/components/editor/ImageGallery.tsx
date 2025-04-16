@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { ImageDetail } from '@/types/image.types';
 import { Edit2, X, PanelLeft, PanelRight, AlignCenter, ArrowUpRight, Trash2 } from 'lucide-react';
+import TranslatedText from '@/components/TranslatedText';
 
 interface ImageGalleryProps {
   images: ImageDetail[];
@@ -39,7 +40,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
 
   return (
     <div className="border rounded-lg p-4 bg-gray-50">
-      <h3 className="font-medium mb-3">Immagini inserite</h3>
+      <h3 className="font-medium mb-3">
+        <TranslatedText text="Immagini inserite" disableAutoTranslation={true} />
+      </h3>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {images.map((image, index) => (
           <div 
@@ -62,7 +65,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                 onClick={() => onToggleControls(index)}
               >
                 <Edit2 className="h-4 w-4 mr-1" />
-                Modifica
+                <TranslatedText text="Modifica" disableAutoTranslation={true} />
               </Button>
             </div>
             
@@ -76,7 +79,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
             {showImageControls === index && (
               <div className="absolute inset-0 bg-white z-20 p-3 flex flex-col">
                 <div className="flex justify-between mb-2">
-                  <span className="font-medium text-sm">Modifica immagine</span>
+                  <span className="font-medium text-sm">
+                    <TranslatedText text="Modifica immagine" disableAutoTranslation={true} />
+                  </span>
                   <Button variant="ghost" size="icon" onClick={() => onToggleControls(index)}>
                     <X className="h-4 w-4" />
                   </Button>
@@ -84,7 +89,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                 
                 <div className="space-y-3 flex-1">
                   <div>
-                    <Label htmlFor={`img-position-${index}`} className="text-xs">Posizione</Label>
+                    <Label htmlFor={`img-position-${index}`} className="text-xs">
+                      <TranslatedText text="Posizione" disableAutoTranslation={true} />
+                    </Label>
                     <div className="flex gap-1 mt-1">
                       <Button 
                         variant={image.position === "left" ? "default" : "outline"} 
@@ -123,7 +130,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                   
                   <div>
                     <div className="flex justify-between">
-                      <Label htmlFor={`img-width-${index}`} className="text-xs">Larghezza ({parseInt(image.width)}%)</Label>
+                      <Label htmlFor={`img-width-${index}`} className="text-xs">
+                        <TranslatedText text={`Larghezza (${parseInt(image.width)}%)`} disableAutoTranslation={true} />
+                      </Label>
                     </div>
                     <Slider
                       id={`img-width-${index}`}
@@ -137,7 +146,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                   </div>
                   
                   <div>
-                    <Label htmlFor={`img-caption-${index}`} className="text-xs">Didascalia</Label>
+                    <Label htmlFor={`img-caption-${index}`} className="text-xs">
+                      <TranslatedText text="Didascalia" disableAutoTranslation={true} />
+                    </Label>
                     <Input
                       id={`img-caption-${index}`}
                       value={image.caption || ''}
@@ -155,7 +166,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                   className="mt-2"
                 >
                   <Trash2 className="h-4 w-4 mr-1" />
-                  Elimina immagine
+                  <TranslatedText text="Elimina immagine" disableAutoTranslation={true} />
                 </Button>
               </div>
             )}

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { InsertButtonsProps } from '../types';
 import { ToolbarGroup } from './ToolbarGroup';
+import TranslatedText from '@/components/TranslatedText';
 
 export const InsertButtons: React.FC<InsertButtonsProps> = ({
   onOpenImageDialog,
@@ -23,11 +24,11 @@ export const InsertButtons: React.FC<InsertButtonsProps> = ({
               className="flex items-center gap-1"
             >
               <ImageIcon className="h-4 w-4" />
-              Immagine
+              <TranslatedText text="Immagine" disableAutoTranslation={true} />
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Inserisci immagine</p>
+            <p><TranslatedText text="Inserisci immagine" disableAutoTranslation={true} /></p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -42,11 +43,11 @@ export const InsertButtons: React.FC<InsertButtonsProps> = ({
               className="flex items-center gap-1"
             >
               <Phone className="h-4 w-4" />
-              Telefono
+              <TranslatedText text="Telefono" disableAutoTranslation={true} />
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Inserisci numero di telefono cliccabile</p>
+            <p><TranslatedText text="Inserisci numero di telefono cliccabile" disableAutoTranslation={true} /></p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -61,11 +62,11 @@ export const InsertButtons: React.FC<InsertButtonsProps> = ({
               className="flex items-center gap-1"
             >
               <MapPin className="h-4 w-4" />
-              Mappa
+              <TranslatedText text="Mappa" disableAutoTranslation={true} />
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Inserisci collegamento a Google Maps</p>
+            <p><TranslatedText text="Inserisci collegamento a Google Maps" disableAutoTranslation={true} /></p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

@@ -1,6 +1,7 @@
 
 import React, { useRef } from 'react';
 import { Textarea } from "@/components/ui/textarea";
+import TranslatedText from '@/components/TranslatedText';
 
 interface EditorContentProps {
   content: string;

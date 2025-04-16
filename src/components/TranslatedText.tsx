@@ -8,7 +8,7 @@ interface TranslatedTextProps {
   as?: keyof JSX.IntrinsicElements;
   className?: string;
   showLoadingState?: boolean;
-  disableAutoTranslation?: boolean; // Nuovo parametro per disattivare la traduzione automatica
+  disableAutoTranslation?: boolean; // Parametro per disattivare la traduzione automatica
 }
 
 // Usa memo per prevenire re-render non necessari

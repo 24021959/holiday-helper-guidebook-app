@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { X, Upload, Trash2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -40,6 +39,7 @@ const ImagesUploader: React.FC<ImagesUploaderProps> = ({
           url,
           position: 'center' as const,
           caption: '',
+          width: '50%', // Aggiungo il campo width richiesto
         };
       });
 
