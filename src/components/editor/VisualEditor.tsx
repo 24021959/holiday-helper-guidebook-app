@@ -139,6 +139,30 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     toast.success("Link a Google Maps aggiunto con successo");
   };
 
+  // Handle image deletion directly from the editor content
+  const handleEditorImageDelete = (index: number) => {
+    // Extract and collect all image data from content
+    const imageMatches: string[] = [];
+    const regex = /\{\"type\":\"image\",.*?\}/g;
+    let match;
+    
+    while ((match = regex.exec(content)) !== null) {
+      imageMatches.push(match[0]);
+    }
+    
+    if (index >= 0 && index < imageMatches.length) {
+      // Remove the specific image JSON from content
+      const newContent = content.replace(imageMatches[index], '');
+      
+      // Clean up any consecutive newlines that might be left behind
+      const cleanedContent = newContent.replace(/\n\s*\n\s*\n/g, '\n\n');
+      
+      onChange(cleanedContent);
+      updateHistory(cleanedContent);
+      toast.success("Immagine eliminata con successo");
+    }
+  };
+
   return (
     <div className={`flex flex-col space-y-4 ${isFullscreen ? 'fixed inset-0 z-50 bg-white p-4' : ''}`}>
       <EditorSection 
@@ -161,6 +185,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         onUndo={handleUndo}
         onRedo={handleRedo}
         images={images}
+        onImageDelete={handleEditorImageDelete}
       />
 
       <EditorImageGallery 
@@ -185,8 +210,13 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         />
       )}
 
-      {showPhoneDialog && handlePhoneInsert()}
-      {showMapDialog && handleMapInsert()}
+      {showPhoneDialog && (
+        handlePhoneInsert()
+      )}
+      
+      {showMapDialog && (
+        handleMapInsert()
+      )}
     </div>
   );
 };

@@ -24,6 +24,7 @@ interface EditorSectionProps {
   onUndo: () => void;
   onRedo: () => void;
   images: ImageDetail[];
+  onImageDelete?: (index: number) => void;
 }
 
 export const EditorSection: React.FC<EditorSectionProps> = ({
@@ -45,7 +46,8 @@ export const EditorSection: React.FC<EditorSectionProps> = ({
   onInsertMap,
   onUndo,
   onRedo,
-  images
+  images,
+  onImageDelete
 }) => {
   return (
     <>
@@ -73,6 +75,7 @@ export const EditorSection: React.FC<EditorSectionProps> = ({
         onContentChange={onContentChange}
         onSelect={onTextSelect}
         images={images}
+        onImageDelete={onImageDelete}
       />
     </>
   );

@@ -24,13 +24,8 @@ export const useEditorPreview = (content: string, images: ImageDetail[]) => {
             "mx-auto block";
           
           const imageHtml = `
-            <figure class="${positionClass}" style="width: ${imageData.width || '50%'}; margin-bottom: 1rem;">
-              <img 
-                src="${imageData.url}" 
-                alt="${imageData.caption || `Image ${index + 1}`}" 
-                class="w-full h-auto rounded-md" 
-                data-image-index="${index}"
-              />
+            <figure class="${positionClass}" style="width: ${imageData.width || '50%'}; margin-bottom: 1rem; position: relative;">
+              <span class="image-placeholder" data-image-index="${index}"></span>
               ${imageData.caption ? `<figcaption class="text-sm text-gray-500 mt-1">${imageData.caption}</figcaption>` : ''}
             </figure>
           `;

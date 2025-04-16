@@ -11,6 +11,7 @@ interface EditorContentProps {
   onContentChange: (content: string) => void;
   onSelect: () => void;
   images?: ImageDetail[];
+  onImageDelete?: (index: number) => void;
 }
 
 export const EditorContent: React.FC<EditorContentProps> = ({
@@ -19,7 +20,8 @@ export const EditorContent: React.FC<EditorContentProps> = ({
   formattedPreview,
   onContentChange,
   onSelect,
-  images = []
+  images = [],
+  onImageDelete
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -46,6 +48,36 @@ export const EditorContent: React.FC<EditorContentProps> = ({
     return processed;
   }, [content]);
 
+  // Extract images from content for visual display
+  const contentImages = React.useMemo(() => {
+    const images: ImageDetail[] = [];
+    const regex = /\{\"type\":\"image\",.*?\}/g;
+    let match;
+    
+    while ((match = regex.exec(content)) !== null) {
+      try {
+        const imageData = JSON.parse(match[0]);
+        images.push({
+          url: imageData.url,
+          position: imageData.position,
+          width: imageData.width || "50%",
+          caption: imageData.caption || ""
+        });
+      } catch (e) {
+        console.error("Failed to parse image data:", e);
+      }
+    }
+    
+    return images;
+  }, [content]);
+
+  // Handle image deletion from the editor
+  const handleImageDelete = (index: number) => {
+    if (onImageDelete) {
+      onImageDelete(index);
+    }
+  };
+
   return (
     <div className="border rounded-lg overflow-hidden" data-no-translation="true">
       {editMode === 'visual' ? (
@@ -60,6 +92,50 @@ export const EditorContent: React.FC<EditorContentProps> = ({
             placeholder="Inizia a scrivere qui..."
             data-no-translation="true"
           />
+          {/* Display images in the visual editor */}
+          <div className="absolute inset-0 pointer-events-none p-4 overflow-auto" data-no-translation="true">
+            {contentImages.map((image, idx) => {
+              const positionClass = 
+                image.position === "left" ? "float-left mr-4" : 
+                image.position === "right" ? "float-right ml-4" : 
+                image.position === "full" ? "w-full block" : 
+                "mx-auto block";
+                
+              return (
+                <div 
+                  key={idx}
+                  className="relative pointer-events-auto"
+                  style={{
+                    width: image.width,
+                    margin: image.position === "center" ? "0 auto" : undefined,
+                    float: image.position === "left" ? "left" : image.position === "right" ? "right" : undefined,
+                    clear: image.position === "full" ? "both" : undefined,
+                    marginBottom: "1rem",
+                    marginRight: image.position === "left" ? "1rem" : undefined,
+                    marginLeft: image.position === "right" ? "1rem" : undefined
+                  }}
+                >
+                  <button
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 hover:opacity-100 transition-opacity z-20"
+                    onClick={() => handleImageDelete(idx)}
+                    type="button"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 6L6 18M6 6l12 12"></path>
+                    </svg>
+                  </button>
+                  <img 
+                    src={image.url} 
+                    alt={image.caption || `Image ${idx+1}`}
+                    className="w-full h-auto rounded-md"
+                  />
+                  {image.caption && (
+                    <p className="text-sm text-gray-500 mt-1">{image.caption}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
           <div 
             className="absolute inset-0 pointer-events-none p-4 prose max-w-none overflow-hidden"
             dangerouslySetInnerHTML={{ __html: formattedPreview }}
