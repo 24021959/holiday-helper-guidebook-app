@@ -78,6 +78,23 @@ export const EstablishmentSettings = ({ form }: EstablishmentSettingsProps) => {
           </FormItem>
         )}
       />
+
+      <FormField
+        control={form.control}
+        name="headerColor"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Colore Sfondo Header</FormLabel>
+            <FormControl>
+              <Input 
+                type="color" 
+                className="h-10 w-full p-1 cursor-pointer" 
+                {...field}
+              />
+            </FormControl>
+          </FormItem>
+        )}
+      />
     </div>
   );
 };

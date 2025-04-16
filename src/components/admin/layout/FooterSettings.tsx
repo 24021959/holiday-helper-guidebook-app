@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Facebook, Instagram, Twitter, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
-import { LayoutSettingsForm } from "../LayoutSettings";
+import { LayoutSettingsForm } from "@/hooks/useLayoutSettings";
 
 interface FooterSettingsProps {
   form: UseFormReturn<LayoutSettingsForm>;
@@ -57,6 +57,23 @@ export const FooterSettings = ({ form }: FooterSettingsProps) => {
                 )}
               />
             </div>
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="footerColor"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Colore Sfondo Footer</FormLabel>
+            <FormControl>
+              <Input 
+                type="color" 
+                className="h-10 w-full p-1 cursor-pointer" 
+                {...field}
+              />
+            </FormControl>
           </FormItem>
         )}
       />

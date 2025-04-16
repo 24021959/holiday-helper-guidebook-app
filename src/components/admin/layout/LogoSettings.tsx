@@ -6,7 +6,7 @@ import ImageUploader from "@/components/ImageUploader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlignLeft, AlignCenter, AlignRight } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
-import { LayoutSettingsForm } from "../LayoutSettings";
+import { LayoutSettingsForm } from "@/hooks/useLayoutSettings";
 
 interface LogoSettingsProps {
   form: UseFormReturn<LayoutSettingsForm>;
