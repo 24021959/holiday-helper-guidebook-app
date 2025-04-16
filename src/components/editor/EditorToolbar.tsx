@@ -1,58 +1,79 @@
 
 import React from 'react';
-import { Button } from "@/components/ui/button";
-import { ImageIcon, Maximize2, Minimize2, Eye, EyeOff } from "lucide-react";
+import { FormatButtons } from './toolbar/EditorToolbarButtons';
+import { AlignmentButtons } from './toolbar/EditorToolbarButtons';
+import { InsertButtons } from './toolbar/EditorToolbarButtons';
+import { ViewButtons } from './toolbar/EditorToolbarButtons';
+import { HistoryButtons } from './toolbar/EditorToolbarButtons';
 
 interface EditorToolbarProps {
   expanded: boolean;
   previewMode: boolean;
+  selectedText: { start: number; end: number; text: string } | null;
+  historyIndex: number;
+  editHistory: string[];
   onToggleExpand: () => void;
   onTogglePreview: () => void;
   onInsertImage: () => void;
+  onTextFormat: (format: string) => void;
+  onTextAlign: (alignment: 'left' | 'center' | 'right' | 'justify') => void;
+  onInsertPhone: () => void;
+  onInsertMap: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
 }
 
 export const EditorToolbar: React.FC<EditorToolbarProps> = ({
   expanded,
   previewMode,
+  selectedText,
+  historyIndex,
+  editHistory,
   onToggleExpand,
   onTogglePreview,
-  onInsertImage
+  onInsertImage,
+  onTextFormat,
+  onTextAlign,
+  onInsertPhone,
+  onInsertMap,
+  onUndo,
+  onRedo
 }) => {
   return (
-    <div className="flex justify-between items-center mb-2">
-      <div className="flex items-center space-x-2">
-        <Button 
-          type="button" 
-          variant="ghost" 
-          size="sm"
-          onClick={onInsertImage}
-          className="text-gray-500 hover:text-gray-700"
-        >
-          <ImageIcon className="h-4 w-4 mr-1" />
-          <span className="text-xs">Inserisci Immagine</span>
-        </Button>
-      </div>
-      <div className="flex items-center space-x-1">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={onTogglePreview}
-          className="h-8 w-8"
-          title={previewMode ? "Modalità modifica" : "Modalità anteprima"}
-        >
-          {previewMode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={onToggleExpand}
-          className="h-8 w-8"
-          title={expanded ? "Riduci editor" : "Espandi editor"}
-        >
-          {expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-        </Button>
+    <div className="flex flex-wrap gap-2 p-2 bg-white border border-gray-200 rounded-lg shadow-sm">
+      <div className="flex flex-wrap items-center gap-2">
+        <FormatButtons
+          selectedText={selectedText}
+          onTextFormat={onTextFormat}
+        />
+        <div className="h-6 border-r border-gray-200" />
+        
+        <AlignmentButtons
+          selectedText={selectedText}
+          onTextAlign={onTextAlign}
+        />
+        <div className="h-6 border-r border-gray-200" />
+        
+        <InsertButtons
+          onOpenImageDialog={onInsertImage}
+          onInsertPhone={onInsertPhone}
+          onInsertMap={onInsertMap}
+        />
+        <div className="h-6 border-r border-gray-200" />
+        
+        <HistoryButtons
+          historyIndex={historyIndex}
+          editHistory={editHistory}
+          onUndo={onUndo}
+          onRedo={onRedo}
+        />
+        <div className="h-6 border-r border-gray-200" />
+        
+        <ViewButtons
+          editMode={previewMode ? 'preview' : 'visual'}
+          onToggleEditMode={onTogglePreview}
+          onToggleFullscreen={onToggleExpand}
+        />
       </div>
     </div>
   );
