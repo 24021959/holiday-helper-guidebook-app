@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -24,19 +23,19 @@ export const FormatButtons: React.FC<FormatButtonsProps> = ({ selectedText, onTe
     <ToolbarButton 
       icon={Bold}
       label="Grassetto"
-      onClick={() => onTextFormat('bold')}
+      onClick={() => selectedText && onTextFormat('bold', selectedText)}
       disabled={!selectedText}
     />
     <ToolbarButton 
       icon={Italic}
       label="Corsivo"
-      onClick={() => onTextFormat('italic')}
+      onClick={() => selectedText && onTextFormat('italic', selectedText)}
       disabled={!selectedText}
     />
     <ToolbarButton 
       icon={Underline}
       label="Sottolineato"
-      onClick={() => onTextFormat('underline')}
+      onClick={() => selectedText && onTextFormat('underline', selectedText)}
       disabled={!selectedText}
     />
   </ToolbarGroup>
@@ -47,25 +46,25 @@ export const AlignmentButtons: React.FC<AlignmentButtonsProps> = ({ selectedText
     <ToolbarButton 
       icon={AlignLeft}
       label="Allinea a sinistra"
-      onClick={() => onTextAlign('left')}
+      onClick={() => selectedText && onTextAlign('left', selectedText)}
       disabled={!selectedText}
     />
     <ToolbarButton 
       icon={AlignCenter}
       label="Centra"
-      onClick={() => onTextAlign('center')}
+      onClick={() => selectedText && onTextAlign('center', selectedText)}
       disabled={!selectedText}
     />
     <ToolbarButton 
       icon={AlignRight}
       label="Allinea a destra"
-      onClick={() => onTextAlign('right')}
+      onClick={() => selectedText && onTextAlign('right', selectedText)}
       disabled={!selectedText}
     />
     <ToolbarButton 
       icon={AlignJustify}
       label="Giustifica"
-      onClick={() => onTextAlign('justify')}
+      onClick={() => selectedText && onTextAlign('justify', selectedText)}
       disabled={!selectedText}
     />
   </ToolbarGroup>

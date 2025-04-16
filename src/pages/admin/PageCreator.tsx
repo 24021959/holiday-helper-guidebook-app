@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -64,7 +63,7 @@ const PageCreator = () => {
   };
 
   return (
-    <div className="container max-w-4xl mx-auto py-6 space-y-6">
+    <div className="container w-[90%] mx-auto py-6 space-y-6">
       <Card className="border-emerald-100">
         <CardContent className="pt-6">
           <div className="space-y-6">
