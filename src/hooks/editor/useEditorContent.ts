@@ -90,27 +90,25 @@ export const useEditorContent = (content: string, onChange: (content: string) =>
     updateHistory(newContent);
   };
 
-  const handleInsertPhone = () => {
-    const phoneNumber = window.prompt("Inserisci il numero di telefono (formato: +39 123 456 7890):");
-    if (!phoneNumber) return;
+  const handleInsertPhone = (phoneNumber?: string, label?: string) => {
+    const phoneNum = phoneNumber || window.prompt("Inserisci il numero di telefono (formato: +39 123 456 7890):");
+    if (!phoneNum) return;
     
-    const label = window.prompt("Inserisci l'etichetta per il numero di telefono:", phoneNumber);
-    const displayLabel = label || phoneNumber;
+    const displayLabel = label || window.prompt("Inserisci l'etichetta per il numero di telefono:", phoneNum) || phoneNum;
     
-    const formattedPhone = phoneNumber.replace(/\s+/g, '');
+    const formattedPhone = phoneNum.replace(/\s+/g, '');
     insertAtCursor(`[PHONE:${formattedPhone}:${displayLabel}]`);
     
     toast.success("Numero di telefono aggiunto con successo");
   };
 
-  const handleInsertMap = () => {
-    const mapUrl = window.prompt("Inserisci l'URL di Google Maps:");
-    if (!mapUrl) return;
+  const handleInsertMap = (mapUrl?: string, label?: string) => {
+    const url = mapUrl || window.prompt("Inserisci l'URL di Google Maps:");
+    if (!url) return;
     
-    const label = window.prompt("Inserisci l'etichetta per la posizione:", "Visualizza su Google Maps");
-    const displayLabel = label || "Visualizza su Google Maps";
+    const displayLabel = label || window.prompt("Inserisci l'etichetta per la posizione:", "Visualizza su Google Maps") || "Visualizza su Google Maps";
     
-    insertAtCursor(`[MAP:${mapUrl}:${displayLabel}]`);
+    insertAtCursor(`[MAP:${url}:${displayLabel}]`);
     
     toast.success("Link a Google Maps aggiunto con successo");
   };

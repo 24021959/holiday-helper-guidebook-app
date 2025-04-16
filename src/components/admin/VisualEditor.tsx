@@ -50,77 +50,18 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     handleRedo,
     handleTextFormat,
     handleTextAlign,
-    handleInsertPhone,
-    handleInsertMap,
+    handleInsertPhone: originalHandleInsertPhone,
+    handleInsertMap: originalHandleInsertMap,
     handleInsertImage,
     updateHistory
   } = useEditorContent(content, onChange);
 
-  const {
-    editMode,
-    isFullscreen,
-    showImageDialog,
-    showPhoneDialog,
-    showMapDialog,
-    setShowImageDialog,
-    setShowPhoneDialog,
-    setShowMapDialog,
-    toggleEditMode,
-    toggleFullscreen
-  } = useEditorState();
-
-  const {
-    hoveredImageIndex,
-    setHoveredImageIndex,
-    showImageControls,
-    setShowImageControls,
-    handleImagePositionChange,
-    handleImageWidthChange,
-    handleImageCaptionChange,
-    handleDeleteImage
-  } = useImageControls(images, onImageAdd, onChange);
-
-  const { formattedPreview } = useEditorPreview(content, images);
-
-  const handleTextareaSelect = () => {
-    const textarea = document.querySelector('textarea');
-    if (textarea) {
-      setCursorPosition(textarea.selectionStart);
-      
-      if (textarea.selectionStart !== textarea.selectionEnd) {
-        setSelectedText({
-          start: textarea.selectionStart,
-          end: textarea.selectionEnd,
-          text: textarea.value.substring(
-            textarea.selectionStart,
-            textarea.selectionEnd
-          )
-        });
-      } else {
-        setSelectedText(null);
-      }
-    }
+  const handleInsertPhone = (phone: string, label: string) => {
+    originalHandleInsertPhone();
   };
 
-  const handleOpenImageDialog = () => {
-    if (document.querySelector('textarea')) {
-      setCursorPosition((document.querySelector('textarea') as HTMLTextAreaElement).selectionStart);
-      setShowImageDialog(true);
-    }
-  };
-
-  const handleOpenPhoneDialog = () => {
-    if (document.querySelector('textarea')) {
-      setCursorPosition((document.querySelector('textarea') as HTMLTextAreaElement).selectionStart);
-      setShowPhoneDialog(true);
-    }
-  };
-
-  const handleOpenMapDialog = () => {
-    if (document.querySelector('textarea')) {
-      setCursorPosition((document.querySelector('textarea') as HTMLTextAreaElement).selectionStart);
-      setShowMapDialog(true);
-    }
+  const handleInsertMap = (url: string, label: string) => {
+    originalHandleInsertMap();
   };
 
   const handleImageUpload = (imageUrl: string, position: "left" | "center" | "right" | "full", caption?: string) => {
