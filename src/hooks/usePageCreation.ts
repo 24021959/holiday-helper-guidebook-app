@@ -27,7 +27,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
     try {
       setIsCreating(true);
       
-      // Create path based on the page type
+      // Crea il percorso in base al tipo di pagina
       const sanitizedTitle = values.title
         .toLowerCase()
         .replace(/[^\w\s]/gi, '')
@@ -37,7 +37,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         ? `${values.parentPath}/${sanitizedTitle}`
         : `/${sanitizedTitle}`;
 
-      // Save only the Italian version first
+      // Salva solo la versione italiana prima
       const pageId = await saveNewPage(
         values.title,
         values.content,
@@ -52,6 +52,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
       toast.success("Pagina in italiano creata con successo");
 
       // Solo dopo il salvataggio della pagina italiana, avvia le traduzioni
+      // QUESTO SUCCEDE SOLO DOPO IL CLIC SU "SALVA PAGINA"
       if (pageId) {
         try {
           await translatePages(

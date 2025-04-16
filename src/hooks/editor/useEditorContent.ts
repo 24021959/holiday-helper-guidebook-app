@@ -122,7 +122,8 @@ export const useEditorContent = (content: string, onChange: (content: string) =>
       type: "image",
       url: imageDetail.url,
       position: imageDetail.position,
-      caption: imageDetail.caption || ""
+      caption: imageDetail.caption || "",
+      width: imageDetail.width || "50%"
     });
     
     const newContent = 

@@ -51,10 +51,14 @@ export const useImageControls = (images: ImageDetail[], onImageAdd: (image: Imag
     
     updatedImages.forEach((image, newIdx) => {
       onImageAdd(image);
+      // Aggiornamento dei placeholder se necessario
       const oldPlaceholder = `[IMAGE_${newIdx + 1}]`;
       const newPlaceholder = `[IMAGE_${newIdx}]`;
-      const updatedContent = newContent.replace(oldPlaceholder, newPlaceholder);
-      onChange(updatedContent);
+      
+      if (newContent.includes(oldPlaceholder)) {
+        const updatedContent = newContent.replace(oldPlaceholder, newPlaceholder);
+        onChange(updatedContent);
+      }
     });
     
     toast.success("Immagine eliminata con successo");

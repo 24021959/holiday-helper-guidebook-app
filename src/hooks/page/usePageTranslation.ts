@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { usePageSaving } from "./usePageSaving";
 
 /**
- * Hook for handling page translations
+ * Hook per la gestione delle traduzioni delle pagine
+ * IMPORTANTE: La traduzione avviene SOLO quando l'utente fa clic su "Salva Pagina"
  */
 export const usePageTranslation = () => {
   const [isTranslating, setIsTranslating] = useState(false);
@@ -13,7 +14,8 @@ export const usePageTranslation = () => {
   const { saveNewPage } = usePageSaving();
 
   /**
-   * Translates and creates pages in all supported languages
+   * Traduce e crea pagine in tutte le lingue supportate
+   * Questa funzione deve essere chiamata SOLO quando l'utente fa clic su "Salva Pagina"
    */
   const translatePages = async (
     content: string,
@@ -29,7 +31,7 @@ export const usePageTranslation = () => {
       setIsTranslating(true);
       toast.info("Avvio traduzione automatica in tutte le lingue...");
 
-      // Translate to all other languages
+      // Traduci in tutte le altre lingue
       const targetLangs: ("en" | "fr" | "es" | "de")[] = ['en', 'fr', 'es', 'de'];
       
       const translations = await translateSequential(
