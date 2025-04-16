@@ -9,6 +9,7 @@ import { useVisualEditorState } from './hooks/useVisualEditorState';
 import { EditorSection } from './EditorSection';
 import { EditorImageGallery } from './EditorImageGallery';
 import ImageInsertionDialog from '../admin/form/ImageInsertionDialog';
+import { toast } from "sonner";
 
 interface VisualEditorProps {
   content: string;
@@ -26,7 +27,13 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const {
     showImageDialog,
     setShowImageDialog,
-    handleOpenImageDialog
+    showPhoneDialog,
+    setShowPhoneDialog,
+    showMapDialog,
+    setShowMapDialog,
+    handleOpenImageDialog,
+    handleOpenPhoneDialog,
+    handleOpenMapDialog
   } = useVisualEditorState(content, images);
 
   const {
@@ -102,6 +109,33 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
     handleInsertImage(imageDetail);
     onImageAdd(imageDetail);
+    setShowImageDialog(false);
+  };
+
+  const handlePhoneInsert = () => {
+    const phoneNumber = prompt("Inserisci il numero di telefono (formato: +39 123 456 7890):");
+    if (!phoneNumber) {
+      setShowPhoneDialog(false);
+      return;
+    }
+    
+    const label = prompt("Inserisci l'etichetta per il numero di telefono:", phoneNumber);
+    handleInsertPhone(phoneNumber, label || undefined);
+    setShowPhoneDialog(false);
+    toast.success("Numero di telefono aggiunto con successo");
+  };
+
+  const handleMapInsert = () => {
+    const mapUrl = prompt("Inserisci l'URL di Google Maps:");
+    if (!mapUrl) {
+      setShowMapDialog(false);
+      return;
+    }
+    
+    const label = prompt("Inserisci l'etichetta per la posizione:", "Visualizza su Google Maps");
+    handleInsertMap(mapUrl, label || undefined);
+    setShowMapDialog(false);
+    toast.success("Link a Google Maps aggiunto con successo");
   };
 
   return (
@@ -121,8 +155,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         onTextSelect={handleTextareaSelect}
         onTextFormat={handleTextFormat}
         onTextAlign={handleTextAlign}
-        onInsertPhone={handleInsertPhone}
-        onInsertMap={handleInsertMap}
+        onInsertPhone={handleOpenPhoneDialog}
+        onInsertMap={handleOpenMapDialog}
         onUndo={handleUndo}
         onRedo={handleRedo}
         images={images}
@@ -147,6 +181,9 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         onClose={() => setShowImageDialog(false)}
         onImageUpload={handleImageUpload}
       />
+
+      {showPhoneDialog && handlePhoneInsert()}
+      {showMapDialog && handleMapInsert()}
     </div>
   );
 };
