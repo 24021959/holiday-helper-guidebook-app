@@ -60,6 +60,7 @@ export const useEditorContent = (content: string, onChange: (content: string) =>
       content.substring(end);
     
     onChange(newContent);
+    updateHistory(newContent);
   };
 
   const handleTextAlign = (alignment: 'left' | 'center' | 'right' | 'justify') => {
@@ -74,6 +75,7 @@ export const useEditorContent = (content: string, onChange: (content: string) =>
       content.substring(end);
     
     onChange(newContent);
+    updateHistory(newContent);
   };
 
   const insertAtCursor = (text: string) => {
@@ -85,13 +87,12 @@ export const useEditorContent = (content: string, onChange: (content: string) =>
       content.substring(cursorPosition);
     
     onChange(newContent);
+    updateHistory(newContent);
   };
 
-  const handleInsertPhone = () => {
-    const phoneNumber = window.prompt("Inserisci il numero di telefono (formato: +39 123 456 7890):");
+  const handleInsertPhone = (phoneNumber: string, label?: string) => {
     if (!phoneNumber) return;
     
-    const label = window.prompt("Inserisci l'etichetta per il numero di telefono:", phoneNumber);
     const displayLabel = label || phoneNumber;
     
     const formattedPhone = phoneNumber.replace(/\s+/g, '');
@@ -100,11 +101,9 @@ export const useEditorContent = (content: string, onChange: (content: string) =>
     toast.success("Numero di telefono aggiunto con successo");
   };
 
-  const handleInsertMap = () => {
-    const mapUrl = window.prompt("Inserisci l'URL di Google Maps:");
+  const handleInsertMap = (mapUrl: string, label?: string) => {
     if (!mapUrl) return;
     
-    const label = window.prompt("Inserisci l'etichetta per la posizione:", "Visualizza su Google Maps");
     const displayLabel = label || "Visualizza su Google Maps";
     
     insertAtCursor(`[MAP:${mapUrl}:${displayLabel}]`);
@@ -115,19 +114,21 @@ export const useEditorContent = (content: string, onChange: (content: string) =>
   const handleInsertImage = (imageDetail: ImageDetail) => {
     if (cursorPosition === null) return;
     
-    const imageMarkup = JSON.stringify({
+    const imageData = JSON.stringify({
       type: "image",
       url: imageDetail.url,
       position: imageDetail.position,
+      width: imageDetail.width,
       caption: imageDetail.caption || ""
     });
     
     const newContent = 
       content.substring(0, cursorPosition) + 
-      "\n\n" + imageMarkup + "\n\n" + 
+      "\n" + imageData + "\n" + 
       content.substring(cursorPosition);
     
     onChange(newContent);
+    updateHistory(newContent);
     toast.success("Immagine aggiunta con successo");
   };
 

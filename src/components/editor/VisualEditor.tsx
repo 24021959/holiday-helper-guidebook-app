@@ -33,7 +33,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     setShowMapDialog,
     handleOpenImageDialog,
     handleOpenPhoneDialog,
-    handleOpenMapDialog
+    handleOpenMapDialog,
+    dialogRef
   } = useVisualEditorState(content, images);
 
   const {
@@ -176,11 +177,13 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         onDeleteImage={(index) => handleDeleteImage(index, content)}
       />
 
-      <ImageInsertionDialog
-        isOpen={showImageDialog}
-        onClose={() => setShowImageDialog(false)}
-        onImageUpload={handleImageUpload}
-      />
+      {showImageDialog && (
+        <ImageInsertionDialog
+          isOpen={showImageDialog}
+          onClose={() => setShowImageDialog(false)}
+          onImageUpload={handleImageUpload}
+        />
+      )}
 
       {showPhoneDialog && handlePhoneInsert()}
       {showMapDialog && handleMapInsert()}

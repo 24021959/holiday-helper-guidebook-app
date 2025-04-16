@@ -43,23 +43,35 @@ export const useImageControls = (images: ImageDetail[], onImageAdd: (image: Imag
   };
 
   const handleDeleteImage = (index: number, content: string) => {
-    const imagePlaceholder = `[IMAGE_${index}]`;
-    const newContent = content.replace(imagePlaceholder, '');
+    // Find the image data in the content
+    const imageToDelete = images[index];
+    if (!imageToDelete) return;
+    
+    // Create a JSON representation of the image to find in content
+    const imageData = JSON.stringify({
+      type: "image",
+      url: imageToDelete.url,
+      position: imageToDelete.position,
+      width: imageToDelete.width,
+      caption: imageToDelete.caption || ""
+    });
+    
+    // Create a regex pattern to find this or similar image data
+    const urlEscaped = imageToDelete.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const imagePattern = new RegExp(`\\{[^}]*"url":"${urlEscaped}"[^}]*\\}`, 'g');
+    
+    // Replace the image JSON with empty string
+    let newContent = content.replace(imagePattern, '');
+    
+    // Clean up any consecutive newlines that might be left behind
+    newContent = newContent.replace(/\n\s*\n\s*\n/g, '\n\n');
+    
+    // Update content
     onChange(newContent);
     
+    // Remove from images array
     const updatedImages = images.filter((_, idx) => idx !== index);
-    
-    updatedImages.forEach((image, newIdx) => {
-      onImageAdd(image);
-      // Aggiornamento dei placeholder se necessario
-      const oldPlaceholder = `[IMAGE_${newIdx + 1}]`;
-      const newPlaceholder = `[IMAGE_${newIdx}]`;
-      
-      if (newContent.includes(oldPlaceholder)) {
-        const updatedContent = newContent.replace(oldPlaceholder, newPlaceholder);
-        onChange(updatedContent);
-      }
-    });
+    updatedImages.forEach(image => onImageAdd(image));
     
     toast.success("Immagine eliminata con successo");
   };

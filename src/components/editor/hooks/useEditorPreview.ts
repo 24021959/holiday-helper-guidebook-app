@@ -9,6 +9,39 @@ export const useEditorPreview = (content: string, images: ImageDetail[]) => {
     const formatContent = () => {
       let formatted = content || '';
       
+      // Process image JSON objects in content
+      const regex = /\{\"type\":\"image\",.*?\}/g;
+      let match;
+      let index = 0;
+      
+      while ((match = regex.exec(formatted)) !== null) {
+        try {
+          const imageData = JSON.parse(match[0]);
+          const positionClass = 
+            imageData.position === "left" ? "float-left mr-4" : 
+            imageData.position === "right" ? "float-right ml-4" : 
+            imageData.position === "full" ? "w-full block" : 
+            "mx-auto block";
+          
+          const imageHtml = `
+            <figure class="${positionClass}" style="width: ${imageData.width || '50%'}; margin-bottom: 1rem;">
+              <img 
+                src="${imageData.url}" 
+                alt="${imageData.caption || `Image ${index + 1}`}" 
+                class="w-full h-auto rounded-md" 
+                data-image-index="${index}"
+              />
+              ${imageData.caption ? `<figcaption class="text-sm text-gray-500 mt-1">${imageData.caption}</figcaption>` : ''}
+            </figure>
+          `;
+          
+          formatted = formatted.replace(match[0], imageHtml);
+          index++;
+        } catch (e) {
+          console.error("Failed to parse image data:", e);
+        }
+      }
+      
       // Replace image placeholders with actual images
       images.forEach((image, index) => {
         const positionClass = 
@@ -55,11 +88,11 @@ export const useEditorPreview = (content: string, images: ImageDetail[]) => {
       
       // Convert lists
       let bulletListRegex = /- (.*?)(?:\n|$)/g;
-      let match;
+      let match2;
       let listItems = [];
       
-      while ((match = bulletListRegex.exec(formatted)) !== null) {
-        listItems.push(`<li>${match[1]}</li>`);
+      while ((match2 = bulletListRegex.exec(formatted)) !== null) {
+        listItems.push(`<li>${match2[1]}</li>`);
       }
       
       if (listItems.length > 0) {
