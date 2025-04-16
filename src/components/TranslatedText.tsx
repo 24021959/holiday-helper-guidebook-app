@@ -30,10 +30,24 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
   const cacheKey = `${language}:${text}`;
 
   useEffect(() => {
-    // Check if we're inside an editor context (parent with data-no-translation attribute)
-    const isInEditorContext = !!document.querySelector('[data-no-translation="true"]')?.contains(
-      document.activeElement
-    );
+    // Verifica se siamo in un contesto di editor (qualsiasi elemento parent con attributo data-no-translation)
+    const isInEditorContext = (() => {
+      // Check if any parent element has the data-no-translation attribute
+      let currentElement = document.activeElement;
+      while (currentElement) {
+        if (currentElement.getAttribute && currentElement.getAttribute('data-no-translation') === 'true') {
+          return true;
+        }
+        currentElement = currentElement.parentElement;
+      }
+      
+      // Anche il form di creazione pagina dovrebbe essere escluso dalla traduzione automatica
+      const isInPageForm = !!document.querySelector('form') && 
+                          (document.activeElement?.tagName === 'INPUT' || 
+                           document.activeElement?.tagName === 'TEXTAREA');
+      
+      return isInPageForm;
+    })();
 
     // If automatic translation is disabled, or we're in an editor context, use only the original text
     if (disableAutoTranslation || isInEditorContext) {

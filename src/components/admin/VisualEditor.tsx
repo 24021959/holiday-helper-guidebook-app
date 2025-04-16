@@ -111,8 +111,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   };
 
   return (
-    <div className={`flex flex-col space-y-4 ${isFullscreen ? 'fixed inset-0 z-50 bg-white p-4' : ''}`}>
-      <div className="flex flex-wrap gap-2 p-2 bg-gray-50 border border-gray-200 rounded-md mb-4 sticky top-0 z-10">
+    <div className={`flex flex-col space-y-4 ${isFullscreen ? 'fixed inset-0 z-50 bg-white p-4' : ''}`} data-no-translation="true">
+      <div className="flex flex-wrap gap-2 p-2 bg-gray-50 border border-gray-200 rounded-md mb-4 sticky top-0 z-10" data-no-translation="true">
         <HistoryButtons
           historyIndex={historyIndex}
           editHistory={editHistory}

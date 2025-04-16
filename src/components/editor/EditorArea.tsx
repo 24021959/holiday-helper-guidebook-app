@@ -23,7 +23,7 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
   const previewRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className={`border rounded-lg overflow-hidden ${className}`}>
+    <div className={`border rounded-lg overflow-hidden ${className}`} data-no-translation="true">
       {editMode === 'visual' ? (
         <div ref={editorRef} className="relative min-h-[500px] bg-white p-4" data-no-translation="true">
           <Textarea

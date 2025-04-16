@@ -68,9 +68,9 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        <div className="py-4">
+        <div className="py-4" data-no-translation="true">
           {previewUrl ? (
-            <div className="space-y-4">
+            <div className="space-y-4" data-no-translation="true">
               <div className="border rounded-md overflow-hidden">
                 <img 
                   src={previewUrl} 
@@ -79,7 +79,7 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
                 />
               </div>
               
-              <div className="space-y-3">
+              <div className="space-y-3" data-no-translation="true">
                 <div className="space-y-1.5">
                   <Label htmlFor="position">
                     <TranslatedText text="Posizione dell'immagine" disableAutoTranslation={true} />
@@ -88,6 +88,7 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
                     value={position} 
                     onValueChange={(value) => setPosition(value as "left" | "center" | "right" | "full")}
                     className="flex space-x-2"
+                    data-no-translation="true"
                   >
                     <div className="flex items-center space-x-1">
                       <RadioGroupItem value="left" id="left" />
@@ -125,12 +126,13 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
                     value={caption} 
                     onChange={(e) => setCaption(e.target.value)}
                     placeholder="Inserisci una didascalia per l'immagine"
+                    data-no-translation="true"
                   />
                 </div>
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-[200px] border-2 border-dashed rounded-md border-gray-300 p-4">
+            <div className="flex flex-col items-center justify-center h-[200px] border-2 border-dashed rounded-md border-gray-300 p-4" data-no-translation="true">
               <ImageIcon className="h-10 w-10 text-gray-400 mb-2" />
               <p className="text-sm text-gray-500 mb-4">
                 <TranslatedText text="Carica un'immagine (JPG, PNG, GIF)" disableAutoTranslation={true} />
@@ -146,22 +148,25 @@ const ImageInsertionDialog: React.FC<ImageInsertionDialogProps> = ({
                   className="sr-only"
                   accept="image/*"
                   onChange={handleFileChange}
+                  data-no-translation="true"
                 />
               </label>
             </div>
           )}
         </div>
         
-        <DialogFooter>
+        <DialogFooter data-no-translation="true">
           <Button 
             variant="outline" 
             onClick={resetForm}
+            data-no-translation="true"
           >
             <TranslatedText text="Annulla" disableAutoTranslation={true} />
           </Button>
           <Button 
             onClick={handleConfirm} 
             disabled={!previewUrl}
+            data-no-translation="true"
           >
             <TranslatedText text="Inserisci" disableAutoTranslation={true} />
           </Button>
