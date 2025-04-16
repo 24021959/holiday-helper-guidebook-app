@@ -43,13 +43,13 @@ const Footer: React.FC<FooterProps> = ({
     const fetchFooterSettings = async () => {
       try {
         // First try localStorage for immediate display
-        let localSettings = null;
+        let cachedSettings = null;
         try {
           const savedFooterSettings = localStorage.getItem("footerSettings");
           if (savedFooterSettings) {
-            localSettings = JSON.parse(savedFooterSettings);
-            setSettings(localSettings);
-            console.log("Using cached footer settings:", localSettings);
+            cachedSettings = JSON.parse(savedFooterSettings);
+            setSettings(cachedSettings);
+            console.log("Using cached footer settings:", cachedSettings);
           }
         } catch (err) {
           console.error("Error parsing footer settings from localStorage:", err);
@@ -67,8 +67,8 @@ const Footer: React.FC<FooterProps> = ({
             console.error('Error loading footer settings:', error);
           }
           
-          // If we don't have local settings, use defaults
-          if (!localSettings) {
+          // If we don't have cached settings, use defaults
+          if (!cachedSettings) {
             setSettings(defaultFooterSettings);
           }
         } else if (data && data.value) {
@@ -81,12 +81,13 @@ const Footer: React.FC<FooterProps> = ({
           } catch (e) {
             console.warn("Could not cache footer settings in localStorage:", e);
           }
-        } else if (!localSettings) {
+        } else if (!cachedSettings) {
           setSettings(defaultFooterSettings);
         }
       } catch (error) {
         console.error('Error fetching footer settings:', error);
-        if (!localSettings) {
+        // If we have an error and no cached settings, use defaults
+        if (!cachedSettings) {
           setSettings(defaultFooterSettings);
         }
       } finally {

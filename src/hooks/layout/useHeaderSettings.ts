@@ -91,7 +91,17 @@ export const saveHeaderSettings = async (headerData: HeaderData): Promise<Table[
     
     // Cache in localStorage as backup
     try {
-      localStorage.setItem("headerSettings", JSON.stringify(headerData));
+      const localStorageData = {
+        logoUrl: headerData.logo_url,
+        headerColor: headerData.header_color,
+        establishmentName: headerData.establishment_name,
+        logoPosition: headerData.logo_position,
+        logoSize: headerData.logo_size,
+        establishmentNameAlignment: headerData.establishment_name_alignment,
+        establishmentNameColor: headerData.establishment_name_color
+      };
+      localStorage.setItem("headerSettings", JSON.stringify(localStorageData));
+      console.log("Cached header settings in localStorage:", localStorageData);
     } catch (e) {
       console.warn("Could not cache header settings in localStorage:", e);
     }

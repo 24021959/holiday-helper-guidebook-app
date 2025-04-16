@@ -24,7 +24,7 @@ export const useHeaderSettings = () => {
     
     try {
       // First check localStorage as immediate fallback
-      let localSettings = null;
+      let localSettings: HeaderSettings | null = null;
       try {
         const savedHeaderSettings = localStorage.getItem("headerSettings");
         if (savedHeaderSettings) {
@@ -54,14 +54,14 @@ export const useHeaderSettings = () => {
       }
       
       if (data) {
-        const newSettings = {
+        const newSettings: HeaderSettings = {
           logoUrl: data.logo_url,
           headerColor: data.header_color,
           establishmentName: data.establishment_name,
-          logoPosition: data.logo_position || "left",
-          logoSize: data.logo_size || "medium",
-          establishmentNameAlignment: data.establishment_name_alignment || "left",
-          establishmentNameColor: data.establishment_name_color || "#000000"
+          logoPosition: data.logo_position as "left" | "center" | "right",
+          logoSize: data.logo_size as "small" | "medium" | "large",
+          establishmentNameAlignment: data.establishment_name_alignment as "left" | "center" | "right",
+          establishmentNameColor: data.establishment_name_color
         };
         
         setHeaderSettings(newSettings);
@@ -76,7 +76,7 @@ export const useHeaderSettings = () => {
       } else if (!localSettings) {
         // No data found and no local settings, set defaults
         console.log("No header settings found, using defaults");
-        const defaultSettings = {
+        const defaultSettings: HeaderSettings = {
           headerColor: "bg-white",
           establishmentName: "Locanda dell'Angelo",
           logoPosition: "left",

@@ -30,6 +30,7 @@ export const useLayoutSettings = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [formLoaded, setFormLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveAttempt, setSaveAttempt] = useState(0);
 
   const form = useForm<LayoutSettingsForm>({
     defaultValues: {
@@ -89,18 +90,20 @@ export const useLayoutSettings = () => {
           
           if (dbHeaderData) {
             headerData = {
-              logoUrl: dbHeaderData.logo_url,
-              establishmentName: dbHeaderData.establishment_name,
-              logoPosition: dbHeaderData.logo_position,
-              logoSize: dbHeaderData.logo_size,
-              headerColor: dbHeaderData.header_color,
-              establishmentNameColor: dbHeaderData.establishment_name_color,
-              establishmentNameAlignment: dbHeaderData.establishment_name_alignment
+              logoUrl: dbHeaderData.logo_url || '',
+              establishmentName: dbHeaderData.establishment_name || '',
+              logoPosition: dbHeaderData.logo_position || 'left',
+              logoSize: dbHeaderData.logo_size || 'medium',
+              headerColor: dbHeaderData.header_color || '#FFFFFF',
+              establishmentNameColor: dbHeaderData.establishment_name_color || '#000000',
+              establishmentNameAlignment: dbHeaderData.establishment_name_alignment || 'left'
             };
+            console.log("Found header settings in database:", headerData);
           }
           
           if (dbFooterData) {
             footerData = dbFooterData;
+            console.log("Found footer settings in database:", footerData);
           }
         } catch (error) {
           console.error("Error loading settings from database:", error);
@@ -155,6 +158,7 @@ export const useLayoutSettings = () => {
     console.log("Submitting layout settings:", data);
     setIsLoading(true);
     setIsSuccess(false);
+    setSaveAttempt(prev => prev + 1);
     
     try {
       toast.info("Salvataggio impostazioni in corso...");
@@ -186,19 +190,31 @@ export const useLayoutSettings = () => {
       console.log("Saving footer data:", footerData);
       
       // Use Promise.all to save both settings concurrently
-      const [headerResult, footerResult] = await Promise.all([
+      const results = await Promise.allSettled([
         saveHeaderSettings(headerData),
         saveFooterSettings(footerData)
       ]);
       
-      console.log("Header settings saved:", headerResult);
-      console.log("Footer settings saved:", footerResult);
-
-      if (!headerResult && !footerResult) {
-        throw new Error("Nessun dato è stato salvato");
+      // Check results
+      const headerResult = results[0];
+      const footerResult = results[1];
+      
+      if (headerResult.status === 'rejected') {
+        console.error("Error saving header settings:", headerResult.reason);
+        toast.error("Errore nel salvataggio delle impostazioni header");
+        return;
       }
+      
+      if (footerResult.status === 'rejected') {
+        console.error("Error saving footer settings:", footerResult.reason);
+        toast.error("Errore nel salvataggio delle impostazioni footer");
+        return;
+      }
+      
+      console.log("Header settings saved:", headerResult.status === 'fulfilled' ? headerResult.value : 'N/A');
+      console.log("Footer settings saved:", footerResult.status === 'fulfilled' ? footerResult.value : 'N/A');
 
-      // Also update local cache for immediate access
+      // Update cache for immediate access
       try {
         localStorage.setItem("headerSettings", JSON.stringify({
           logoUrl: data.logoUrl,
@@ -211,6 +227,7 @@ export const useLayoutSettings = () => {
         }));
         
         localStorage.setItem("footerSettings", JSON.stringify(footerData));
+        console.log("Settings cached in localStorage");
       } catch (e) {
         console.warn("Could not cache settings in localStorage:", e);
       }
@@ -232,6 +249,7 @@ export const useLayoutSettings = () => {
     loadError,
     isLoading,
     isSuccess,
+    saveAttempt,
     onSubmit,
     ...colorPreview
   };
