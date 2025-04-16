@@ -24,44 +24,10 @@ export const EditorContent: React.FC<EditorContentProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
-  const renderInlineImages = () => {
-    let htmlContent = content;
-    
-    // Replace image placeholders with actual images
-    images.forEach((image, index) => {
-      const positionClass = 
-        image.position === "left" ? "float-left mr-4" : 
-        image.position === "right" ? "float-right ml-4" : 
-        image.position === "full" ? "w-full block" : 
-        "mx-auto block";
-      
-      const imageHtml = `
-        <figure class="${positionClass}" style="width: ${image.width}; margin-bottom: 1rem;">
-          <img 
-            src="${image.url}" 
-            alt="${image.caption || `Image ${index + 1}`}" 
-            class="w-full h-auto rounded-md" 
-            data-image-index="${index}"
-          />
-          ${image.caption ? `<figcaption class="text-sm text-gray-500 mt-1">${image.caption}</figcaption>` : ''}
-        </figure>
-      `;
-      
-      htmlContent = htmlContent.replace(`[IMAGE_${index}]`, imageHtml);
-    });
-
-    return htmlContent;
-  };
-
   return (
     <div className="border rounded-lg overflow-hidden" data-no-translation="true">
       {editMode === 'visual' ? (
         <div className="relative min-h-[500px] bg-white p-4" data-no-translation="true">
-          <div 
-            className="absolute inset-0 pointer-events-none prose max-w-none p-4" 
-            dangerouslySetInnerHTML={{ __html: renderInlineImages() }} 
-            data-no-translation="true"
-          />
           <Textarea
             ref={textareaRef}
             value={content}
