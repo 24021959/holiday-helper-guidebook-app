@@ -1,8 +1,10 @@
 
 import { useForm } from "react-hook-form";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
+import { saveHeaderSettings, fetchHeaderSettings } from "./layout/useHeaderSettings";
+import { saveFooterSettings, fetchFooterSettings } from "./layout/useFooterSettings";
+import { useColorPreview } from "./layout/useColorPreview";
 
 export interface LayoutSettingsForm {
   logoUrl: string;
@@ -24,50 +26,31 @@ export interface LayoutSettingsForm {
 }
 
 export const useLayoutSettings = () => {
-  const [previewHeaderColor, setPreviewHeaderColor] = useState("#FFFFFF");
-  const [previewFooterColor, setPreviewFooterColor] = useState("#FFFFFF");
-  const [previewEstablishmentNameColor, setPreviewEstablishmentNameColor] = useState("#000000");
-  const [previewFooterTextColor, setPreviewFooterTextColor] = useState("#555555");
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<LayoutSettingsForm>({
     defaultValues: async () => {
       try {
-        const [headerResult, footerResult] = await Promise.all([
-          supabase.from('header_settings').select('*').maybeSingle(),
-          supabase.from('site_settings').select('*').eq('key', 'footer_settings').maybeSingle()
-        ]);
-
-        const headerData = headerResult.data || {};
-        const footerData = footerResult.data?.value || {};
-
-        const initialHeaderColor = headerData.header_color || '#FFFFFF';
-        const initialFooterColor = footerData.background_color || '#FFFFFF';
-        const initialNameColor = headerData.establishment_name_color || '#000000';
-        const initialFooterTextColor = footerData.text_color || '#555555';
-        
-        setPreviewHeaderColor(initialHeaderColor);
-        setPreviewFooterColor(initialFooterColor);
-        setPreviewEstablishmentNameColor(initialNameColor);
-        setPreviewFooterTextColor(initialFooterTextColor);
+        const headerData = await fetchHeaderSettings();
+        const footerData = await fetchFooterSettings();
 
         return {
-          logoUrl: headerData.logo_url || '',
-          establishmentName: headerData.establishment_name || '',
-          logoPosition: headerData.logo_position || 'left',
-          logoSize: headerData.logo_size || 'medium',
-          themeColor: initialHeaderColor,
-          headerColor: initialHeaderColor,
-          footerColor: initialFooterColor,
-          footerTextColor: initialFooterTextColor,
-          establishmentNameColor: initialNameColor,
-          footerText: footerData.custom_text || '',
-          showSocialLinks: footerData.show_social_links || false,
-          facebookUrl: footerData.facebook_url || '',
-          instagramUrl: footerData.instagram_url || '',
-          twitterUrl: footerData.twitter_url || '',
-          footerTextAlignment: footerData.text_alignment || 'left',
-          establishmentNameAlignment: headerData.establishment_name_alignment || 'left'
+          logoUrl: headerData?.logo_url || '',
+          establishmentName: headerData?.establishment_name || '',
+          logoPosition: headerData?.logo_position || 'left',
+          logoSize: headerData?.logo_size || 'medium',
+          themeColor: headerData?.header_color || '#FFFFFF',
+          headerColor: headerData?.header_color || '#FFFFFF',
+          footerColor: footerData?.background_color || '#FFFFFF',
+          footerTextColor: footerData?.text_color || '#555555',
+          establishmentNameColor: headerData?.establishment_name_color || '#000000',
+          footerText: footerData?.custom_text || '',
+          showSocialLinks: footerData?.show_social_links || false,
+          facebookUrl: footerData?.facebook_url || '',
+          instagramUrl: footerData?.instagram_url || '',
+          twitterUrl: footerData?.twitter_url || '',
+          footerTextAlignment: footerData?.text_alignment || 'left',
+          establishmentNameAlignment: headerData?.establishment_name_alignment || 'left'
         };
       } catch (error) {
         console.error("Error loading layout settings:", error);
@@ -94,114 +77,32 @@ export const useLayoutSettings = () => {
     }
   });
 
-  useEffect(() => {
-    setPreviewHeaderColor(form.watch('headerColor'));
-    setPreviewFooterColor(form.watch('footerColor'));
-    setPreviewEstablishmentNameColor(form.watch('establishmentNameColor'));
-    setPreviewFooterTextColor(form.watch('footerTextColor'));
-  }, [
-    form.watch('headerColor'),
-    form.watch('footerColor'),
-    form.watch('establishmentNameColor'),
-    form.watch('footerTextColor')
-  ]);
+  const colorPreview = useColorPreview(form.watch);
 
   const onSubmit = async (data: LayoutSettingsForm) => {
     setIsLoading(true);
     try {
-      // For header settings
-      const headerData = {
-        logo_url: data.logoUrl,
-        header_color: data.headerColor,
-        establishment_name: data.establishmentName,
-        establishment_name_alignment: data.establishmentNameAlignment,
-        establishment_name_color: data.establishmentNameColor,
-        logo_position: data.logoPosition,
-        logo_size: data.logoSize
-      };
-
-      // Instead of using upsert which could be causing the RLS error,
-      // Let's create a more detailed approach:
-      
-      // First check if header settings exist
-      const { data: existingHeaderData, error: headerCheckError } = await supabase
-        .from('header_settings')
-        .select('*')
-        .limit(1);
-
-      if (headerCheckError) {
-        console.error("Error checking header settings:", headerCheckError);
-        throw headerCheckError;
-      }
-
-      if (existingHeaderData && existingHeaderData.length > 0) {
-        // Update existing header settings
-        const { error: updateError } = await supabase
-          .from('header_settings')
-          .update(headerData)
-          .eq('id', existingHeaderData[0].id);
-        
-        if (updateError) {
-          console.error("Error updating header settings:", updateError);
-          throw updateError;
-        }
-      } else {
-        // Insert new header settings
-        const { error: insertError } = await supabase
-          .from('header_settings')
-          .insert(headerData);
-        
-        if (insertError) {
-          console.error("Error inserting header settings:", insertError);
-          throw insertError;
-        }
-      }
-
-      // For footer settings
-      const footerValue = {
-        custom_text: data.footerText,
-        show_social_links: data.showSocialLinks,
-        facebook_url: data.facebookUrl,
-        instagram_url: data.instagramUrl,
-        twitter_url: data.twitterUrl,
-        background_color: data.footerColor,
-        text_color: data.footerTextColor,
-        text_alignment: data.footerTextAlignment
-      };
-
-      // First check if footer settings exist
-      const { data: existingFooterData, error: footerCheckError } = await supabase
-        .from('site_settings')
-        .select('*')
-        .eq('key', 'footer_settings');
-
-      if (footerCheckError) {
-        console.error("Error checking footer settings:", footerCheckError);
-        throw footerCheckError;
-      }
-
-      if (existingFooterData && existingFooterData.length > 0) {
-        // Update existing footer settings
-        const { error: updateError } = await supabase
-          .from('site_settings')
-          .update({ value: footerValue })
-          .eq('id', existingFooterData[0].id);
-        
-        if (updateError) {
-          console.error("Error updating footer settings:", updateError);
-          throw updateError;
-        }
-      } else {
-        // Insert new footer settings
-        const { error: insertError } = await supabase
-          .from('site_settings')
-          .insert({ key: 'footer_settings', value: footerValue });
-        
-        if (insertError) {
-          console.error("Error inserting footer settings:", insertError);
-          throw insertError;
-        }
-      }
+      await Promise.all([
+        saveHeaderSettings({
+          logo_url: data.logoUrl,
+          header_color: data.headerColor,
+          establishment_name: data.establishmentName,
+          establishment_name_alignment: data.establishmentNameAlignment,
+          establishment_name_color: data.establishmentNameColor,
+          logo_position: data.logoPosition,
+          logo_size: data.logoSize
+        }),
+        saveFooterSettings({
+          custom_text: data.footerText,
+          show_social_links: data.showSocialLinks,
+          facebook_url: data.facebookUrl,
+          instagram_url: data.instagramUrl,
+          twitter_url: data.twitterUrl,
+          background_color: data.footerColor,
+          text_color: data.footerTextColor,
+          text_alignment: data.footerTextAlignment
+        })
+      ]);
 
       toast.success("Impostazioni layout salvate con successo");
     } catch (error) {
@@ -214,11 +115,8 @@ export const useLayoutSettings = () => {
 
   return {
     form,
-    previewHeaderColor,
-    previewFooterColor,
-    previewEstablishmentNameColor,
-    previewFooterTextColor,
     isLoading,
-    onSubmit
+    onSubmit,
+    ...colorPreview
   };
 };
