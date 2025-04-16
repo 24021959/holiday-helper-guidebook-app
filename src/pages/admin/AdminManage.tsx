@@ -8,15 +8,20 @@ import { LanguageSelector } from "@/components/admin/manage/LanguageSelector";
 import { LanguageInfoBanner } from "@/components/admin/manage/LanguageInfoBanner";
 import { PagesList } from "@/components/admin/manage/PagesList";
 import { DeletePageDialog } from "@/components/admin/manage/DeletePageDialog";
+import EditPageForm from "@/components/admin/EditPageForm";
+import { useRouter } from "@/lib/next-router-mock";
 
 const AdminManage = () => {
   const [pages, setPages] = useState<PageData[]>([]);
+  const [parentPages, setParentPages] = useState<PageData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deletingPage, setDeletingPage] = useState<PageData | null>(null);
   const [currentLanguage, setCurrentLanguage] = useState('it');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [editingPage, setEditingPage] = useState<PageData | null>(null);
   const { deletePageAndTranslations } = usePageCreation({ onPageCreated: setPages });
+  const router = useRouter();
 
   const fetchPages = async (langCode: string) => {
     try {
@@ -53,6 +58,31 @@ const AdminManage = () => {
           is_parent: page.is_parent || false
         }));
         setPages(formattedPages);
+      }
+
+      // Fetch all pages to use as parent options
+      const { data: allData } = await supabase
+        .from('custom_pages')
+        .select('*')
+        .eq('is_parent', true);
+      
+      if (allData) {
+        const allParentPages = allData.map(page => ({
+          id: page.id,
+          title: page.title,
+          content: page.content,
+          path: page.path,
+          imageUrl: page.image_url,
+          icon: page.icon,
+          listType: page.list_type as "locations" | "activities" | "restaurants" | undefined,
+          listItems: page.list_items,
+          isSubmenu: page.is_submenu || false,
+          parentPath: page.parent_path || undefined,
+          pageImages: page.content ? extractImagesFromContent(page.content) : [],
+          published: page.published,
+          is_parent: page.is_parent || false
+        }));
+        setParentPages(allParentPages);
       }
     } catch (error) {
       console.error("Error fetching pages:", error);
@@ -103,6 +133,10 @@ const AdminManage = () => {
     window.open(`/preview${page.path}`, '_blank');
   };
 
+  const handleEdit = (page: PageData) => {
+    setEditingPage(page);
+  };
+
   const handleDelete = (page: PageData) => {
     setDeletingPage(page);
     setShowDeleteDialog(true);
@@ -133,6 +167,42 @@ const AdminManage = () => {
     }
   };
 
+  const handlePageUpdated = async () => {
+    await fetchPages(currentLanguage);
+    setEditingPage(null);
+    toast.success("Pagina aggiornata con successo");
+  };
+
+  // Define keyword to icon map
+  const keywordToIconMap: Record<string, string> = {
+    home: "Home",
+    casa: "Home",
+    info: "Info",
+    informazioni: "Info",
+    contatti: "Phone",
+    telefono: "Phone",
+    email: "Mail",
+    menu: "Menu",
+    ristorante: "Utensils",
+    cibo: "Utensils",
+    mappa: "Map",
+    posizione: "MapPin",
+    eventi: "Calendar",
+    gallery: "Image",
+    galleria: "Image",
+    foto: "Image",
+    servizi: "LayoutGrid",
+    attività: "Activity",
+    attivita: "Activity",
+    escursioni: "Mountain",
+    sport: "Dumbbell",
+    piscina: "Waves",
+    spiaggia: "Umbrella",
+    mare: "Ship",
+    // Default fallback
+    default: "FileText"
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -143,30 +213,43 @@ const AdminManage = () => {
 
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Gestione Pagine</h2>
-        <LanguageSelector 
-          currentLanguage={currentLanguage} 
-          onLanguageChange={setCurrentLanguage} 
+      {editingPage ? (
+        <EditPageForm 
+          selectedPage={editingPage}
+          parentPages={parentPages}
+          onPageUpdated={handlePageUpdated}
+          keywordToIconMap={keywordToIconMap}
+          allPages={pages}
         />
-      </div>
+      ) : (
+        <>
+          <div className="mb-6">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Gestione Pagine</h2>
+            <LanguageSelector 
+              currentLanguage={currentLanguage} 
+              onLanguageChange={setCurrentLanguage} 
+            />
+          </div>
 
-      <LanguageInfoBanner currentLanguage={currentLanguage} />
+          <LanguageInfoBanner currentLanguage={currentLanguage} />
 
-      <PagesList 
-        pages={pages}
-        onView={handleView}
-        onDelete={handleDelete}
-        isDeleting={isDeleting}
-      />
+          <PagesList 
+            pages={pages}
+            onView={handleView}
+            onDelete={handleDelete}
+            onEdit={handleEdit}
+            isDeleting={isDeleting}
+          />
 
-      <DeletePageDialog 
-        isOpen={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        page={deletingPage}
-        isDeleting={isDeleting}
-        onConfirm={confirmDelete}
-      />
+          <DeletePageDialog 
+            isOpen={showDeleteDialog}
+            onOpenChange={setShowDeleteDialog}
+            page={deletingPage}
+            isDeleting={isDeleting}
+            onConfirm={confirmDelete}
+          />
+        </>
+      )}
     </div>
   );
 };

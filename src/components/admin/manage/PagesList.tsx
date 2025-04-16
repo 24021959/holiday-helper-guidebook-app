@@ -9,17 +9,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Eye, Trash2 } from "lucide-react";
+import { Eye, Trash2, Pencil } from "lucide-react";
 import { PageTypeBadge } from "./PageTypeBadge";
 
 interface PagesListProps {
   pages: PageData[];
   onView: (page: PageData) => void;
   onDelete: (page: PageData) => void;
+  onEdit: (page: PageData) => void;
   isDeleting: boolean;
 }
 
-export const PagesList = ({ pages, onView, onDelete, isDeleting }: PagesListProps) => {
+export const PagesList = ({ pages, onView, onDelete, onEdit, isDeleting }: PagesListProps) => {
   if (pages.length === 0) {
     return (
       <div className="text-center py-10 bg-gray-50 rounded-lg">
@@ -48,6 +49,14 @@ export const PagesList = ({ pages, onView, onDelete, isDeleting }: PagesListProp
             </TableCell>
             <TableCell className="text-right">
               <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => onEdit(page)}
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
                 <Button
                   variant="outline"
                   size="icon"
