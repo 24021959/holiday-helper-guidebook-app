@@ -33,26 +33,41 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
     // BLOCCO CATEGORICO: In QUALSIASI contesto amministrativo o di editing,
     // NON eseguire mai traduzioni automatiche
     
-    // 1. Force block any translation in admin section
-    if (window.location.pathname.includes('/admin')) {
+    // 0. Hard coded prevention - NEVER TRANSLATE when in admin paths
+    if (
+      window.location.pathname.includes('/admin') || 
+      document.body.hasAttribute('data-no-translation') ||
+      disableAutoTranslation
+    ) {
       setTranslatedText(text);
       return;
     }
 
-    // 2. Force block any translation if disableAutoTranslation is true
-    if (disableAutoTranslation) {
+    // 1. Global editor mode detection - NEVER translate in editor mode 
+    const inEditorMode = (() => {
+      // Check for any editor-specific elements in the page
+      return (
+        document.querySelector('[data-editor="true"]') !== null ||
+        document.querySelector('form') !== null ||
+        document.querySelector('textarea') !== null ||
+        document.querySelector('[data-no-translation="true"]') !== null ||
+        document.querySelector('dialog, [role="dialog"]') !== null
+      );
+    })();
+
+    if (inEditorMode) {
       setTranslatedText(text);
       return;
     }
 
-    // 3. Check for global translation blocking attribute on body or any parent
+    // 2. Check for global translation blocking attribute
     const bodyHasNoTranslation = document.body.getAttribute('data-no-translation') === 'true';
     if (bodyHasNoTranslation) {
       setTranslatedText(text);
       return;
     }
 
-    // 4. Check for any parent element with data-no-translation attribute
+    // 3. Check for any parent element with data-no-translation attribute
     const isInNoTranslationContext = (() => {
       let currentElement = document.activeElement;
       while (currentElement) {
@@ -69,23 +84,20 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
       return;
     }
 
-    // 5. Additional check for forms, editors, or any input context
-    const isInEditorContext = (() => {
-      // Verifica anche l'esistenza di form o modali di editing
-      const isInPageForm = document.querySelector('form') !== null;
-      
-      // Verifica se siamo in qualsiasi dialogo o modale
-      const isInDialog = document.querySelector('dialog, [role="dialog"]') !== null;
-      
-      return isInPageForm || isInDialog;
-    })();
-
-    if (isInEditorContext) {
+    // Only proceed with translation if none of the blocking conditions are met
+    // and we're not in Italian language
+    if (language === 'it') {
       setTranslatedText(text);
       return;
     }
-
-    // Only proceed with translation if none of the blocking conditions are met
+    
+    // Check cache first before translating
+    if (translationCacheRef.current[cacheKey]) {
+      setTranslatedText(translationCacheRef.current[cacheKey]);
+      return;
+    }
+    
+    // Determine if we need to translate based on language and text changes
     const needsTranslation = 
       language !== 'it' && 
       (text !== prevTextRef.current || 
@@ -94,25 +106,17 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
     let isMounted = true;
     
     const fetchTranslation = async () => {
-      // If we're in Italian or the translation is already in cache, use it directly
-      if (language === 'it') {
+      // Final safety check before translation
+      if (language === 'it' || document.body.hasAttribute('data-no-translation')) {
         setTranslatedText(text);
-        return;
-      }
-      
-      // Check if the translation is in cache
-      if (translationCacheRef.current[cacheKey]) {
-        setTranslatedText(translationCacheRef.current[cacheKey]);
         return;
       }
       
       setIsLoading(true);
       try {
-        console.log(`Traduzione: "${text}" in ${language}`);
         const result = await translate(text);
         
         if (isMounted) {
-          console.log(`Risultato traduzione: "${result}"`);
           setTranslatedText(result);
           // Save to cache
           translationCacheRef.current[cacheKey] = result;

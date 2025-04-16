@@ -31,6 +31,12 @@ export const usePageTranslation = () => {
       setIsTranslating(true);
       toast.info("Avvio traduzione automatica in tutte le lingue...");
 
+      // CRITICAL: Force disable the no-translation flag ONLY for this operation
+      const wasNoTranslation = document.body.hasAttribute('data-no-translation');
+      if (wasNoTranslation) {
+        document.body.removeAttribute('data-no-translation');
+      }
+
       // Traduci in tutte le altre lingue
       const targetLangs: ("en" | "fr" | "es" | "de")[] = ['en', 'fr', 'es', 'de'];
       
@@ -66,13 +72,25 @@ export const usePageTranslation = () => {
         }
       }
 
+      // CRITICAL: Restore the no-translation flag after operation
+      if (wasNoTranslation) {
+        document.body.setAttribute('data-no-translation', 'true');
+      }
+
       return true;
     } catch (error) {
       console.error("Error translating pages:", error);
       toast.error("Errore durante la traduzione delle pagine");
+      
+      // CRITICAL: Ensure the no-translation flag is restored in case of error
+      document.body.setAttribute('data-no-translation', 'true');
+      
       throw error;
     } finally {
       setIsTranslating(false);
+      
+      // CRITICAL: Final safety check to ensure the no-translation flag is set
+      document.body.setAttribute('data-no-translation', 'true');
     }
   };
 

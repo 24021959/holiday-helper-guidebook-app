@@ -42,6 +42,9 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         ? `${values.parentPath}/${sanitizedTitle}`
         : `/${sanitizedTitle}`;
 
+      // CRITICAL: Set a flag to indicate that automatic translations should be disabled
+      document.body.setAttribute('data-no-translation', 'true');
+      
       console.log("CREAZIONE PAGINA INIZIATA - Solo versione italiana");
       console.log("⚠️ LA TRADUZIONE SARÀ AVVIATA SOLO DOPO IL SALVATAGGIO DELLA PAGINA ITALIANA");
       
@@ -59,11 +62,18 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
 
       toast.success("Pagina in italiano creata con successo");
 
-      // Solo dopo il salvataggio della pagina italiana, avvia le traduzioni
-      // QUESTO SUCCEDE SOLO DOPO IL CLIC SU "SALVA PAGINA" - È L'UNICO PUNTO DOVE AVVIENE LA TRADUZIONE
-      if (pageId) {
-        console.log("INIZIO TRADUZIONE PAGINA - Solo dopo salvataggio");
+      // EXPLICIT USER CHOICE: Only translate after Italian page save and ONLY if the user explicitly chose to translate
+      const userConfirmedTranslation = window.confirm(
+        "Vuoi tradurre automaticamente questa pagina in altre lingue? Clicca 'Annulla' per saltare la traduzione."
+      );
+      
+      // Only proceed with translations if user confirmed
+      if (pageId && userConfirmedTranslation) {
+        console.log("INIZIO TRADUZIONE PAGINA - Su richiesta utente dopo salvataggio");
         try {
+          // Remove the no-translation flag ONLY for the translation operation
+          document.body.removeAttribute('data-no-translation');
+          
           await translatePages(
             values.content,
             values.title,
@@ -75,6 +85,9 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
             pageImages
           );
           
+          // Re-enable the no-translation flag after translations
+          document.body.setAttribute('data-no-translation', 'true');
+          
           const { data: pagesData, error: fetchError } = await supabase
             .from('custom_pages')
             .select('*')
@@ -85,20 +98,37 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
           if (pagesData) {
             onPageCreated(pagesData);
             toast.success("Traduzioni completate con successo");
-            onSuccess();
           }
         } catch (translationError) {
           console.error("Errore durante la traduzione:", translationError);
           toast.error("Errore durante la traduzione delle pagine");
-          // La pagina italiana è comunque salvata, quindi non è necessario rollback
+        } finally {
+          // Make sure the no-translation flag is reset after all operations
+          document.body.setAttribute('data-no-translation', 'true');
+        }
+      } else {
+        toast.info("Traduzione automatica saltata su richiesta dell'utente");
+        
+        // Still refresh the pages list
+        const { data: pagesData, error: fetchError } = await supabase
+          .from('custom_pages')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (!fetchError && pagesData) {
+          onPageCreated(pagesData);
         }
       }
       
+      // Call the success callback regardless of translation
+      onSuccess();
     } catch (error) {
       console.error("Errore nella creazione della pagina:", error);
       toast.error("Errore nel salvare la pagina");
     } finally {
       setIsCreating(false);
+      // Ensure the no-translation flag is reset
+      document.body.setAttribute('data-no-translation', 'true');
     }
   };
 

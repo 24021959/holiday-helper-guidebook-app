@@ -23,7 +23,7 @@ interface AdminCreateProps {
 const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
   const [parentPages, setParentPages] = useState<PageData[]>([]);
 
-  // Imposta attributi globali per disabilitare le traduzioni
+  // CRITICAL: Imposta attributi globali per disabilitare le traduzioni
   useEffect(() => {
     // 1. Aggiungi attributo al body per bloccare traduzioni automatiche a livello globale
     document.body.setAttribute('data-no-translation', 'true');
@@ -39,16 +39,49 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
     if (mainContainer) {
       mainContainer.setAttribute('data-no-translation', 'true');
     }
+
+    // 4. Add this attribute to ALL form elements
+    document.querySelectorAll('form, input, textarea').forEach(el => {
+      el.setAttribute('data-no-translation', 'true');
+    });
+    
+    // 5. Add this attribute to any element with contenteditable attribute
+    document.querySelectorAll('[contenteditable="true"]').forEach(el => {
+      el.setAttribute('data-no-translation', 'true');
+    });
+    
+    // 6. Add a global data attribute to indicate this is an editor
+    document.body.setAttribute('data-editor', 'true');
     
     // Rimuovi tutti gli attributi quando il componente viene smontato
     return () => {
       document.body.removeAttribute('data-no-translation');
+      document.body.removeAttribute('data-editor');
       if (rootElement) {
         rootElement.removeAttribute('data-no-translation');
       }
       if (mainContainer) {
         mainContainer.removeAttribute('data-no-translation');
       }
+      document.querySelectorAll('[data-no-translation="true"]').forEach(el => {
+        el.removeAttribute('data-no-translation');
+      });
+    };
+  }, []);
+
+  // CRITICAL: Este effetto impedisce qualsiasi tentativo di traduzione
+  useEffect(() => {
+    const preventTranslation = (e: any) => {
+      if (e.type === 'message' && e.data && e.data.action === 'translate') {
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    };
+    
+    window.addEventListener('message', preventTranslation, true);
+    
+    return () => {
+      window.removeEventListener('message', preventTranslation, true);
     };
   }, []);
 
@@ -91,7 +124,7 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
   }, []);
 
   return (
-    <div className="container mx-auto px-4 py-6" data-no-translation="true">
+    <div className="container mx-auto px-4 py-6" data-no-translation="true" data-editor="true">
       <AdminPageForm
         pageToEdit={pageToEdit}
         onEditComplete={onEditComplete}
