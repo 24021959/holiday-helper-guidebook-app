@@ -1,3 +1,4 @@
+
 import React from "react";
 
 interface HeaderProps {
@@ -8,6 +9,7 @@ interface HeaderProps {
   logoPosition?: "left" | "center" | "right";
   establishmentName?: string;
   establishmentNameAlignment?: "left" | "center" | "right";
+  establishmentNameColor?: string;
   showAdminButton?: boolean;
 }
 
@@ -19,6 +21,7 @@ const Header: React.FC<HeaderProps> = ({
   logoPosition = "left",
   establishmentName,
   establishmentNameAlignment = "left",
+  establishmentNameColor = "#000000",
   showAdminButton = false
 }) => {
   // Determine if we should use dark or light text based on background color
@@ -26,8 +29,6 @@ const Header: React.FC<HeaderProps> = ({
     backgroundColor === "bg-white" || 
     backgroundColor === "bg-gradient-to-r from-amber-400 to-yellow-500";
   
-  const textColorClass = isLightBackground ? "text-gray-800" : "text-white";
-
   // Calculate logo size
   const logoSizeClass = {
     small: "h-12 md:h-14",
@@ -55,15 +56,15 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <div
-      className={`w-full ${!backgroundImage ? backgroundColor : ''} py-5 px-4 shadow-md relative overflow-hidden rounded-xl`}
+      className={`w-full py-5 px-4 shadow-md relative overflow-hidden rounded-xl`}
       style={
         backgroundImage
           ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: "cover", backgroundPosition: "center" }
-          : {}
+          : { backgroundColor }
       }
     >
       {/* Decorative elements (only for colored headers, not for white background) */}
-      {backgroundColor !== "bg-white" && (
+      {backgroundColor !== "bg-white" && backgroundColor !== "#FFFFFF" && (
         <div className="absolute top-0 left-0 w-full h-full opacity-20">
           <div className="absolute top-6 left-6 w-16 h-16 rounded-full bg-white"></div>
           <div className="absolute bottom-8 right-8 w-24 h-24 rounded-full bg-white"></div>
@@ -87,7 +88,10 @@ const Header: React.FC<HeaderProps> = ({
         {/* Title - only show if provided */}
         {establishmentName && (
           <div className={`${nameMarginClass} w-full`}>
-            <h1 className={`text-xl md:text-2xl font-bold ${textColorClass} ${getTextAlignmentClass()}`}>
+            <h1 
+              className={`text-xl md:text-2xl font-bold ${getTextAlignmentClass()}`}
+              style={{ color: establishmentNameColor }}
+            >
               {establishmentName}
             </h1>
           </div>

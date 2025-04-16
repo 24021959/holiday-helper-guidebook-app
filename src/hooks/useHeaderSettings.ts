@@ -9,6 +9,8 @@ export interface HeaderSettings {
   establishmentName?: string | null;
   logoPosition?: "left" | "center" | "right";
   logoSize?: "small" | "medium" | "large"; 
+  establishmentNameAlignment?: "left" | "center" | "right";
+  establishmentNameColor?: string;
 }
 
 export const useHeaderSettings = () => {
@@ -58,7 +60,9 @@ export const useHeaderSettings = () => {
           headerColor: data.header_color,
           establishmentName: data.establishment_name,
           logoPosition: data.logo_position || "left",
-          logoSize: data.logo_size || "medium"
+          logoSize: data.logo_size || "medium",
+          establishmentNameAlignment: data.establishment_name_alignment || "left",
+          establishmentNameColor: data.establishment_name_color || "#000000"
         };
         
         setHeaderSettings(newSettings);
@@ -73,7 +77,9 @@ export const useHeaderSettings = () => {
           headerColor: "bg-white",
           establishmentName: "Locanda dell'Angelo",
           logoPosition: "left",
-          logoSize: "medium"
+          logoSize: "medium",
+          establishmentNameAlignment: "left",
+          establishmentNameColor: "#000000"
         });
       }
     } catch (error) {

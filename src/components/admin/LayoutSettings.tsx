@@ -32,13 +32,13 @@ export interface LayoutSettingsForm extends HeaderSettings {
   footerColor: string;
   footerTextAlignment: "left" | "center" | "right";
   establishmentNameAlignment: "left" | "center" | "right";
+  establishmentNameColor: string;
 }
 
 export const LayoutSettings = () => {
-  const [tempHeaderColor, setTempHeaderColor] = useState("#FFFFFF");
-  const [tempFooterColor, setTempFooterColor] = useState("#FFFFFF");
   const [previewHeaderColor, setPreviewHeaderColor] = useState("#FFFFFF");
   const [previewFooterColor, setPreviewFooterColor] = useState("#FFFFFF");
+  const [previewEstablishmentNameColor, setPreviewEstablishmentNameColor] = useState("#000000");
 
   const form = useForm<LayoutSettingsForm>({
     defaultValues: async () => {
@@ -52,11 +52,11 @@ export const LayoutSettings = () => {
 
       const initialHeaderColor = headerData.header_color || '#FFFFFF';
       const initialFooterColor = footerData.background_color || '#FFFFFF';
+      const initialNameColor = headerData.establishment_name_color || '#000000';
       
-      setTempHeaderColor(initialHeaderColor);
-      setTempFooterColor(initialFooterColor);
       setPreviewHeaderColor(initialHeaderColor);
       setPreviewFooterColor(initialFooterColor);
+      setPreviewEstablishmentNameColor(initialNameColor);
 
       return {
         logoUrl: headerData.logo_url || '',
@@ -66,6 +66,7 @@ export const LayoutSettings = () => {
         themeColor: initialHeaderColor,
         headerColor: initialHeaderColor,
         footerColor: initialFooterColor,
+        establishmentNameColor: initialNameColor,
         footerText: footerData.custom_text || '',
         showSocialLinks: footerData.show_social_links || false,
         facebookUrl: footerData.facebook_url || '',
@@ -77,6 +78,17 @@ export const LayoutSettings = () => {
     }
   });
 
+  // Update previews in real-time when form values change
+  useEffect(() => {
+    setPreviewHeaderColor(form.watch('headerColor'));
+    setPreviewFooterColor(form.watch('footerColor'));
+    setPreviewEstablishmentNameColor(form.watch('establishmentNameColor'));
+  }, [
+    form.watch('headerColor'), 
+    form.watch('footerColor'),
+    form.watch('establishmentNameColor')
+  ]);
+
   const onSubmit = async (data: LayoutSettingsForm) => {
     try {
       const { error: headerError } = await supabase
@@ -86,6 +98,7 @@ export const LayoutSettings = () => {
           header_color: data.headerColor,
           establishment_name: data.establishmentName,
           establishment_name_alignment: data.establishmentNameAlignment,
+          establishment_name_color: data.establishmentNameColor,
           logo_position: data.logoPosition,
           logo_size: data.logoSize
         });
@@ -114,27 +127,6 @@ export const LayoutSettings = () => {
       console.error("Error saving layout settings:", error);
       toast.error("Errore nel salvataggio delle impostazioni");
     }
-  };
-
-  const handleHeaderColorChange = (color: string) => {
-    setTempHeaderColor(color);
-  };
-
-  const applyHeaderColor = () => {
-    form.setValue('headerColor', tempHeaderColor);
-    form.setValue('themeColor', tempHeaderColor);
-    setPreviewHeaderColor(tempHeaderColor);
-    toast.success("Colore header applicato");
-  };
-
-  const handleFooterColorChange = (color: string) => {
-    setTempFooterColor(color);
-  };
-
-  const applyFooterColor = () => {
-    form.setValue('footerColor', tempFooterColor);
-    setPreviewFooterColor(tempFooterColor);
-    toast.success("Colore footer applicato");
   };
 
   return (
@@ -193,14 +185,48 @@ export const LayoutSettings = () => {
                 )}
               />
             </div>
+
+            <div>
+              <FormField
+                control={form.control}
+                name="establishmentNameColor"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Colore Testo Nome Azienda</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="color" 
+                        className="h-10 w-full p-1 cursor-pointer" 
+                        value={field.value}
+                        onChange={(e) => {
+                          field.onChange(e.target.value);
+                        }}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
 
-          <ThemeColorPicker
-            form={form}
-            tempColor={tempHeaderColor}
-            onColorChange={handleHeaderColorChange}
-            onApplyColor={applyHeaderColor}
-            label="Colore Sfondo Header"
+          <FormField
+            control={form.control}
+            name="headerColor"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Colore Sfondo Header</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="color" 
+                    className="h-10 w-full p-1 cursor-pointer" 
+                    value={field.value}
+                    onChange={(e) => {
+                      field.onChange(e.target.value);
+                    }}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
           />
           
           <LogoSettings form={form} />
@@ -215,16 +241,29 @@ export const LayoutSettings = () => {
                 logoSize={form.watch('logoSize')}
                 establishmentName={form.watch('establishmentName')}
                 establishmentNameAlignment={form.watch('establishmentNameAlignment')}
+                establishmentNameColor={previewEstablishmentNameColor}
               />
             </div>
           </div>
 
-          <ThemeColorPicker
-            form={form}
-            tempColor={tempFooterColor}
-            onColorChange={handleFooterColorChange}
-            onApplyColor={applyFooterColor}
-            label="Colore Sfondo Footer"
+          <FormField
+            control={form.control}
+            name="footerColor"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Colore Sfondo Footer</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="color" 
+                    className="h-10 w-full p-1 cursor-pointer" 
+                    value={field.value}
+                    onChange={(e) => {
+                      field.onChange(e.target.value);
+                    }}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
           />
 
           <FooterSettings form={form} />
