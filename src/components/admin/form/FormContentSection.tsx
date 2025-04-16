@@ -114,9 +114,9 @@ export const FormContentSection: React.FC<FormContentSectionProps> = ({
         </div>
 
         <div>
-          <FormLabel>Immagini nella pagina</FormLabel>
+          <FormLabel>Galleria Immagini</FormLabel>
           <FormDescription>
-            Aggiungi immagini da mostrare all'interno della pagina.
+            Aggiungi immagini da inserire nel contenuto della pagina. Queste immagini saranno disponibili da inserire nel testo.
           </FormDescription>
           <FormControl>
             <ImagesUploader 
@@ -141,16 +141,13 @@ export const FormContentSection: React.FC<FormContentSectionProps> = ({
                   <FormItem>
                     <FormLabel>Contenuto</FormLabel>
                     <FormDescription>
-                      Scrivi il contenuto della pagina. Puoi usare Markdown per formattare
-                      il testo.
+                      Scrivi il contenuto della pagina. Puoi inserire immagini direttamente nel testo usando il pulsante dedicato.
                     </FormDescription>
                     <FormControl>
-                      <div className="border rounded-lg">
-                        <Editor
-                          value={field.value || ""}
-                          onChange={field.onChange}
-                        />
-                      </div>
+                      <Editor
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -163,8 +160,7 @@ export const FormContentSection: React.FC<FormContentSectionProps> = ({
               <div className="p-4 border border-red-300 rounded bg-red-50">
                 <FormLabel>Contenuto</FormLabel>
                 <FormDescription>
-                  Scrivi il contenuto della pagina. Puoi usare Markdown per formattare
-                  il testo.
+                  Scrivi il contenuto della pagina. Puoi inserire immagini direttamente nel testo usando il pulsante dedicato.
                 </FormDescription>
                 <div className="border rounded-lg">
                   <Editor
