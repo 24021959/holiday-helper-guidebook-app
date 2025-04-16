@@ -1,11 +1,11 @@
 
 import React from 'react';
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
 import { EditorToolbar } from './EditorToolbar';
 import { EditorImageDialog } from './EditorImageDialog';
 import { useEditorState } from '@/hooks/editor/useEditorState';
 import { useTextFormatting } from '@/hooks/editor/useTextFormatting';
+import { useImageHandling } from '@/hooks/editor/useImageHandling';
 
 interface EditorProps {
   value: string;
@@ -16,12 +16,10 @@ export const Editor: React.FC<EditorProps> = ({ value, onChange }) => {
   const {
     expanded,
     previewMode,
-    imageDialogOpen,
     cursorPosition,
     selectedText,
     historyIndex,
     editHistory,
-    setImageDialogOpen,
     setCursorPosition,
     setSelectedText,
     toggleExpanded,
@@ -31,14 +29,13 @@ export const Editor: React.FC<EditorProps> = ({ value, onChange }) => {
   } = useEditorState(value, onChange);
 
   const { handleTextFormat, handleTextAlign } = useTextFormatting(value, updateContent);
-
-  const handleOpenImageDialog = () => {
-    const textarea = document.querySelector('textarea');
-    if (textarea) {
-      setCursorPosition(textarea.selectionStart);
-    }
-    setImageDialogOpen(true);
-  };
+  
+  const {
+    imageDialogOpen,
+    setImageDialogOpen,
+    handleOpenImageDialog,
+    handleImageInsert
+  } = useImageHandling(value, cursorPosition, updateContent, updateHistory);
 
   const handleUndo = () => {
     if (historyIndex > 0) {
@@ -128,23 +125,7 @@ export const Editor: React.FC<EditorProps> = ({ value, onChange }) => {
       <EditorImageDialog 
         open={imageDialogOpen}
         onOpenChange={setImageDialogOpen}
-        onInsertImage={async (imageUrl, imagePosition, imageCaption, file) => {
-          try {
-            const pos = cursorPosition ?? value.length;
-            const imageMarkup = `\n[IMAGE:${imageUrl}:${imagePosition}:${imageCaption}]\n`;
-            const newContent = 
-              value.substring(0, pos) + 
-              imageMarkup + 
-              value.substring(pos);
-            
-            onChange(newContent);
-            updateHistory(newContent);
-            toast.success("Immagine inserita con successo");
-          } catch (error) {
-            console.error("Error inserting image:", error);
-            toast.error("Errore nell'inserimento dell'immagine");
-          }
-        }}
+        onInsertImage={handleImageInsert}
       />
     </div>
   );

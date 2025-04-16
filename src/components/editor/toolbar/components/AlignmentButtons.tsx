@@ -14,25 +14,25 @@ export const AlignmentButtons: React.FC<AlignmentButtonsProps> = ({
       <ToolbarButton
         icon={AlignLeft}
         label="Allinea a sinistra"
-        onClick={() => onTextAlign('left')}
+        onClick={() => selectedText && onTextAlign('left', selectedText)}
         disabled={!selectedText}
       />
       <ToolbarButton
         icon={AlignCenter}
         label="Centra"
-        onClick={() => onTextAlign('center')}
+        onClick={() => selectedText && onTextAlign('center', selectedText)}
         disabled={!selectedText}
       />
       <ToolbarButton
         icon={AlignRight}
         label="Allinea a destra"
-        onClick={() => onTextAlign('right')}
+        onClick={() => selectedText && onTextAlign('right', selectedText)}
         disabled={!selectedText}
       />
       <ToolbarButton
         icon={AlignJustify}
         label="Giustifica"
-        onClick={() => onTextAlign('justify')}
+        onClick={() => selectedText && onTextAlign('justify', selectedText)}
         disabled={!selectedText}
       />
     </ToolbarGroup>

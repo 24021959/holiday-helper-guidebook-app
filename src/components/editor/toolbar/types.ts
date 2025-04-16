@@ -1,4 +1,18 @@
 
+import { LucideIcon } from 'lucide-react';
+
+export interface ToolbarButtonProps {
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+}
+
+export interface ToolbarGroupProps {
+  children: React.ReactNode;
+  label?: string;
+}
+
 export interface FormatButtonsProps {
   selectedText: { start: number; end: number; text: string; } | null;
   onTextFormat: (format: string, selectedText: { start: number; end: number; text: string; }) => void;

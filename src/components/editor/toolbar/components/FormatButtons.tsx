@@ -22,19 +22,19 @@ export const FormatButtons: React.FC<FormatButtonsProps> = ({
       <ToolbarButton
         icon={Bold}
         label="Grassetto"
-        onClick={() => onTextFormat('bold')}
+        onClick={() => selectedText && onTextFormat('bold', selectedText)}
         disabled={!selectedText}
       />
       <ToolbarButton
         icon={Italic}
         label="Corsivo"
-        onClick={() => onTextFormat('italic')}
+        onClick={() => selectedText && onTextFormat('italic', selectedText)}
         disabled={!selectedText}
       />
       <ToolbarButton
         icon={Underline}
         label="Sottolineato"
-        onClick={() => onTextFormat('underline')}
+        onClick={() => selectedText && onTextFormat('underline', selectedText)}
         disabled={!selectedText}
       />
       
@@ -47,11 +47,11 @@ export const FormatButtons: React.FC<FormatButtonsProps> = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuItem onClick={() => onTextFormat('h1')}>
+          <DropdownMenuItem onClick={() => selectedText && onTextFormat('h1', selectedText)}>
             <Heading1 className="h-4 w-4 mr-2" />
             Titolo grande
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onTextFormat('h2')}>
+          <DropdownMenuItem onClick={() => selectedText && onTextFormat('h2', selectedText)}>
             <Heading2 className="h-4 w-4 mr-2" />
             Sottotitolo
           </DropdownMenuItem>
@@ -61,7 +61,7 @@ export const FormatButtons: React.FC<FormatButtonsProps> = ({
       <ToolbarButton
         icon={List}
         label="Elenco puntato"
-        onClick={() => onTextFormat('bullet')}
+        onClick={() => selectedText && onTextFormat('bullet', selectedText)}
         disabled={!selectedText}
       />
     </ToolbarGroup>
