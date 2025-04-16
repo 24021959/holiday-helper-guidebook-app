@@ -225,3 +225,4 @@ export const PageTypeSection: React.FC<PageTypeSectionProps> = ({
     </>
   );
 };
+

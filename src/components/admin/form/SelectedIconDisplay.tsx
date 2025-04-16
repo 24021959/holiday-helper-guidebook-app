@@ -24,3 +24,4 @@ export const SelectedIconDisplay: React.FC<SelectedIconDisplayProps> = ({
     </Card>
   );
 };
+

@@ -1,18 +1,10 @@
-
 import React from "react";
 import { useState, useEffect } from "react";
 import { VisualEditor } from "@/components/admin/VisualEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { usePageCreation } from "@/hooks/usePageCreation";
 import { ImageItem, ImageDetail } from "@/types/image.types";
@@ -26,6 +18,10 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { PageType } from "@/types/form.types";
+import { FormHeader } from "@/components/admin/form/FormHeader";
+import { PageTypeSection } from "@/components/admin/form/PageTypeSection";
+import { SelectedIconDisplay } from "@/components/admin/form/SelectedIconDisplay";
+import { FormActions } from "@/components/admin/form/FormActions";
 import IconRenderer from "@/components/IconRenderer";
 
 export interface PageContent {
@@ -73,30 +69,6 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
     }
   });
 
-  const iconOptions = [
-    { value: 'FileText', label: 'Documento' },
-    { value: 'Image', label: 'Immagine' },
-    { value: 'MessageCircle', label: 'Messaggio' },
-    { value: 'Info', label: 'Informazioni' },
-    { value: 'Map', label: 'Mappa' },
-    { value: 'Utensils', label: 'Ristorante' },
-    { value: 'Landmark', label: 'Monumento' },
-    { value: 'Hotel', label: 'Hotel' },
-    { value: 'Wifi', label: 'WiFi' },
-    { value: 'Bus', label: 'Bus' },
-    { value: 'ShoppingBag', label: 'Shopping' },
-    { value: 'Calendar', label: 'Calendario' },
-    { value: 'Phone', label: 'Telefono' },
-    { value: 'Book', label: 'Libro' },
-    { value: 'Coffee', label: 'Caffè' },
-    { value: 'Home', label: 'Casa' },
-    { value: 'Bike', label: 'Bicicletta' },
-    { value: 'Camera', label: 'Fotocamera' },
-    { value: 'Globe', label: 'Mondo' },
-    { value: 'Mountain', label: 'Montagna' },
-    { value: 'MapPin', label: 'Posizione' },
-  ];
-
   useEffect(() => {
     const fetchParentPages = async () => {
       try {
@@ -136,28 +108,11 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
     fetchParentPages();
   }, []);
 
-  const filteredParentPages = parentPages.filter(page => {
-    const isItalianPage = !page.path.startsWith('/en/') && 
-                          !page.path.startsWith('/de/') && 
-                          !page.path.startsWith('/fr/') && 
-                          !page.path.startsWith('/es/');
-    
-    const isParentPage = page.is_parent === true;
-    
-    return isItalianPage && isParentPage;
-  });
-
-  console.log("Filtered Italian parent pages in AdminCreate:", filteredParentPages);
-
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPageContent(prev => ({
       ...prev,
       title: e.target.value
     }));
-  };
-
-  const handleIconChange = (value: string) => {
-    setSelectedIcon(value);
   };
 
   const handleContentChange = (newContent: string) => {
@@ -245,127 +200,22 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
         
         <CardContent>
           <div className="space-y-6">
-            <div>
-              <Label htmlFor="pageTitle" className="text-base font-medium">
-                Titolo della pagina
-              </Label>
-              <Input 
-                id="pageTitle" 
-                placeholder="Inserisci il titolo della pagina" 
-                className="mt-1 text-lg font-medium"
-                value={pageContent.title}
-                onChange={handleTitleChange}
-              />
-            </div>
-            
-            {/* Nuovo campo per selezionare l'icona */}
-            <div>
-              <Label htmlFor="pageIcon" className="text-base font-medium">
-                Icona della pagina
-              </Label>
-              <Select
-                value={selectedIcon}
-                onValueChange={handleIconChange}
-              >
-                <SelectTrigger className="w-full mt-1">
-                  <SelectValue placeholder="Seleziona un'icona">
-                    <div className="flex items-center gap-2">
-                      <IconRenderer iconName={selectedIcon} size="small" />
-                      <span>{iconOptions.find(opt => opt.value === selectedIcon)?.label || selectedIcon}</span>
-                    </div>
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px] overflow-y-auto">
-                  {iconOptions.map((iconOption) => (
-                    <SelectItem key={iconOption.value} value={iconOption.value}>
-                      <div className="flex items-center gap-2">
-                        <IconRenderer iconName={iconOption.value} size="small" />
-                        <span>{iconOption.label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Card per mostrare l'icona selezionata */}
-            <div>
-              <Card className="mt-2">
-                <CardContent className="pt-6">
-                  <div className="mb-2">
-                    <strong>Icona selezionata:</strong>
-                  </div>
-                  <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-md border">
-                    <IconRenderer iconName={selectedIcon} size="medium" />
-                    <span className="text-sm">{selectedIcon}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <FormHeader  />
 
-            <div className="space-y-4">
-              <Label htmlFor="pageType" className="text-base font-medium">
-                Tipo di pagina
-              </Label>
-              <div className="grid grid-cols-3 gap-4">
-                <Button
-                  type="button"
-                  variant={pageContent.pageType === "normal" ? "default" : "outline"}
-                  className={pageContent.pageType === "normal" ? "bg-blue-600 hover:bg-blue-700" : ""}
-                  onClick={() => handlePageTypeChange("normal")}
-                >
-                  Pagina normale
-                </Button>
-                <Button
-                  type="button"
-                  variant={pageContent.pageType === "submenu" ? "default" : "outline"}
-                  className={pageContent.pageType === "submenu" ? "bg-blue-600 hover:bg-blue-700" : ""}
-                  onClick={() => handlePageTypeChange("submenu")}
-                >
-                  Sottopagina
-                </Button>
-                <Button
-                  type="button"
-                  variant={pageContent.pageType === "parent" ? "default" : "outline"}
-                  className={pageContent.pageType === "parent" ? "bg-blue-600 hover:bg-blue-700" : ""}
-                  onClick={() => handlePageTypeChange("parent")}
-                >
-                  Pagina genitore
-                </Button>
-              </div>
-            </div>
+            <PageTypeSection
+              pageType={pageContent.pageType}
+              setPageType={(type) => setPageContent(prev => ({ ...prev, pageType: type }))}
+              parentPath={pageContent.parentPath || ""}
+              setParentPath={(path) => setPageContent(prev => ({ ...prev, parentPath: path }))}
+              icon={selectedIcon}
+              setIcon={setSelectedIcon}
+              parentPages={parentPages}
+            />
 
-            {pageContent.pageType === "submenu" && (
-              <div>
-                <Label htmlFor="parentPath" className="text-base font-medium">
-                  Pagina principale
-                </Label>
-                <Select
-                  value={pageContent.parentPath || ""}
-                  onValueChange={handleParentPathChange}
-                >
-                  <SelectTrigger className="w-full mt-1">
-                    <SelectValue placeholder="Seleziona una pagina genitore" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredParentPages.length > 0 ? (
-                      filteredParentPages.map((page) => (
-                        <SelectItem key={page.path} value={page.path}>
-                          {page.title}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="none" disabled>
-                        Nessuna pagina genitore disponibile
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <SelectedIconDisplay iconName={selectedIcon} />
 
             {pageContent.pageType !== "parent" && (
-              <div className="border rounded-lg mt-2">
+              <div className="border rounded-lg">
                 <VisualEditor 
                   content={pageContent.content}
                   images={pageContent.images}
@@ -374,42 +224,26 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
                 />
               </div>
             )}
+
+            <FormActions
+              isSubmitting={isCreating || isTranslating}
+              isCreating={isCreating}
+              isTranslating={isTranslating}
+              onCancel={() => {
+                if (pageToEdit) {
+                  onEditComplete();
+                }
+                setPageContent({
+                  title: "",
+                  content: "",
+                  images: [],
+                  pageType: "normal"
+                });
+                setUploadedImage(null);
+              }}
+            />
           </div>
         </CardContent>
-        
-        <CardFooter className="flex justify-end gap-2 bg-gray-50 rounded-b-lg">
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              if (pageToEdit) {
-                onEditComplete();
-              }
-              setPageContent({
-                title: "",
-                content: "",
-                images: [],
-                pageType: "normal"
-              });
-              setUploadedImage(null);
-            }}
-          >
-            Annulla
-          </Button>
-          <Button 
-            onClick={handleSavePage}
-            disabled={isCreating || isTranslating}
-          >
-            {isCreating ? (
-              "Salvataggio in corso..."
-            ) : isTranslating ? (
-              "Traduzione in corso..."
-            ) : pageToEdit ? (
-              "Aggiorna Pagina"
-            ) : (
-              "Salva Pagina"
-            )}
-          </Button>
-        </CardFooter>
       </Card>
     </div>
   );
