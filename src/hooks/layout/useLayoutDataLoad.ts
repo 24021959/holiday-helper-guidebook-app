@@ -86,7 +86,7 @@ export const useLayoutDataLoad = (form: UseFormReturn<LayoutSettingsForm>) => {
           establishmentNameAlignment: headerData?.establishmentNameAlignment || 'left'
         };
 
-        console.log("Setting form values:", formValues);
+        console.log("Setting form values with footerColor:", formValues.footerColor);
         form.reset(formValues);
         setFormLoaded(true);
       } catch (error) {
@@ -101,4 +101,3 @@ export const useLayoutDataLoad = (form: UseFormReturn<LayoutSettingsForm>) => {
 
   return { formLoaded, loadError };
 };
-

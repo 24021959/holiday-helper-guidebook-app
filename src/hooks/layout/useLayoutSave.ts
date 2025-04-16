@@ -35,7 +35,7 @@ export const useLayoutSave = () => {
         facebook_url: data.facebookUrl,
         instagram_url: data.instagramUrl,
         twitter_url: data.twitterUrl,
-        background_color: data.footerColor,
+        background_color: data.footerColor, // Make sure this is being included
         text_color: data.footerTextColor,
         text_alignment: data.footerTextAlignment
       };
@@ -77,8 +77,18 @@ export const useLayoutSave = () => {
           establishmentNameAlignment: data.establishmentNameAlignment
         }));
         
-        localStorage.setItem("footerSettings", JSON.stringify(footerData));
-        console.log("Settings cached in localStorage");
+        // Ensure we're saving the full footerData object to localStorage
+        localStorage.setItem("footerSettings", JSON.stringify({
+          custom_text: data.footerText,
+          show_social_links: data.showSocialLinks,
+          facebook_url: data.facebookUrl,
+          instagram_url: data.instagramUrl,
+          twitter_url: data.twitterUrl,
+          background_color: data.footerColor, // Make sure this is explicitly set
+          text_color: data.footerTextColor,
+          text_alignment: data.footerTextAlignment
+        }));
+        console.log("Settings cached in localStorage with footerColor:", data.footerColor);
       } catch (e) {
         console.warn("Could not cache settings in localStorage:", e);
       }
@@ -101,4 +111,3 @@ export const useLayoutSave = () => {
     onSubmit
   };
 };
-

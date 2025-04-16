@@ -23,6 +23,11 @@ export const saveFooterSettings = async (footerData: FooterData): Promise<Table[
   try {
     console.log("Attempting to save footer settings:", footerData);
     
+    if (!footerData.background_color) {
+      console.warn("Warning: background_color is missing or empty, using default #FFFFFF");
+      footerData.background_color = "#FFFFFF";
+    }
+    
     // Check if footer settings already exist
     const { data: existingFooterData, error: footerCheckError } = await supabase
       .from('site_settings')
@@ -40,6 +45,7 @@ export const saveFooterSettings = async (footerData: FooterData): Promise<Table[
     // Upsert pattern: If data exists, update it; otherwise, insert new record
     if (existingFooterData && existingFooterData.length > 0) {
       console.log("Updating existing footer settings with ID:", existingFooterData[0].id);
+      console.log("Footer data being saved:", JSON.stringify(footerData, null, 2));
       
       const { data, error: updateError } = await supabase
         .from('site_settings')
@@ -116,17 +122,24 @@ export const fetchFooterSettings = async (): Promise<FooterData | null> => {
     }
 
     if (data?.value) {
-      console.log("Footer settings fetched successfully:", data.value);
+      const footerData = data.value as FooterData;
+      console.log("Footer settings fetched successfully:", footerData);
+      
+      // Ensure background_color has a value
+      if (!footerData.background_color) {
+        console.warn("Background color missing in database, setting default");
+        footerData.background_color = "#FFFFFF";
+      }
       
       // Cache in localStorage as backup
       try {
-        localStorage.setItem("footerSettings", JSON.stringify(data.value));
-        console.log("Footer settings cached in localStorage:", data.value);
+        localStorage.setItem("footerSettings", JSON.stringify(footerData));
+        console.log("Footer settings cached in localStorage:", footerData);
       } catch (e) {
         console.warn("Could not cache footer settings in localStorage:", e);
       }
       
-      return data.value as FooterData;
+      return footerData;
     } else {
       console.log("No footer settings found in database");
       return null;

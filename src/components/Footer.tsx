@@ -26,7 +26,7 @@ const defaultFooterSettings: FooterSettings = {
   facebook_url: "",
   instagram_url: "",
   twitter_url: "",
-  background_color: "bg-gradient-to-r from-teal-50 to-emerald-50",
+  background_color: "#FFFFFF",
   text_color: "#555555",
   text_alignment: "left"
 };
@@ -119,7 +119,7 @@ const Footer: React.FC<FooterProps> = ({
 
   if (isLoading) {
     return (
-      <div className={`w-full ${defaultFooterSettings.background_color} py-3 border-t border-gray-200`}>
+      <div className={`w-full py-3 border-t border-gray-200`} style={{ backgroundColor: defaultFooterSettings.background_color }}>
         <div className="container mx-auto px-4">
           <div className={`${getTextAlignClass()} text-gray-500 text-xs`}>
             {defaultFooterSettings.custom_text}
@@ -132,10 +132,7 @@ const Footer: React.FC<FooterProps> = ({
   return (
     <div 
       className={`w-full py-3 border-t border-gray-200`}
-      style={{ 
-        backgroundColor: bgColor.startsWith('#') ? bgColor : '',
-        background: !bgColor.startsWith('#') ? bgColor : ''
-      }}
+      style={{ backgroundColor: bgColor }}
     >
       <div className="container mx-auto px-4">
         <div className={`flex flex-col md:flex-row ${settings.show_social_links ? 'justify-between' : 'justify-center'} items-center`}>
