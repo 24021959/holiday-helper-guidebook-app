@@ -120,32 +120,41 @@ export const useLayoutSettings = () => {
         logo_size: data.logoSize
       };
 
-      // First try a SELECT to check if we need to INSERT or UPDATE
-      const { data: existingHeader, error: headerCheckError } = await supabase
+      // Instead of using upsert which could be causing the RLS error,
+      // Let's create a more detailed approach:
+      
+      // First check if header settings exist
+      const { data: existingHeaderData, error: headerCheckError } = await supabase
         .from('header_settings')
-        .select('id')
-        .limit(1)
-        .maybeSingle();
+        .select('*')
+        .limit(1);
 
       if (headerCheckError) {
-        console.error("Error checking for existing header settings:", headerCheckError);
+        console.error("Error checking header settings:", headerCheckError);
+        throw headerCheckError;
       }
 
-      // If record exists, update it
-      if (existingHeader) {
+      if (existingHeaderData && existingHeaderData.length > 0) {
+        // Update existing header settings
         const { error: updateError } = await supabase
           .from('header_settings')
           .update(headerData)
-          .eq('id', existingHeader.id);
+          .eq('id', existingHeaderData[0].id);
         
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error("Error updating header settings:", updateError);
+          throw updateError;
+        }
       } else {
-        // If no record exists, insert a new one
+        // Insert new header settings
         const { error: insertError } = await supabase
           .from('header_settings')
           .insert(headerData);
         
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error("Error inserting header settings:", insertError);
+          throw insertError;
+        }
       }
 
       // For footer settings
@@ -161,31 +170,37 @@ export const useLayoutSettings = () => {
       };
 
       // First check if footer settings exist
-      const { data: existingFooter, error: footerCheckError } = await supabase
+      const { data: existingFooterData, error: footerCheckError } = await supabase
         .from('site_settings')
-        .select('id')
-        .eq('key', 'footer_settings')
-        .maybeSingle();
+        .select('*')
+        .eq('key', 'footer_settings');
 
       if (footerCheckError) {
-        console.error("Error checking for existing footer settings:", footerCheckError);
+        console.error("Error checking footer settings:", footerCheckError);
+        throw footerCheckError;
       }
 
-      // If record exists, update it
-      if (existingFooter) {
+      if (existingFooterData && existingFooterData.length > 0) {
+        // Update existing footer settings
         const { error: updateError } = await supabase
           .from('site_settings')
           .update({ value: footerValue })
-          .eq('id', existingFooter.id);
+          .eq('id', existingFooterData[0].id);
         
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error("Error updating footer settings:", updateError);
+          throw updateError;
+        }
       } else {
-        // If no record exists, insert a new one
+        // Insert new footer settings
         const { error: insertError } = await supabase
           .from('site_settings')
           .insert({ key: 'footer_settings', value: footerValue });
         
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error("Error inserting footer settings:", insertError);
+          throw insertError;
+        }
       }
 
       toast.success("Impostazioni layout salvate con successo");
