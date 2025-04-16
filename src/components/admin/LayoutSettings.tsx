@@ -120,13 +120,30 @@ export const LayoutSettings = () => {
     toast.success("Colore applicato");
   };
 
-  const currentValues = form.watch();
+  // Watch form values for live preview
+  const headerPreviewValues = form.watch([
+    'logoUrl',
+    'themeColor',
+    'establishmentName',
+    'logoPosition',
+    'logoSize'
+  ]);
+
+  const footerPreviewValues = form.watch([
+    'footerText',
+    'showSocialLinks',
+    'facebookUrl',
+    'instagramUrl',
+    'twitterUrl',
+    'themeColor',
+    'footerTextAlignment'
+  ]);
 
   return (
     <div className="p-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          {/* Theme Color */}
+          {/* Theme Color Section */}
           <FormField
             control={form.control}
             name="themeColor"
@@ -151,7 +168,7 @@ export const LayoutSettings = () => {
                     type="button"
                     onClick={applyColor}
                     className="flex items-center gap-2"
-                  >
+                    >
                     <Check className="w-4 h-4" />
                     Applica
                   </Button>
@@ -159,31 +176,6 @@ export const LayoutSettings = () => {
               </FormItem>
             )}
           />
-
-          {/* Preview section */}
-          {showPreview && (
-            <div className="space-y-6 border rounded-lg p-4">
-              <h3 className="text-lg font-semibold mb-4">Anteprima</h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Header</h4>
-                  <Header
-                    backgroundColor={currentValues.themeColor}
-                    logoUrl={currentValues.logoUrl}
-                    logoPosition={currentValues.logoPosition}
-                    logoSize={currentValues.logoSize}
-                    establishmentName={currentValues.establishmentName}
-                  />
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Footer</h4>
-                  <Footer />
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Logo Section */}
           <FormField
@@ -295,6 +287,20 @@ export const LayoutSettings = () => {
               </FormItem>
             )}
           />
+
+          {/* Header Preview */}
+          <div className="border rounded-lg p-4 bg-gray-50">
+            <h3 className="text-sm font-medium mb-2 text-gray-700">Anteprima Header</h3>
+            <div className="rounded-lg overflow-hidden shadow-sm">
+              <Header
+                backgroundColor={headerPreviewValues[1]} // themeColor
+                logoUrl={headerPreviewValues[0]} // logoUrl
+                logoPosition={headerPreviewValues[3]} // logoPosition
+                logoSize={headerPreviewValues[4]} // logoSize
+                establishmentName={headerPreviewValues[2]} // establishmentName
+              />
+            </div>
+          </div>
 
           {/* Footer Text */}
           <FormField
@@ -414,6 +420,14 @@ export const LayoutSettings = () => {
               />
             </div>
           )}
+
+          {/* Footer Preview */}
+          <div className="border rounded-lg p-4 bg-gray-50">
+            <h3 className="text-sm font-medium mb-2 text-gray-700">Anteprima Footer</h3>
+            <div className="rounded-lg overflow-hidden shadow-sm">
+              <Footer />
+            </div>
+          </div>
 
           <Button type="submit" className="w-full">
             Salva Impostazioni
