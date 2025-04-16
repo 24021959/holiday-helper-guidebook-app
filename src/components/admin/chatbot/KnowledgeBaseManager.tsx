@@ -98,31 +98,61 @@ const KnowledgeBaseManager: React.FC = () => {
       toast.info(`Elaborazione di ${pages.length} pagine per la base di conoscenza...`);
       setProgress(20);
       
-      // Call edge function to process pages
-      const { data, error } = await supabase.functions.invoke('create-chatbot-knowledge', {
-        body: { pages }
-      });
-
-      if (error) throw error;
-      
-      setProgress(100);
-      
-      if (data.success) {
-        toast.success(data.message || `Base di conoscenza aggiornata con successo`);
-        await checkKnowledgeBase();
-      } else {
-        setError(data.message || "Errore nell'aggiornamento della base di conoscenza");
-        toast.error(data.message || "Errore nell'aggiornamento della base di conoscenza");
+      // First, clear the existing knowledge base
+      const { error: clearError } = await supabase
+        .from('chatbot_knowledge')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+        
+      if (clearError) {
+        console.error("Error clearing knowledge base:", clearError);
+        throw new Error(`Error clearing knowledge base: ${clearError.message}`);
       }
+      
+      setProgress(40);
+      
+      // Process pages in batches to avoid timeouts
+      const batchSize = 5;
+      let processedCount = 0;
+      
+      for (let i = 0; i < pages.length; i += batchSize) {
+        const batch = pages.slice(i, Math.min(i + batchSize, pages.length));
+        
+        // Process each page in the batch
+        await Promise.all(batch.map(async (page) => {
+          try {
+            // Call our Edge Function to process the page
+            const { data, error } = await supabase.functions.invoke('process-page-content', {
+              body: { page }
+            });
+            
+            if (error) throw error;
+            
+            processedCount++;
+            const progressPercentage = Math.min(90, 40 + Math.floor((processedCount / pages.length) * 50));
+            setProgress(progressPercentage);
+            
+            return data;
+          } catch (error) {
+            console.error(`Error processing page ${page.id}:`, error);
+            throw error;
+          }
+        }));
+      }
+      
+      // Final update
+      setProgress(100);
+      toast.success(`Base di conoscenza aggiornata con successo: ${processedCount} pagine elaborate`);
+      
+      // Refresh status
+      await checkKnowledgeBase();
     } catch (error) {
-      console.error("Errore nell'aggiornamento della base di conoscenza:", error);
+      console.error("Error updating knowledge base:", error);
       setError(`Errore nell'aggiornamento della base di conoscenza: ${error.message}`);
       toast.error(`Errore nell'aggiornamento della base di conoscenza: ${error.message}`);
     } finally {
       setIsLoading(false);
-      setTimeout(() => {
-        setProgress(0);
-      }, 1500);
+      setTimeout(() => setProgress(0), 2000);
     }
   };
 

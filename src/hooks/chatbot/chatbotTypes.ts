@@ -15,6 +15,11 @@ export interface ChatbotConfig {
   position: 'right' | 'left';
   iconType: 'default' | 'custom';
   customIconUrl?: string;
+  messageBackgroundColor?: string;
+  messageTextColor?: string;
+  userMessageBackgroundColor?: string;
+  userMessageTextColor?: string;
+  suggestedQuestions?: Record<string, string[]>;
 }
 
 export const defaultConfig: ChatbotConfig = {
@@ -30,5 +35,12 @@ export const defaultConfig: ChatbotConfig = {
   secondaryColor: "#ffffff",
   botName: "Assistente Virtuale",
   position: 'right',
-  iconType: 'default'
+  iconType: 'default',
+  suggestedQuestions: {
+    it: ["Quali sono i vostri orari?", "Come posso contattarvi?", "Dove siete situati?"],
+    en: ["What are your opening hours?", "How can I contact you?", "Where are you located?"],
+    fr: ["Quels sont vos horaires d'ouverture?", "Comment puis-je vous contacter?", "Où êtes-vous situés?"],
+    es: ["¿Cuáles son sus horarios?", "¿Cómo puedo contactarlos?", "¿Dónde están ubicados?"],
+    de: ["Was sind Ihre Öffnungszeiten?", "Wie kann ich Sie kontaktieren?", "Wo befinden Sie sich?"]
+  }
 };
