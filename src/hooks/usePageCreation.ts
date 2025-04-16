@@ -51,30 +51,36 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
 
       toast.success("Pagina in italiano creata con successo");
 
-      // Only after the Italian page is created successfully, start translations
+      // Solo dopo il salvataggio della pagina italiana, avvia le traduzioni
       if (pageId) {
-        await translatePages(
-          values.content,
-          values.title,
-          finalPath,
-          imageUrl,
-          values.icon,
-          values.pageType,
-          values.pageType === "submenu" ? values.parentPath || null : null,
-          pageImages
-        );
-      
-        const { data: pagesData, error: fetchError } = await supabase
-          .from('custom_pages')
-          .select('*')
-          .order('created_at', { ascending: false });
-      
-        if (fetchError) throw fetchError;
-      
-        if (pagesData) {
-          onPageCreated(pagesData);
-          toast.success("Traduzioni completate con successo");
-          onSuccess();
+        try {
+          await translatePages(
+            values.content,
+            values.title,
+            finalPath,
+            imageUrl,
+            values.icon,
+            values.pageType,
+            values.pageType === "submenu" ? values.parentPath || null : null,
+            pageImages
+          );
+          
+          const { data: pagesData, error: fetchError } = await supabase
+            .from('custom_pages')
+            .select('*')
+            .order('created_at', { ascending: false });
+          
+          if (fetchError) throw fetchError;
+          
+          if (pagesData) {
+            onPageCreated(pagesData);
+            toast.success("Traduzioni completate con successo");
+            onSuccess();
+          }
+        } catch (translationError) {
+          console.error("Errore durante la traduzione:", translationError);
+          toast.error("Errore durante la traduzione delle pagine");
+          // La pagina italiana è comunque salvata, quindi non è necessario rollback
         }
       }
       

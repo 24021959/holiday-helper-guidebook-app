@@ -4,4 +4,14 @@ export interface ImageDetail {
   position: "left" | "center" | "right" | "full";
   caption?: string;
   width: string;
+  type?: "image";
+}
+
+export interface ImageItem extends ImageDetail {
+  insertInContent?: boolean;
+  order?: number;
+}
+
+export interface ImageUploadItem extends ImageDetail {
+  file?: File;
 }
