@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import HeaderLogo from "./header/HeaderLogo";
+import EstablishmentName from "./header/EstablishmentName";
 
 interface HeaderProps {
   backgroundImage?: string;
@@ -51,12 +52,10 @@ const Header: React.FC<HeaderProps> = ({
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        // Try to get cached settings first
         const cachedSettings = localStorage.getItem("headerSettings");
         if (cachedSettings) {
           try {
             const parsed = JSON.parse(cachedSettings);
-            // Convert from localStorage format to component format
             setLocalSettings({
               logo_url: parsed.logoUrl,
               header_color: parsed.headerColor,
@@ -72,7 +71,6 @@ const Header: React.FC<HeaderProps> = ({
           }
         }
         
-        // Try to get settings from database
         const { data, error } = await supabase
           .from('header_settings')
           .select('*')
@@ -85,7 +83,6 @@ const Header: React.FC<HeaderProps> = ({
           setLocalSettings(data);
           console.log("Loaded header settings from DB:", data);
           
-          // Update cache
           try {
             localStorage.setItem("headerSettings", JSON.stringify({
               logoUrl: data.logo_url,
@@ -110,7 +107,6 @@ const Header: React.FC<HeaderProps> = ({
     loadSettings();
   }, []);
   
-  // Determine which settings to use (props take precedence, followed by DB settings, then defaults)
   const effectiveLogoUrl = logoUrl ?? localSettings?.logo_url ?? defaultSettings.logo_url;
   const effectiveLogoSize = logoSize ?? localSettings?.logo_size ?? defaultSettings.logo_size;
   const effectiveLogoPosition = logoPosition ?? localSettings?.logo_position ?? defaultSettings.logo_position;
@@ -119,32 +115,14 @@ const Header: React.FC<HeaderProps> = ({
   const effectiveEstablishmentNameColor = establishmentNameColor ?? localSettings?.establishment_name_color ?? defaultSettings.establishment_name_color;
   const effectiveBackgroundColor = backgroundColor ?? localSettings?.header_color ?? defaultSettings.header_color;
 
-  // Calculate logo size
-  const logoSizeClass = {
-    small: "h-12 md:h-14",
-    medium: "h-16 md:h-20",
-    large: "h-20 md:h-24"
-  }[effectiveLogoSize || "medium"];
-
-  // Determine layout based on logo position
   const layoutClass = {
     left: "sm:flex-row sm:justify-between",
     center: "flex-col items-center",
     right: "sm:flex-row-reverse sm:justify-between"
   }[effectiveLogoPosition || "left"];
 
-  // Additional margin for centered layout (logo above, name below)
   const nameMarginClass = (effectiveLogoPosition === "center" && effectiveLogoUrl) ? "mt-2" : "mt-0";
 
-  const getTextAlignmentClass = () => {
-    switch (effectiveEstablishmentNameAlignment) {
-      case "center": return "text-center";
-      case "right": return "text-right";
-      default: return "text-left";
-    }
-  };
-
-  // Show a basic loading state if still loading
   if (loading) {
     return (
       <div className="w-full py-5 px-4 shadow-md rounded-xl bg-white">
@@ -158,36 +136,25 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <div
-      className={`w-full py-5 px-4 shadow-md relative overflow-hidden rounded-xl`}
+      className="w-full py-5 px-4 shadow-md relative overflow-hidden rounded-xl"
       style={{
         ...(backgroundImage
           ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: "cover", backgroundPosition: "center" }
           : { backgroundColor: effectiveBackgroundColor?.startsWith('#') ? effectiveBackgroundColor : undefined })
       }}
     >
-      
-      
       <div className={`relative z-10 flex ${layoutClass}`}>
-        {effectiveLogoUrl && (
-          <div className="flex-shrink-0 mb-2 sm:mb-0">
-            <img 
-              src={effectiveLogoUrl} 
-              alt="Logo" 
-              className={`${logoSizeClass} object-contain`} 
-            />
-          </div>
-        )}
+        <HeaderLogo 
+          logoUrl={effectiveLogoUrl}
+          logoSize={effectiveLogoSize}
+        />
         
-        {effectiveEstablishmentName && (
-          <div className={`${nameMarginClass} w-full`}>
-            <h1 
-              className={`text-xl md:text-2xl font-bold ${getTextAlignmentClass()}`}
-              style={{ color: effectiveEstablishmentNameColor || '#000000' }}
-            >
-              {effectiveEstablishmentName}
-            </h1>
-          </div>
-        )}
+        <EstablishmentName 
+          name={effectiveEstablishmentName || ''}
+          alignment={effectiveEstablishmentNameAlignment}
+          color={effectiveEstablishmentNameColor}
+          className={nameMarginClass}
+        />
       </div>
     </div>
   );
