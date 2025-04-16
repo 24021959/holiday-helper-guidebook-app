@@ -42,14 +42,16 @@ const Footer: React.FC<FooterProps> = ({
   useEffect(() => {
     const fetchFooterSettings = async () => {
       try {
+        setIsLoading(true);
+        
         // First try localStorage for immediate display
-        let cachedSettings = null;
+        let localSettings: FooterSettings | null = null;
         try {
           const savedFooterSettings = localStorage.getItem("footerSettings");
           if (savedFooterSettings) {
-            cachedSettings = JSON.parse(savedFooterSettings);
-            setSettings(cachedSettings);
-            console.log("Using cached footer settings:", cachedSettings);
+            localSettings = JSON.parse(savedFooterSettings);
+            setSettings(localSettings);
+            console.log("Using cached footer settings:", localSettings);
           }
         } catch (err) {
           console.error("Error parsing footer settings from localStorage:", err);
@@ -68,28 +70,28 @@ const Footer: React.FC<FooterProps> = ({
           }
           
           // If we don't have cached settings, use defaults
-          if (!cachedSettings) {
+          if (!localSettings) {
             setSettings(defaultFooterSettings);
           }
         } else if (data && data.value) {
           const dbSettings = data.value as FooterSettings;
+          console.log("Retrieved footer settings from DB:", dbSettings);
           setSettings(dbSettings);
           
           // Update localStorage with latest from DB
           try {
             localStorage.setItem("footerSettings", JSON.stringify(dbSettings));
+            console.log("Updated localStorage with latest footer settings");
           } catch (e) {
             console.warn("Could not cache footer settings in localStorage:", e);
           }
-        } else if (!cachedSettings) {
+        } else if (!localSettings) {
           setSettings(defaultFooterSettings);
         }
       } catch (error) {
         console.error('Error fetching footer settings:', error);
         // If we have an error and no cached settings, use defaults
-        if (!cachedSettings) {
-          setSettings(defaultFooterSettings);
-        }
+        setSettings(defaultFooterSettings);
       } finally {
         setIsLoading(false);
       }

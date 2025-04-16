@@ -82,6 +82,7 @@ export const saveFooterSettings = async (footerData: FooterData): Promise<Table[
     // Cache in localStorage as backup
     try {
       localStorage.setItem("footerSettings", JSON.stringify(footerData));
+      console.log("Footer settings cached in localStorage:", footerData);
     } catch (e) {
       console.warn("Could not cache footer settings in localStorage:", e);
     }
@@ -120,6 +121,7 @@ export const fetchFooterSettings = async (): Promise<FooterData | null> => {
       // Cache in localStorage as backup
       try {
         localStorage.setItem("footerSettings", JSON.stringify(data.value));
+        console.log("Footer settings cached in localStorage:", data.value);
       } catch (e) {
         console.warn("Could not cache footer settings in localStorage:", e);
       }
