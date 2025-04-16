@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef, memo } from "react";
 import { useTranslation } from "@/context/TranslationContext";
 import { Loader2 } from "lucide-react";
+import { Language } from "@/types/translation.types";
 
 interface TranslatedTextProps {
   text: string;
@@ -11,7 +12,6 @@ interface TranslatedTextProps {
   disableAutoTranslation?: boolean;
 }
 
-// Use memo to prevent unnecessary re-renders
 const TranslatedText: React.FC<TranslatedTextProps> = memo(({ 
   text, 
   as: Component = "span", 
@@ -23,17 +23,12 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
   const [translatedText, setTranslatedText] = useState(text);
   const [isLoading, setIsLoading] = useState(false);
   const prevTextRef = useRef(text);
-  const prevLanguageRef = useRef(language);
+  const prevLanguageRef = useRef<Language>(language);
   
-  // Translation cache in component memory
   const translationCacheRef = useRef<Record<string, string>>({});
   const cacheKey = `${language}:${text}`;
 
   useEffect(() => {
-    // BLOCCO CATEGORICO: In QUALSIASI contesto amministrativo o di editing,
-    // NON eseguire mai traduzioni automatiche
-    
-    // 0. Hard coded prevention - NEVER TRANSLATE when in admin paths
     if (
       window.location.pathname.includes('/admin') || 
       document.body.hasAttribute('data-no-translation') ||
@@ -43,9 +38,7 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
       return;
     }
 
-    // 1. Global editor mode detection - NEVER translate in editor mode 
     const inEditorMode = (() => {
-      // Check for any editor-specific elements in the page
       return (
         document.querySelector('[data-editor="true"]') !== null ||
         document.querySelector('form') !== null ||
@@ -60,14 +53,12 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
       return;
     }
 
-    // 2. Check for global translation blocking attribute
     const bodyHasNoTranslation = document.body.getAttribute('data-no-translation') === 'true';
     if (bodyHasNoTranslation) {
       setTranslatedText(text);
       return;
     }
 
-    // 3. Check for any parent element with data-no-translation attribute
     const isInNoTranslationContext = (() => {
       let currentElement = document.activeElement;
       while (currentElement) {
@@ -84,20 +75,16 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
       return;
     }
 
-    // Only proceed with translation if none of the blocking conditions are met
-    // and we're not in Italian language
     if (language === 'it') {
       setTranslatedText(text);
       return;
     }
     
-    // Check cache first before translating
     if (translationCacheRef.current[cacheKey]) {
       setTranslatedText(translationCacheRef.current[cacheKey]);
       return;
     }
     
-    // Determine if we need to translate based on language and text changes
     const needsTranslation = 
       language !== 'it' && 
       (text !== prevTextRef.current || 
@@ -106,7 +93,6 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
     let isMounted = true;
     
     const fetchTranslation = async () => {
-      // Final safety check before translation
       if (language === 'it' || document.body.hasAttribute('data-no-translation')) {
         setTranslatedText(text);
         return;
@@ -118,13 +104,12 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
         
         if (isMounted) {
           setTranslatedText(result);
-          // Save to cache
           translationCacheRef.current[cacheKey] = result;
         }
       } catch (error) {
         console.error("Errore di traduzione:", error);
         if (isMounted) {
-          setTranslatedText(text); // Fallback to original text in case of error
+          setTranslatedText(text);
         }
       } finally {
         if (isMounted) {
@@ -136,11 +121,9 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
     if (needsTranslation) {
       fetchTranslation();
     } else if (language === 'it') {
-      // Always use the original text for Italian
       setTranslatedText(text);
     }
     
-    // Update references for the next render
     prevTextRef.current = text;
     prevLanguageRef.current = language;
     

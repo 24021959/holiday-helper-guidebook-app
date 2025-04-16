@@ -8,6 +8,8 @@ import { uploadImage } from "@/integrations/supabase/storage";
 import { pageFormSchema } from './schemas/pageFormSchema';
 import { z } from "zod";
 import { PageForm } from './form/PageForm';
+import { Button } from "@/components/ui/button";
+import { Globe } from "lucide-react";
 
 interface EditPageFormProps {
   selectedPage: PageData;
@@ -47,7 +49,8 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
   const currentLanguage = getLanguageFromPath(selectedPage.path);
   console.log(`Editing page in language: ${currentLanguage}`);
 
-  const { handleTranslateAndCreate, isCreating, isTranslating } = usePageCreation({ 
+  const [lastSavedValues, setLastSavedValues] = useState<any>(null);
+  const { handlePageCreation, isCreating, isTranslating, handleManualTranslation } = usePageCreation({ 
     onPageCreated: onPageUpdated 
   });
 
@@ -88,20 +91,24 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
     try {
       setIsSubmitting(true);
       
-      // If we're editing a translated version, make sure we keep the language prefix in parent path
       if (currentLanguage !== 'it' && values.parentPath) {
-        // Ensure the parent path has the correct language prefix
         if (!values.parentPath.startsWith(`/${currentLanguage}/`)) {
           values.parentPath = `/${currentLanguage}${values.parentPath.replace(/^\/[a-z]{2}\//, '/')}`;
         }
       }
       
-      // When editing Italian pages, make it clear that translations will be affected
-      if (currentLanguage === 'it') {
-        toast.info("Modifiche alla versione italiana aggiorneranno anche le traduzioni");
-      }
+      // Save the values for translation
+      setLastSavedValues({
+        content: values.content,
+        title: values.title,
+        icon: values.icon || "FileText",
+        pageType: values.pageType,
+        parentPath: values.parentPath,
+        mainImage,
+        pageImages
+      });
       
-      await handleTranslateAndCreate(
+      await handlePageCreation(
         { 
           title: values.title, 
           content: values.content || "", 
@@ -123,6 +130,38 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
     }
   };
 
+  const handleManualTranslate = async () => {
+    if (!lastSavedValues) {
+      toast.error("Devi prima salvare la pagina prima di poterla tradurre");
+      return;
+    }
+
+    try {
+      const sanitizedTitle = lastSavedValues.title
+        .toLowerCase()
+        .replace(/[^\w\s]/gi, '')
+        .replace(/\s+/g, '-');
+      
+      const finalPath = lastSavedValues.pageType === "submenu" && lastSavedValues.parentPath
+        ? `${lastSavedValues.parentPath}/${sanitizedTitle}`
+        : `/${sanitizedTitle}`;
+
+      await handleManualTranslation(
+        lastSavedValues.content,
+        lastSavedValues.title,
+        finalPath,
+        lastSavedValues.mainImage,
+        lastSavedValues.icon,
+        lastSavedValues.pageType,
+        lastSavedValues.pageType === "submenu" ? lastSavedValues.parentPath : null,
+        lastSavedValues.pageImages
+      );
+    } catch (error) {
+      console.error("Error during translation:", error);
+      toast.error("Errore durante la traduzione");
+    }
+  };
+
   const handleCancel = () => {
     // Just close or reset the form
   };
@@ -132,8 +171,14 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
       <h2 className="text-xl font-medium text-emerald-600 mb-4">Modifica Pagina</h2>
       
       <PageForm
-        initialValues={initialValues}
-        parentPages={filteredParentPages}
+        initialValues={{
+          title: selectedPage.title,
+          content: selectedPage.content,
+          icon: selectedPage.icon || "FileText",
+          pageType: selectedPage.is_parent ? "parent" : selectedPage.isSubmenu ? "submenu" : "normal",
+          parentPath: selectedPage.parentPath,
+        }}
+        parentPages={parentPages.filter(page => page.id !== selectedPage.id)}
         isCreating={isCreating}
         isTranslating={isTranslating}
         isSubmitting={isSubmitting}
@@ -144,6 +189,19 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
         onSubmit={handleFormSubmit}
         submitButtonText="Salva Modifiche"
       />
+
+      {lastSavedValues && currentLanguage === 'it' && (
+        <div className="mt-6 flex justify-center">
+          <Button
+            onClick={handleManualTranslate}
+            disabled={isTranslating}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Globe className="w-4 h-4 mr-2" />
+            {isTranslating ? "Traduzione in corso..." : "Traduci la pagina"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

@@ -7,6 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { PageData } from "@/types/page.types";
 import { usePageCreation } from "@/hooks/usePageCreation";
 import { PageForm } from './form/PageForm';
+import { Button } from "@/components/ui/button";
+import { Globe } from "lucide-react";
 import type { z } from "zod";
 import { pageFormSchema } from './schemas/pageFormSchema';
 
@@ -21,8 +23,14 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mainImage, setMainImage] = useState<string | null>(null);
+  const [lastSavedValues, setLastSavedValues] = useState<any>(null);
   const { toast } = useToast();
-  const { isCreating, isTranslating, handleTranslateAndCreate } = usePageCreation({ onPageCreated });
+  const { 
+    isCreating, 
+    isTranslating, 
+    handlePageCreation,
+    handleManualTranslation 
+  } = usePageCreation({ onPageCreated });
 
   const handleMainImageUpload = async (file: File) => {
     try {
@@ -53,7 +61,7 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
     try {
       setIsSubmitting(true);
       
-      await handleTranslateAndCreate(
+      await handlePageCreation(
         { 
           title: values.title, 
           content: values.content || "", 
@@ -65,6 +73,16 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
         pageImages,
         () => {
           setMainImage(null);
+          // Save values for translation button
+          setLastSavedValues({
+            content: values.content,
+            title: values.title,
+            icon: values.icon,
+            pageType: values.pageType,
+            parentPath: values.parentPath,
+            mainImage,
+            pageImages
+          });
         }
       );
     } catch (error) {
@@ -79,8 +97,40 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
     }
   };
 
+  const handleTranslate = async () => {
+    if (!lastSavedValues) {
+      toast({
+        title: "Errore",
+        description: "Devi prima salvare la pagina prima di poterla tradurre",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const sanitizedTitle = lastSavedValues.title
+      .toLowerCase()
+      .replace(/[^\w\s]/gi, '')
+      .replace(/\s+/g, '-');
+    
+    const finalPath = lastSavedValues.pageType === "submenu" && lastSavedValues.parentPath
+      ? `${lastSavedValues.parentPath}/${sanitizedTitle}`
+      : `/${sanitizedTitle}`;
+
+    await handleManualTranslation(
+      lastSavedValues.content,
+      lastSavedValues.title,
+      finalPath,
+      lastSavedValues.mainImage,
+      lastSavedValues.icon,
+      lastSavedValues.pageType,
+      lastSavedValues.pageType === "submenu" ? lastSavedValues.parentPath : null,
+      lastSavedValues.pageImages
+    );
+  };
+
   const handleCancel = () => {
     setMainImage(null);
+    setLastSavedValues(null);
   };
 
   return (
@@ -97,6 +147,19 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
         onSubmit={handleFormSubmit}
         submitButtonText="Salva Pagina"
       />
+      
+      {lastSavedValues && (
+        <div className="mt-6 flex justify-center">
+          <Button
+            onClick={handleTranslate}
+            disabled={isTranslating}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Globe className="w-4 h-4 mr-2" />
+            {isTranslating ? "Traduzione in corso..." : "Traduci la pagina"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
