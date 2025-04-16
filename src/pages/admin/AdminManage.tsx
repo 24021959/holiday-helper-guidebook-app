@@ -2,36 +2,12 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageData } from "@/types/page.types";
-import { 
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Eye, Pencil, Trash2, AlertTriangle } from "lucide-react";
-import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { usePageCreation } from "@/hooks/usePageCreation";
-
-const languages = [
-  { code: 'it', name: 'Italiano', flag: '🇮🇹' },
-  { code: 'en', name: 'English', flag: '🇬🇧' },
-  { code: 'fr', name: 'Français', flag: '🇫🇷' },
-  { code: 'es', name: 'Español', flag: '🇪🇸' },
-  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
-];
+import { toast } from "sonner";
+import { LanguageSelector } from "@/components/admin/manage/LanguageSelector";
+import { LanguageInfoBanner } from "@/components/admin/manage/LanguageInfoBanner";
+import { PagesList } from "@/components/admin/manage/PagesList";
+import { DeletePageDialog } from "@/components/admin/manage/DeletePageDialog";
 
 const AdminManage = () => {
   const [pages, setPages] = useState<PageData[]>([]);
@@ -48,13 +24,11 @@ const AdminManage = () => {
       let query = supabase.from('custom_pages').select('*');
       
       if (langCode === 'it') {
-        // For Italian, get pages that don't have a language prefix in the path
         query = query.not('path', 'like', '/en/%')
                      .not('path', 'like', '/fr/%')
                      .not('path', 'like', '/es/%')
                      .not('path', 'like', '/de/%');
       } else {
-        // For other languages, get only pages with the specific language prefix
         query = query.like('path', `/${langCode}/%`);
       }
 
@@ -63,8 +37,6 @@ const AdminManage = () => {
       if (error) throw error;
 
       if (data) {
-        console.log(`Fetched ${data.length} pages for language: ${langCode}`, data);
-        
         const formattedPages = data.map(page => ({
           id: page.id,
           title: page.title,
@@ -90,9 +62,9 @@ const AdminManage = () => {
     }
   };
 
-  const extractImagesFromContent = (content: string): { url: string; position: "left" | "center" | "right" | "full"; caption?: string; type: "image"; width: "100%" }[] => {
+  const extractImagesFromContent = (content: string) => {
     try {
-      const images: { url: string; position: "left" | "center" | "right" | "full"; caption?: string; type: "image"; width: "100%" }[] = [];
+      const images: { url: string; position: "left" | "center" | "right" | "full"; caption?: string; }[] = [];
       if (!content.includes('<!-- IMAGES -->')) return [];
       
       const imagesSection = content.split('<!-- IMAGES -->')[1];
@@ -108,9 +80,7 @@ const AdminManage = () => {
             images.push({
               url: img.url,
               position: img.position || 'center',
-              caption: img.caption || '',
-              type: 'image',
-              width: '100%'
+              caption: img.caption || ''
             });
           }
         } catch (e) {
@@ -133,7 +103,7 @@ const AdminManage = () => {
     window.open(`/preview${page.path}`, '_blank');
   };
 
-  const handleDelete = async (page: PageData) => {
+  const handleDelete = (page: PageData) => {
     setDeletingPage(page);
     setShowDeleteDialog(true);
   };
@@ -143,13 +113,9 @@ const AdminManage = () => {
     
     try {
       setIsDeleting(true);
-      
-      // Get language of the page being deleted
       const isItalianPage = !deletingPage.path.match(/^\/[a-z]{2}\//);
       
       await deletePageAndTranslations(deletingPage.path);
-      
-      // Make sure to refresh the page list to show the current state
       await fetchPages(currentLanguage);
       
       if (isItalianPage) {
@@ -157,7 +123,6 @@ const AdminManage = () => {
       } else {
         toast.success("Pagina tradotta eliminata con successo");
       }
-      
     } catch (error) {
       console.error("Error in confirmDelete:", error);
       toast.error("Errore nell'eliminazione della pagina");
@@ -168,142 +133,40 @@ const AdminManage = () => {
     }
   };
 
-  const getLanguageLabel = (langCode: string): string => {
-    const lang = languages.find(l => l.code === langCode);
-    return lang ? `${lang.flag} ${lang.name}` : langCode;
-  };
-
   if (isLoading) {
-    return <div className="flex justify-center items-center h-64">
-      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-emerald-500"></div>
-    </div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-emerald-500"></div>
+      </div>
+    );
   }
 
   return (
     <div className="p-6">
       <div className="mb-6">
         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Gestione Pagine</h2>
-        <div className="flex gap-2 mb-6">
-          {languages.map((lang) => (
-            <Button
-              key={lang.code}
-              variant={currentLanguage === lang.code ? "default" : "outline"}
-              onClick={() => setCurrentLanguage(lang.code)}
-              className={currentLanguage === lang.code ? "bg-emerald-600 text-white hover:bg-emerald-700" : ""}
-            >
-              <span className="mr-2">{lang.flag}</span>
-              {lang.name}
-            </Button>
-          ))}
-        </div>
+        <LanguageSelector 
+          currentLanguage={currentLanguage} 
+          onLanguageChange={setCurrentLanguage} 
+        />
       </div>
 
-      {/* Language info banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-        <div className="flex items-start">
-          <div className="flex-shrink-0 mt-0.5">
-            <AlertTriangle className="h-5 w-5 text-blue-500" />
-          </div>
-          <div className="ml-3">
-            <h3 className="text-sm font-medium text-blue-800">
-              {currentLanguage === 'it' 
-                ? "Stai visualizzando le pagine in italiano (lingua principale)" 
-                : `Stai visualizzando le pagine in ${getLanguageLabel(currentLanguage)}`
-              }
-            </h3>
-            <div className="mt-2 text-sm text-blue-700">
-              {currentLanguage === 'it' 
-                ? "Quando elimini una pagina in italiano, verranno eliminate anche tutte le sue traduzioni."
-                : "Le pagine in questa lingua sono traduzioni. Eliminando una pagina italiana verranno eliminate anche tutte le sue traduzioni."
-              }
-            </div>
-          </div>
-        </div>
-      </div>
+      <LanguageInfoBanner currentLanguage={currentLanguage} />
 
-      {pages.length === 0 ? (
-        <div className="text-center py-10 bg-gray-50 rounded-lg">
-          <p className="text-gray-500">Nessuna pagina trovata per questa lingua</p>
-        </div>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Titolo</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead className="text-right">Azioni</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {pages.map((page) => (
-              <TableRow key={page.id}>
-                <TableCell className="font-medium">
-                  {page.title}
-                </TableCell>
-                <TableCell>
-                  {page.is_parent ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                      Master
-                    </span>
-                  ) : page.isSubmenu ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      Sottopagina
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                      Normale
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleView(page)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="text-red-600 hover:text-red-700"
-                      onClick={() => handleDelete(page)}
-                      disabled={isDeleting}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
+      <PagesList 
+        pages={pages}
+        onView={handleView}
+        onDelete={handleDelete}
+        isDeleting={isDeleting}
+      />
 
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
-            <AlertDialogDescription>
-              {!deletingPage ? "Caricamento..." : deletingPage.path.match(/^\/[a-z]{2}\//) 
-                ? `Sei sicuro di voler eliminare questa pagina tradotta in ${getLanguageLabel(deletingPage.path.match(/^\/([a-z]{2})\//)?.[1] || '')}? L'azione non può essere annullata.`
-                : "Sei sicuro di voler eliminare questa pagina italiana e TUTTE le sue traduzioni? L'azione non può essere annullata e rimuoverà la pagina in tutte le lingue."
-              }
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annulla</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-red-600 hover:bg-red-700"
-              disabled={isDeleting}
-            >
-              {isDeleting ? "Eliminazione in corso..." : "Elimina"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeletePageDialog 
+        isOpen={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        page={deletingPage}
+        isDeleting={isDeleting}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };

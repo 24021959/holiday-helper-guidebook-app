@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef, memo } from "react";
 import { useTranslation } from "@/context/TranslationContext";
 import { Loader2 } from "lucide-react";
@@ -77,7 +76,7 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
     }
 
     // Handle Italian language case
-    if (language === "it") {
+    if (language === "it" as Language) {
       setTranslatedText(text);
       return;
     }
@@ -88,14 +87,14 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
     }
     
     const needsTranslation = 
-      language !== "it" && 
+      language !== "it" as Language && 
       (text !== prevTextRef.current || 
        language !== prevLanguageRef.current);
     
     let isMounted = true;
     
     const fetchTranslation = async () => {
-      if (language === "it" || document.body.hasAttribute('data-no-translation')) {
+      if (language === "it" as Language || document.body.hasAttribute('data-no-translation')) {
         setTranslatedText(text);
         return;
       }
@@ -122,7 +121,7 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
     
     if (needsTranslation) {
       fetchTranslation();
-    } else if (language === "it") {
+    } else if (language === "it" as Language) {
       setTranslatedText(text);
     }
     

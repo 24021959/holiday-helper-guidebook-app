@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useEditorContent } from '@/components/editor/hooks/useEditorContent';
 import { useEditorPreview } from '@/components/editor/hooks/useEditorPreview';
@@ -124,7 +123,6 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     }
   };
 
-  // This function correctly handles the image upload and insertion
   const handleImageUpload = (imageUrl: string, position: "left" | "center" | "right" | "full", caption?: string) => {
     const imageDetail: ImageDetail = {
       url: imageUrl,
@@ -267,7 +265,6 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         onImageUpload={handleImageUpload}
       />
 
-      {/* Phone Dialog */}
       <Dialog open={showPhoneDialog} onOpenChange={setShowPhoneDialog}>
         <DialogContent>
           <DialogHeader>
@@ -309,7 +306,6 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Map Dialog */}
       <Dialog open={showMapDialog} onOpenChange={setShowMapDialog}>
         <DialogContent>
           <DialogHeader>
