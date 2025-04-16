@@ -109,81 +109,84 @@ export const useLayoutSettings = () => {
   const onSubmit = async (data: LayoutSettingsForm) => {
     setIsLoading(true);
     try {
-      // Check if header settings already exist
-      const { data: existingHeader } = await supabase
+      // For header settings
+      const headerData = {
+        logo_url: data.logoUrl,
+        header_color: data.headerColor,
+        establishment_name: data.establishmentName,
+        establishment_name_alignment: data.establishmentNameAlignment,
+        establishment_name_color: data.establishmentNameColor,
+        logo_position: data.logoPosition,
+        logo_size: data.logoSize
+      };
+
+      // First try a SELECT to check if we need to INSERT or UPDATE
+      const { data: existingHeader, error: headerCheckError } = await supabase
         .from('header_settings')
         .select('id')
+        .limit(1)
         .maybeSingle();
 
-      // Upsert with explicit ID if exists, otherwise create new
-      const headerData = existingHeader ? 
-        { 
-          id: existingHeader.id,
-          logo_url: data.logoUrl,
-          header_color: data.headerColor,
-          establishment_name: data.establishmentName,
-          establishment_name_alignment: data.establishmentNameAlignment,
-          establishment_name_color: data.establishmentNameColor,
-          logo_position: data.logoPosition,
-          logo_size: data.logoSize
-        } : 
-        {
-          logo_url: data.logoUrl,
-          header_color: data.headerColor,
-          establishment_name: data.establishmentName,
-          establishment_name_alignment: data.establishmentNameAlignment,
-          establishment_name_color: data.establishmentNameColor,
-          logo_position: data.logoPosition,
-          logo_size: data.logoSize
-        };
+      if (headerCheckError) {
+        console.error("Error checking for existing header settings:", headerCheckError);
+      }
 
-      const { error: headerError } = await supabase
-        .from('header_settings')
-        .upsert(headerData);
+      // If record exists, update it
+      if (existingHeader) {
+        const { error: updateError } = await supabase
+          .from('header_settings')
+          .update(headerData)
+          .eq('id', existingHeader.id);
+        
+        if (updateError) throw updateError;
+      } else {
+        // If no record exists, insert a new one
+        const { error: insertError } = await supabase
+          .from('header_settings')
+          .insert(headerData);
+        
+        if (insertError) throw insertError;
+      }
 
-      if (headerError) throw headerError;
+      // For footer settings
+      const footerValue = {
+        custom_text: data.footerText,
+        show_social_links: data.showSocialLinks,
+        facebook_url: data.facebookUrl,
+        instagram_url: data.instagramUrl,
+        twitter_url: data.twitterUrl,
+        background_color: data.footerColor,
+        text_color: data.footerTextColor,
+        text_alignment: data.footerTextAlignment
+      };
 
-      // Check if footer settings already exist
-      const { data: existingFooter } = await supabase
+      // First check if footer settings exist
+      const { data: existingFooter, error: footerCheckError } = await supabase
         .from('site_settings')
         .select('id')
         .eq('key', 'footer_settings')
         .maybeSingle();
 
-      const footerData = existingFooter ? 
-        {
-          id: existingFooter.id,
-          key: 'footer_settings',
-          value: {
-            custom_text: data.footerText,
-            show_social_links: data.showSocialLinks,
-            facebook_url: data.facebookUrl,
-            instagram_url: data.instagramUrl,
-            twitter_url: data.twitterUrl,
-            background_color: data.footerColor,
-            text_color: data.footerTextColor,
-            text_alignment: data.footerTextAlignment
-          }
-        } : 
-        {
-          key: 'footer_settings',
-          value: {
-            custom_text: data.footerText,
-            show_social_links: data.showSocialLinks,
-            facebook_url: data.facebookUrl,
-            instagram_url: data.instagramUrl,
-            twitter_url: data.twitterUrl,
-            background_color: data.footerColor,
-            text_color: data.footerTextColor,
-            text_alignment: data.footerTextAlignment
-          }
-        };
+      if (footerCheckError) {
+        console.error("Error checking for existing footer settings:", footerCheckError);
+      }
 
-      const { error: footerError } = await supabase
-        .from('site_settings')
-        .upsert(footerData);
-
-      if (footerError) throw footerError;
+      // If record exists, update it
+      if (existingFooter) {
+        const { error: updateError } = await supabase
+          .from('site_settings')
+          .update({ value: footerValue })
+          .eq('id', existingFooter.id);
+        
+        if (updateError) throw updateError;
+      } else {
+        // If no record exists, insert a new one
+        const { error: insertError } = await supabase
+          .from('site_settings')
+          .insert({ key: 'footer_settings', value: footerValue });
+        
+        if (insertError) throw insertError;
+      }
 
       toast.success("Impostazioni layout salvate con successo");
     } catch (error) {
