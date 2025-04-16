@@ -6,12 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save } from "lucide-react";
-import { VisualEditor } from "@/components/admin/VisualEditor";
 import { ImageDetail } from "@/types/image.types";
 import { useToast } from "@/hooks/use-toast";
 import { usePageCreation } from "@/hooks/usePageCreation";
 import { PageType } from "@/types/form.types";
 import { PageIconSection } from "@/components/admin/form/PageIconSection";
+import { VisualEditor } from "@/components/editor/VisualEditor";
 
 const PageCreator = () => {
   const [pageTitle, setPageTitle] = useState<string>("");
