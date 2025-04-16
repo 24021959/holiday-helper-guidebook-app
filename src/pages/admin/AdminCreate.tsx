@@ -23,6 +23,10 @@ import { PageTypeSection } from "@/components/admin/form/PageTypeSection";
 import { SelectedIconDisplay } from "@/components/admin/form/SelectedIconDisplay";
 import { FormActions } from "@/components/admin/form/FormActions";
 import IconRenderer from "@/components/IconRenderer";
+import { useForm, FormProvider } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { formSchema } from "@/components/admin/schemas/pageFormSchema";
 
 export interface PageContent {
   title: string;
@@ -183,6 +187,17 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
     }
   };
 
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: pageToEdit?.title || "",
+      content: pageToEdit?.content || "",
+      icon: pageToEdit?.icon || "FileText",
+      pageType: pageToEdit?.is_parent ? "parent" : pageToEdit?.isSubmenu ? "submenu" : "normal",
+      parentPath: pageToEdit?.parentPath || "",
+    },
+  });
+
   return (
     <div className="container mx-auto px-4 py-6">
       <Card className="bg-white shadow-lg border-0">
@@ -200,7 +215,7 @@ const AdminCreate = ({ pageToEdit, onEditComplete }: AdminCreateProps) => {
         
         <CardContent>
           <div className="space-y-6">
-            <FormHeader  />
+            <FormHeader control={form.control} />
 
             <PageTypeSection
               pageType={pageContent.pageType}

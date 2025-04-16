@@ -19,6 +19,11 @@ interface FormHeaderProps {
 }
 
 export const FormHeader = ({ control }: FormHeaderProps) => {
+  if (!control) {
+    console.error("FormHeader: control è null");
+    return null;
+  }
+  
   return (
     <FormField
       control={control}

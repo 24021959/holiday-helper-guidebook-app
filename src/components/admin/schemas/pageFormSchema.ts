@@ -11,4 +11,7 @@ export const pageFormSchema = z.object({
   parentPath: z.string().optional(),
 });
 
+// Esportiamo anche con il nome formSchema per compatibilità
+export const formSchema = pageFormSchema;
+
 export type PageFormData = z.infer<typeof pageFormSchema>;

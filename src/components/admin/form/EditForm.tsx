@@ -16,13 +16,14 @@ import { FormHeader } from './FormHeader';
 import { ImageItem } from "@/types/image.types";
 import { PageData } from "@/types/page.types";
 import { toast } from "sonner";
-import { formSchema } from '../schemas/pageFormSchema';
+import { formSchema, pageFormSchema } from '../schemas/pageFormSchema';
+import { PageFormValues } from "@/types/form.types";
 
 interface EditFormProps {
   selectedPage: PageData;
   parentPages: PageData[];
   onPageUpdated: (pages: PageData[]) => void;
-  handleTranslateAndCreate: (values: any) => Promise<void>;
+  handleTranslateAndCreate: (values: PageFormValues, imageUrl: string | null, pageImages: ImageItem[], onSuccess: () => void) => Promise<void>;
 }
 
 export const EditForm = ({ 
@@ -36,7 +37,19 @@ export const EditForm = ({
   const [availableTranslations, setAvailableTranslations] = useState<Record<string, boolean>>({});
   const [selectedIcon, setSelectedIcon] = useState(selectedPage.icon || "FileText");
   const [uploadedImage, setUploadedImage] = useState<string | null>(selectedPage.imageUrl || null);
-  const [pageImages, setPageImages] = useState<ImageItem[]>(selectedPage.pageImages || []);
+  
+  // Assicuriamoci che pageImages abbia il formato corretto con type e width
+  const initialPageImages = selectedPage.pageImages 
+    ? selectedPage.pageImages.map(img => ({
+        url: img.url,
+        position: img.position,
+        caption: img.caption || "",
+        type: "image" as const,
+        width: "100%"
+      }))
+    : [];
+  
+  const [pageImages, setPageImages] = useState<ImageItem[]>(initialPageImages);
   
   const initialPageType = selectedPage.is_parent ? "parent" : selectedPage.isSubmenu ? "submenu" : "normal";
   const [pageType, setPageType] = useState<"normal" | "submenu" | "parent">(initialPageType);
@@ -50,8 +63,34 @@ export const EditForm = ({
       title: selectedPage.title,
       content: selectedPage.content,
       icon: selectedPage.icon || "FileText",
+      pageType: initialPageType,
+      parentPath: selectedPage.parentPath || "",
     },
   });
+
+  const handleOnSubmit = async (formValues: z.infer<typeof formSchema>) => {
+    const formattedValues: PageFormValues = {
+      title: formValues.title,
+      content: formValues.content || "",
+      icon: selectedIcon,
+      pageType: pageType,
+      parentPath: parentPath
+    };
+    
+    try {
+      await handleTranslateAndCreate(
+        formattedValues,
+        uploadedImage,
+        pageImages,
+        () => {
+          toast.success("Modifiche salvate con successo");
+        }
+      );
+    } catch (error) {
+      console.error("Errore durante il salvataggio:", error);
+      toast.error("Errore durante il salvataggio delle modifiche");
+    }
+  };
 
   const handleImageInsertion = (imageId: number) => {
     if (imageId >= 0 && imageId < pageImages.length) {
@@ -67,6 +106,11 @@ export const EditForm = ({
     }
   };
 
+  // Funzione per gestire il cambio delle immagini mantenendo il formato corretto
+  const handlePageImagesChange = (newImages: ImageItem[]) => {
+    setPageImages(newImages);
+  };
+
   return (
     <FormProvider {...form}>
       <h2 className="text-xl font-medium text-emerald-600 mb-4">Modifica Pagina</h2>
@@ -77,11 +121,11 @@ export const EditForm = ({
         path={selectedPage.path}
         isTranslating={isTranslating}
         availableTranslations={availableTranslations}
-        onTranslate={handleTranslateAndCreate}
+        onTranslate={() => handleOnSubmit(form.getValues())}
       />
       
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleTranslateAndCreate)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(handleOnSubmit)} className="space-y-6">
           <FormHeader control={form.control} />
           
           <PageTypeSection 
@@ -119,7 +163,7 @@ export const EditForm = ({
             <TabsContent value="images">
               <PageMultiImageSection 
                 images={pageImages}
-                onImagesChange={setPageImages}
+                onImagesChange={handlePageImagesChange}
               />
             </TabsContent>
             

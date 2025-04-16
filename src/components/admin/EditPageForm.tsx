@@ -3,6 +3,8 @@ import React from 'react';
 import { PageData } from "@/types/page.types";
 import { EditForm } from './form/EditForm';
 import { usePageCreation } from "@/hooks/usePageCreation";
+import { ImageItem } from "@/types/image.types";
+import { PageFormValues } from "@/types/form.types";
 
 interface EditPageFormProps {
   selectedPage: PageData;
@@ -23,12 +25,22 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
     onPageCreated: onPageUpdated 
   });
 
+  // Wrapper per adattare la firma della funzione handleTranslateAndCreate
+  const handleFormSubmit = async (
+    values: PageFormValues,
+    imageUrl: string | null,
+    pageImages: ImageItem[],
+    onSuccess: () => void
+  ) => {
+    return handleTranslateAndCreate(values, imageUrl, pageImages, onSuccess);
+  };
+
   return (
     <EditForm
       selectedPage={selectedPage}
       parentPages={parentPages}
       onPageUpdated={onPageUpdated}
-      handleTranslateAndCreate={handleTranslateAndCreate}
+      handleTranslateAndCreate={handleFormSubmit}
     />
   );
 };
