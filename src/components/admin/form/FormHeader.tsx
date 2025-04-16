@@ -18,7 +18,7 @@ interface FormHeaderProps {
   control: Control<FormData>;
 }
 
-export const FormHeader: React.FC<FormHeaderProps> = ({ control }) => {
+export const FormHeader = ({ control }: FormHeaderProps) => {
   return (
     <FormField
       control={control}
