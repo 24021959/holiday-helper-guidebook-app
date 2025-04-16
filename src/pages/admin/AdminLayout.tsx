@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,20 +13,19 @@ import AdminManage from "./AdminManage";
 import { PageData } from "@/types/page.types";
 import { LayoutSettings } from "@/components/admin/LayoutSettings";
 import { toast } from "sonner";
+import ChatbotSettings from "@/components/admin/chatbot/ChatbotSettings";
 
 const AdminLayout = () => {
   const isAuthenticated = true;
   const [activeTab, setActiveTab] = useState("create");
   const [pageToEdit, setPageToEdit] = useState<PageData | null>(null);
 
-  // Set the active tab from URL hash if present
   useEffect(() => {
     const hash = window.location.hash.replace('#', '');
     if (hash && ['create', 'manage', 'settings', 'chatbot', 'analytics'].includes(hash)) {
       setActiveTab(hash);
     }
     
-    // Update hash when tab changes
     window.addEventListener('hashchange', () => {
       const newHash = window.location.hash.replace('#', '');
       if (newHash && ['create', 'manage', 'settings', 'chatbot', 'analytics'].includes(newHash)) {
@@ -36,7 +34,6 @@ const AdminLayout = () => {
     });
   }, []);
 
-  // Update URL hash when activeTab changes
   useEffect(() => {
     window.location.hash = activeTab;
   }, [activeTab]);
@@ -126,12 +123,7 @@ const AdminLayout = () => {
               value="chatbot" 
               className="p-6 bg-yellow-50/50 rounded-lg border border-yellow-100"
             >
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                Configurazione Chatbot
-              </h2>
-              <div className="text-gray-600">
-                Impostazioni del chatbot verranno aggiunte qui
-              </div>
+              <ChatbotSettings />
             </TabsContent>
 
             <TabsContent 
