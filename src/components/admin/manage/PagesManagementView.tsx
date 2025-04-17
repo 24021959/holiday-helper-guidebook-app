@@ -35,16 +35,8 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
     setShowDeleteDialog(true);
   };
 
-  const handleEditClick = (page: PageData) => {
-    console.log("Modifica pagina:", page.title);
-    // Navigate to the create page with edit mode enabled and the page data
-    navigate(`/admin/create`, { 
-      state: { 
-        editMode: true, 
-        pageToEdit: page 
-      } 
-    });
-  };
+  // Questo metodo verrà eliminato poiché utilizzeremo direttamente onEditPage
+  // che viene passato come prop dal componente padre
 
   const confirmDelete = async (): Promise<void> => {
     if (deletingPage) {
@@ -70,7 +62,7 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
         pages={pages}
         onView={onViewPage}
         onDelete={handleDeleteClick}
-        onEdit={handleEditClick}
+        onEdit={onEditPage}
         isDeleting={isDeleting}
       />
 

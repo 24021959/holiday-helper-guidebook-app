@@ -95,13 +95,19 @@ const AdminManage = () => {
 
   const handleEdit = (page: PageData) => {
     console.log("Navigating to edit page:", page.title);
-    // Navigate to create page with edit mode and page data
-    navigate("/admin/create", { 
-      state: { 
-        editMode: true, 
-        pageToEdit: page 
-      } 
-    });
+    
+    // Explicitly navigate to the create page route with state
+    try {
+      navigate("/admin/create", { 
+        state: { 
+          editMode: true, 
+          pageToEdit: page 
+        } 
+      });
+    } catch (error) {
+      console.error("Navigation error:", error);
+      toast.error("Errore durante la navigazione alla pagina di modifica");
+    }
   };
 
   if (isLoading) {
