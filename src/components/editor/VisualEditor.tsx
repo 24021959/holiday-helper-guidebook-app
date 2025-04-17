@@ -18,6 +18,7 @@ interface VisualEditorProps {
   editMode?: 'visual' | 'preview';
   onEditModeChange?: (mode: 'visual' | 'preview') => void;
   forcePreviewOnly?: boolean;
+  disableAutoSave?: boolean;
 }
 
 export const VisualEditor: React.FC<VisualEditorProps> = ({
@@ -27,7 +28,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   onImageAdd,
   editMode: externalEditMode,
   onEditModeChange,
-  forcePreviewOnly = false
+  forcePreviewOnly = false,
+  disableAutoSave = false
 }) => {
   const {
     showImageDialog,
@@ -54,7 +56,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     handleTextFormat,
     handleTextAlign,
     updateHistory
-  } = useEditorContent(content, onChange);
+  } = useEditorContent(content, disableAutoSave ? () => {} : onChange);
 
   // Use the external edit mode if provided, otherwise use the internal state
   const {
@@ -81,12 +83,12 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const {
     handleImageUpload,
     handleEditorImageDelete
-  } = useImageOperations(content, onChange, updateHistory, onImageAdd);
+  } = useImageOperations(content, disableAutoSave ? () => {} : onChange, updateHistory, onImageAdd);
 
   const {
     handlePhoneInsert,
     handleMapInsert
-  } = useSpecialInserts(content, cursorPosition, onChange, updateHistory);
+  } = useSpecialInserts(content, cursorPosition, disableAutoSave ? () => {} : onChange, updateHistory);
 
   const handleTextareaSelect = () => {
     const textarea = document.querySelector('textarea');
@@ -109,8 +111,15 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   };
 
   const handleContentChange = (newContent: string) => {
-    onChange(newContent);
+    if (!disableAutoSave) {
+      onChange(newContent);
+    }
     updateHistory(newContent);
+  };
+
+  // This function will be called by parent when explicit save is requested
+  const getCurrentContent = (): string => {
+    return editHistory[historyIndex] || content;
   };
 
   return (
@@ -126,7 +135,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         onContentChange={handleContentChange}
         onToggleFullscreen={toggleFullscreen}
         onToggleEditMode={toggleEditMode}
-        onOpenImageDialog={handleOpenImageDialog}
+        onOpenImageDialog={() => {}} // Removed image button functionality
         onTextSelect={handleTextareaSelect}
         onTextFormat={handleTextFormat}
         onTextAlign={handleTextAlign}

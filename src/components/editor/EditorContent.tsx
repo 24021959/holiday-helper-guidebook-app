@@ -33,40 +33,10 @@ export const EditorContent: React.FC<EditorContentProps> = ({
     
     // Replace image JSON data with placeholders for editor
     const regex = /\{\"type\":\"image\",.*?\}/g;
-    processed = processed.replace(regex, `[IMMAGINE]`);
+    processed = processed.replace(regex, `[IMAGE PLACEHOLDER]`);
     
     return processed;
   }, [content]);
-
-  // Extract images from content for visual display
-  const contentImages = React.useMemo(() => {
-    const images: ImageDetail[] = [];
-    const regex = /\{\"type\":\"image\",.*?\}/g;
-    let match;
-    
-    while ((match = regex.exec(content)) !== null) {
-      try {
-        const imageData = JSON.parse(match[0]);
-        images.push({
-          url: imageData.url,
-          position: imageData.position,
-          width: imageData.width || "50%",
-          caption: imageData.caption || ""
-        });
-      } catch (e) {
-        console.error("Failed to parse image data:", e);
-      }
-    }
-    
-    return images;
-  }, [content]);
-
-  // Handle image deletion from the editor
-  const handleImageDelete = (index: number) => {
-    if (onImageDelete) {
-      onImageDelete(index);
-    }
-  };
 
   // If forcePreviewOnly is true, we always show the preview
   const displayMode = forcePreviewOnly ? 'preview' : editMode;
@@ -89,9 +59,9 @@ export const EditorContent: React.FC<EditorContentProps> = ({
                 originalImages.push(match[0]);
               }
               
-              // Replace [IMMAGINE] placeholders with original image data
+              // Replace placeholders with original image data
               originalImages.forEach((imgData) => {
-                newContent = newContent.replace('[IMMAGINE]', imgData);
+                newContent = newContent.replace('[IMAGE PLACEHOLDER]', imgData);
               });
               
               onContentChange(newContent);
@@ -102,50 +72,6 @@ export const EditorContent: React.FC<EditorContentProps> = ({
             placeholder="Inizia a scrivere qui..."
             data-no-translation="true"
           />
-          {/* Display images in the visual editor */}
-          <div className="absolute inset-0 pointer-events-none p-4 overflow-auto" data-no-translation="true">
-            {contentImages.map((image, idx) => {
-              const positionClass = 
-                image.position === "left" ? "float-left mr-4" : 
-                image.position === "right" ? "float-right ml-4" : 
-                image.position === "full" ? "w-full block" : 
-                "mx-auto block";
-                
-              return (
-                <div 
-                  key={idx}
-                  className="relative pointer-events-auto"
-                  style={{
-                    width: image.width,
-                    margin: image.position === "center" ? "0 auto" : undefined,
-                    float: image.position === "left" ? "left" : image.position === "right" ? "right" : undefined,
-                    clear: image.position === "full" ? "both" : undefined,
-                    marginBottom: "1rem",
-                    marginRight: image.position === "left" ? "1rem" : undefined,
-                    marginLeft: image.position === "right" ? "1rem" : undefined
-                  }}
-                >
-                  <button
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 hover:opacity-100 transition-opacity z-20"
-                    onClick={() => handleImageDelete(idx)}
-                    type="button"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M18 6L6 18M6 6l12 12"></path>
-                    </svg>
-                  </button>
-                  <img 
-                    src={image.url} 
-                    alt={image.caption || `Image ${idx+1}`}
-                    className="w-full h-auto rounded-md"
-                  />
-                  {image.caption && (
-                    <p className="text-sm text-gray-500 mt-1">{image.caption}</p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
         </div>
       ) : (
         <div 

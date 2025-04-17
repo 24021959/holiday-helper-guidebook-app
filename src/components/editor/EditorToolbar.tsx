@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { 
   Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, 
-  ImageIcon, Phone, MapPin, Type, List, Undo, Redo, 
+  Phone, MapPin, Type, List, Undo, Redo, 
   Maximize2, Minimize2, Eye, EyeOff, Heading1, Heading2 
 } from "lucide-react";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar";
@@ -17,7 +17,6 @@ interface EditorToolbarProps {
   editHistory: string[];
   onToggleExpand: () => void;
   onTogglePreview: () => void;
-  onInsertImage: () => void;
   onTextFormat: (format: string) => void;
   onTextAlign: (alignment: 'left' | 'center' | 'right' | 'justify') => void;
   onInsertPhone: () => void;
@@ -34,7 +33,6 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
   editHistory,
   onToggleExpand,
   onTogglePreview,
-  onInsertImage,
   onTextFormat,
   onTextAlign,
   onInsertPhone,
@@ -163,19 +161,6 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
 
       {/* Insert Group */}
       <div className="flex flex-wrap items-center gap-1">
-        <Button 
-          variant="ghost"
-          size="sm"
-          onClick={onInsertImage}
-          className="flex items-center gap-1 h-8"
-          title="Inserisci immagine"
-        >
-          <ImageIcon className="h-4 w-4" />
-          <span className="text-xs sm:text-sm">
-            <TranslatedText text="Immagine" disableAutoTranslation={true} />
-          </span>
-        </Button>
-        
         <Button 
           variant="ghost"
           size="sm"

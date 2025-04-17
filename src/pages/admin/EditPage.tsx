@@ -1,11 +1,11 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { PageData } from "@/types/page.types";
 import { toast } from "sonner";
 import { useAdminPages } from "@/hooks/admin/useAdminPages";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Save } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,11 +24,14 @@ const formSchema = z.object({
 const EditPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const editorRef = useRef<any>(null);
   const { pageToEdit } = location.state || {};
   const [selectedPage, setSelectedPage] = useState<PageData | null>(pageToEdit || null);
   const { isLoading } = useAdminPages();
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [editorContent, setEditorContent] = useState<string>("");
 
   // Inizializza il form
   const form = useForm<z.infer<typeof formSchema>>({
@@ -60,15 +63,34 @@ const EditPage = () => {
         title: selectedPage.title,
         content: selectedPage.content,
       });
+      setEditorContent(selectedPage.content);
     }
   }, [selectedPage, form]);
 
   const handleBackClick = () => {
-    navigate("/admin/manage");
+    if (hasUnsavedChanges) {
+      if (window.confirm("Hai modifiche non salvate. Sei sicuro di voler uscire?")) {
+        navigate("/admin/manage");
+      }
+    } else {
+      navigate("/admin/manage");
+    }
   };
 
   const handleImageUpdate = (imageUrl: string) => {
     setUploadedImage(imageUrl);
+    setHasUnsavedChanges(true);
+  };
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    form.setValue("title", e.target.value);
+    setHasUnsavedChanges(true);
+  };
+
+  const handleEditorStateChange = (content: string) => {
+    setEditorContent(content);
+    // Don't auto-save, just track unsaved changes
+    setHasUnsavedChanges(true);
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -76,18 +98,25 @@ const EditPage = () => {
 
     setIsSubmitting(true);
     try {
+      // Get the latest content from the editor if it exists
+      let finalContent = editorContent;
+      if (editorRef.current && editorRef.current.getCurrentContent) {
+        finalContent = editorRef.current.getCurrentContent();
+      }
+
       // Qui salviamo solo le modifiche essenziali: titolo, contenuto e immagine
       // Manteniamo tutti gli altri parametri della pagina originale
       const updatedPage = {
         ...selectedPage,
         title: values.title,
-        content: values.content || "",
+        content: finalContent,
         imageUrl: uploadedImage,
       };
 
       // Simuliamo il salvataggio
       setTimeout(() => {
         toast.success("Modifiche salvate con successo");
+        setHasUnsavedChanges(false);
         navigate("/admin/manage");
         setIsSubmitting(false);
       }, 800);
@@ -148,7 +177,14 @@ const EditPage = () => {
                     <FormItem>
                       <FormLabel>Titolo</FormLabel>
                       <FormControl>
-                        <Input placeholder="Titolo della pagina" {...field} />
+                        <Input 
+                          placeholder="Titolo della pagina" 
+                          {...field} 
+                          onChange={(e) => {
+                            field.onChange(e);
+                            handleTitleChange(e);
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -179,10 +215,12 @@ const EditPage = () => {
                       <FormLabel>Contenuto</FormLabel>
                       <FormControl>
                         <Editor
+                          ref={editorRef}
                           value={field.value || ""}
-                          onChange={field.onChange}
+                          onChange={handleEditorStateChange}
                           initialEditMode="visual"
                           forcePreviewOnly={false}
+                          disableAutoSave={true}
                         />
                       </FormControl>
                       <FormMessage />
@@ -191,11 +229,17 @@ const EditPage = () => {
                 />
 
                 <div className="pt-4 border-t flex justify-end space-x-4">
+                  {hasUnsavedChanges && (
+                    <div className="flex-grow text-amber-600 flex items-center">
+                      Modifiche non salvate
+                    </div>
+                  )}
                   <Button 
                     type="submit" 
-                    className="bg-emerald-600 hover:bg-emerald-700"
+                    className="bg-emerald-600 hover:bg-emerald-700 flex items-center gap-2"
                     disabled={isSubmitting}
                   >
+                    <Save className="h-4 w-4" />
                     {isSubmitting ? "Salvataggio..." : "Salva modifiche"}
                   </Button>
                 </div>
