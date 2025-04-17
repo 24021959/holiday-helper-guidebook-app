@@ -6,6 +6,7 @@ import { PageForm } from './form/PageForm';
 import { TranslationButton } from './form/TranslationButton';
 import { useEditPageForm } from '@/hooks/admin/useEditPageForm';
 import { pageFormSchema } from './schemas/pageFormSchema';
+import { PageType } from "@/types/form.types";
 
 interface EditPageFormProps {
   selectedPage: PageData;
@@ -49,12 +50,12 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
     onPageUpdated
   });
 
-  // Initialize values from selectedPage
+  // Initialize values from selectedPage with proper type casting
   const initialValues = {
     title: selectedPage.title,
     content: selectedPage.content,
     icon: selectedPage.icon || "FileText",
-    pageType: (selectedPage.is_parent ? "parent" : selectedPage.isSubmenu ? "submenu" : "normal"),
+    pageType: (selectedPage.is_parent ? "parent" : selectedPage.isSubmenu ? "submenu" : "normal") as PageType,
     parentPath: selectedPage.parentPath,
   };
 

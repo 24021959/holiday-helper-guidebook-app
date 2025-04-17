@@ -9,12 +9,15 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import TranslatedText from '@/components/TranslatedText';
+import { useHomePageSaver } from '@/hooks/useHomePageSaver';
+import { Save, GanttChart } from 'lucide-react';
 
 const Home: React.FC = () => {
   const { headerSettings, loading, error, refreshHeaderSettings } = useHeaderSettings();
   const [heroImage, setHeroImage] = useState('/lovable-uploads/6d1eebb5-61dd-4e37-99c7-4c67721ca126.png');
   const { language, setLanguage } = useTranslation();
   const navigate = useNavigate();
+  const { isSaving, saveHomePageToDatabase } = useHomePageSaver();
   
   // Detect browser language on first load
   useEffect(() => {
@@ -53,6 +56,14 @@ const Home: React.FC = () => {
     } else {
       navigate(`/${language}/menu`);
     }
+  };
+
+  const handleSaveHomePage = async () => {
+    await saveHomePageToDatabase();
+  };
+
+  const handleGoToPageManagement = () => {
+    navigate('/admin/manage');
   };
 
   if (loading) {
@@ -136,6 +147,28 @@ const Home: React.FC = () => {
               <TranslatedText text="Esplora il nostro Menu" />
             </Button>
           </div>
+          
+          {/* Admin Actions (Only visible for admins) */}
+          <div className="mt-12 border-t pt-6 flex justify-center gap-4">
+            <Button 
+              onClick={handleSaveHomePage} 
+              variant="outline" 
+              className="flex items-center gap-2 border-emerald-300"
+              disabled={isSaving}
+            >
+              <Save className="h-4 w-4" />
+              {isSaving ? "Salvando..." : "Salva pagina nel sistema"}
+            </Button>
+            
+            <Button 
+              onClick={handleGoToPageManagement}
+              variant="outline"
+              className="flex items-center gap-2 border-blue-300"
+            >
+              <GanttChart className="h-4 w-4" />
+              Gestione Pagine
+            </Button>
+          </div>
         </div>
       </main>
       
@@ -201,4 +234,3 @@ const FlagItem = ({ code, currentLanguage, onClick }: { code: string, currentLan
 };
 
 export default Home;
-
