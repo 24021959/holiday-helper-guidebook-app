@@ -39,10 +39,11 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
 }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deletingPage, setDeletingPage] = useState<PageData | null>(null);
-  const { isTranslating, translatePage } = usePageTranslation();
+  const { isTranslating, translatePage, translatePageToAllLanguages } = usePageTranslation();
   const [showTranslateDialog, setShowTranslateDialog] = useState(false);
   const [translatingPage, setTranslatingPage] = useState<PageData | null>(null);
   const [targetLanguage, setTargetLanguage] = useState<Language>("en");
+  const [isTranslatingAll, setIsTranslatingAll] = useState(false);
 
   const handleDeleteClick = (page: PageData) => {
     setDeletingPage(page);
@@ -66,21 +67,42 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
     if (!translatingPage) return;
     
     try {
-      toast.info(`Avvio traduzione di "${translatingPage.title}" in ${targetLanguage.toUpperCase()}...`);
+      // Se è selezionata una singola lingua
+      if (!isTranslatingAll) {
+        toast.info(`Avvio traduzione di "${translatingPage.title}" in ${targetLanguage.toUpperCase()}...`);
+        
+        await translatePage(
+          translatingPage.content,
+          translatingPage.title,
+          translatingPage.path,
+          translatingPage.imageUrl || null,
+          translatingPage.icon || "FileText",
+          translatingPage.isSubmenu ? "submenu" : (translatingPage.is_parent ? "parent" : "generic"),
+          translatingPage.parentPath || null,
+          translatingPage.pageImages || [],
+          targetLanguage
+        );
+        
+        toast.success(`Pagina tradotta con successo in ${targetLanguage.toUpperCase()}`);
+      } else {
+        // Se sono selezionate tutte le lingue
+        const targetLanguages: Language[] = ["en", "fr", "es", "de"];
+        
+        toast.info(`Avvio traduzione di "${translatingPage.title}" in tutte le lingue...`);
+        
+        await translatePageToAllLanguages(
+          translatingPage.content,
+          translatingPage.title,
+          translatingPage.path,
+          translatingPage.imageUrl || null,
+          translatingPage.icon || "FileText",
+          translatingPage.isSubmenu ? "submenu" : (translatingPage.is_parent ? "parent" : "generic"),
+          translatingPage.parentPath || null,
+          translatingPage.pageImages || [],
+          targetLanguages
+        );
+      }
       
-      await translatePage(
-        translatingPage.content,
-        translatingPage.title,
-        translatingPage.path,
-        translatingPage.imageUrl || null,
-        translatingPage.icon || "FileText",
-        translatingPage.isSubmenu ? "submenu" : (translatingPage.is_parent ? "parent" : "generic"),
-        translatingPage.parentPath || null,
-        translatingPage.pageImages || [],
-        targetLanguage
-      );
-      
-      toast.success(`Pagina tradotta con successo in ${targetLanguage.toUpperCase()}`);
       setShowTranslateDialog(false);
     } catch (error) {
       console.error("Errore durante la traduzione:", error);
@@ -123,41 +145,55 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
           <DialogHeader>
             <DialogTitle>Traduci pagina</DialogTitle>
             <DialogDescription>
-              Scegli in quale lingua vuoi tradurre la pagina "{translatingPage?.title}"
+              {isTranslatingAll 
+                ? "La pagina verrà tradotta in tutte le lingue (EN, FR, ES, DE) in sequenza" 
+                : `Scegli in quale lingua vuoi tradurre la pagina "${translatingPage?.title}"`}
             </DialogDescription>
           </DialogHeader>
           
           <div className="flex flex-col gap-3 my-4">
-            <div className="grid grid-cols-2 gap-3">
-              <Button 
-                variant={targetLanguage === "en" ? "default" : "outline"}
-                onClick={() => setTargetLanguage("en")}
-                className={targetLanguage === "en" ? "border-2 border-blue-600" : ""}
-              >
-                🇬🇧 English
-              </Button>
-              <Button 
-                variant={targetLanguage === "fr" ? "default" : "outline"}
-                onClick={() => setTargetLanguage("fr")}
-                className={targetLanguage === "fr" ? "border-2 border-blue-600" : ""}
-              >
-                🇫🇷 Français
-              </Button>
-              <Button 
-                variant={targetLanguage === "es" ? "default" : "outline"}
-                onClick={() => setTargetLanguage("es")}
-                className={targetLanguage === "es" ? "border-2 border-blue-600" : ""}
-              >
-                🇪🇸 Español
-              </Button>
-              <Button 
-                variant={targetLanguage === "de" ? "default" : "outline"}
-                onClick={() => setTargetLanguage("de")}
-                className={targetLanguage === "de" ? "border-2 border-blue-600" : ""}
-              >
-                🇩🇪 Deutsch
-              </Button>
-            </div>
+            {!isTranslatingAll && (
+              <div className="grid grid-cols-2 gap-3">
+                <Button 
+                  variant={targetLanguage === "en" ? "default" : "outline"}
+                  onClick={() => setTargetLanguage("en")}
+                  className={targetLanguage === "en" ? "border-2 border-blue-600" : ""}
+                >
+                  🇬🇧 English
+                </Button>
+                <Button 
+                  variant={targetLanguage === "fr" ? "default" : "outline"}
+                  onClick={() => setTargetLanguage("fr")}
+                  className={targetLanguage === "fr" ? "border-2 border-blue-600" : ""}
+                >
+                  🇫🇷 Français
+                </Button>
+                <Button 
+                  variant={targetLanguage === "es" ? "default" : "outline"}
+                  onClick={() => setTargetLanguage("es")}
+                  className={targetLanguage === "es" ? "border-2 border-blue-600" : ""}
+                >
+                  🇪🇸 Español
+                </Button>
+                <Button 
+                  variant={targetLanguage === "de" ? "default" : "outline"}
+                  onClick={() => setTargetLanguage("de")}
+                  className={targetLanguage === "de" ? "border-2 border-blue-600" : ""}
+                >
+                  🇩🇪 Deutsch
+                </Button>
+              </div>
+            )}
+            
+            <Button 
+              variant="outline" 
+              onClick={() => setIsTranslatingAll(!isTranslatingAll)}
+              className={isTranslatingAll ? "bg-amber-100 border-amber-400 text-amber-800" : ""}
+            >
+              {isTranslatingAll 
+                ? "✅ Tradurre in tutte le lingue (sequenzialmente)" 
+                : "Tradurre in tutte le lingue (sequenzialmente)"}
+            </Button>
           </div>
 
           <DialogFooter>

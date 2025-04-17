@@ -11,7 +11,7 @@ import { Language } from "@/types/translation.types";
  */
 export const usePageTranslation = () => {
   const [isTranslating, setIsTranslating] = useState(false);
-  const { translatePage } = useTranslation();
+  const { translatePage: translatePageContent } = useTranslation();
   const { saveNewPage } = usePageSaving();
 
   /**
@@ -40,7 +40,7 @@ export const usePageTranslation = () => {
       
       console.log(`Translating content: "${content.substring(0, 50)}..." and title: "${title}" to ${targetLang}`);
       
-      const { title: translatedTitle, content: translatedContent } = await translatePage(content, title);
+      const { title: translatedTitle, content: translatedContent } = await translatePageContent(content, title);
       
       console.log(`Translated title: "${translatedTitle}"`);
       console.log(`Translated content (preview): "${translatedContent.substring(0, 50)}..."`);
@@ -119,9 +119,67 @@ export const usePageTranslation = () => {
     }
   };
 
+  /**
+   * Traduce una pagina in tutte le lingue in sequenza
+   */
+  const translatePageToAllLanguages = async (
+    content: string,
+    title: string,
+    finalPath: string,
+    imageUrl: string | null,
+    icon: string,
+    pageType: string,
+    parentPath: string | null,
+    pageImages: any[],
+    targetLanguages: Language[]
+  ) => {
+    try {
+      setIsTranslating(true);
+      const totalLanguages = targetLanguages.length;
+      
+      for (let i = 0; i < totalLanguages; i++) {
+        const lang = targetLanguages[i];
+        toast.info(`Avvio traduzione in ${lang.toUpperCase()} (${i+1}/${totalLanguages})...`);
+        
+        try {
+          await translatePage(
+            content, 
+            title, 
+            finalPath, 
+            imageUrl, 
+            icon, 
+            pageType, 
+            parentPath, 
+            pageImages, 
+            lang
+          );
+          
+          // Aggiungiamo una breve pausa tra le traduzioni
+          if (i < totalLanguages - 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        } catch (langError) {
+          console.error(`Error translating to ${lang}:`, langError);
+          toast.error(`Errore durante la traduzione in ${lang.toUpperCase()}`);
+          // Continue with next language despite errors
+        }
+      }
+      
+      toast.success("Traduzioni completate con successo!");
+      return true;
+    } catch (error) {
+      console.error("Error in translation sequence:", error);
+      toast.error("Errore durante la sequenza di traduzioni");
+      throw error;
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   return {
     isTranslating,
     setIsTranslating,
-    translatePage
+    translatePage,
+    translatePageToAllLanguages
   };
 };

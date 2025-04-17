@@ -8,6 +8,7 @@ import { usePageSaving } from "./page/usePageSaving";
 import { usePageDeletion } from "./page/usePageDeletion";
 import { usePageTranslation } from "./page/usePageTranslation";
 import { usePageFormatting } from "./page/usePageFormatting";
+import { Language } from "@/types/translation.types";
 
 interface UsePageCreationProps {
   onPageCreated: (pages: any[]) => void;
@@ -15,7 +16,7 @@ interface UsePageCreationProps {
 
 export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
   const { isCreating, setIsCreating, saveNewPage } = usePageSaving();
-  const { isTranslating, translatePages } = usePageTranslation();
+  const { isTranslating, translatePageToAllLanguages } = usePageTranslation();
   const { deletePageAndTranslations } = usePageDeletion();
 
   /**
@@ -97,10 +98,11 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
     icon: string,
     pageType: PageType,
     parentPath: string | null,
-    pageImages: ImageItem[]
+    pageImages: ImageItem[],
+    targetLanguages: Language[]
   ) => {
     try {
-      await translatePages(
+      await translatePageToAllLanguages(
         content,
         title,
         finalPath,
@@ -108,7 +110,8 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
         icon,
         pageType,
         parentPath,
-        pageImages
+        pageImages,
+        targetLanguages
       );
       
       const { data: pagesData, error: fetchError } = await supabase
