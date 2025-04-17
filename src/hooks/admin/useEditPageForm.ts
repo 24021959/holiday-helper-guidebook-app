@@ -5,6 +5,7 @@ import { usePageCreation } from "@/hooks/usePageCreation";
 import { ImageItem } from "@/types/image.types";
 import { toast } from "sonner";
 import { uploadImage } from "@/integrations/supabase/storage";
+import { Language } from "@/types/translation.types";
 
 // Helper function to extract language from path
 const getLanguageFromPath = (path: string): string => {
@@ -118,6 +119,8 @@ export const useEditPageForm = ({
         ? `${lastSavedValues.parentPath}/${sanitizedTitle}`
         : `/${sanitizedTitle}`;
 
+      const targetLanguages: Language[] = ["en", "fr", "es", "de"];
+
       await handleManualTranslation(
         lastSavedValues.content,
         lastSavedValues.title,
@@ -126,7 +129,8 @@ export const useEditPageForm = ({
         lastSavedValues.icon,
         lastSavedValues.pageType,
         lastSavedValues.pageType === "submenu" ? lastSavedValues.parentPath : null,
-        lastSavedValues.pageImages
+        lastSavedValues.pageImages,
+        targetLanguages
       );
     } catch (error) {
       console.error("Error during translation:", error);

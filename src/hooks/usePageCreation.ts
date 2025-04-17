@@ -99,7 +99,7 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
     pageType: PageType,
     parentPath: string | null,
     pageImages: ImageItem[],
-    targetLanguages: Language[]
+    targetLanguages: Language[] = ["en", "fr", "es", "de"]
   ) => {
     try {
       await translatePageToAllLanguages(

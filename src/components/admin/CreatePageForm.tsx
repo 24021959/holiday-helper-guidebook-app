@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Globe } from "lucide-react";
 import type { z } from "zod";
 import { pageFormSchema } from './schemas/pageFormSchema';
+import { Language } from "@/types/translation.types";
 
 interface CreatePageFormProps {
   parentPages: PageData[];
@@ -116,6 +117,8 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
       ? `${lastSavedValues.parentPath}/${sanitizedTitle}`
       : `/${sanitizedTitle}`;
 
+    const targetLanguages: Language[] = ["en", "fr", "es", "de"];
+    
     await handleManualTranslation(
       lastSavedValues.content,
       lastSavedValues.title,
@@ -124,7 +127,8 @@ const CreatePageForm: React.FC<CreatePageFormProps> = ({
       lastSavedValues.icon,
       lastSavedValues.pageType,
       lastSavedValues.pageType === "submenu" ? lastSavedValues.parentPath : null,
-      lastSavedValues.pageImages
+      lastSavedValues.pageImages,
+      targetLanguages
     );
   };
 
