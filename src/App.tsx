@@ -32,6 +32,12 @@ function App() {
           {/* Admin routes */}
           <Route path="/admin/edit" element={<EditPage />} />
           
+          {/* Home pages in different languages */}
+          <Route path="/en" element={<Home />} />
+          <Route path="/fr" element={<Home />} />
+          <Route path="/es" element={<Home />} />
+          <Route path="/de" element={<Home />} />
+          
           {/* Main menu routes with language support */}
           <Route path="/menu" element={<Menu />} />
           <Route path="/en/menu" element={<Menu />} />

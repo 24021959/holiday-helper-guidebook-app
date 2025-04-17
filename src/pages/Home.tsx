@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import { useHeaderSettings } from "@/hooks/useHeaderSettings";
 import LoadingView from "@/components/LoadingView";
 import { useTranslation } from "@/context/TranslationContext";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useHomePageSaver } from '@/hooks/useHomePageSaver';
 import LanguageFlags from '@/components/home/LanguageFlags';
 import HeroImage from '@/components/home/HeroImage';
@@ -17,6 +17,7 @@ const Home: React.FC = () => {
   const [heroImage] = useState('/lovable-uploads/6d1eebb5-61dd-4e37-99c7-4c67721ca126.png');
   const { language, setLanguage } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { saveHomePageToDatabase } = useHomePageSaver();
   
   // Automatically save the home page when the component mounts
@@ -24,6 +25,25 @@ const Home: React.FC = () => {
     // Ensure the home page is saved in all languages
     saveHomePageToDatabase();
   }, []);
+
+  useEffect(() => {
+    // Detect current route and set language accordingly
+    const pathSegments = location.pathname.split('/').filter(Boolean);
+    const pathLang = pathSegments[0];
+    
+    if (pathLang && ['en', 'fr', 'es', 'de'].includes(pathLang)) {
+      setLanguage(pathLang as 'it' | 'en' | 'fr' | 'es' | 'de');
+    } else if (pathSegments.length === 0 || pathSegments[0] === 'home') {
+      // Root or /home path defaults to Italian
+      const savedLanguage = localStorage.getItem('selectedLanguage');
+      if (savedLanguage && savedLanguage !== 'it') {
+        // Redirect to language-specific home page
+        navigate(`/${savedLanguage}`);
+      } else {
+        setLanguage('it');
+      }
+    }
+  }, [location.pathname, setLanguage, navigate]);
 
   useEffect(() => {
     const detectBrowserLanguage = () => {
@@ -65,6 +85,13 @@ const Home: React.FC = () => {
 
   const handleSelectLanguage = (selectedLanguage: string) => {
     setLanguage(selectedLanguage as 'it' | 'en' | 'fr' | 'es' | 'de');
+    
+    // Navigate to the correct language home page
+    if (selectedLanguage === 'it') {
+      navigate('/');
+    } else {
+      navigate(`/${selectedLanguage}`);
+    }
   };
 
   if (loading) {

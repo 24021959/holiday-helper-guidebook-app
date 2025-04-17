@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { PageData } from "@/types/page.types";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,20 +18,21 @@ export const useAdminPages = () => {
       let query = supabase.from('custom_pages').select('*');
       
       if (langCode === 'it') {
-        // Per l'italiano, escludiamo i percorsi con prefissi di lingua
+        // For Italian, exclude paths with language prefixes,
+        // but include the root path (/) and /home
         query = query.not('path', 'like', '/en/%')
                      .not('path', 'like', '/fr/%')
                      .not('path', 'like', '/es/%')
-                     .not('path', 'like', '/de/%');
+                     .not('path', 'like', '/de/%')
+                     .not('path', 'eq', '/en')
+                     .not('path', 'eq', '/fr')
+                     .not('path', 'eq', '/es')
+                     .not('path', 'eq', '/de');
                      
-        // Include anche i percorsi che iniziano direttamente con /
-        // E quelli speciali come /home o / (index)
       } else {
-        // Per altre lingue, includiamo solo i percorsi con il prefisso della lingua selezionata
-        query = query.like('path', `/${langCode}/%`);
-        
-        // Aggiungiamo la ricerca della home page tradotta
-        query = query.or(`path.eq./${langCode},path.eq./${langCode}/home`);
+        // For other languages, include paths with the specific language prefix
+        // or the root path for that language (/en, /fr, etc.)
+        query = query.or(`path.eq./${langCode},path.like./${langCode}/%`);
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });
@@ -41,6 +41,7 @@ export const useAdminPages = () => {
 
       if (data) {
         const formattedPages = data.map(page => formatPageData(page));
+        console.log(`Fetched ${formattedPages.length} pages for language: ${langCode}`);
         setPages(formattedPages);
       }
 
@@ -120,7 +121,7 @@ export const useAdminPages = () => {
     
     try {
       setIsDeleting(true);
-      const isItalianPage = !pageToDelete.path.match(/^\/[a-z]{2}\//);
+      const isItalianPage = !pageToDelete.path.match(/^\/[a-z]{2}($|\/)/);
       
       await deletePageAndTranslations(pageToDelete.path);
       await fetchPages(currentLanguage);

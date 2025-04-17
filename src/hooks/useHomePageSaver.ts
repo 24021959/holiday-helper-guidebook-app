@@ -122,12 +122,13 @@ export const useHomePageSaver = () => {
         targetLangs
       );
       
-      // Save each translation to the database
+      // Save each translation to the database with correct language paths
       for (const lang of targetLangs) {
         if (translations[lang]) {
-          // Check if translation already exists
+          // Create language-specific path (e.g., /en, /fr, etc.)
           const langPath = `/${lang}`;
           
+          // Check if translation already exists for this language
           const { data: existingTranslation } = await supabase
             .from('custom_pages')
             .select('id')
@@ -137,7 +138,7 @@ export const useHomePageSaver = () => {
           const translationData = {
             title: translations[lang].title,
             content: translations[lang].content,
-            path: langPath,
+            path: langPath,  // Root path for each language
             image_url: italianHomePage.image_url,
             icon: italianHomePage.icon,
             is_parent: false,
@@ -153,7 +154,7 @@ export const useHomePageSaver = () => {
               .update(translationData)
               .eq('id', existingTranslation.id);
           } else {
-            // Insert new translation
+            // Insert new translation with a unique ID
             const pageId = uuidv4();
             await supabase
               .from('custom_pages')
