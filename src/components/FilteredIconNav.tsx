@@ -51,19 +51,19 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
   // Filter icons based on current language
   const icons = React.useMemo(() => {
     if (language === 'it') {
-      // For Italian (default), show only paths that don't start with prefixes of other languages
+      // Per l'italiano, filtra solo le pagine italiane (path che non iniziano con /en/, /fr/, etc.)
+      // inoltre escludi le pagine root di altre lingue come /en, /fr, etc.
       return allIcons.filter(icon => {
         const path = icon.path || '';
-        return !path.startsWith('/en/') && 
-               !path.startsWith('/fr/') && 
-               !path.startsWith('/es/') && 
-               !path.startsWith('/de/');
+        // Escludiamo sia i percorsi /lingua/ che /lingua
+        return !path.match(/^\/(en|fr|es|de)(\/|$)/);
       });
     } else {
-      // For other languages, show only paths that start with the current language prefix
+      // Per altre lingue, mostra solo percorsi con il prefisso della lingua corrente
+      // più specificamente, solo quelli che iniziano con /lingua/ o sono esattamente /lingua
       return allIcons.filter(icon => {
         const path = icon.path || '';
-        return path.startsWith(`/${language}/`);
+        return path === `/${language}` || path.startsWith(`/${language}/`);
       });
     }
   }, [allIcons, language]);
@@ -71,6 +71,10 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
   useEffect(() => {
     console.log("FilteredIconNav - All icons before filtering:", allIcons.length);
     console.log("FilteredIconNav - Icons after filtering:", icons.length);
+    
+    if (icons.length > 0) {
+      console.log("FilteredIconNav - Filtered icon paths:", icons.map(i => i.path).join(', '));
+    }
   }, [allIcons, icons]);
 
   const handleRefresh = () => {

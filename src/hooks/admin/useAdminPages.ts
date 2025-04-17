@@ -21,7 +21,8 @@ export const useAdminPages = () => {
       console.log(`Fetching pages for language: ${langCode}`);
       
       if (langCode === 'it') {
-        // For Italian, exclude paths that start with language codes
+        // Per l'italiano, escludiamo tutti i percorsi che iniziano con codici lingua
+        // o che sono esattamente un codice lingua
         query = query
           .not('path', 'like', '/en/%')
           .not('path', 'like', '/fr/%') 
@@ -32,7 +33,8 @@ export const useAdminPages = () => {
           .not('path', 'eq', '/es')
           .not('path', 'eq', '/de');
       } else {
-        // For other languages, get exact language root or paths with the language prefix
+        // Per altre lingue, ottieni solo pagine che iniziano con il codice lingua
+        // o che sono esattamente quel codice lingua
         query = query.or(`path.eq./${langCode},path.like./${langCode}/%`);
       }
 

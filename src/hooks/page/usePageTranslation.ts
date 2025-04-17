@@ -32,8 +32,8 @@ export const usePageTranslation = () => {
       toast.info("Avvio traduzione manuale in tutte le lingue...");
 
       // Forza la disattivazione del flag no-translation SOLO per questa operazione
-      const wasNoTranslation = document.body.hasAttribute('data-no-translation');
-      if (wasNoTranslation) {
+      const noTranslationFlag = document.body.hasAttribute('data-no-translation');
+      if (noTranslationFlag) {
         document.body.removeAttribute('data-no-translation');
       }
 
@@ -98,7 +98,7 @@ export const usePageTranslation = () => {
       }
 
       // Ripristina il flag no-translation dopo l'operazione
-      if (wasNoTranslation) {
+      if (noTranslationFlag) {
         document.body.setAttribute('data-no-translation', 'true');
       }
 
@@ -108,7 +108,8 @@ export const usePageTranslation = () => {
       toast.error("Errore durante la traduzione delle pagine");
       
       // Garantisci il ripristino del flag no-translation in caso di errore
-      if (wasNoTranslation) {
+      const noTranslationFlag = document.body.hasAttribute('data-no-translation');
+      if (noTranslationFlag) {
         document.body.setAttribute('data-no-translation', 'true');
       }
       

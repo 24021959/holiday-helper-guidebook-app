@@ -29,6 +29,7 @@ export const useHomePageSaver = () => {
         return;
       }
 
+      // Se non esiste la home page italiana, creala
       const pageId = uuidv4();
       const homeImageUrl = "/lovable-uploads/6d1eebb5-61dd-4e37-99c7-4c67721ca126.png";
       const homeTitle = "Home";
@@ -146,7 +147,7 @@ export const useHomePageSaver = () => {
           // Check if translation already exists for this language
           const { data: existingTranslation } = await supabase
             .from('custom_pages')
-            .select('id')
+            .select('id, title')
             .eq('path', langPath)
             .maybeSingle();
             
@@ -163,6 +164,8 @@ export const useHomePageSaver = () => {
           };
             
           if (existingTranslation) {
+            console.log(`Aggiornamento pagina Home in ${lang} esistente: "${existingTranslation.title}" -> "${translations[lang].title}"`);
+            
             // Update existing translation
             const { error: updateError } = await supabase
               .from('custom_pages')
@@ -175,6 +178,46 @@ export const useHomePageSaver = () => {
             }
               
             console.log(`Updated home page in ${lang} with translated content`);
+            
+            // Controlla se esiste il menu icon corrispondente
+            const { data: existingIcon } = await supabase
+              .from('menu_icons')
+              .select('id')
+              .eq('path', langPath)
+              .maybeSingle();
+              
+            if (existingIcon) {
+              // Aggiorna l'icona del menu esistente
+              const { error: iconUpdateError } = await supabase
+                .from('menu_icons')
+                .update({
+                  label: translations[lang].title,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', existingIcon.id);
+                
+              if (iconUpdateError) {
+                console.error(`Error updating menu icon for ${lang}:`, iconUpdateError);
+              }
+            } else {
+              // L'icona non esiste, creala
+              const { error: iconError } = await supabase
+                .from('menu_icons')
+                .insert({
+                  path: langPath,
+                  label: translations[lang].title,
+                  icon: icon,
+                  bg_color: 'bg-blue-200',
+                  is_submenu: false,
+                  published: true,
+                  is_parent: false,
+                  updated_at: new Date().toISOString()
+                });
+                
+              if (iconError) {
+                console.error(`Error creating menu icon for ${lang}:`, iconError);
+              }
+            }
           } else {
             // Insert new translation with a unique ID
             const pageId = uuidv4();
