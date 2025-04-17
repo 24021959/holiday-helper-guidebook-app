@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import { useTranslation } from "@/context/TranslationContext";
+import { Language } from "@/types/translation.types";
 
 export const useHomePageSaver = () => {
   const [isSaving, setIsSaving] = useState(false);
@@ -111,8 +112,8 @@ export const useHomePageSaver = () => {
         return;
       }
       
-      // Target languages to translate to
-      const targetLangs = ['en', 'fr', 'es', 'de'] as const;
+      // Target languages to translate to - Fix type by providing explicit Language[] type
+      const targetLangs: Language[] = ['en', 'fr', 'es', 'de'];
       
       // Translate content to all languages sequentially
       const translations = await translateSequential(
