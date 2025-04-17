@@ -33,7 +33,8 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
     setShowDeleteDialog(true);
   };
 
-  const confirmDelete = () => {
+  // Modifichiamo questa funzione per restituire una Promise<void>
+  const confirmDelete = async (): Promise<void> => {
     if (deletingPage) {
       onDeletePage(deletingPage);
       setShowDeleteDialog(false);

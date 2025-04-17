@@ -1,16 +1,27 @@
 
+// Aggiungiamo qui la definizione di PageType se non esiste già
+export type PageType = "locations" | "activities" | "restaurants" | "generic";
+
 export interface PageData {
   id: string;
   title: string;
   content: string;
   path: string;
-  imageUrl: string | null;
-  icon: string;
+  imageUrl?: string;
+  icon?: string;
   listType?: "locations" | "activities" | "restaurants";
-  listItems?: { name: string; description?: string; phoneNumber?: string; mapsUrl?: string; }[];
-  isSubmenu: boolean;
+  listItems?: Record<string, any>[];
+  isSubmenu?: boolean;
   parentPath?: string;
-  pageImages: { url: string; position: "left" | "center" | "right" | "full"; caption?: string; }[];
-  published: boolean;
-  is_parent: boolean;
+  pageImages?: { url: string; position: "left" | "center" | "right" | "full"; caption?: string }[];
+  published?: boolean;
+  is_parent?: boolean;
+}
+
+export interface PageFormValues {
+  title: string;
+  content: string;
+  icon: string;
+  pageType: PageType;
+  parentPath?: string;
 }
