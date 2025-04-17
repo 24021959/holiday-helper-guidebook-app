@@ -20,7 +20,7 @@ export const PagesList: React.FC<PagesListProps> = ({
   onEdit,
   isDeleting
 }) => {
-  // If there are no pages, show a helpful message
+  // Se non ci sono pagine, mostra un messaggio informativo
   if (pages.length === 0) {
     return (
       <Card className="border-dashed border-2 border-gray-300 bg-gray-50">

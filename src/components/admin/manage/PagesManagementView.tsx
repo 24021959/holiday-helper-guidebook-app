@@ -69,7 +69,7 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
         pages={pages}
         onView={onViewPage}
         onDelete={handleDeleteClick}
-        onEdit={handleEditClick}
+        onEdit={onEditPage}
         isDeleting={isDeleting}
       />
 
