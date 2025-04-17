@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -24,7 +25,8 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
     values: PageFormValues,
     imageUrl: string | null,
     pageImages: ImageItem[],
-    onSuccess: () => void
+    onSuccess: () => void,
+    fixedPath?: string
   ) => {
     try {
       setIsCreating(true);
@@ -35,14 +37,19 @@ export const usePageCreation = ({ onPageCreated }: UsePageCreationProps) => {
       // CRITICAL: Force disable translations during page creation
       document.body.setAttribute('data-no-translation', 'true');
       
-      const sanitizedTitle = values.title
-        .toLowerCase()
-        .replace(/[^\w\s]/gi, '')
-        .replace(/\s+/g, '-');
+      let finalPath = fixedPath;
       
-      let finalPath = values.pageType === "submenu" && values.parentPath
-        ? `${values.parentPath}/${sanitizedTitle}`
-        : `/${sanitizedTitle}`;
+      // If no fixed path is provided, generate one from the title
+      if (!finalPath) {
+        const sanitizedTitle = values.title
+          .toLowerCase()
+          .replace(/[^\w\s]/gi, '')
+          .replace(/\s+/g, '-');
+        
+        finalPath = values.pageType === "submenu" && values.parentPath
+          ? `${values.parentPath}/${sanitizedTitle}`
+          : `/${sanitizedTitle}`;
+      }
       
       // Save only Italian version - no automatic translation
       const pageId = await saveNewPage(

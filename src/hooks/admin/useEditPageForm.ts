@@ -26,6 +26,8 @@ export const useEditPageForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mainImage, setMainImage] = useState<string | null>(selectedPage.imageUrl || null);
   const [lastSavedValues, setLastSavedValues] = useState<any>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewContent, setPreviewContent] = useState<React.ReactNode>(null);
   
   // Extract current language from the path
   const currentLanguage = getLanguageFromPath(selectedPage.path);
@@ -73,6 +75,10 @@ export const useEditPageForm = ({
         pageImages
       });
       
+      // For home page, maintain the same path
+      const isHomePage = selectedPage.path === "/" || selectedPage.path.endsWith("/home");
+      const finalPath = isHomePage ? selectedPage.path : undefined;
+      
       await handlePageCreation(
         { 
           title: values.title, 
@@ -85,7 +91,8 @@ export const useEditPageForm = ({
         pageImages,
         () => {
           toast.success("Modifiche salvate con successo");
-        }
+        },
+        finalPath // Pass the original path for home page
       );
     } catch (error) {
       console.error("Error in form submission:", error);
@@ -127,6 +134,11 @@ export const useEditPageForm = ({
     }
   };
 
+  const handlePreview = (content: React.ReactNode) => {
+    setPreviewContent(content);
+    setPreviewOpen(true);
+  };
+
   return {
     isSubmitting,
     mainImage,
@@ -134,9 +146,13 @@ export const useEditPageForm = ({
     lastSavedValues,
     isCreating,
     isTranslating,
+    previewOpen,
+    setPreviewOpen,
+    previewContent,
     handleMainImageUpload,
     handleMainImageRemove,
     handleFormSubmit,
-    handleManualTranslate
+    handleManualTranslate,
+    handlePreview
   };
 };

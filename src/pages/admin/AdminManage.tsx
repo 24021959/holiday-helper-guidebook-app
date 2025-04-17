@@ -53,7 +53,12 @@ const AdminManage = () => {
   } = useAdminPages();
 
   const handleView = (page: PageData) => {
-    window.open(`/preview${page.path}`, '_blank');
+    // For home page, open the actual root URL
+    if (page.path === "/" || page.path.endsWith("/home")) {
+      window.open("/", '_blank');
+    } else {
+      window.open(`/preview${page.path}`, '_blank');
+    }
   };
 
   const handleEdit = (page: PageData) => {

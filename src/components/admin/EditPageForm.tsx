@@ -7,6 +7,7 @@ import { TranslationButton } from './form/TranslationButton';
 import { useEditPageForm } from '@/hooks/admin/useEditPageForm';
 import { pageFormSchema } from './schemas/pageFormSchema';
 import { PageType } from "@/types/form.types";
+import PagePreview from './form/PagePreview';
 
 interface EditPageFormProps {
   selectedPage: PageData;
@@ -43,7 +44,10 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
     handleMainImageUpload,
     handleMainImageRemove,
     handleFormSubmit,
-    handleManualTranslate
+    handleManualTranslate,
+    previewOpen,
+    setPreviewOpen,
+    previewContent
   } = useEditPageForm({
     selectedPage,
     parentPages,
@@ -63,9 +67,13 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
     // Just close or reset the form
   };
 
+  const isHomePage = selectedPage.path === "/" || selectedPage.path.endsWith("/home");
+
   return (
     <div className="container max-w-4xl mx-auto">
-      <h2 className="text-xl font-medium text-emerald-600 mb-4">Modifica Pagina</h2>
+      <h2 className="text-xl font-medium text-emerald-600 mb-4">
+        {isHomePage ? "Modifica Pagina Home" : "Modifica Pagina"}
+      </h2>
       
       <PageForm
         initialValues={initialValues}
@@ -88,6 +96,15 @@ const EditPageForm: React.FC<EditPageFormProps> = ({
         onTranslate={handleManualTranslate}
         isVisible={!!lastSavedValues && currentLanguage === 'it'}
       />
+
+      {previewOpen && (
+        <PagePreview
+          isOpen={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          content={previewContent}
+          title={selectedPage.title}
+        />
+      )}
     </div>
   );
 };
