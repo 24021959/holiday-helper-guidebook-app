@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { 
   Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, 
   ImageIcon, Phone, MapPin, Type, List, Undo, Redo, 
-  Maximize2, Minimize2, Eye, EyeOff 
+  Maximize2, Minimize2, Eye, EyeOff, Heading1, Heading2 
 } from "lucide-react";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar";
 import TranslatedText from '@/components/TranslatedText';
@@ -49,7 +49,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
         <Button 
           variant="ghost"
           size="icon"
-          onClick={() => onTextFormat('bold')}
+          onClick={() => selectedText && onTextFormat('bold')}
           disabled={!selectedText}
           title="Grassetto"
         >
@@ -59,7 +59,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
         <Button 
           variant="ghost"
           size="icon"
-          onClick={() => onTextFormat('italic')}
+          onClick={() => selectedText && onTextFormat('italic')}
           disabled={!selectedText}
           title="Corsivo"
         >
@@ -69,7 +69,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
         <Button 
           variant="ghost"
           size="icon"
-          onClick={() => onTextFormat('underline')}
+          onClick={() => selectedText && onTextFormat('underline')}
           disabled={!selectedText}
           title="Sottolineato"
         >
@@ -82,7 +82,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
         <Button 
           variant="ghost"
           size="icon"
-          onClick={() => onTextAlign('left')}
+          onClick={() => selectedText && onTextAlign('left')}
           disabled={!selectedText}
           title="Allinea a sinistra"
         >
@@ -92,7 +92,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
         <Button 
           variant="ghost"
           size="icon"
-          onClick={() => onTextAlign('center')}
+          onClick={() => selectedText && onTextAlign('center')}
           disabled={!selectedText}
           title="Centra"
         >
@@ -102,7 +102,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
         <Button 
           variant="ghost"
           size="icon"
-          onClick={() => onTextAlign('right')}
+          onClick={() => selectedText && onTextAlign('right')}
           disabled={!selectedText}
           title="Allinea a destra"
         >
@@ -112,7 +112,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
         <Button 
           variant="ghost"
           size="icon"
-          onClick={() => onTextAlign('justify')}
+          onClick={() => selectedText && onTextAlign('justify')}
           disabled={!selectedText}
           title="Giustifica"
         >
@@ -134,32 +134,29 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
             </MenubarTrigger>
             <MenubarContent>
               <MenubarItem onClick={() => selectedText && onTextFormat('h1')} disabled={!selectedText}>
-                <span className="text-lg font-bold">H1</span> <span className="ml-2 text-sm text-muted-foreground">Titolo</span>
+                <Heading1 className="h-4 w-4 mr-2" />
+                <span className="text-sm">Titolo grande</span>
               </MenubarItem>
               <MenubarItem onClick={() => selectedText && onTextFormat('h2')} disabled={!selectedText}>
-                <span className="text-md font-bold">H2</span> <span className="ml-2 text-sm text-muted-foreground">Sottotitolo</span>
+                <Heading2 className="h-4 w-4 mr-2" />
+                <span className="text-sm">Sottotitolo</span>
               </MenubarItem>
             </MenubarContent>
           </MenubarMenu>
         </Menubar>
 
-        <Menubar className="border-none p-0">
-          <MenubarMenu>
-            <MenubarTrigger className="h-8 px-2 py-1 data-[state=open]:bg-accent">
-              <div className="flex items-center gap-1 text-sm">
-                <List className="h-4 w-4" />
-                <span><TranslatedText text="Liste" disableAutoTranslation={true} /></span>
-              </div>
-            </MenubarTrigger>
-            <MenubarContent>
-              <MenubarItem onClick={() => selectedText && onTextFormat('bullet')} disabled={!selectedText}>
-                <span className="flex items-center gap-2">
-                  <span>•</span> <span className="text-sm">Lista puntata</span>
-                </span>
-              </MenubarItem>
-            </MenubarContent>
-          </MenubarMenu>
-        </Menubar>
+        <Button 
+          variant="ghost"
+          size="sm"
+          onClick={() => selectedText && onTextFormat('bullet')}
+          disabled={!selectedText}
+          className="flex items-center gap-1 h-8"
+        >
+          <List className="h-4 w-4" />
+          <span className="text-xs sm:text-sm">
+            <TranslatedText text="Lista" disableAutoTranslation={true} />
+          </span>
+        </Button>
 
         <div className="h-6 border-r border-gray-200 mx-1" />
       </div>
@@ -174,7 +171,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
           title="Inserisci immagine"
         >
           <ImageIcon className="h-4 w-4" />
-          <span className="text-xs sm:text-sm hidden sm:inline">
+          <span className="text-xs sm:text-sm">
             <TranslatedText text="Immagine" disableAutoTranslation={true} />
           </span>
         </Button>
@@ -187,7 +184,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
           title="Inserisci telefono"
         >
           <Phone className="h-4 w-4" />
-          <span className="text-xs sm:text-sm hidden sm:inline">
+          <span className="text-xs sm:text-sm">
             <TranslatedText text="Telefono" disableAutoTranslation={true} />
           </span>
         </Button>
@@ -200,7 +197,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
           title="Inserisci mappa"
         >
           <MapPin className="h-4 w-4" />
-          <span className="text-xs sm:text-sm hidden sm:inline">
+          <span className="text-xs sm:text-sm">
             <TranslatedText text="Mappa" disableAutoTranslation={true} />
           </span>
         </Button>

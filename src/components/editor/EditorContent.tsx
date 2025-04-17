@@ -27,24 +27,13 @@ export const EditorContent: React.FC<EditorContentProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
-  // Parse content to identify and replace image markers
+  // Improved image handling - replace JSON with simple placeholders
   const processedContent = React.useMemo(() => {
     let processed = content;
     
     // Replace image JSON data with placeholders for editor
     const regex = /\{\"type\":\"image\",.*?\}/g;
-    let match;
-    let index = 0;
-    
-    while ((match = regex.exec(content)) !== null) {
-      try {
-        const imageData = JSON.parse(match[0]);
-        processed = processed.replace(match[0], `[IMMAGINE]`);
-        index++;
-      } catch (e) {
-        console.error("Failed to parse image data:", e);
-      }
-    }
+    processed = processed.replace(regex, `[IMMAGINE]`);
     
     return processed;
   }, [content]);
@@ -101,7 +90,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
               }
               
               // Replace [IMMAGINE] placeholders with original image data
-              originalImages.forEach((imgData, idx) => {
+              originalImages.forEach((imgData) => {
                 newContent = newContent.replace('[IMMAGINE]', imgData);
               });
               
