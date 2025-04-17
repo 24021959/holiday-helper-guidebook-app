@@ -21,7 +21,7 @@ const keywordToIconMap: Record<string, string> = {
   menu: "Menu",
   ristorante: "Utensils",
   cibo: "Utensils",
-  mappa: "Map",
+  mappa: "MapPin",
   posizione: "MapPin",
   eventi: "Calendar",
   gallery: "Image",
@@ -95,19 +95,11 @@ const AdminManage = () => {
 
   const handleEdit = (page: PageData) => {
     console.log("Navigating to edit page:", page.title);
-    
-    // Explicitly navigate to the create page route with state
-    try {
-      navigate("/admin/create", { 
-        state: { 
-          editMode: true, 
-          pageToEdit: page 
-        } 
-      });
-    } catch (error) {
-      console.error("Navigation error:", error);
-      toast.error("Errore durante la navigazione alla pagina di modifica");
-    }
+    navigate("/admin/edit", { 
+      state: { 
+        pageToEdit: page 
+      } 
+    });
   };
 
   if (isLoading) {

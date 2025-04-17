@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { PageData } from "@/types/page.types";
 import { ImageItem } from "@/types/image.types";
 import { toast } from "sonner";
-import { PageFormValues } from "@/types/form.types";
+import { PageFormValues, PageType } from "@/types/form.types";
 
 interface UseEditFormStateProps {
   selectedPage: PageData;
@@ -38,8 +38,13 @@ export const useEditFormState = ({
   
   const [pageImages, setPageImages] = useState<ImageItem[]>(initialPageImages);
   
-  const initialPageType = selectedPage.is_parent ? "parent" : selectedPage.isSubmenu ? "submenu" : "normal";
-  const [pageType, setPageType] = useState<"normal" | "submenu" | "parent">(initialPageType);
+  const initialPageType = selectedPage.is_parent 
+    ? "parent" as const 
+    : selectedPage.isSubmenu 
+      ? "submenu" as const 
+      : "normal" as const;
+      
+  const [pageType, setPageType] = useState<PageType>(initialPageType);
   const [parentPath, setParentPath] = useState<string>(selectedPage.parentPath || "");
 
   const handleFormSubmit = async (formValues: any) => {

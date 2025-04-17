@@ -7,7 +7,7 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { PageData } from "@/types/page.types";
 import { formSchema } from '../schemas/pageFormSchema';
-import { PageFormValues } from "@/types/form.types";
+import { PageFormValues, PageType } from "@/types/form.types";
 import { EditFormHeader } from './EditFormHeader';
 import { EditFormTypeSection } from './EditFormTypeSection';
 import { EditFormTabs } from './EditFormTabs';
