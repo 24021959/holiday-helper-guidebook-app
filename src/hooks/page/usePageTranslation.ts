@@ -4,21 +4,20 @@ import { useTranslation } from "@/context/TranslationContext";
 import { toast } from "sonner";
 import { usePageSaving } from "./usePageSaving";
 import { supabase } from "@/integrations/supabase/client";
+import { Language } from "@/types/translation.types";
 
 /**
  * Hook per la gestione delle traduzioni delle pagine
- * IMPORTANTE: La traduzione avviene SOLO quando l'utente fa clic sul pulsante di traduzione manuale
  */
 export const usePageTranslation = () => {
   const [isTranslating, setIsTranslating] = useState(false);
-  const { translateSequential } = useTranslation();
+  const { translatePage } = useTranslation();
   const { saveNewPage } = usePageSaving();
 
   /**
-   * Traduce e crea pagine in tutte le lingue supportate
-   * Questa funzione deve essere chiamata SOLO quando l'utente fa clic sul pulsante di traduzione manuale
+   * Traduce una pagina in una lingua specifica
    */
-  const translatePages = async (
+  const translatePage = async (
     content: string,
     title: string,
     finalPath: string,
@@ -26,90 +25,77 @@ export const usePageTranslation = () => {
     icon: string,
     pageType: string,
     parentPath: string | null,
-    pageImages: any[]
+    pageImages: any[],
+    targetLang: Language
   ) => {
     try {
       setIsTranslating(true);
-      toast.info("Avvio traduzione manuale in tutte le lingue...");
+      toast.info(`Avvio traduzione in ${targetLang.toUpperCase()}...`);
 
       // Forza la disattivazione del flag no-translation SOLO per questa operazione
       const noTranslationFlag = document.body.hasAttribute('data-no-translation');
       if (noTranslationFlag) {
         document.body.removeAttribute('data-no-translation');
       }
-
-      // Traduci in tutte le altre lingue
-      const targetLangs: ("en" | "fr" | "es" | "de")[] = ['en', 'fr', 'es', 'de'];
       
-      console.log(`Translating content: "${content.substring(0, 50)}..." and title: "${title}"`);
+      console.log(`Translating content: "${content.substring(0, 50)}..." and title: "${title}" to ${targetLang}`);
       
-      const translations = await translateSequential(
-        content,
-        title,
-        targetLangs
-      );
+      const { title: translatedTitle, content: translatedContent } = await translatePage(content, title);
       
-      console.log("Translations received:", Object.keys(translations).join(", "));
+      console.log(`Translated title: "${translatedTitle}"`);
+      console.log(`Translated content (preview): "${translatedContent.substring(0, 50)}..."`);
       
       // Gestione speciale per la Home page
       const isHomePage = finalPath === "/" || finalPath === "/home";
       
-      for (const lang of targetLangs) {
-        if (translations[lang]) {
-          console.log(`Processing translation for ${lang}`);
-          
-          // Se è la home page, usa un formato di path speciale
-          let translatedPath = isHomePage 
-            ? `/${lang}` 
-            : `/${lang}${finalPath}`;
-            
-          // Make sure we're not duplicating language prefixes
-          translatedPath = translatedPath.replace(/\/[a-z]{2}\/[a-z]{2}\//, `/${lang}/`);
-          
-          let translatedParentPath = null;
-          
-          if (pageType === "submenu" && parentPath) {
-            // Ensure parent path also has correct language prefix
-            if (parentPath.startsWith('/')) {
-              // Remove any existing language prefix
-              const cleanParentPath = parentPath.replace(/^\/[a-z]{2}\//, '/');
-              translatedParentPath = `/${lang}${cleanParentPath}`;
-            } else {
-              translatedParentPath = `/${lang}/${parentPath}`;
-            }
-          }
-          
-          console.log(`Creating translated page: ${lang}, path: ${translatedPath}, parentPath: ${translatedParentPath || 'none'}`);
-          console.log(`Translated title: "${translations[lang].title}"`);
-          console.log(`Translated content (preview): "${translations[lang].content.substring(0, 50)}..."`);
-          
-          // Check if translation already exists
-          const { data: existingPage } = await supabase
-            .from('custom_pages')
-            .select('id')
-            .eq('path', translatedPath)
-            .maybeSingle();
-            
-          if (existingPage) {
-            console.log(`Updating existing translation for ${lang}`);
-          } else {
-            console.log(`Creating new translation for ${lang}`);
-          }
-          
-          await saveNewPage(
-            translations[lang].title,
-            translations[lang].content,
-            translatedPath,
-            imageUrl,
-            icon,
-            pageType as any,
-            translatedParentPath,
-            pageImages
-          );
-          
-          toast.success(`Pagina tradotta in ${lang.toUpperCase()} e salvata con successo`);
+      // Crea il percorso per la pagina tradotta
+      let translatedPath = isHomePage 
+        ? `/${targetLang}` 
+        : `/${targetLang}${finalPath}`;
+        
+      // Make sure we're not duplicating language prefixes
+      translatedPath = translatedPath.replace(/\/[a-z]{2}\/[a-z]{2}\//, `/${targetLang}/`);
+      
+      let translatedParentPath = null;
+      
+      if (pageType === "submenu" && parentPath) {
+        // Ensure parent path also has correct language prefix
+        if (parentPath.startsWith('/')) {
+          // Remove any existing language prefix
+          const cleanParentPath = parentPath.replace(/^\/[a-z]{2}\//, '/');
+          translatedParentPath = `/${targetLang}${cleanParentPath}`;
+        } else {
+          translatedParentPath = `/${targetLang}/${parentPath}`;
         }
       }
+      
+      console.log(`Creating translated page: ${targetLang}, path: ${translatedPath}, parentPath: ${translatedParentPath || 'none'}`);
+      
+      // Check if translation already exists
+      const { data: existingPage } = await supabase
+        .from('custom_pages')
+        .select('id')
+        .eq('path', translatedPath)
+        .maybeSingle();
+        
+      if (existingPage) {
+        console.log(`Updating existing translation for ${targetLang}`);
+      } else {
+        console.log(`Creating new translation for ${targetLang}`);
+      }
+      
+      await saveNewPage(
+        translatedTitle,
+        translatedContent,
+        translatedPath,
+        imageUrl,
+        icon,
+        pageType as any,
+        translatedParentPath,
+        pageImages
+      );
+      
+      toast.success(`Pagina tradotta in ${targetLang.toUpperCase()} e salvata con successo`);
 
       // Ripristina il flag no-translation dopo l'operazione
       if (noTranslationFlag) {
@@ -118,8 +104,8 @@ export const usePageTranslation = () => {
 
       return true;
     } catch (error) {
-      console.error("Error translating pages:", error);
-      toast.error("Errore durante la traduzione delle pagine");
+      console.error("Error translating page:", error);
+      toast.error("Errore durante la traduzione della pagina");
       
       // Garantisci il ripristino del flag no-translation in caso di errore
       const noTranslationFlag = document.body.hasAttribute('data-no-translation');
@@ -136,6 +122,6 @@ export const usePageTranslation = () => {
   return {
     isTranslating,
     setIsTranslating,
-    translatePages
+    translatePage
   };
 };

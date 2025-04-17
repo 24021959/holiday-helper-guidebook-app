@@ -2,7 +2,7 @@
 import React from "react";
 import { PageData } from "@/types/page.types";
 import { Button } from "@/components/ui/button";
-import { Eye, Pencil, Trash2, Languages } from "lucide-react";
+import { Eye, Pencil, Languages } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 interface PagesListProps {
@@ -45,14 +45,11 @@ export const PagesList: React.FC<PagesListProps> = ({
   return (
     <div className="space-y-4">
       {pages.map((page) => {
-        const isHomePage = page.path === "/" || page.path.endsWith("/home");
-        
         return (
           <Card key={page.id} className="overflow-hidden">
             <CardHeader className="p-4 bg-gray-50 flex flex-row justify-between items-center">
               <div>
                 <h3 className="text-lg font-medium">{page.title}</h3>
-                <p className="text-sm text-gray-500">{page.path}</p>
               </div>
               <div className="flex space-x-2">
                 <Button
@@ -85,19 +82,6 @@ export const PagesList: React.FC<PagesListProps> = ({
                   >
                     <Languages className="h-4 w-4" />
                     <span className="ml-1 hidden sm:inline">Traduci</span>
-                  </Button>
-                )}
-                {!isHomePage && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onDelete(page)}
-                    disabled={isDeleting}
-                    className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                    aria-label={`Elimina ${page.title}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span className="ml-1 hidden sm:inline">Elimina</span>
                   </Button>
                 )}
               </div>
