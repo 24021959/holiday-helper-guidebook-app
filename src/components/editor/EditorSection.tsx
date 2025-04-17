@@ -15,7 +15,6 @@ interface EditorSectionProps {
   onContentChange: (content: string) => void;
   onToggleFullscreen: () => void;
   onToggleEditMode: () => void;
-  onOpenImageDialog: () => void;
   onTextSelect: () => void;
   onTextFormat: (format: string) => void;
   onTextAlign: (alignment: 'left' | 'center' | 'right' | 'justify') => void;
@@ -39,7 +38,6 @@ export const EditorSection: React.FC<EditorSectionProps> = ({
   onContentChange,
   onToggleFullscreen,
   onToggleEditMode,
-  onOpenImageDialog,
   onTextSelect,
   onTextFormat,
   onTextAlign,
@@ -62,7 +60,6 @@ export const EditorSection: React.FC<EditorSectionProps> = ({
           editHistory={editHistory}
           onToggleExpand={onToggleFullscreen}
           onTogglePreview={onToggleEditMode}
-          onInsertImage={onOpenImageDialog}
           onTextFormat={onTextFormat}
           onTextAlign={onTextAlign}
           onInsertPhone={onInsertPhone}

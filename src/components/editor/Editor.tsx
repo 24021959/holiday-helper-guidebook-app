@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, forwardRef, useImperativeHandle } from 'react';
 import { VisualEditor } from "@/components/editor/VisualEditor";
 import { ImageDetail } from '@/types/image.types';
 
@@ -11,13 +11,18 @@ interface EditorProps {
   disableAutoSave?: boolean;
 }
 
-export const Editor: React.FC<EditorProps> = ({ 
+export interface EditorHandle {
+  getCurrentContent: () => string;
+  handleSave: () => void;
+}
+
+export const Editor = forwardRef<EditorHandle, EditorProps>(({ 
   value, 
   onChange,
   initialEditMode = 'visual',
   forcePreviewOnly = false,
   disableAutoSave = false
-}) => {
+}, ref) => {
   const [editMode, setEditMode] = useState<'visual' | 'preview'>(
     forcePreviewOnly ? 'preview' : initialEditMode
   );
@@ -50,7 +55,7 @@ export const Editor: React.FC<EditorProps> = ({
   };
 
   // Expose getCurrentContent and handleSave to parent via ref
-  React.useImperativeHandle(editorRef, () => ({
+  useImperativeHandle(ref, () => ({
     getCurrentContent,
     handleSave
   }));
@@ -58,7 +63,7 @@ export const Editor: React.FC<EditorProps> = ({
   return (
     <div className="border rounded-md">
       <VisualEditor
-        ref={editorRef}
+        editorRef={editorRef}
         content={value}
         images={images}
         onChange={onChange}
@@ -70,4 +75,6 @@ export const Editor: React.FC<EditorProps> = ({
       />
     </div>
   );
-};
+});
+
+Editor.displayName = 'Editor';

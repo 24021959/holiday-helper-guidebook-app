@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef, useImperativeHandle, forwardRef } from 'react';
 import { ImageDetail } from '@/types/image.types';
 import { useEditorContent } from './hooks/useEditorContent';
 import { useEditorPreview } from './hooks/useEditorPreview';
@@ -19,9 +19,10 @@ interface VisualEditorProps {
   onEditModeChange?: (mode: 'visual' | 'preview') => void;
   forcePreviewOnly?: boolean;
   disableAutoSave?: boolean;
+  editorRef?: React.RefObject<any>;
 }
 
-export const VisualEditor: React.FC<VisualEditorProps> = ({
+export const VisualEditor = forwardRef<any, VisualEditorProps>(({
   content,
   images,
   onChange,
@@ -29,8 +30,14 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   editMode: externalEditMode,
   onEditModeChange,
   forcePreviewOnly = false,
-  disableAutoSave = false
-}) => {
+  disableAutoSave = false,
+  editorRef: externalEditorRef
+}, ref) => {
+  const internalEditorRef = useRef<any>(null);
+  
+  // Use external ref if provided, otherwise use internal ref
+  const editorRef = externalEditorRef || internalEditorRef;
+
   const {
     showImageDialog,
     setShowImageDialog,
@@ -122,6 +129,19 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     return editHistory[historyIndex] || content;
   };
 
+  // Expose the getCurrentContent method to parent components
+  useImperativeHandle(ref, () => ({
+    getCurrentContent
+  }));
+  
+  // Also expose the method via editorRef for backward compatibility
+  if (editorRef && typeof editorRef === 'object') {
+    editorRef.current = {
+      ...editorRef.current,
+      getCurrentContent
+    };
+  }
+
   return (
     <div className={`flex flex-col space-y-4 ${isFullscreen ? 'fixed inset-0 z-50 bg-white p-4' : ''}`}>
       <EditorSection 
@@ -135,7 +155,6 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         onContentChange={handleContentChange}
         onToggleFullscreen={toggleFullscreen}
         onToggleEditMode={toggleEditMode}
-        onOpenImageDialog={() => {}} // Removed image button functionality
         onTextSelect={handleTextareaSelect}
         onTextFormat={handleTextFormat}
         onTextAlign={handleTextAlign}
@@ -159,4 +178,6 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       />
     </div>
   );
-};
+});
+
+VisualEditor.displayName = 'VisualEditor';
