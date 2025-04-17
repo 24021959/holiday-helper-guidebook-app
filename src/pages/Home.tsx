@@ -11,6 +11,7 @@ import LanguageFlags from '@/components/home/LanguageFlags';
 import HeroImage from '@/components/home/HeroImage';
 import ContentSection from '@/components/home/ContentSection';
 import ErrorDisplay from '@/components/home/ErrorDisplay';
+import { toast } from "sonner";
 
 const Home: React.FC = () => {
   const { headerSettings, loading, error, refreshHeaderSettings } = useHeaderSettings();
@@ -18,12 +19,22 @@ const Home: React.FC = () => {
   const { language, setLanguage } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { saveHomePageToDatabase } = useHomePageSaver();
+  const { saveHomePageToDatabase, isSaving } = useHomePageSaver();
   
   // Automatically save the home page when the component mounts
   useEffect(() => {
-    // Ensure the home page is saved in all languages
-    saveHomePageToDatabase();
+    const initializeHomePage = async () => {
+      try {
+        // Ensure the home page is saved and translated in all languages
+        await saveHomePageToDatabase();
+        toast.success("Pagine Home verificate e tradotte con successo");
+      } catch (error) {
+        console.error("Error initializing home page:", error);
+        toast.error("Errore durante l'inizializzazione delle pagine Home");
+      }
+    };
+    
+    initializeHomePage();
   }, []);
 
   useEffect(() => {
@@ -85,6 +96,7 @@ const Home: React.FC = () => {
 
   const handleSelectLanguage = (selectedLanguage: string) => {
     setLanguage(selectedLanguage as 'it' | 'en' | 'fr' | 'es' | 'de');
+    localStorage.setItem('selectedLanguage', selectedLanguage);
     
     // Navigate to the correct language home page
     if (selectedLanguage === 'it') {
@@ -94,7 +106,7 @@ const Home: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (loading || isSaving) {
     return <LoadingView message="Caricamento..." />;
   }
 

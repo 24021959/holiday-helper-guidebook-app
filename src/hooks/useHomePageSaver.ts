@@ -112,7 +112,7 @@ export const useHomePageSaver = () => {
         return;
       }
       
-      // Target languages to translate to - Fix type by providing explicit Language[] type
+      // Target languages to translate to
       const targetLangs: Language[] = ['en', 'fr', 'es', 'de'];
       
       // Translate content to all languages sequentially
@@ -153,6 +153,8 @@ export const useHomePageSaver = () => {
               .from('custom_pages')
               .update(translationData)
               .eq('id', existingTranslation.id);
+              
+            console.log(`Updated home page in ${lang} with translated content`);
           } else {
             // Insert new translation with a unique ID
             const pageId = uuidv4();
@@ -162,6 +164,8 @@ export const useHomePageSaver = () => {
                 id: pageId,
                 ...translationData
               });
+              
+            console.log(`Created new home page in ${lang} with translated content`);
               
             // Add menu icon for translated home
             await supabase
@@ -177,8 +181,6 @@ export const useHomePageSaver = () => {
                 updated_at: new Date().toISOString()
               });
           }
-          
-          console.log(`Home page translated and saved in ${lang}`);
         }
       }
       

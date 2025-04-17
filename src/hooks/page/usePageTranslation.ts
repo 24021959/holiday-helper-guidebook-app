@@ -40,17 +40,23 @@ export const usePageTranslation = () => {
       // Traduci in tutte le altre lingue
       const targetLangs: ("en" | "fr" | "es" | "de")[] = ['en', 'fr', 'es', 'de'];
       
+      console.log(`Translating content: "${content.substring(0, 50)}..." and title: "${title}"`);
+      
       const translations = await translateSequential(
         content,
         title,
         targetLangs
       );
       
+      console.log("Translations received:", Object.keys(translations).join(", "));
+      
       // Gestione speciale per la Home page
       const isHomePage = finalPath === "/" || finalPath === "/home";
       
       for (const lang of targetLangs) {
         if (translations[lang]) {
+          console.log(`Processing translation for ${lang}`);
+          
           // Se è la home page, usa un formato di path speciale
           let translatedPath = isHomePage 
             ? `/${lang}` 
@@ -73,6 +79,8 @@ export const usePageTranslation = () => {
           }
           
           console.log(`Creating translated page: ${lang}, path: ${translatedPath}, parentPath: ${translatedParentPath || 'none'}`);
+          console.log(`Translated title: "${translations[lang].title}"`);
+          console.log(`Translated content (preview): "${translations[lang].content.substring(0, 50)}..."`);
           
           await saveNewPage(
             translations[lang].title,
