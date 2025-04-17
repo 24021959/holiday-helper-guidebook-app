@@ -25,3 +25,10 @@ export interface TranslationProgress {
   completed: number;
   currentPage?: string;
 }
+
+export interface MenuIconsHookResult {
+  icons: IconData[];
+  isLoading: boolean;
+  error: string | null;
+  refreshIcons: () => void;
+}
