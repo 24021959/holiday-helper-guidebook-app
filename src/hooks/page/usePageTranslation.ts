@@ -56,10 +56,20 @@ export const usePageTranslation = () => {
             ? `/${lang}` 
             : `/${lang}${finalPath}`;
             
+          // Make sure we're not duplicating language prefixes
+          translatedPath = translatedPath.replace(/\/[a-z]{2}\/[a-z]{2}\//, `/${lang}/`);
+          
           let translatedParentPath = null;
           
           if (pageType === "submenu" && parentPath) {
-            translatedParentPath = `/${lang}${parentPath.replace(/^\/[a-z]{2}\//, '/')}`;
+            // Ensure parent path also has correct language prefix
+            if (parentPath.startsWith('/')) {
+              // Remove any existing language prefix
+              const cleanParentPath = parentPath.replace(/^\/[a-z]{2}\//, '/');
+              translatedParentPath = `/${lang}${cleanParentPath}`;
+            } else {
+              translatedParentPath = `/${lang}/${parentPath}`;
+            }
           }
           
           console.log(`Creating translated page: ${lang}, path: ${translatedPath}, parentPath: ${translatedParentPath || 'none'}`);

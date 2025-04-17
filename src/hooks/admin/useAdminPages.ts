@@ -18,20 +18,16 @@ export const useAdminPages = () => {
       let query = supabase.from('custom_pages').select('*');
       
       if (langCode === 'it') {
-        // For Italian, exclude paths with language prefixes,
-        // but include the root path (/) and /home
-        query = query.not('path', 'like', '/en/%')
-                     .not('path', 'like', '/fr/%')
-                     .not('path', 'like', '/es/%')
-                     .not('path', 'like', '/de/%')
-                     .not('path', 'eq', '/en')
-                     .not('path', 'eq', '/fr')
-                     .not('path', 'eq', '/es')
-                     .not('path', 'eq', '/de');
-                     
+        query = query
+          .not('path', 'like', '/en/%')
+          .not('path', 'like', '/fr/%') 
+          .not('path', 'like', '/es/%')
+          .not('path', 'like', '/de/%')
+          .not('path', 'eq', '/en')
+          .not('path', 'eq', '/fr')
+          .not('path', 'eq', '/es')
+          .not('path', 'eq', '/de');
       } else {
-        // For other languages, include paths with the specific language prefix
-        // or the root path for that language (/en, /fr, etc.)
         query = query.or(`path.eq./${langCode},path.like./${langCode}/%`);
       }
 
@@ -45,7 +41,6 @@ export const useAdminPages = () => {
         setPages(formattedPages);
       }
 
-      // Fetch all pages to use as parent options
       const { data: allData } = await supabase
         .from('custom_pages')
         .select('*')
