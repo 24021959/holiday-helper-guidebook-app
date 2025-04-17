@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Language } from "@/types/translation.types";
 
@@ -7,31 +6,53 @@ export const useMenuQueries = () => {
     try {
       console.log(`Fetching root pages for language: ${language}`);
       
+      let homePage = null;
+      let otherPages = [];
+
+      // First, fetch home page
+      const homePagePath = language === 'it' ? '/home' : `/${language}`;
+      const { data: homePageData, error: homeError } = await supabase
+        .from('custom_pages')
+        .select('id, title, path, icon, parent_path, published')
+        .eq('path', homePagePath)
+        .eq('published', true)
+        .maybeSingle();
+
+      if (homePageData) {
+        homePage = homePageData;
+      }
+
+      // Then fetch other root pages
       if (language === 'it') {
         const { data: rootPages, error: rootError } = await supabase
           .from('custom_pages')
           .select('id, title, path, icon, parent_path, published')
           .is('parent_path', null)
           .eq('published', true)
+          .not('path', 'eq', '/home')
           .not('path', 'like', '/en/%')
           .not('path', 'like', '/fr/%')
           .not('path', 'like', '/es/%')
           .not('path', 'like', '/de/%');
           
-        console.log('Root pages for IT:', rootPages);
-        return { data: rootPages, error: rootError };
+        otherPages = rootPages || [];
       } else {
-        // For other languages, load only pages with language prefix
         const { data: langPages, error: langError } = await supabase
           .from('custom_pages')
           .select('id, title, path, icon, parent_path, published')
           .is('parent_path', null)
           .eq('published', true)
-          .like('path', `/${language}/%`);
+          .like('path', `/${language}/%`)
+          .not('path', 'eq', `/${language}`);
           
-        console.log(`Pages for ${language}:`, langPages);
-        return { data: langPages, error: langError };
+        otherPages = langPages || [];
       }
+
+      // Combine home page and other pages, with home page first
+      const pageIcons = homePage ? [homePage, ...otherPages] : otherPages;
+      
+      console.log(`Loaded ${pageIcons.length} root pages`);
+      return { data: pageIcons, error: null };
     } catch (err) {
       console.error('Error fetching root pages:', err);
       return { data: null, error: err };
