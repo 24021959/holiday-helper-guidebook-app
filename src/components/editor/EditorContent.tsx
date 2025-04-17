@@ -12,6 +12,7 @@ interface EditorContentProps {
   onSelect: () => void;
   images?: ImageDetail[];
   onImageDelete?: (index: number) => void;
+  forcePreviewOnly?: boolean;
 }
 
 export const EditorContent: React.FC<EditorContentProps> = ({
@@ -21,7 +22,8 @@ export const EditorContent: React.FC<EditorContentProps> = ({
   onContentChange,
   onSelect,
   images = [],
-  onImageDelete
+  onImageDelete,
+  forcePreviewOnly = false
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -78,9 +80,12 @@ export const EditorContent: React.FC<EditorContentProps> = ({
     }
   };
 
+  // If forcePreviewOnly is true, we always show the preview
+  const displayMode = forcePreviewOnly ? 'preview' : editMode;
+
   return (
     <div className="border rounded-lg overflow-hidden" data-no-translation="true">
-      {editMode === 'visual' ? (
+      {displayMode === 'visual' ? (
         <div className="relative min-h-[500px] bg-white p-4" data-no-translation="true">
           <Textarea
             ref={textareaRef}

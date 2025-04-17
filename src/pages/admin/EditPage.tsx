@@ -6,21 +6,14 @@ import { toast } from "sonner";
 import { useAdminPages } from "@/hooks/admin/useAdminPages";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { FormProvider, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form } from "@/components/ui/form";
-import { Editor } from "@/components/editor/Editor";
-import ImageUploader from "@/components/ImageUploader";
-import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import ImageUploader from "@/components/ImageUploader";
+import { Editor } from "@/components/editor/Editor";
 
 // Schema semplificato per il form
 const formSchema = z.object({
@@ -146,68 +139,68 @@ const EditPage = () => {
       <div className="container max-w-4xl mx-auto">
         <Card className="border-emerald-100">
           <CardContent className="pt-6">
-            <FormProvider {...form}>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Titolo</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Titolo della pagina" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Titolo</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Titolo della pagina" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="space-y-2">
+                  <FormLabel>Immagine Principale</FormLabel>
+                  <div className="space-y-4">
+                    {uploadedImage && (
+                      <div className="mb-2">
+                        <img 
+                          src={uploadedImage} 
+                          alt="Anteprima" 
+                          className="w-full h-auto object-contain max-h-[300px] rounded-md"
+                        />
+                      </div>
                     )}
-                  />
-
-                  <div className="space-y-2">
-                    <FormLabel>Immagine Principale</FormLabel>
-                    <div className="space-y-4">
-                      {uploadedImage && (
-                        <div className="mb-2">
-                          <img 
-                            src={uploadedImage} 
-                            alt="Anteprima" 
-                            className="w-full h-auto object-contain max-h-[300px] rounded-md"
-                          />
-                        </div>
-                      )}
-                      <ImageUploader onImageUpload={handleImageUpdate} />
-                    </div>
+                    <ImageUploader onImageUpload={handleImageUpdate} />
                   </div>
+                </div>
 
-                  <FormField
-                    control={form.control}
-                    name="content"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contenuto</FormLabel>
-                        <FormControl>
-                          <Editor
-                            value={field.value || ""}
-                            onChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <FormField
+                  control={form.control}
+                  name="content"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contenuto</FormLabel>
+                      <FormControl>
+                        <Editor
+                          value={field.value || ""}
+                          onChange={field.onChange}
+                          initialEditMode="preview"
+                          forcePreviewOnly={true}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                  <div className="pt-4 border-t flex justify-end space-x-4">
-                    <Button 
-                      type="submit" 
-                      className="bg-emerald-600 hover:bg-emerald-700"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? "Salvataggio..." : "Salva modifiche"}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </FormProvider>
+                <div className="pt-4 border-t flex justify-end space-x-4">
+                  <Button 
+                    type="submit" 
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Salvataggio..." : "Salva modifiche"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </CardContent>
         </Card>
       </div>

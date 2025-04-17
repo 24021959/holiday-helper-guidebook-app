@@ -25,6 +25,7 @@ interface EditorSectionProps {
   onRedo: () => void;
   images: ImageDetail[];
   onImageDelete?: (index: number) => void;
+  forcePreviewOnly?: boolean;
 }
 
 export const EditorSection: React.FC<EditorSectionProps> = ({
@@ -47,26 +48,29 @@ export const EditorSection: React.FC<EditorSectionProps> = ({
   onUndo,
   onRedo,
   images,
-  onImageDelete
+  onImageDelete,
+  forcePreviewOnly = false
 }) => {
   return (
     <>
-      <EditorToolbar
-        expanded={isFullscreen}
-        previewMode={editMode === 'preview'}
-        selectedText={selectedText}
-        historyIndex={historyIndex}
-        editHistory={editHistory}
-        onToggleExpand={onToggleFullscreen}
-        onTogglePreview={onToggleEditMode}
-        onInsertImage={onOpenImageDialog}
-        onTextFormat={onTextFormat}
-        onTextAlign={onTextAlign}
-        onInsertPhone={onInsertPhone}
-        onInsertMap={onInsertMap}
-        onUndo={onUndo}
-        onRedo={onRedo}
-      />
+      {!forcePreviewOnly && (
+        <EditorToolbar
+          expanded={isFullscreen}
+          previewMode={editMode === 'preview'}
+          selectedText={selectedText}
+          historyIndex={historyIndex}
+          editHistory={editHistory}
+          onToggleExpand={onToggleFullscreen}
+          onTogglePreview={onToggleEditMode}
+          onInsertImage={onOpenImageDialog}
+          onTextFormat={onTextFormat}
+          onTextAlign={onTextAlign}
+          onInsertPhone={onInsertPhone}
+          onInsertMap={onInsertMap}
+          onUndo={onUndo}
+          onRedo={onRedo}
+        />
+      )}
 
       <EditorContent
         content={content}
@@ -76,6 +80,7 @@ export const EditorSection: React.FC<EditorSectionProps> = ({
         onSelect={onTextSelect}
         images={images}
         onImageDelete={onImageDelete}
+        forcePreviewOnly={forcePreviewOnly}
       />
     </>
   );

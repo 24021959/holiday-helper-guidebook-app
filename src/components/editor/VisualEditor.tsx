@@ -15,13 +15,19 @@ interface VisualEditorProps {
   images: ImageDetail[];
   onChange: (content: string) => void;
   onImageAdd: (image: ImageDetail) => void;
+  editMode?: 'visual' | 'preview';
+  onEditModeChange?: (mode: 'visual' | 'preview') => void;
+  forcePreviewOnly?: boolean;
 }
 
 export const VisualEditor: React.FC<VisualEditorProps> = ({
   content,
   images,
   onChange,
-  onImageAdd
+  onImageAdd,
+  editMode: externalEditMode,
+  onEditModeChange,
+  forcePreviewOnly = false
 }) => {
   const {
     showImageDialog,
@@ -50,12 +56,25 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     updateHistory
   } = useEditorContent(content, onChange);
 
+  // Use the external edit mode if provided, otherwise use the internal state
   const {
-    editMode,
+    editMode: internalEditMode,
     isFullscreen,
-    toggleEditMode,
+    toggleEditMode: internalToggleEditMode,
     toggleFullscreen
   } = useEditorState();
+
+  const editMode = externalEditMode || internalEditMode;
+  
+  const toggleEditMode = () => {
+    if (forcePreviewOnly) return; // Don't toggle if preview only is forced
+    
+    if (onEditModeChange) {
+      onEditModeChange(editMode === 'visual' ? 'preview' : 'visual');
+    } else {
+      internalToggleEditMode();
+    }
+  };
 
   const { formattedPreview } = useEditorPreview(content, images);
 
@@ -117,6 +136,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         onRedo={handleRedo}
         images={images}
         onImageDelete={handleEditorImageDelete}
+        forcePreviewOnly={forcePreviewOnly}
       />
 
       <EditorDialogs
