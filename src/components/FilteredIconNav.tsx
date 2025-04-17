@@ -1,13 +1,14 @@
-
 import React, { useEffect, useState } from "react";
 import IconNav from "./IconNav";
 import LoadingView from "./LoadingView";
 import ErrorView from "./ErrorView";
-import { useMenuIcons } from "@/hooks/useMenuIcons";
+import { useMenuIcons } from "@/hooks/menu/useMenuIcons";
 import { toast } from "sonner";
 import { useTranslation } from "@/context/TranslationContext";
-import { AlertCircle } from "lucide-react";
+import EmptyMenuState from "./menu/EmptyMenuState";
+import AdminHelpBox from "./menu/AdminHelpBox";
 import { Button } from "./ui/button";
+import { IconData } from "@/hooks/menu/types";
 
 interface FilteredIconNavProps {
   parentPath: string | null;
@@ -106,25 +107,15 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
 
   if (localError) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-        <AlertCircle className="h-12 w-12 text-amber-500 mb-4" />
-        <h3 className="text-xl font-semibold text-gray-800 mb-2">Menu vuoto</h3>
-        <p className="text-gray-600 mb-4 max-w-md">{localError}</p>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={handleRefresh}>
-            Aggiorna
-          </Button>
-          {language !== 'it' && (
-            <Button onClick={handleSwitchToItalian}>
-              Passa al menu italiano
-            </Button>
-          )}
-        </div>
-      </div>
+      <EmptyMenuState
+        message={localError}
+        onRefresh={handleRefresh}
+        onSwitchToItalian={handleSwitchToItalian}
+        showItalianSwitch={language !== 'it'}
+      />
     );
   }
 
-  // Show empty state for empty menu
   if (icons.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
@@ -133,16 +124,7 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
           Non ci sono pagine disponibili in questa sezione del menu
         </p>
         
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 max-w-md text-left">
-          <h4 className="font-medium text-amber-800 mb-2">Come aggiungere pagine:</h4>
-          <ul className="list-disc pl-5 text-amber-700 space-y-1">
-            <li>Vai all'area amministrativa (/admin)</li>
-            <li>Usa la funzione 'Crea Nuova Pagina'</li>
-            <li>Per creare una sottopagina, seleziona il tipo 'Sottopagina'</li>
-            <li>Nel dropdown genitore, seleziona la pagina genitore corretta</li>
-            <li>Assicurati che il campo 'Pubblicato' sia ATTIVO</li>
-          </ul>
-        </div>
+        <AdminHelpBox />
         
         <Button onClick={handleRefresh} className="mt-6">
           Aggiorna menu

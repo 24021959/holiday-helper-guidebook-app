@@ -1,12 +1,7 @@
-
-import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React from "react";
 import MenuIconGrid from "./MenuIconGrid";
-import { identifyIconFromTitle } from "@/utils/iconUtils";
-import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";
-import { IconData } from "@/hooks/useMenuIcons";
-import TranslatedText from "./TranslatedText";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { IconData } from "@/hooks/menu/types";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@/context/TranslationContext";
 
 interface IconNavProps {
@@ -17,56 +12,11 @@ interface IconNavProps {
 
 const IconNav: React.FC<IconNavProps> = ({ 
   parentPath, 
-  onRefresh, 
-  icons = []
+  onRefresh,
+  icons
 }) => {
   const navigate = useNavigate();
-  const keywordToIconMap = useKeywordToIconMap();
-  const isMobile = useIsMobile();
   const { language } = useTranslation();
-
-  useEffect(() => {
-    console.log("IconNav - Received", icons.length, "icons with parentPath:", parentPath);
-    console.log("IconNav - Current language:", language);
-    
-    if (icons.length > 0) {
-      console.log("IconNav - First icon details:", JSON.stringify(icons[0]));
-    }
-    
-    if (parentPath) {
-      console.log("IconNav - All subpages under parent:", parentPath);
-    }
-  }, [icons, parentPath, language]);
-
-  // Format icons for component use
-  const formattedIcons = icons.map(icon => {
-    let iconName = icon.icon;
-    const title = icon.title || icon.label || "";
-    
-    // Auto-detect appropriate icon if current one is generic
-    if (iconName === "FileText" || !iconName) {
-      iconName = identifyIconFromTitle(title, keywordToIconMap);
-    }
-    
-    return {
-      id: icon.id,
-      title: title,
-      icon: iconName,
-      path: icon.path,
-      parent_path: icon.parent_path,
-      is_parent: icon.is_parent,
-      label: icon.label || title,
-      published: icon.published
-    };
-  });
-
-  // Remove any duplicate icons based on path and ensure only published icons
-  const uniqueIcons = Array.from(
-    new Map(formattedIcons
-      .filter(icon => icon.published !== false) // Keep only published icons
-      .map(icon => [icon.path, icon])
-    ).values()
-  );
 
   const handleIconClick = (icon: IconData) => {
     console.log("Clicked on icon:", icon);
@@ -146,8 +96,8 @@ const IconNav: React.FC<IconNavProps> = ({
   };
 
   return (
-    <div className={`flex-1 flex flex-col ${isMobile ? 'p-1' : 'p-3'}`}>
-      <MenuIconGrid icons={uniqueIcons} onIconClick={handleIconClick} />
+    <div className="flex-1 flex flex-col p-3">
+      <MenuIconGrid icons={icons} onIconClick={handleIconClick} />
     </div>
   );
 };
