@@ -134,13 +134,8 @@ export const VisualEditor = forwardRef<any, VisualEditorProps>(({
     getCurrentContent
   }));
   
-  // Also expose the method via editorRef for backward compatibility
-  if (editorRef && typeof editorRef === 'object') {
-    editorRef.current = {
-      ...editorRef.current,
-      getCurrentContent
-    };
-  }
+  // Fix: Instead of directly assigning to editorRef.current, use useImperativeHandle
+  // The previous code was trying to modify a read-only property
 
   return (
     <div className={`flex flex-col space-y-4 ${isFullscreen ? 'fixed inset-0 z-50 bg-white p-4' : ''}`}>

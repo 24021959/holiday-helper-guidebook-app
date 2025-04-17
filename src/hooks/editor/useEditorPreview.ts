@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { ImageDetail } from '@/types/image.types';
 
@@ -31,6 +32,9 @@ export const useEditorPreview = (content: string, images: ImageDetail[]) => {
         formatted = formatted.replace(`[IMAGE_${index}]`, imageHtml);
       });
 
+      // Pre-process paragraphs - convert double newlines to paragraph markers
+      formatted = formatted.replace(/\n\s*\n/g, "\n<p-break>\n");
+      
       // Convert markdown-like formatting to HTML
       formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
       formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
@@ -69,14 +73,43 @@ export const useEditorPreview = (content: string, images: ImageDetail[]) => {
         formatted = formatted.replace(/BULLETS_PLACEHOLDER/, '');
       }
       
+      // Convert ordered lists
+      let orderedListRegex = /\d+\. (.*?)(?:\n|$)/g;
+      let orderedListItems = [];
+      let matchOrdered;
+      
+      while ((matchOrdered = orderedListRegex.exec(formatted)) !== null) {
+        orderedListItems.push(`<li>${matchOrdered[1]}</li>`);
+      }
+      
+      if (orderedListItems.length > 0) {
+        const orderedList = `<ol class="list-decimal pl-5 my-2">${orderedListItems.join('')}</ol>`;
+        formatted = formatted.replace(/\d+\. .*?(?:\n|$)/g, '');
+        formatted = formatted + orderedList; // Append at the end
+      }
+      
       // Alignment classes
       formatted = formatted.replace(/\[ALIGN:left\](.*?)\[\/ALIGN\]/gs, '<div class="text-left">$1</div>');
       formatted = formatted.replace(/\[ALIGN:center\](.*?)\[\/ALIGN\]/gs, '<div class="text-center">$1</div>');
       formatted = formatted.replace(/\[ALIGN:right\](.*?)\[\/ALIGN\]/gs, '<div class="text-right">$1</div>');
       formatted = formatted.replace(/\[ALIGN:justify\](.*?)\[\/ALIGN\]/gs, '<div class="text-justify">$1</div>');
       
-      // Handle line breaks
-      formatted = formatted.replace(/\n/g, '<br />');
+      // Process paragraphs - convert paragraph markers back to proper HTML paragraphs
+      formatted = formatted.replace(/<p-break>/g, '</p><p class="mb-4">');
+      
+      // Wrap content in paragraph tags if not already wrapped
+      if (!formatted.startsWith('<p')) {
+        formatted = `<p class="mb-4">${formatted}`;
+      }
+      if (!formatted.endsWith('</p>')) {
+        formatted = `${formatted}</p>`;
+      }
+      
+      // Handle remaining line breaks - convert single newlines to <br> tags
+      formatted = formatted.replace(/\n/g, '<br>');
+      
+      // Remove any empty paragraphs
+      formatted = formatted.replace(/<p class="mb-4"><\/p>/g, '');
       
       return formatted;
     };

@@ -68,9 +68,10 @@ export const EditorContent: React.FC<EditorContentProps> = ({
             }}
             onSelect={onSelect}
             onClick={onSelect}
-            className="w-full h-full min-h-[400px] resize-none border-0 focus-visible:ring-0 bg-transparent relative z-10"
+            className="w-full h-full min-h-[400px] resize-none border-0 focus-visible:ring-0 bg-transparent relative z-10 font-base leading-relaxed"
             placeholder="Inizia a scrivere qui..."
             data-no-translation="true"
+            style={{ lineHeight: '1.8' }}
           />
         </div>
       ) : (

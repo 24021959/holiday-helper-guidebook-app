@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect } from 'react';
 import { Textarea } from "@/components/ui/textarea";
 
@@ -80,16 +81,17 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
             onChange={(e) => onContentChange(e.target.value)}
             onSelect={onSelect}
             onClick={onSelect}
-            className="w-full h-full min-h-[400px] resize-none border-0 focus-visible:ring-0"
+            className="w-full h-full min-h-[400px] resize-none border-0 focus-visible:ring-0 font-base leading-relaxed"
             placeholder="Inizia a scrivere qui..."
             data-no-translation="true"
             data-editor="true"
+            style={{ lineHeight: '1.8' }}
           />
         </div>
       ) : (
         <div 
           ref={previewRef}
-          className="min-h-[500px] p-6 bg-white overflow-auto text-gray-800 prose max-w-none prose-headings:my-4 prose-p:my-2"
+          className="min-h-[500px] p-6 bg-white overflow-auto text-gray-800 prose max-w-none prose-headings:my-4 prose-p:my-4"
           dangerouslySetInnerHTML={{ __html: formattedPreview }}
           data-no-translation="true"
           data-editor="true"
