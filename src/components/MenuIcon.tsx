@@ -33,8 +33,7 @@ const MenuIcon: React.FC<MenuIconProps> = ({ icon, index, onClick }) => {
       </div>
       <span className="text-center text-gray-700 font-medium text-lg">
         <TranslatedText 
-          text={icon.title || icon.label || ""} 
-          showLoadingState={true}
+          text={icon.title || icon.label || ""}
         />
       </span>
     </div>

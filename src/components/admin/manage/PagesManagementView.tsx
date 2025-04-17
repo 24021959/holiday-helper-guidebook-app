@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { PageData } from "@/types/page.types";
 import { LanguageTabs } from "./LanguageTabs";
