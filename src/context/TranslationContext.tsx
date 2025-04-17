@@ -1,14 +1,37 @@
+import React, { createContext, useState, useContext } from 'react';
+import { Language } from '@/types/translation.types';
 
-import React, { createContext, useContext, useState } from 'react';
-import { TranslationContextType } from '@/types/translation.types';
+type TranslationContextType = {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  translate: (text: string) => Promise<string>;
+  translateBulk: (texts: string[]) => Promise<string[]>;
+  translatePage: (pageContent: string, pageTitle: string) => Promise<{ title: string; content: string; }>;
+  translateSequential: (pageContent: string, pageTitle: string, targetLangs: Language[]) => Promise<Record<Language, { title: string; content: string; }>>;
+  t: (text: string) => string;
+};
 
-// Contesto semplificato che non supporta più le traduzioni
-const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
+const defaultContext: TranslationContextType = {
+  language: 'it',
+  setLanguage: () => {},
+  translate: async (text: string) => text,
+  translateBulk: async (texts: string[]) => texts,
+  translatePage: async (content: string, title: string) => ({ title, content }),
+  translateSequential: async (content: string, title: string) => ({ 
+    it: { title, content },
+    en: { title, content },
+    fr: { title, content },
+    es: { title, content },
+    de: { title, content }
+  }),
+  t: (text: string) => text,
+};
+
+export const TranslationContext = createContext<TranslationContextType>(defaultContext);
 
 export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language] = useState<'it'>('it');
+  const [language, setLanguage] = useState<Language>('it');
 
-  // Funzioni stub per mantenere la compatibilità
   const translate = async (text: string): Promise<string> => {
     return text;
   };
@@ -27,7 +50,7 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const translateSequential = async (
     pageContent: string, 
     pageTitle: string, 
-    targetLangs: any[]
+    targetLangs: Language[]
   ) => {
     return { it: { title: pageTitle, content: pageContent } };
   };
@@ -38,7 +61,7 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const value = {
     language,
-    setLanguage: () => {}, // Funzione vuota
+    setLanguage,
     translate,
     translateBulk,
     translatePage,

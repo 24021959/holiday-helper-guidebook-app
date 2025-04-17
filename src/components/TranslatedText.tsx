@@ -6,14 +6,26 @@ interface TranslatedTextProps {
   as?: keyof JSX.IntrinsicElements;
   className?: string;
   disableAutoTranslation?: boolean;
+  dangerouslySetInnerHTML?: boolean;
 }
 
 const TranslatedText: React.FC<TranslatedTextProps> = ({ 
   text, 
   as: Component = "span", 
   className = "",
-  disableAutoTranslation = false
+  disableAutoTranslation = false,
+  dangerouslySetInnerHTML = false
 }) => {
+  if (dangerouslySetInnerHTML) {
+    return (
+      <Component 
+        className={className} 
+        data-no-translation={disableAutoTranslation}
+        dangerouslySetInnerHTML={{ __html: text }}
+      />
+    );
+  }
+
   return (
     <Component className={className} data-no-translation={disableAutoTranslation}>
       {text}

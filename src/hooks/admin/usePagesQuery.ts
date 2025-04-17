@@ -15,17 +15,34 @@ export const usePagesQuery = () => {
     try {
       setIsLoading(true);
       
-      const { data, error } = await supabase
+      // First, get the home page
+      const { data: homeData, error: homeError } = await supabase
         .from('custom_pages')
         .select('*')
+        .eq('path', '/home')
+        .maybeSingle();
+
+      if (homeError) throw homeError;
+
+      // Then get all other pages
+      const { data: regularPages, error } = await supabase
+        .from('custom_pages')
+        .select('*')
+        .neq('path', '/home')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      if (data) {
-        const formattedPages = data.map(page => formatPageData(page));
-        setPages(formattedPages);
+      // Combine home page with other pages if it exists
+      const allPages = [];
+      if (homeData) {
+        allPages.push(formatPageData(homeData));
       }
+      if (regularPages) {
+        allPages.push(...regularPages.map(page => formatPageData(page)));
+      }
+
+      setPages(allPages);
 
       // Get all parent pages for dropdown selections
       const { data: allData } = await supabase
