@@ -36,9 +36,13 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
   };
 
   const handleEditClick = (page: PageData) => {
-    // Navigate to edit page instead of using the callback
-    // This ensures we properly navigate to the edit form
-    navigate(`/admin/edit/${page.id}`, { state: { page } });
+    // Navigate to the create page with edit mode enabled and the page data
+    navigate(`/admin/create`, { 
+      state: { 
+        editMode: true, 
+        pageToEdit: page 
+      } 
+    });
   };
 
   const confirmDelete = async (): Promise<void> => {

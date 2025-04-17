@@ -1,7 +1,6 @@
 
 import React from "react";
 import { PageData } from "@/types/page.types";
-import { PageTypeBadge } from "./PageTypeBadge";
 import { Button } from "@/components/ui/button";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -44,12 +43,8 @@ export const PagesList: React.FC<PagesListProps> = ({
       {pages.map((page) => (
         <Card key={page.id} className="overflow-hidden">
           <CardHeader className="p-4 bg-gray-50 flex flex-row justify-between items-center">
-            <div className="flex items-center space-x-4">
+            <div>
               <h3 className="text-lg font-medium">{page.title}</h3>
-              <PageTypeBadge 
-                isParent={!!page.is_parent} 
-                isSubmenu={!!page.isSubmenu} 
-              />
             </div>
             <div className="flex space-x-2">
               <Button

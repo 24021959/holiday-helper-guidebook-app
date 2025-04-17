@@ -1,9 +1,7 @@
-
 import React, { useState, useEffect } from "react";
 import { PageData } from "@/types/page.types";
 import { useAdminPages } from "@/hooks/admin/useAdminPages";
 import { toast } from "sonner";
-import EditPageForm from "@/components/admin/EditPageForm";
 import { PagesManagementView } from "@/components/admin/manage/PagesManagementView";
 import { Button } from "@/components/ui/button";
 import { Trash2, AlertTriangle } from "lucide-react";
@@ -41,7 +39,6 @@ const keywordToIconMap: Record<string, string> = {
 };
 
 const AdminManage = () => {
-  const [editingPage, setEditingPage] = useState<PageData | null>(null);
   const [needsIndexCleanup, setNeedsIndexCleanup] = useState(false);
   const navigate = useNavigate();
   
@@ -58,7 +55,6 @@ const AdminManage = () => {
 
   const { deleteIndexPage } = usePageDeletion();
 
-  // Check if we have both / and /home pages
   useEffect(() => {
     if (pages && pages.length > 0) {
       const indexPage = pages.find(p => p.path === '/');
@@ -97,14 +93,13 @@ const AdminManage = () => {
   };
 
   const handleEdit = (page: PageData) => {
-    // Instead of setting the editingPage state, navigate to the edit form
-    navigate(`/admin/create`, { state: { editMode: true, pageToEdit: page } });
-  };
-
-  const handlePageUpdated = async () => {
-    await fetchPages(currentLanguage);
-    setEditingPage(null);
-    toast.success("Pagina aggiornata con successo");
+    // Navigate to create page with edit mode and page data
+    navigate(`/admin/create`, { 
+      state: { 
+        editMode: true, 
+        pageToEdit: page 
+      } 
+    });
   };
 
   if (isLoading) {
@@ -140,25 +135,15 @@ const AdminManage = () => {
         </div>
       )}
 
-      {editingPage ? (
-        <EditPageForm 
-          selectedPage={editingPage}
-          parentPages={parentPages}
-          onPageUpdated={handlePageUpdated}
-          keywordToIconMap={keywordToIconMap}
-          allPages={pages}
-        />
-      ) : (
-        <PagesManagementView
-          pages={pages}
-          currentLanguage={currentLanguage}
-          onLanguageChange={setCurrentLanguage}
-          isDeleting={isDeleting}
-          onDeletePage={confirmDeletePage}
-          onViewPage={handleView}
-          onEditPage={handleEdit}
-          />
-      )}
+      <PagesManagementView
+        pages={pages}
+        currentLanguage={currentLanguage}
+        onLanguageChange={setCurrentLanguage}
+        isDeleting={isDeleting}
+        onDeletePage={confirmDeletePage}
+        onViewPage={handleView}
+        onEditPage={handleEdit}
+      />
     </div>
   );
 };
