@@ -1,27 +1,18 @@
 
-import React, { useState } from "react";
+import React from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import LoadingView from "@/components/LoadingView";
-import ErrorView from "@/components/ErrorView";
 import { useHeaderSettings } from "@/hooks/useHeaderSettings";
-import { toast } from "sonner";
+import LoadingView from "@/components/LoadingView";
 import FilteredIconNav from "@/components/FilteredIconNav";
 import { useIsMobile } from "@/hooks/use-mobile";
 import NavigateBack from "@/components/NavigateBack";
 
 const Menu: React.FC = () => {
-  const { headerSettings, loading: headerLoading, error: headerError, refreshHeaderSettings } = useHeaderSettings();
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const { headerSettings, loading, error } = useHeaderSettings();
   const isMobile = useIsMobile();
-  
-  const handleRefresh = () => {
-    setRefreshTrigger(prev => prev + 1);
-    toast.info("Aggiornamento menu...");
-    refreshHeaderSettings();
-  };
 
-  if (headerLoading) {
+  if (loading) {
     return <LoadingView message="Caricamento menu..." fullScreen={true} />;
   }
 
@@ -42,20 +33,7 @@ const Menu: React.FC = () => {
       </div>
       
       <div className="flex-1 flex flex-col overflow-auto">
-        {headerError ? (
-          <ErrorView 
-            message={headerError || "Errore di caricamento"}
-            onRefresh={handleRefresh}
-            onAlternativeAction={() => window.location.reload()}
-            alternativeActionText="Ricarica pagina"
-          />
-        ) : (
-          <FilteredIconNav 
-            parentPath={null} 
-            onRefresh={handleRefresh} 
-            refreshTrigger={refreshTrigger} 
-          />
-        )}
+        <FilteredIconNav parentPath={null} />
       </div>
       
       <Footer />

@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 import Index from "./pages/Index";
@@ -38,12 +37,8 @@ function App() {
           <Route path="/es" element={<Home />} />
           <Route path="/de" element={<Home />} />
           
-          {/* Main menu routes with language support */}
+          {/* Menu routes */}
           <Route path="/menu" element={<Menu />} />
-          <Route path="/en/menu" element={<Menu />} />
-          <Route path="/fr/menu" element={<Menu />} />
-          <Route path="/es/menu" element={<Menu />} />
-          <Route path="/de/menu" element={<Menu />} />
           
           {/* SubMenu routes with improved path handling */}
           <Route path="/submenu/:parentPath" element={<SubMenu />} />
