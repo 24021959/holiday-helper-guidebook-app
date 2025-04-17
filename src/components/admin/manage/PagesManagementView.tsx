@@ -1,11 +1,10 @@
 
 import React, { useState } from "react";
 import { PageData } from "@/types/page.types";
-import { LanguageSelector } from "./LanguageSelector";
+import { LanguageTabs } from "./LanguageTabs";
 import { LanguageInfoBanner } from "./LanguageInfoBanner";
 import { PagesList } from "./PagesList";
 import { DeletePageDialog } from "./DeletePageDialog";
-import { useNavigate } from "react-router-dom";
 
 interface PagesManagementViewProps {
   pages: PageData[];
@@ -28,15 +27,11 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
 }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deletingPage, setDeletingPage] = useState<PageData | null>(null);
-  const navigate = useNavigate();
 
   const handleDeleteClick = (page: PageData) => {
     setDeletingPage(page);
     setShowDeleteDialog(true);
   };
-
-  // Questo metodo verrà eliminato poiché utilizzeremo direttamente onEditPage
-  // che viene passato come prop dal componente padre
 
   const confirmDelete = async (): Promise<void> => {
     if (deletingPage) {
@@ -50,7 +45,7 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
     <>
       <div className="mb-6">
         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Gestione Pagine</h2>
-        <LanguageSelector 
+        <LanguageTabs 
           currentLanguage={currentLanguage} 
           onLanguageChange={onLanguageChange} 
         />

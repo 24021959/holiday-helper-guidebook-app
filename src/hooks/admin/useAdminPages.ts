@@ -24,12 +24,15 @@ export const useAdminPages = () => {
                      .not('path', 'like', '/fr/%')
                      .not('path', 'like', '/es/%')
                      .not('path', 'like', '/de/%');
+                     
+        // Include anche i percorsi che iniziano direttamente con /
+        // E quelli speciali come /home o / (index)
       } else {
         // Per altre lingue, includiamo solo i percorsi con il prefisso della lingua selezionata
         query = query.like('path', `/${langCode}/%`);
         
-        // Aggiungiamo anche la ricerca di /langCode/home per includere la home tradotta
-        query = query.or(`path.eq./${langCode}/home`);
+        // Aggiungiamo la ricerca della home page tradotta
+        query = query.or(`path.eq./${langCode},path.eq./${langCode}/home`);
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });

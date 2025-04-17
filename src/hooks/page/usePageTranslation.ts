@@ -31,7 +31,7 @@ export const usePageTranslation = () => {
       setIsTranslating(true);
       toast.info("Avvio traduzione manuale in tutte le lingue...");
 
-      // CRITICAL: Force disable the no-translation flag ONLY for this operation
+      // Forza la disattivazione del flag no-translation SOLO per questa operazione
       const wasNoTranslation = document.body.hasAttribute('data-no-translation');
       if (wasNoTranslation) {
         document.body.removeAttribute('data-no-translation');
@@ -46,14 +46,14 @@ export const usePageTranslation = () => {
         targetLangs
       );
       
-      // Special handling for Home page
+      // Gestione speciale per la Home page
       const isHomePage = finalPath === "/" || finalPath === "/home";
       
       for (const lang of targetLangs) {
         if (translations[lang]) {
-          // If this is the home page, use a special path format
+          // Se è la home page, usa un formato di path speciale
           let translatedPath = isHomePage 
-            ? `/${lang}/home` 
+            ? `/${lang}` 
             : `/${lang}${finalPath}`;
             
           let translatedParentPath = null;
@@ -79,7 +79,7 @@ export const usePageTranslation = () => {
         }
       }
 
-      // CRITICAL: Restore the no-translation flag after operation
+      // Ripristina il flag no-translation dopo l'operazione
       if (wasNoTranslation) {
         document.body.setAttribute('data-no-translation', 'true');
       }
@@ -89,14 +89,14 @@ export const usePageTranslation = () => {
       console.error("Error translating pages:", error);
       toast.error("Errore durante la traduzione delle pagine");
       
-      // CRITICAL: Ensure the no-translation flag is restored in case of error
+      // Garantisci il ripristino del flag no-translation in caso di errore
       document.body.setAttribute('data-no-translation', 'true');
       
       throw error;
     } finally {
       setIsTranslating(false);
       
-      // CRITICAL: Final safety check to ensure the no-translation flag is set
+      // Controllo finale di sicurezza per garantire che il flag no-translation sia impostato
       document.body.setAttribute('data-no-translation', 'true');
     }
   };
