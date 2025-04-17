@@ -1,7 +1,6 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
-import { useTranslation } from "@/context/TranslationContext";
 import { IconData, MenuIconsProps } from "./types";
 import { useMenuQueries } from "./useMenuQueries";
 import { useIconCache } from "./useIconCache";
@@ -12,7 +11,6 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: MenuIconsProps)
   const [icons, setIcons] = useState<IconData[]>([]);
   const [hasConnectionError, setHasConnectionError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
-  const { language } = useTranslation();
   const queries = useMenuQueries();
   const { getCachedIcons, cacheIcons, clearIconCache } = useIconCache();
 
@@ -33,31 +31,26 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: MenuIconsProps)
       setError(null);
       setHasConnectionError(false);
 
-      const cacheKey = `icons_${parentPath || 'root'}_${language}_${refreshTrigger}`;
+      const cacheKey = `icons_${parentPath || 'root'}_${refreshTrigger}`;
       clearIconCache(cacheKey);
 
-      console.log(`Loading icons for parentPath: ${parentPath}, language: ${language}`);
+      console.log(`Loading icons for parentPath: ${parentPath}`);
 
       let pageIcons: IconData[] = [];
 
       if (parentPath === null) {
-        // Load root level pages
-        const { data: rootPages, error: rootError } = await queries.fetchRootPages(language);
+        // Load root level pages - Italian only version
+        const { data: rootPages, error: rootError } = await queries.fetchRootPages();
         
         if (rootError) throw rootError;
 
         if (rootPages && rootPages.length > 0) {
-          pageIcons = rootPages
-            .filter(page => {
-              const path = page.path || '';
-              return !['/en', '/fr', '/es', '/de'].includes(path);
-            })
-            .map(processPageIconData);
+          pageIcons = rootPages.map(processPageIconData);
 
           // Check for home page
           const hasHomePage = pageIcons.some(icon => icon.path === '/home');
           if (!hasHomePage) {
-            const homePage = await queries.fetchHomePageForLanguage(language);
+            const homePage = await queries.fetchHomePageForLanguage();
             if (homePage) {
               pageIcons.push(processPageIconData(homePage));
             }
@@ -73,7 +66,7 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: MenuIconsProps)
           pageIcons = subPages.map(processPageIconData);
         } else {
           // Try menu icons as fallback
-          const { data: menuIconsData, error: menuIconsError } = await queries.fetchMenuIcons(language, parentPath);
+          const { data: menuIconsData, error: menuIconsError } = await queries.fetchMenuIcons(parentPath);
           
           if (!menuIconsError && menuIconsData && menuIconsData.length > 0) {
             pageIcons = menuIconsData.map(icon => ({
@@ -120,7 +113,7 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: MenuIconsProps)
       setError("Error loading menu. Try again later.");
 
       // Try to use cached icons as fallback
-      const cacheKey = `icons_${parentPath || 'root'}_${language}_${refreshTrigger-1}`;
+      const cacheKey = `icons_${parentPath || 'root'}_${refreshTrigger-1}`;
       const cachedIcons = getCachedIcons(cacheKey);
       if (cachedIcons && cachedIcons.length > 0) {
         console.log(`Using ${cachedIcons.length} cached icons as fallback after error`);
@@ -129,12 +122,12 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: MenuIconsProps)
     } finally {
       setIsLoading(false);
     }
-  }, [parentPath, refreshTrigger, language, queries, cacheIcons, clearIconCache, getCachedIcons]);
+  }, [parentPath, refreshTrigger, queries, cacheIcons, clearIconCache, getCachedIcons]);
 
   useEffect(() => {
     console.log(`useMenuIcons - Loading icons with refreshTrigger: ${refreshTrigger}`);
     loadIcons();
-  }, [loadIcons, refreshTrigger, language]);
+  }, [loadIcons, refreshTrigger]);
 
   useEffect(() => {
     if (hasConnectionError && retryCount < 3) {

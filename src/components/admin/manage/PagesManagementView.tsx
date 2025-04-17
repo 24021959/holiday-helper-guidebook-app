@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { PageData } from "@/types/page.types";
 import { LanguageTabs } from "./LanguageTabs";
@@ -47,7 +48,6 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
     setShowTranslateDialog(true);
   };
 
-  // Correzione: Modificata la funzione per restituire una Promise<void>
   const confirmTranslation = async (): Promise<void> => {
     if (!translatingPage) return Promise.resolve();
     
