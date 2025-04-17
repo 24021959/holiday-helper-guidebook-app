@@ -14,7 +14,7 @@ import PreviewPage from "./pages/PreviewPage";
 import { TranslationProvider } from "./context/TranslationContext";
 import { Toaster } from "sonner";
 import ChatbotBubble from "./components/ChatbotBubble";
-import EditPage from "./pages/admin/EditPage"; // Add this import
+import EditPage from "./pages/admin/EditPage";
 
 function App() {
   return (
@@ -29,7 +29,7 @@ function App() {
           <Route path="/welcome" element={<Welcome />} />
           <Route path="/storia" element={<Storia />} />
           
-          {/* Add the new edit page route inside AdminLayout */}
+          {/* Admin routes */}
           <Route path="/admin/edit" element={<EditPage />} />
           
           {/* Main menu routes with language support */}

@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useForm, FormProvider } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,7 +21,7 @@ interface EditFormProps {
   handleTranslateAndCreate: (values: PageFormValues, imageUrl: string | null, pageImages: ImageItem[], onSuccess: () => void) => Promise<void>;
 }
 
-export const EditForm = ({ 
+export const EditForm: React.FC<EditFormProps> = ({ 
   selectedPage,
   parentPages,
   onPageUpdated,
@@ -62,7 +62,7 @@ export const EditForm = ({
     },
   });
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Ensure form is reset whenever selectedPage changes
     form.reset({
       title: selectedPage.title,
@@ -76,8 +76,13 @@ export const EditForm = ({
     setUploadedImage(selectedPage.imageUrl || null);
   }, [selectedPage, setSelectedIcon, setUploadedImage, form, initialPageType]);
 
+  // Wrap the submit handler to ensure it correctly processes the form values
+  const onSubmit = form.handleSubmit((data) => {
+    handleFormSubmit(data);
+  });
+
   return (
-    <FormProvider {...form}>
+    <div>
       <EditFormHeader 
         selectedPage={selectedPage}
         isTranslating={isTranslating}
@@ -85,39 +90,41 @@ export const EditForm = ({
         onTranslate={() => handleFormSubmit(form.getValues())}
       />
       
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-          <EditFormTypeSection 
-            pageType={pageType}
-            setPageType={setPageType}
-            parentPath={parentPath}
-            setParentPath={setParentPath}
-            icon={selectedIcon}
-            setIcon={setSelectedIcon}
-            parentPages={parentPages.filter(p => p.id !== selectedPage.id)}
-            control={form.control}
-          />
-          
-          <EditFormTabs 
-            currentTab={currentTab}
-            setCurrentTab={setCurrentTab}
-            pageImages={pageImages}
-            handlePageImagesChange={handlePageImagesChange}
-            handleImageInsertion={handleImageInsertion}
-            uploadedImage={uploadedImage}
-            setUploadedImage={setUploadedImage}
-          />
-          
-          <div className="pt-4 border-t flex justify-end space-x-4">
-            <Button 
-              type="submit" 
-              className="bg-emerald-600 hover:bg-emerald-700"
-            >
-              Salva modifiche
-            </Button>
-          </div>
-        </form>
-      </Form>
-    </FormProvider>
+      <FormProvider {...form}>
+        <Form {...form}>
+          <form onSubmit={onSubmit} className="space-y-6">
+            <EditFormTypeSection 
+              pageType={pageType}
+              setPageType={setPageType}
+              parentPath={parentPath}
+              setParentPath={setParentPath}
+              icon={selectedIcon}
+              setIcon={setSelectedIcon}
+              parentPages={parentPages.filter(p => p.id !== selectedPage.id)}
+              control={form.control}
+            />
+            
+            <EditFormTabs 
+              currentTab={currentTab}
+              setCurrentTab={setCurrentTab}
+              pageImages={pageImages}
+              handlePageImagesChange={handlePageImagesChange}
+              handleImageInsertion={handleImageInsertion}
+              uploadedImage={uploadedImage}
+              setUploadedImage={setUploadedImage}
+            />
+            
+            <div className="pt-4 border-t flex justify-end space-x-4">
+              <Button 
+                type="submit" 
+                className="bg-emerald-600 hover:bg-emerald-700"
+              >
+                Salva modifiche
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </FormProvider>
+    </div>
   );
 };
