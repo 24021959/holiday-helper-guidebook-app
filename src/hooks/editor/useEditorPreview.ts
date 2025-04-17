@@ -9,6 +9,36 @@ export const useEditorPreview = (content: string, images: ImageDetail[]) => {
     const formatContent = () => {
       let formatted = content || '';
       
+      // Process image JSON objects in content
+      const regex = /\{\"type\":\"image\",.*?\}/g;
+      let match;
+      
+      while ((match = regex.exec(formatted)) !== null) {
+        try {
+          const imageData = JSON.parse(match[0]);
+          const positionClass = 
+            imageData.position === "left" ? "float-left mr-4" : 
+            imageData.position === "right" ? "float-right ml-4" : 
+            imageData.position === "full" ? "w-full block" : 
+            "mx-auto block";
+          
+          const imageHtml = `
+            <figure class="${positionClass}" style="width: ${imageData.width || '50%'}; margin-bottom: 1rem; position: relative;">
+              <img 
+                src="${imageData.url}" 
+                alt="${imageData.caption || 'Image'}" 
+                class="w-full h-auto rounded-md" 
+              />
+              ${imageData.caption ? `<figcaption class="text-sm text-gray-500 mt-1">${imageData.caption}</figcaption>` : ''}
+            </figure>
+          `;
+          
+          formatted = formatted.replace(match[0], imageHtml);
+        } catch (e) {
+          console.error("Failed to parse image data:", e);
+        }
+      }
+      
       // Replace image placeholders with actual images
       images.forEach((image, index) => {
         const positionClass = 
@@ -21,7 +51,7 @@ export const useEditorPreview = (content: string, images: ImageDetail[]) => {
           <figure class="${positionClass}" style="width: ${image.width}; margin-bottom: 1rem;">
             <img 
               src="${image.url}" 
-              alt="${image.caption || `Image ${index + 1}`}" 
+              alt="${image.caption || `Image ${index+1}`}" 
               class="w-full h-auto rounded-md" 
               data-image-index="${index}"
             />
@@ -29,9 +59,9 @@ export const useEditorPreview = (content: string, images: ImageDetail[]) => {
           </figure>
         `;
         
-        formatted = formatted.replace(`[IMAGE_${index}]`, imageHtml);
+        formatted = formatted.replace(`[IMMAGINE]`, imageHtml);
       });
-
+      
       // Pre-process paragraphs - convert double newlines to paragraph markers
       formatted = formatted.replace(/\n\s*\n/g, "\n<p-break>\n");
       
@@ -58,11 +88,11 @@ export const useEditorPreview = (content: string, images: ImageDetail[]) => {
       
       // Convert lists
       let bulletListRegex = /- (.*?)(?:\n|$)/g;
-      let match;
+      let match2;
       let listItems = [];
       
-      while ((match = bulletListRegex.exec(formatted)) !== null) {
-        listItems.push(`<li>${match[1]}</li>`);
+      while ((match2 = bulletListRegex.exec(formatted)) !== null) {
+        listItems.push(`<li>${match2[1]}</li>`);
       }
       
       if (listItems.length > 0) {
@@ -98,14 +128,14 @@ export const useEditorPreview = (content: string, images: ImageDetail[]) => {
       formatted = formatted.replace(/<p-break>/g, '</p><p class="mb-4">');
       
       // Wrap content in paragraph tags if not already wrapped
-      if (!formatted.startsWith('<p')) {
+      if (!formatted.startsWith('<p') && !formatted.startsWith('<h') && !formatted.startsWith('<ul') && !formatted.startsWith('<ol')) {
         formatted = `<p class="mb-4">${formatted}`;
       }
-      if (!formatted.endsWith('</p>')) {
+      if (!formatted.endsWith('</p>') && !formatted.endsWith('</ul>') && !formatted.endsWith('</ol>')) {
         formatted = `${formatted}</p>`;
       }
       
-      // Handle remaining line breaks - convert single newlines to <br> tags
+      // Handle remaining line breaks
       formatted = formatted.replace(/\n/g, '<br>');
       
       // Remove any empty paragraphs

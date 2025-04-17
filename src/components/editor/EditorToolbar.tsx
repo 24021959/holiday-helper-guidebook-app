@@ -159,7 +159,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
         <div className="h-6 border-r border-gray-200 mx-1" />
       </div>
 
-      {/* Insert Group */}
+      {/* Insert Group - Image button removed */}
       <div className="flex flex-wrap items-center gap-1">
         <Button 
           variant="ghost"

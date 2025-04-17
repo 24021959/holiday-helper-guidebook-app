@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ImageIcon, Phone, MapPin } from 'lucide-react';
+import { Phone, MapPin } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { InsertButtonsProps } from '../types';
@@ -8,31 +8,11 @@ import { ToolbarGroup } from './ToolbarGroup';
 import TranslatedText from '@/components/TranslatedText';
 
 export const InsertButtons: React.FC<InsertButtonsProps> = ({
-  onOpenImageDialog,
   onInsertPhone,
   onInsertMap,
 }) => {
   return (
     <ToolbarGroup label="Insert">
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onOpenImageDialog}
-              className="flex items-center gap-1"
-            >
-              <ImageIcon className="h-4 w-4" />
-              <TranslatedText text="Immagine" disableAutoTranslation={true} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p><TranslatedText text="Inserisci immagine" disableAutoTranslation={true} /></p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
