@@ -44,7 +44,7 @@ export const PagesList: React.FC<PagesListProps> = ({
       {pages.map((page) => (
         <Card key={page.id} className="overflow-hidden">
           <CardHeader className="p-4 bg-gray-50 flex flex-row justify-between items-center">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-4">
               <h3 className="text-lg font-medium">{page.title}</h3>
               <PageTypeBadge 
                 isParent={!!page.is_parent} 
@@ -85,26 +85,6 @@ export const PagesList: React.FC<PagesListProps> = ({
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-2">
-                <div className="text-sm text-gray-500 mb-1">Percorso:</div>
-                <code className="bg-gray-100 px-2 py-1 rounded text-sm">{page.path}</code>
-              </div>
-              <div>
-                {page.imageUrl && (
-                  <div>
-                    <div className="text-sm text-gray-500 mb-1">Immagine:</div>
-                    <img 
-                      src={page.imageUrl} 
-                      alt={`Immagine per ${page.title}`} 
-                      className="h-20 object-cover rounded border border-gray-200" 
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
         </Card>
       ))}
     </div>

@@ -8,6 +8,7 @@ import { PagesManagementView } from "@/components/admin/manage/PagesManagementVi
 import { Button } from "@/components/ui/button";
 import { Trash2, AlertTriangle } from "lucide-react";
 import { usePageDeletion } from "@/hooks/page/usePageDeletion";
+import { useNavigate } from "react-router-dom";
 
 // Define a mapping of keywords to icons
 const keywordToIconMap: Record<string, string> = {
@@ -42,6 +43,7 @@ const keywordToIconMap: Record<string, string> = {
 const AdminManage = () => {
   const [editingPage, setEditingPage] = useState<PageData | null>(null);
   const [needsIndexCleanup, setNeedsIndexCleanup] = useState(false);
+  const navigate = useNavigate();
   
   const {
     pages,
@@ -95,7 +97,8 @@ const AdminManage = () => {
   };
 
   const handleEdit = (page: PageData) => {
-    setEditingPage(page);
+    // Instead of setting the editingPage state, navigate to the edit form
+    navigate(`/admin/create`, { state: { editMode: true, pageToEdit: page } });
   };
 
   const handlePageUpdated = async () => {
@@ -154,7 +157,7 @@ const AdminManage = () => {
           onDeletePage={confirmDeletePage}
           onViewPage={handleView}
           onEditPage={handleEdit}
-        />
+          />
       )}
     </div>
   );

@@ -5,6 +5,7 @@ import { LanguageSelector } from "./LanguageSelector";
 import { LanguageInfoBanner } from "./LanguageInfoBanner";
 import { PagesList } from "./PagesList";
 import { DeletePageDialog } from "./DeletePageDialog";
+import { useNavigate } from "react-router-dom";
 
 interface PagesManagementViewProps {
   pages: PageData[];
@@ -27,13 +28,19 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
 }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deletingPage, setDeletingPage] = useState<PageData | null>(null);
+  const navigate = useNavigate();
 
   const handleDeleteClick = (page: PageData) => {
     setDeletingPage(page);
     setShowDeleteDialog(true);
   };
 
-  // Modifichiamo questa funzione per restituire una Promise<void>
+  const handleEditClick = (page: PageData) => {
+    // Navigate to edit page instead of using the callback
+    // This ensures we properly navigate to the edit form
+    navigate(`/admin/edit/${page.id}`, { state: { page } });
+  };
+
   const confirmDelete = async (): Promise<void> => {
     if (deletingPage) {
       onDeletePage(deletingPage);
@@ -58,7 +65,7 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
         pages={pages}
         onView={onViewPage}
         onDelete={handleDeleteClick}
-        onEdit={onEditPage}
+        onEdit={handleEditClick}
         isDeleting={isDeleting}
       />
 

@@ -29,8 +29,7 @@ export const useAdminPages = () => {
         query = query.like('path', `/${langCode}/%`);
         
         // Aggiungiamo anche la ricerca di /langCode/home per includere la home tradotta
-        const homePathPattern = `/${langCode}/home`;
-        query = query.or(`path.eq.${homePathPattern}`);
+        query = query.or(`path.eq./${langCode}/home`);
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });
