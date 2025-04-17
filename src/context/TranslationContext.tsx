@@ -53,9 +53,18 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const translateSequential = async (
     pageContent: string, 
     pageTitle: string, 
-    targetLangs: Language[]
-  ) => {
-    return { it: { title: pageTitle, content: pageContent } };
+    targetLangs: Language[] = ['en', 'fr', 'es', 'de']
+  ): Promise<Record<Language, { title: string; content: string; }>> => {
+    // Create a record with all languages
+    const results: Record<Language, { title: string; content: string; }> = {
+      it: { title: pageTitle, content: pageContent },
+      en: { title: pageTitle, content: pageContent },
+      fr: { title: pageTitle, content: pageContent },
+      es: { title: pageTitle, content: pageContent },
+      de: { title: pageTitle, content: pageContent }
+    };
+    
+    return results;
   };
 
   const translateAndCloneMenu = async (
