@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -418,59 +417,15 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
             <div className="prose max-w-none clearfix readable-text">
               {pageContentSections.map((section, index) => {
                 if (typeof section === 'string') {
-                  const paragraphs = section.split('\n').filter(p => p.trim() !== '');
-                  
                   return (
-                    <React.Fragment key={`p-${index}`}>
-                      {paragraphs.map((paragraph, pIndex) => {
-                        if (paragraph.match(/\[(.*?)\]\((.*?)\)/)) {
-                          const parts = [];
-                          let lastIndex = 0;
-                          let linkMatch;
-                          const linkRegex = /\[(.*?)\]\((.*?)\)/g;
-                          
-                          while ((linkMatch = linkRegex.exec(paragraph)) !== null) {
-                            if (linkMatch.index > lastIndex) {
-                              parts.push(
-                                <TranslatedText 
-                                  key={`text-${pIndex}-${lastIndex}`} 
-                                  text={paragraph.substring(lastIndex, linkMatch.index)} 
-                                />
-                              );
-                            }
-                            
-                            parts.push(
-                              <span key={`link-${pIndex}-${linkMatch.index}`}>
-                                {renderMarkdownLink(linkMatch[0])}
-                              </span>
-                            );
-                            
-                            lastIndex = linkMatch.index + linkMatch[0].length;
-                          }
-                          
-                          if (lastIndex < paragraph.length) {
-                            parts.push(
-                              <TranslatedText 
-                                key={`text-${pIndex}-${lastIndex}`} 
-                                text={paragraph.substring(lastIndex)} 
-                              />
-                            );
-                          }
-                          
-                          return (
-                            <p key={`p-${index}-${pIndex}`} className="mb-6">
-                              {parts}
-                            </p>
-                          );
-                        }
-                        
-                        return (
-                          <p key={`p-${index}-${pIndex}`} className="mb-6">
-                            <TranslatedText text={paragraph} />
-                          </p>
-                        );
-                      })}
-                    </React.Fragment>
+                    <div key={`p-${index}`}>
+                      <TranslatedText 
+                        text={section} 
+                        as="div" 
+                        dangerouslySetInnerHTML={true}
+                        className="mb-6"
+                      />
+                    </div>
                   );
                 } else {
                   return renderImage(section, index);

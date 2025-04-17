@@ -39,7 +39,14 @@ export const translateText = async (
   } catch (error) {
     console.error('Translation error:', error);
     console.log('Using fallback translation service...');
-    return translateWithFallback(text, 'it', targetLang);
+    try {
+      const fallbackResult = await translateWithFallback(text, 'it', targetLang);
+      return fallbackResult;
+    } catch (fallbackError) {
+      console.error('Fallback translation also failed:', fallbackError);
+      // Return original text in case of complete failure
+      return text;
+    }
   }
 };
 
@@ -53,12 +60,19 @@ export const translateBulkTexts = async (
   // Filter texts that need translation (not in cache)
   const textsToTranslate: string[] = [];
   const results: (string | null)[] = new Array(texts.length);
+  const indexMapping: Record<number, number> = {}; // Maps original index to textsToTranslate index
 
   texts.forEach((text, index) => {
+    if (!text || text.trim() === '') {
+      results[index] = text;
+      return;
+    }
+    
     const cached = cache.getCached(targetLang, text);
     if (cached) {
       results[index] = cached;
     } else {
+      indexMapping[textsToTranslate.length] = index;
       textsToTranslate.push(text);
       results[index] = null;
     }
@@ -84,15 +98,18 @@ export const translateBulkTexts = async (
     }
 
     if (data?.translatedTexts && Array.isArray(data.translatedTexts)) {
-      let translatedIndex = 0;
-      
       console.log(`Bulk translation successful, received ${data.translatedTexts.length} translations`);
       
-      return texts.map((text, index) => {
-        if (results[index] !== null) {
-          return results[index] as string;
+      // Map translated texts back to their original positions
+      textsToTranslate.forEach((_, index) => {
+        const originalIndex = indexMapping[index];
+        if (originalIndex !== undefined) {
+          results[originalIndex] = data.translatedTexts[index] || texts[originalIndex];
         }
-        return data.translatedTexts[translatedIndex++] || text;
+      });
+      
+      return results.map((result, index) => {
+        return result !== null ? result : texts[index];
       });
     }
     
@@ -102,16 +119,26 @@ export const translateBulkTexts = async (
     console.log('Using individual fallback translations...');
     
     // Translate each text individually using fallback
-    const translatedTexts = await Promise.all(
-      textsToTranslate.map(text => translateWithFallback(text, 'it', targetLang))
+    const promises = textsToTranslate.map(text => 
+      translateWithFallback(text, 'it', targetLang)
+        .catch(e => {
+          console.error('Individual fallback translation failed:', e);
+          return text; // Return original text if translation fails
+        })
     );
     
-    let translatedIndex = 0;
-    return texts.map((text, index) => {
-      if (results[index] !== null) {
-        return results[index] as string;
+    const translatedTexts = await Promise.all(promises);
+    
+    // Map translated texts back to their original positions
+    translatedTexts.forEach((translatedText, index) => {
+      const originalIndex = indexMapping[index];
+      if (originalIndex !== undefined) {
+        results[originalIndex] = translatedText;
       }
-      return translatedTexts[translatedIndex++] || text;
+    });
+    
+    return results.map((result, index) => {
+      return result !== null ? result : texts[index];
     });
   }
 };

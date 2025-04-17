@@ -35,12 +35,24 @@ serve(async (req) => {
       // Handle bulk translation of multiple texts
       console.log(`Processing bulk translation request with ${bulkTranslation.length} items to ${targetLang}`);
       
+      // Filter out empty strings to prevent unnecessary translations
+      const validTexts = bulkTranslation.filter(item => item && item.trim() !== '');
+      
+      if (validTexts.length === 0) {
+        console.log("No valid texts to translate");
+        return new Response(
+          JSON.stringify({ translatedTexts: bulkTranslation }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       // Instruction for the model to translate a batch of texts
       const systemPrompt = `You are a professional translator specializing in translating web content.
       Translate each of the following texts from Italian to ${targetLang} accurately.
       Maintain the original formatting, including any HTML tags.
       Ensure the translation sounds natural and is appropriate for web context.
-      Respond with a JSON array of translated texts in the same order as the input, inside a 'translations' field.`;
+      DO NOT include any explanations or notes.
+      Respond with a JSON array of translated texts in the same order as the input.`;
       
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -52,7 +64,7 @@ serve(async (req) => {
           model: 'gpt-4o-mini',
           messages: [
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: JSON.stringify(bulkTranslation) }
+            { role: 'user', content: JSON.stringify(validTexts) }
           ],
           temperature: 0.3,
           response_format: { type: "json_object" },
@@ -77,8 +89,17 @@ serve(async (req) => {
         
         if (Array.isArray(parsedContent.translations)) {
           console.log(`Successfully parsed ${parsedContent.translations.length} translations`);
+          
+          // Map back to original array structure, preserving empty items
+          const resultTranslations = bulkTranslation.map((item, index) => {
+            if (!item || item.trim() === '') {
+              return item; // Keep empty items as is
+            }
+            return parsedContent.translations[validTexts.indexOf(item)] || item;
+          });
+          
           return new Response(
-            JSON.stringify({ translatedTexts: parsedContent.translations }),
+            JSON.stringify({ translatedTexts: resultTranslations }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         } else {
@@ -93,17 +114,25 @@ serve(async (req) => {
         );
       }
     } else {
-      // Handle single text translation (original functionality)
+      // Handle single text translation
+      if (!text || text.trim() === '') {
+        return new Response(
+          JSON.stringify({ translatedText: text }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       console.log(`Processing single text translation to ${targetLang}: "${text.substring(0, 30)}..."`);
       
-      // Istruzioni specifiche per il modello di traduzione
-      const systemPrompt = `Sei un traduttore professionale.
-      La tua unica attività è tradurre il seguente testo dall'italiano a ${targetLang}.
-      Non aggiungere nessuna informazione, commento o spiegazione.
-      Restituisci solo il testo tradotto, mantenendo la formattazione originale come capoversi e punti elenco.
-      Se ci sono tag HTML o Markdown nel testo, mantienili esattamente come sono nel testo originale.
-      Se ci sono nomi propri o termini specifici, mantienili come sono senza tradurli.
-      Assicurati che la traduzione sia naturale e fluida nella lingua di destinazione.`;
+      // Specific instructions for the translation model
+      const systemPrompt = `You are a professional translator.
+      Translate the following text from Italian to ${targetLang}.
+      Do not add any explanations or comments.
+      Preserve all HTML formatting and tags exactly as they appear in the original.
+      Preserve all markdown formatting exactly as it appears in the original.
+      Ensure the translation sounds natural in ${targetLang}.
+      Never change or remove HTML tags or attributes, keep them intact.
+      If proper names or specific terms should not be translated, keep them as they are.`;
       
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',

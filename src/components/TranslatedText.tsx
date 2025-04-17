@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef, memo } from "react";
 import { useTranslation } from "@/context/TranslationContext";
 import { Loader2 } from "lucide-react";
@@ -9,6 +10,7 @@ interface TranslatedTextProps {
   className?: string;
   showLoadingState?: boolean;
   disableAutoTranslation?: boolean;
+  dangerouslySetInnerHTML?: boolean;
 }
 
 const TranslatedText: React.FC<TranslatedTextProps> = memo(({ 
@@ -16,7 +18,8 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
   as: Component = "span", 
   className = "",
   showLoadingState = true,
-  disableAutoTranslation = false
+  disableAutoTranslation = false,
+  dangerouslySetInnerHTML = false
 }) => {
   const { language, translate } = useTranslation();
   const [translatedText, setTranslatedText] = useState(text);
@@ -119,9 +122,9 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
       }
     };
     
-    if (needsTranslation) {
+    if (needsTranslation && text && text.trim() !== '') {
       fetchTranslation();
-    } else if (language === "it" as Language) {
+    } else if (language === "it" as Language || !text || text.trim() === '') {
       setTranslatedText(text);
     }
     
@@ -132,6 +135,26 @@ const TranslatedText: React.FC<TranslatedTextProps> = memo(({
       isMounted = false;
     };
   }, [text, language, translate, cacheKey, disableAutoTranslation]);
+
+  // Handling content with HTML tags
+  if (dangerouslySetInnerHTML) {
+    return (
+      <Component 
+        className={className}
+        dangerouslySetInnerHTML={{ 
+          __html: isLoading && showLoadingState 
+            ? `<span class="inline-flex items-center gap-1 opacity-70">
+                <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                ${text}
+               </span>` 
+            : translatedText
+        }}
+      />
+    );
+  }
 
   return (
     <Component className={className}>

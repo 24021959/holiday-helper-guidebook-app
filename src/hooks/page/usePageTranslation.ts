@@ -141,11 +141,13 @@ export const usePageTranslation = () => {
       const totalLanguages = targetLanguages.length;
       let successCount = 0;
       
+      // Process each language individually to ensure different translations
       for (let i = 0; i < totalLanguages; i++) {
         const lang = targetLanguages[i];
         toast.info(`Avvio traduzione in ${lang.toUpperCase()} (${i+1}/${totalLanguages})...`);
         
         try {
+          // Process each language translation in separate API calls
           await translatePage(
             content, 
             title, 
@@ -160,9 +162,9 @@ export const usePageTranslation = () => {
           
           successCount++;
           
-          // Aggiungiamo una breve pausa tra le traduzioni
+          // Add a short pause between translations to avoid rate limiting
           if (i < totalLanguages - 1) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 2000));
           }
         } catch (langError) {
           console.error(`Error translating to ${lang}:`, langError);
