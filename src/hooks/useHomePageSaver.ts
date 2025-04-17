@@ -10,7 +10,7 @@ export const useHomePageSaver = () => {
   const [isSaving, setIsSaving] = useState(false);
   const { translateSequential } = useTranslation();
 
-  const saveHomePageToDatabase = async () => {
+  const saveHomePageToDatabase = async (showToasts = false) => {
     try {
       setIsSaving(true);
 
@@ -25,7 +25,7 @@ export const useHomePageSaver = () => {
         console.log("La pagina Home in italiano è già stata salvata");
         
         // Check if we need to translate and save in other languages
-        await translateAndSaveHomeInAllLanguages(existingPage.title, existingPage.content);
+        await translateAndSaveHomeInAllLanguages(existingPage.title, existingPage.content, showToasts);
         return;
       }
 
@@ -84,23 +84,27 @@ export const useHomePageSaver = () => {
 
       if (iconError) throw iconError;
 
-      toast.success("Pagina Home salvata con successo in italiano");
+      if (showToasts) {
+        toast.success("Pagina Home salvata con successo in italiano");
+      }
       
       // Now translate and save in other languages
-      await translateAndSaveHomeInAllLanguages(homeTitle, homeContent);
+      await translateAndSaveHomeInAllLanguages(homeTitle, homeContent, showToasts);
       
       return pageId;
 
     } catch (error) {
       console.error("Error saving home page:", error);
-      toast.error("Errore nel salvare la pagina Home");
+      if (showToasts) {
+        toast.error("Errore nel salvare la pagina Home");
+      }
       return null;
     } finally {
       setIsSaving(false);
     }
   };
   
-  const translateAndSaveHomeInAllLanguages = async (originalTitle: string, originalContent: string) => {
+  const translateAndSaveHomeInAllLanguages = async (originalTitle: string, originalContent: string, showToasts = false) => {
     try {
       // Temporarily remove no-translation flag to allow translation
       const wasNoTranslation = document.body.hasAttribute('data-no-translation');
@@ -192,6 +196,7 @@ export const useHomePageSaver = () => {
                 .from('menu_icons')
                 .update({
                   label: translations[lang].title,
+                  icon: "Home",
                   updated_at: new Date().toISOString()
                 })
                 .eq('id', existingIcon.id);
@@ -206,7 +211,7 @@ export const useHomePageSaver = () => {
                 .insert({
                   path: langPath,
                   label: translations[lang].title,
-                  icon: icon,
+                  icon: "Home",
                   bg_color: 'bg-blue-200',
                   is_submenu: false,
                   published: true,
@@ -241,7 +246,7 @@ export const useHomePageSaver = () => {
               .insert({
                 path: langPath,
                 label: translations[lang].title,
-                icon: icon,
+                icon: "Home",
                 bg_color: 'bg-blue-200',
                 is_submenu: false,
                 published: true,
@@ -261,10 +266,14 @@ export const useHomePageSaver = () => {
         document.body.setAttribute('data-no-translation', 'true');
       }
       
-      toast.success("Home page tradotta e salvata in tutte le lingue");
+      if (showToasts) {
+        toast.success("Home page tradotta e salvata in tutte le lingue");
+      }
     } catch (translationError) {
       console.error("Error translating home page:", translationError);
-      toast.error("Errore nella traduzione e salvataggio della pagina Home");
+      if (showToasts) {
+        toast.error("Errore nella traduzione e salvataggio della pagina Home");
+      }
     }
   };
 

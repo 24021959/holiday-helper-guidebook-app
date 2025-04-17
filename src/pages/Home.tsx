@@ -21,35 +21,7 @@ const Home: React.FC = () => {
   const location = useLocation();
   const { saveHomePageToDatabase, isSaving } = useHomePageSaver();
   
-  // Automatically save the home page when the component mounts
-  useEffect(() => {
-    const initializeHomePage = async () => {
-      try {
-        // Ensure the home page is saved and translated in all languages
-        console.log("Initializing home page and translations...");
-        
-        // Disable no-translation flag temporarily to ensure translations work
-        const wasNoTranslation = document.body.hasAttribute('data-no-translation');
-        if (wasNoTranslation) {
-          document.body.removeAttribute('data-no-translation');
-        }
-        
-        await saveHomePageToDatabase();
-        toast.success("Pagine Home verificate e tradotte con successo");
-        
-        // Restore no-translation flag if it was present
-        if (wasNoTranslation) {
-          document.body.setAttribute('data-no-translation', 'true');
-        }
-      } catch (error) {
-        console.error("Error initializing home page:", error);
-        toast.error("Errore durante l'inizializzazione delle pagine Home");
-      }
-    };
-    
-    initializeHomePage();
-  }, []);
-
+  // Rilevamento lingua dall'URL e impostazione del contesto
   useEffect(() => {
     // Detect current route and set language accordingly
     const pathSegments = location.pathname.split('/').filter(Boolean);
@@ -128,7 +100,7 @@ const Home: React.FC = () => {
   const handleForceSaveTranslations = async () => {
     try {
       toast.info("Forzando il salvataggio delle traduzioni...");
-      await saveHomePageToDatabase();
+      await saveHomePageToDatabase(true); // Passa true per mostrare i toast
       toast.success("Traduzioni della Home page forzate con successo");
       setTimeout(() => {
         window.location.reload();

@@ -58,6 +58,7 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
         
         if (language === 'it') {
           // Per l'italiano (default), carica pagine che non hanno prefisso lingua
+          // e aggiungi anche la home page italiana
           const { data: rootPages, error: rootError } = await supabase
             .from('custom_pages')
             .select('id, title, path, icon, parent_path, published')
@@ -74,7 +75,12 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
           } else if (rootPages && rootPages.length > 0) {
             console.log(`Found ${rootPages.length} published root pages for IT:`, rootPages);
             
-            pageIcons = rootPages.map(page => ({
+            // Filtra per escludere percorsi con prefissi lingua esatti come /en, /fr etc
+            const filteredPages = rootPages.filter(page => {
+              return !['/en', '/fr', '/es', '/de'].includes(page.path);
+            });
+            
+            pageIcons = filteredPages.map(page => ({
               id: page.id,
               path: page.path,
               label: page.title,
@@ -84,11 +90,62 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
               published: page.published,
               is_parent: false // Default value, will be updated later
             }));
+            
+            // Verifica se abbiamo la home italiana
+            const hasHomePage = pageIcons.some(icon => icon.path === '/home');
+            if (!hasHomePage) {
+              // Carica la home page italiana se esiste
+              const { data: homePage } = await supabase
+                .from('custom_pages')
+                .select('id, title, path, icon, parent_path, published')
+                .eq('path', '/home')
+                .eq('published', true)
+                .maybeSingle();
+                
+              if (homePage) {
+                pageIcons.push({
+                  id: homePage.id,
+                  path: homePage.path,
+                  label: homePage.title,
+                  title: homePage.title,
+                  icon: homePage.icon || 'Home',
+                  parent_path: homePage.parent_path,
+                  published: homePage.published,
+                  is_parent: false
+                });
+              }
+            }
           } else {
             console.log("No root pages found for IT");
           }
         } else {
           // Per altre lingue, carica solo pagine con prefisso lingua
+          console.log(`Loading only pages with language prefix /${language}/ or exactly /${language}`);
+          
+          // Carica home page per questa lingua (percorso esatto /${language})
+          const { data: langHomePage } = await supabase
+            .from('custom_pages')
+            .select('id, title, path, icon, parent_path, published')
+            .eq('path', `/${language}`)
+            .eq('published', true)
+            .maybeSingle();
+            
+          if (langHomePage) {
+            console.log(`Found home page for ${language}:`, langHomePage);
+            
+            pageIcons.push({
+              id: langHomePage.id,
+              path: langHomePage.path,
+              label: langHomePage.title,
+              title: langHomePage.title,
+              icon: langHomePage.icon || 'Home',
+              parent_path: langHomePage.parent_path,
+              published: langHomePage.published,
+              is_parent: false
+            });
+          }
+          
+          // Carica altre pagine root per questa lingua
           const { data: langPages, error: langError } = await supabase
             .from('custom_pages')
             .select('id, title, path, icon, parent_path, published')
@@ -102,16 +159,19 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
           } else if (langPages && langPages.length > 0) {
             console.log(`Found ${langPages.length} published root pages for ${language}:`, langPages);
             
-            pageIcons = langPages.map(page => ({
-              id: page.id,
-              path: page.path,
-              label: page.title,
-              title: page.title,
-              icon: page.icon || 'FileText',
-              parent_path: page.parent_path,
-              published: page.published,
-              is_parent: false // Default value, will be updated later
-            }));
+            // Aggiungi altre pagine root
+            langPages.forEach(page => {
+              pageIcons.push({
+                id: page.id,
+                path: page.path,
+                label: page.title,
+                title: page.title,
+                icon: page.icon || 'FileText',
+                parent_path: page.parent_path,
+                published: page.published,
+                is_parent: false // Default value, will be updated later
+              });
+            });
           } else {
             console.log(`No root pages found for language ${language}`);
           }
@@ -234,14 +294,21 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
           menuIconsQuery = menuIconsQuery.eq('parent_path', parentPath);
         } else if (language !== 'it') {
           // Per menu principale in lingua diversa dall'italiano
-          menuIconsQuery = menuIconsQuery.like('path', `/${language}/%`);
+          console.log(`Looking for menu icons with path/${language} or /${language}/`);
+          menuIconsQuery = menuIconsQuery
+            .or(`path.eq./${language},path.like./${language}/%`);
         } else {
           // Per italiano, escludi percorsi con prefissi lingua
+          console.log("Looking for menu icons without language prefixes for Italian");
           menuIconsQuery = menuIconsQuery
             .not('path', 'like', '/en/%')
             .not('path', 'like', '/fr/%')
             .not('path', 'like', '/es/%')
-            .not('path', 'like', '/de/%');
+            .not('path', 'like', '/de/%')
+            .not('path', 'eq', '/en')
+            .not('path', 'eq', '/fr')
+            .not('path', 'eq', '/es')
+            .not('path', 'eq', '/de');
         }
         
         const { data: menuIconsData, error: menuIconsError } = await menuIconsQuery;
@@ -274,6 +341,40 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: UseMenuIconsPro
               if (!countError && count !== null && count > 0) {
                 console.log(`Icon ${icon.path} has ${count} children, marked as parent`);
                 iconData[i] = { ...icon, is_parent: true };
+              }
+            }
+          }
+          
+          // Verificare se manca l'icona home in altre lingue
+          if (language !== 'it' && parentPath === null) {
+            // Controlla se abbiamo già l'icona home per questa lingua
+            const hasHomePage = iconData.some(icon => icon.path === `/${language}`);
+            
+            if (!hasHomePage) {
+              console.log(`No home icon found for ${language}, trying to add it`);
+              
+              // Verifica se esiste una pagina home per questa lingua
+              const { data: langHomePage } = await supabase
+                .from('custom_pages')
+                .select('id, title, path, icon')
+                .eq('path', `/${language}`)
+                .eq('published', true)
+                .maybeSingle();
+                
+              if (langHomePage) {
+                console.log(`Found home page for ${language}, adding its icon`, langHomePage);
+                
+                iconData.push({
+                  id: langHomePage.id,
+                  path: langHomePage.path,
+                  label: langHomePage.title,
+                  title: langHomePage.title,
+                  icon: 'Home',
+                  parent_path: null,
+                  bg_color: 'bg-blue-200',
+                  published: true,
+                  is_parent: false
+                });
               }
             }
           }
