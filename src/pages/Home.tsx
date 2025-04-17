@@ -9,6 +9,7 @@ import { useHomePageSaver } from '@/hooks/useHomePageSaver';
 import HeroImage from '@/components/home/HeroImage';
 import ContentSection from '@/components/home/ContentSection';
 import ErrorDisplay from '@/components/home/ErrorDisplay';
+import { toast } from 'sonner';
 
 const Home: React.FC = () => {
   const { headerSettings, loading, error, refreshHeaderSettings } = useHeaderSettings();
@@ -17,11 +18,27 @@ const Home: React.FC = () => {
   const { isSaving, saveHomePageToDatabase } = useHomePageSaver();
   
   useEffect(() => {
-    saveHomePageToDatabase();
+    const saveHome = async () => {
+      try {
+        await saveHomePageToDatabase();
+        console.log("Home page saved successfully");
+      } catch (err) {
+        console.error("Error saving home page:", err);
+      }
+    };
+    
+    saveHome();
   }, []);
   
   const handleGoToMenu = () => {
-    navigate('/menu');
+    try {
+      console.log("Navigating to /menu");
+      toast.info("Caricamento menu...");
+      navigate('/menu');
+    } catch (err) {
+      console.error("Navigation error:", err);
+      toast.error("Errore durante la navigazione");
+    }
   };
 
   if (loading || isSaving) {

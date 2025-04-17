@@ -18,6 +18,39 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: MenuIconsProps)
   const { processPageData, processMenuIconData, checkParentStatus } = useIconProcessor();
   const { language } = useTranslation();
 
+  // Define mock data for offline fallback
+  const getMockIcons = (): IconData[] => {
+    return [
+      {
+        id: "mock-1",
+        path: "/storia",
+        label: "La nostra storia",
+        title: "La nostra storia",
+        icon: "Book",
+        parent_path: null,
+        is_parent: false
+      },
+      {
+        id: "mock-2",
+        path: "/menu/ristorante",
+        label: "Ristorante",
+        title: "Ristorante",
+        icon: "Utensils",
+        parent_path: null,
+        is_parent: true
+      },
+      {
+        id: "mock-3",
+        path: "/menu/servizi",
+        label: "Servizi",
+        title: "Servizi",
+        icon: "Heart",
+        parent_path: null,
+        is_parent: true
+      }
+    ];
+  };
+
   const loadIcons = useCallback(async () => {
     try {
       console.log(`Loading icons for: ${parentPath || 'root'}, language: ${language}`);
@@ -26,7 +59,13 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: MenuIconsProps)
       setHasConnectionError(false);
       
       const cacheKey = `icons_${parentPath || 'root'}_${language}_${refreshTrigger}`;
-      clearIconCache(cacheKey);
+      const cachedIcons = getCachedIcons(cacheKey);
+      
+      // Use cached icons if available while loading
+      if (cachedIcons && cachedIcons.length > 0) {
+        console.log(`Using ${cachedIcons.length} cached icons while loading fresh data`);
+        setIcons(cachedIcons);
+      }
       
       let pageIcons: IconData[] = [];
 
@@ -103,19 +142,38 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: MenuIconsProps)
         setIcons(uniqueIcons);
         cacheIcons(cacheKey, uniqueIcons);
       } else {
-        console.log("No icons found");
-        setIcons([]);
+        console.log("No icons found, trying fallback mock data");
+        if (getCachedIcons(cacheKey)) {
+          console.log("Using cached icons as primary fallback");
+          setIcons(getCachedIcons(cacheKey) || []);
+        } else {
+          console.log("Using mock icons as last resort fallback");
+          // Last resort: use mock data
+          const mockIcons = getMockIcons();
+          setIcons(mockIcons);
+          cacheIcons(cacheKey, mockIcons);
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in loadIcons:", error);
       setHasConnectionError(true);
-      setError("Error loading menu. Try again later.");
       
+      // Format the error message for better display
+      const errorMsg = error?.message || "Error loading menu. Try again later.";
+      setError(errorMsg);
+      
+      // Try to use cached data first
       const cacheKey = `icons_${parentPath || 'root'}_${language}_${refreshTrigger-1}`;
       const cachedIcons = getCachedIcons(cacheKey);
+      
       if (cachedIcons && cachedIcons.length > 0) {
         console.log(`Using ${cachedIcons.length} cached icons as fallback after error`);
         setIcons(cachedIcons);
+      } else {
+        // Last resort: use mock data
+        console.log("Using mock icons as last resort fallback");
+        const mockIcons = getMockIcons();
+        setIcons(mockIcons);
       }
     } finally {
       setIsLoading(false);
