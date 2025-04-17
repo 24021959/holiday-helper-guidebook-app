@@ -112,8 +112,17 @@ export const useHomePageSaver = () => {
         return;
       }
       
+      // Temporarily remove no-translation flag to allow translation
+      const wasNoTranslation = document.body.hasAttribute('data-no-translation');
+      if (wasNoTranslation) {
+        document.body.removeAttribute('data-no-translation');
+      }
+      
       // Target languages to translate to
       const targetLangs: Language[] = ['en', 'fr', 'es', 'de'];
+      
+      console.log("Starting home page translations...");
+      console.log("Original content sample:", italianHomePage.content.substring(0, 100));
       
       // Translate content to all languages sequentially
       const translations = await translateSequential(
@@ -122,11 +131,17 @@ export const useHomePageSaver = () => {
         targetLangs
       );
       
+      console.log("Translations completed for languages:", Object.keys(translations).join(", "));
+      
       // Save each translation to the database with correct language paths
       for (const lang of targetLangs) {
         if (translations[lang]) {
           // Create language-specific path (e.g., /en, /fr, etc.)
           const langPath = `/${lang}`;
+          
+          console.log(`Saving translation for ${lang}...`);
+          console.log(`Translated title: "${translations[lang].title}"`);
+          console.log(`Translated content preview: "${translations[lang].content.substring(0, 100)}..."`);
           
           // Check if translation already exists for this language
           const { data: existingTranslation } = await supabase
@@ -182,6 +197,11 @@ export const useHomePageSaver = () => {
               });
           }
         }
+      }
+      
+      // Restore the no-translation flag if it was present
+      if (wasNoTranslation) {
+        document.body.setAttribute('data-no-translation', 'true');
       }
       
       toast.success("Home page tradotta e salvata in tutte le lingue");

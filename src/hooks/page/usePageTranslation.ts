@@ -108,14 +108,13 @@ export const usePageTranslation = () => {
       toast.error("Errore durante la traduzione delle pagine");
       
       // Garantisci il ripristino del flag no-translation in caso di errore
-      document.body.setAttribute('data-no-translation', 'true');
+      if (wasNoTranslation) {
+        document.body.setAttribute('data-no-translation', 'true');
+      }
       
       throw error;
     } finally {
       setIsTranslating(false);
-      
-      // Controllo finale di sicurezza per garantire che il flag no-translation sia impostato
-      document.body.setAttribute('data-no-translation', 'true');
     }
   };
 

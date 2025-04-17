@@ -25,9 +25,20 @@ const Home: React.FC = () => {
   useEffect(() => {
     const initializeHomePage = async () => {
       try {
+        // Disable no-translation flag temporarily to ensure translations work
+        const wasNoTranslation = document.body.hasAttribute('data-no-translation');
+        if (wasNoTranslation) {
+          document.body.removeAttribute('data-no-translation');
+        }
+        
         // Ensure the home page is saved and translated in all languages
         await saveHomePageToDatabase();
         toast.success("Pagine Home verificate e tradotte con successo");
+        
+        // Restore no-translation flag if it was present
+        if (wasNoTranslation) {
+          document.body.setAttribute('data-no-translation', 'true');
+        }
       } catch (error) {
         console.error("Error initializing home page:", error);
         toast.error("Errore durante l'inizializzazione delle pagine Home");
@@ -43,14 +54,17 @@ const Home: React.FC = () => {
     const pathLang = pathSegments[0];
     
     if (pathLang && ['en', 'fr', 'es', 'de'].includes(pathLang)) {
+      console.log(`Setting language to ${pathLang} based on URL path`);
       setLanguage(pathLang as 'it' | 'en' | 'fr' | 'es' | 'de');
     } else if (pathSegments.length === 0 || pathSegments[0] === 'home') {
       // Root or /home path defaults to Italian
       const savedLanguage = localStorage.getItem('selectedLanguage');
       if (savedLanguage && savedLanguage !== 'it') {
         // Redirect to language-specific home page
+        console.log(`Redirecting to saved language: ${savedLanguage}`);
         navigate(`/${savedLanguage}`);
       } else {
+        console.log('Setting default language to Italian');
         setLanguage('it');
       }
     }
@@ -61,6 +75,7 @@ const Home: React.FC = () => {
       const savedLanguage = localStorage.getItem('selectedLanguage');
       if (savedLanguage) {
         // Use previously saved language preference if available
+        console.log(`Using saved language preference: ${savedLanguage}`);
         setLanguage(savedLanguage as 'it' | 'en' | 'fr' | 'es' | 'de');
         return;
       }
@@ -79,6 +94,7 @@ const Home: React.FC = () => {
       };
       
       if (supportedLanguages[browserLang]) {
+        console.log(`Setting language to ${browserLang} based on browser language`);
         setLanguage(supportedLanguages[browserLang]);
       }
     };
@@ -95,6 +111,7 @@ const Home: React.FC = () => {
   };
 
   const handleSelectLanguage = (selectedLanguage: string) => {
+    console.log(`Language selected by user: ${selectedLanguage}`);
     setLanguage(selectedLanguage as 'it' | 'en' | 'fr' | 'es' | 'de');
     localStorage.setItem('selectedLanguage', selectedLanguage);
     

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { PageData } from "@/types/page.types";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,7 +18,10 @@ export const useAdminPages = () => {
       setIsLoading(true);
       let query = supabase.from('custom_pages').select('*');
       
+      console.log(`Fetching pages for language: ${langCode}`);
+      
       if (langCode === 'it') {
+        // For Italian, exclude paths that start with language codes
         query = query
           .not('path', 'like', '/en/%')
           .not('path', 'like', '/fr/%') 
@@ -28,6 +32,7 @@ export const useAdminPages = () => {
           .not('path', 'eq', '/es')
           .not('path', 'eq', '/de');
       } else {
+        // For other languages, get exact language root or paths with the language prefix
         query = query.or(`path.eq./${langCode},path.like./${langCode}/%`);
       }
 
@@ -38,9 +43,11 @@ export const useAdminPages = () => {
       if (data) {
         const formattedPages = data.map(page => formatPageData(page));
         console.log(`Fetched ${formattedPages.length} pages for language: ${langCode}`);
+        console.log("First page sample:", formattedPages[0]?.title, formattedPages[0]?.path);
         setPages(formattedPages);
       }
 
+      // Get all parent pages for dropdown selections
       const { data: allData } = await supabase
         .from('custom_pages')
         .select('*')
