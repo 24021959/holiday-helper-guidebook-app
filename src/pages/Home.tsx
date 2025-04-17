@@ -97,14 +97,18 @@ const Home: React.FC = () => {
         showAdminButton={true}
       />
       
-      {/* Hero Image - Full width, controlled height */}
-      <div className="w-full h-[500px] relative overflow-hidden">
-        <img 
-          src={heroImage} 
-          alt="Hero" 
-          className="w-full h-full object-cover"
-          onError={() => setHeroImage('/placeholder.svg')}
-        />
+      {/* Hero Image - Responsive with appropriate aspect ratio */}
+      <div className="w-full relative">
+        <div className="container mx-auto px-4">
+          <div className="aspect-w-16 aspect-h-9 overflow-hidden rounded-lg my-4">
+            <img 
+              src={heroImage} 
+              alt="Hero" 
+              className="w-full h-full object-contain bg-gray-50"
+              onError={() => setHeroImage('/placeholder.svg')}
+            />
+          </div>
+        </div>
       </div>
       
       {/* Content Area */}
@@ -197,3 +201,4 @@ const FlagItem = ({ code, currentLanguage, onClick }: { code: string, currentLan
 };
 
 export default Home;
+
