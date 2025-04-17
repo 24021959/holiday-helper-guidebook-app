@@ -1,14 +1,13 @@
-import React, { useEffect, useState } from "react";
+
+import React, { useState } from "react";
 import IconNav from "./IconNav";
 import LoadingView from "./LoadingView";
 import ErrorView from "./ErrorView";
 import { useMenuIcons } from "@/hooks/menu/useMenuIcons";
 import { toast } from "sonner";
-import { useTranslation } from "@/context/TranslationContext";
 import EmptyMenuState from "./menu/EmptyMenuState";
 import AdminHelpBox from "./menu/AdminHelpBox";
 import { Button } from "./ui/button";
-import { IconData } from "@/hooks/menu/types";
 
 interface FilteredIconNavProps {
   parentPath: string | null;
@@ -21,62 +20,11 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
   onRefresh, 
   refreshTrigger = 0 
 }) => {
-  const { language } = useTranslation();
-  const { icons: allIcons, isLoading, error, refreshIcons } = useMenuIcons({ 
+  const { icons, isLoading, error, refreshIcons } = useMenuIcons({ 
     parentPath, 
     refreshTrigger 
   });
   const [localError, setLocalError] = useState<string | null>(null);
-
-  useEffect(() => {
-    console.log("FilteredIconNav - Render with icons:", allIcons.length, "parentPath:", parentPath);
-    console.log("FilteredIconNav - Current language:", language);
-    
-    if (allIcons.length === 0 && !isLoading && !error) {
-      console.log("FilteredIconNav - No icons found for parentPath:", parentPath, "and language:", language);
-      
-      if (language !== 'it') {
-        setLocalError(`Nessuna pagina trovata nel menu ${language.toUpperCase()}. Prova a tradurre il menu dalla sezione amministrativa.`);
-      } else {
-        setLocalError(null);
-      }
-    } else {
-      setLocalError(null);
-      
-      if (parentPath) {
-        console.log("FilteredIconNav - Showing subpages for:", parentPath);
-      }
-    }
-  }, [allIcons, parentPath, language, isLoading, error]);
-
-  // Filter icons based on current language
-  const icons = React.useMemo(() => {
-    if (language === 'it') {
-      // Per l'italiano, filtra solo le pagine italiane (path che non iniziano con /en/, /fr/, etc.)
-      // inoltre escludi le pagine root di altre lingue come /en, /fr, etc.
-      return allIcons.filter(icon => {
-        const path = icon.path || '';
-        // Escludiamo sia i percorsi /lingua/ che /lingua
-        return !path.match(/^\/(en|fr|es|de)(\/|$)/);
-      });
-    } else {
-      // Per altre lingue, mostra solo percorsi con il prefisso della lingua corrente
-      // più specificamente, solo quelli che iniziano con /lingua/ o sono esattamente /lingua
-      return allIcons.filter(icon => {
-        const path = icon.path || '';
-        return path === `/${language}` || path.startsWith(`/${language}/`);
-      });
-    }
-  }, [allIcons, language]);
-
-  useEffect(() => {
-    console.log("FilteredIconNav - All icons before filtering:", allIcons.length);
-    console.log("FilteredIconNav - Icons after filtering:", icons.length);
-    
-    if (icons.length > 0) {
-      console.log("FilteredIconNav - Filtered icon paths:", icons.map(i => i.path).join(', '));
-    }
-  }, [allIcons, icons]);
 
   const handleRefresh = () => {
     setLocalError(null);
@@ -84,16 +32,12 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
       onRefresh();
     } else {
       refreshIcons();
-      toast.info("Refreshing menu...");
+      toast.info("Aggiornamento menu...");
     }
   };
 
-  const handleSwitchToItalian = () => {
-    window.location.href = '/menu';
-  };
-
   if (isLoading) {
-    return <LoadingView message="Loading menu..." />;
+    return <LoadingView message="Caricamento menu..." />;
   }
 
   if (error) {
@@ -101,17 +45,6 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
       <ErrorView 
         message={error}
         onRefresh={handleRefresh}
-      />
-    );
-  }
-
-  if (localError) {
-    return (
-      <EmptyMenuState
-        message={localError}
-        onRefresh={handleRefresh}
-        onSwitchToItalian={handleSwitchToItalian}
-        showItalianSwitch={language !== 'it'}
       />
     );
   }
