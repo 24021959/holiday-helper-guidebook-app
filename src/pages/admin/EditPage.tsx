@@ -6,16 +6,45 @@ import { toast } from "sonner";
 import { useAdminPages } from "@/hooks/admin/useAdminPages";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { EditForm } from "@/components/admin/form/EditForm";
-import { PageFormValues } from "@/types/form.types";
-import { ImageItem } from "@/types/image.types";
+import { FormProvider, useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form } from "@/components/ui/form";
+import { Editor } from "@/components/editor/Editor";
+import ImageUploader from "@/components/ImageUploader";
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+
+// Schema semplificato per il form
+const formSchema = z.object({
+  title: z.string().min(1, "Il titolo è obbligatorio"),
+  content: z.string().optional(),
+});
 
 const EditPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { pageToEdit } = location.state || {};
   const [selectedPage, setSelectedPage] = useState<PageData | null>(pageToEdit || null);
-  const { parentPages, isLoading } = useAdminPages();
+  const { isLoading } = useAdminPages();
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Inizializza il form
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: selectedPage?.title || "",
+      content: selectedPage?.content || "",
+    },
+  });
 
   useEffect(() => {
     if (!selectedPage && !pageToEdit) {
@@ -24,29 +53,56 @@ const EditPage = () => {
     } else if (pageToEdit && !selectedPage) {
       setSelectedPage(pageToEdit);
     }
+
+    // Imposta l'immagine iniziale
+    if (pageToEdit?.imageUrl) {
+      setUploadedImage(pageToEdit.imageUrl);
+    }
   }, [selectedPage, pageToEdit, navigate]);
 
-  const handlePageUpdated = (pages: PageData[]) => {
-    toast.success("Pagina aggiornata con successo");
-    navigate("/admin/manage");
-  };
+  useEffect(() => {
+    // Aggiorna i valori del form quando cambia la pagina selezionata
+    if (selectedPage) {
+      form.reset({
+        title: selectedPage.title,
+        content: selectedPage.content,
+      });
+    }
+  }, [selectedPage, form]);
 
   const handleBackClick = () => {
     navigate("/admin/manage");
   };
 
-  const handleTranslateAndCreate = async (
-    values: PageFormValues,
-    imageUrl: string | null,
-    pageImages: ImageItem[],
-    onSuccess: () => void
-  ) => {
-    // Here you would implement the actual functionality to save changes
-    // This is just a placeholder that simulates a successful update
-    setTimeout(() => {
-      onSuccess();
-      handlePageUpdated([]);
-    }, 1000);
+  const handleImageUpdate = (imageUrl: string) => {
+    setUploadedImage(imageUrl);
+  };
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!selectedPage) return;
+
+    setIsSubmitting(true);
+    try {
+      // Qui salviamo solo le modifiche essenziali: titolo, contenuto e immagine
+      // Manteniamo tutti gli altri parametri della pagina originale
+      const updatedPage = {
+        ...selectedPage,
+        title: values.title,
+        content: values.content || "",
+        imageUrl: uploadedImage,
+      };
+
+      // Simuliamo il salvataggio
+      setTimeout(() => {
+        toast.success("Modifiche salvate con successo");
+        navigate("/admin/manage");
+        setIsSubmitting(false);
+      }, 800);
+    } catch (error) {
+      console.error("Errore durante il salvataggio:", error);
+      toast.error("Errore durante il salvataggio delle modifiche");
+      setIsSubmitting(false);
+    }
   };
 
   if (isLoading) {
@@ -88,12 +144,72 @@ const EditPage = () => {
       </div>
 
       <div className="container max-w-4xl mx-auto">
-        <EditForm
-          selectedPage={selectedPage}
-          parentPages={parentPages}
-          onPageUpdated={handlePageUpdated}
-          handleTranslateAndCreate={handleTranslateAndCreate}
-        />
+        <Card className="border-emerald-100">
+          <CardContent className="pt-6">
+            <FormProvider {...form}>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Titolo</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Titolo della pagina" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="space-y-2">
+                    <FormLabel>Immagine Principale</FormLabel>
+                    <div className="space-y-4">
+                      {uploadedImage && (
+                        <div className="mb-2">
+                          <img 
+                            src={uploadedImage} 
+                            alt="Anteprima" 
+                            className="w-full h-auto object-contain max-h-[300px] rounded-md"
+                          />
+                        </div>
+                      )}
+                      <ImageUploader onImageUpload={handleImageUpdate} />
+                    </div>
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="content"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contenuto</FormLabel>
+                        <FormControl>
+                          <Editor
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="pt-4 border-t flex justify-end space-x-4">
+                    <Button 
+                      type="submit" 
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? "Salvataggio..." : "Salva modifiche"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </FormProvider>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
