@@ -19,6 +19,7 @@ const EditPage = () => {
     isSubmitting,
     hasUnsavedChanges,
     editorContent,
+    pageLanguage,
     handleBackClick,
     handleImageUpdate,
     handleTitleChange,
@@ -45,6 +46,7 @@ const EditPage = () => {
           uploadedImage={uploadedImage}
           hasUnsavedChanges={hasUnsavedChanges}
           isSubmitting={isSubmitting}
+          pageLanguage={pageLanguage}
           onTitleChange={handleTitleChange}
           onEditorStateChange={handleEditorStateChange}
           onImageUpdate={handleImageUpdate}

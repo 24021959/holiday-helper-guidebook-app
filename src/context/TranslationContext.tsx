@@ -17,6 +17,11 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const { translateSequential } = useSequentialTranslation(translatePage);
 
+  // Add empty implementation for translateAndCloneMenu to satisfy the type
+  const translateAndCloneMenu = async (targetLang: any, progressCallback?: any) => {
+    console.log("translateAndCloneMenu not implemented yet");
+  };
+
   const value = {
     language,
     setLanguage,
@@ -24,6 +29,7 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     translateBulk,
     translatePage,
     translateSequential,
+    translateAndCloneMenu, // Add this to satisfy the type
   };
 
   return (

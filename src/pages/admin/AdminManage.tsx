@@ -83,12 +83,14 @@ const AdminManage = () => {
   const handleView = (page: PageData) => {
     const isHomePath = page.path === "/" || page.path === "/home" || page.path.endsWith("/home");
     
-    // For home page, open the actual root URL with the language prefix if needed
+    // For home page, open the actual path with the language prefix
     if (isHomePath) {
-      const lang = page.path.match(/^\/([a-z]{2})\//);
-      const url = lang ? `/${lang[1]}` : "/";
+      // Ensure we're using the correct language path
+      const pageLanguage = page.path.match(/^\/([a-z]{2})\//);
+      const url = pageLanguage ? `/${pageLanguage[1]}` : "/";
       window.open(url, '_blank');
     } else {
+      // For other pages, use the exact path as is in the preview
       window.open(`/preview${page.path}`, '_blank');
     }
   };

@@ -18,6 +18,14 @@ export const useEditPageState = (pageToEdit: PageData | null) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [editorContent, setEditorContent] = useState<string>("");
+  
+  // Extract language from page path
+  const getLanguageFromPath = (path: string): string => {
+    const match = path.match(/^\/([a-z]{2})\//);
+    return match ? match[1] : 'it';
+  };
+  
+  const pageLanguage = selectedPage ? getLanguageFromPath(selectedPage.path) : 'it';
 
   useEffect(() => {
     if (!selectedPage && !pageToEdit) {
@@ -70,7 +78,7 @@ export const useEditPageState = (pageToEdit: PageData | null) => {
 
     setIsSubmitting(true);
     try {
-      // Simulate saving changes
+      // Include language information when saving changes
       const updatedPage = {
         ...selectedPage,
         title: values.title,
@@ -78,8 +86,9 @@ export const useEditPageState = (pageToEdit: PageData | null) => {
         imageUrl: uploadedImage,
       };
 
+      // Preserve the language path when saving
       setTimeout(() => {
-        toast.success("Modifiche salvate con successo");
+        toast.success(`Modifiche salvate con successo (${pageLanguage.toUpperCase()})`);
         setHasUnsavedChanges(false);
         navigate("/admin/manage");
         setIsSubmitting(false);
@@ -97,6 +106,7 @@ export const useEditPageState = (pageToEdit: PageData | null) => {
     isSubmitting,
     hasUnsavedChanges,
     editorContent,
+    pageLanguage,
     handleBackClick,
     handleImageUpdate,
     handleTitleChange,

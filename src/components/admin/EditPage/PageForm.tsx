@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Save } from "lucide-react";
 import ImageUploader from "@/components/ImageUploader";
 import { Editor, EditorHandle } from "@/components/editor/Editor";
+import { Badge } from "@/components/ui/badge";
 
 // Schema for the form
 const formSchema = z.object({
@@ -23,6 +24,7 @@ interface PageFormProps {
   uploadedImage: string | null;
   hasUnsavedChanges: boolean;
   isSubmitting: boolean;
+  pageLanguage?: string;
   onTitleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onEditorStateChange: (content: string) => void;
   onImageUpdate: (imageUrl: string) => void;
@@ -35,6 +37,7 @@ export const PageForm: React.FC<PageFormProps> = ({
   uploadedImage,
   hasUnsavedChanges,
   isSubmitting,
+  pageLanguage = 'it',
   onTitleChange,
   onEditorStateChange,
   onImageUpdate,
@@ -54,9 +57,29 @@ export const PageForm: React.FC<PageFormProps> = ({
     onSubmit(values);
   };
 
+  // Map language codes to names
+  const languageNames: Record<string, string> = {
+    it: 'Italiano',
+    en: 'English',
+    fr: 'Français',
+    es: 'Español',
+    de: 'Deutsch'
+  };
+
   return (
     <Card className="border-emerald-100">
       <CardContent className="pt-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">
+            Modifica Pagina
+          </h2>
+          {pageLanguage && (
+            <Badge className={`px-3 py-1 ${pageLanguage === 'it' ? 'bg-blue-500' : 'bg-emerald-500'}`}>
+              {languageNames[pageLanguage] || pageLanguage.toUpperCase()}
+            </Badge>
+          )}
+        </div>
+        
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
             <FormField
