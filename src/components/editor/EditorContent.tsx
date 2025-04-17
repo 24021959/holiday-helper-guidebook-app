@@ -51,7 +51,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
 
   // Helper function to preserve original HTML and JSON when saving changes
   const preserveFormattingOnChange = (newText: string) => {
-    // Keep original HTML tags
+    // Keep original HTML tags and image JSON objects when the user edits the text
     let updatedContent = content;
     
     // Extract all HTML tags and JSON from original content to preserve them
