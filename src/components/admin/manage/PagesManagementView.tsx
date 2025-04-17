@@ -3,13 +3,12 @@ import React, { useState } from "react";
 import { PageData } from "@/types/page.types";
 import { PagesList } from "./PagesList";
 import { DeletePageDialog } from "./DeletePageDialog";
-import { usePageTranslation } from "@/hooks/page/usePageTranslation";
 import { toast } from "sonner";
 
 interface PagesManagementViewProps {
   pages: PageData[];
   isDeleting: boolean;
-  onDeletePage: (page: PageData) => void;
+  onDeletePage: (page: PageData) => Promise<void>;
   onViewPage: (page: PageData) => void;
   onEditPage: (page: PageData) => void;
 }
@@ -32,11 +31,12 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
   return (
     <>
       <div className="mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Gestione Pagine</h2>
+        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Gestione Pagine in Italiano</h2>
       </div>
 
       <PagesList 
         pages={pages}
+        currentLanguage="it"
         onView={onViewPage}
         onDelete={handleDeleteClick}
         onEdit={onEditPage}
@@ -48,9 +48,9 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
         onOpenChange={setShowDeleteDialog}
         page={deletingPage}
         isDeleting={isDeleting}
-        onConfirm={() => {
+        onConfirm={async () => {
           if (deletingPage) {
-            onDeletePage(deletingPage);
+            await onDeletePage(deletingPage);
             setShowDeleteDialog(false);
             setDeletingPage(null);
           }

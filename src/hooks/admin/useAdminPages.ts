@@ -9,47 +9,31 @@ export const useAdminPages = () => {
   const [pages, setPages] = useState<PageData[]>([]);
   const [parentPages, setParentPages] = useState<PageData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentLanguage, setCurrentLanguage] = useState('it');
   const [isDeleting, setIsDeleting] = useState(false);
   const { deletePageAndTranslations } = usePageDeletion();
 
-  const fetchPages = async (langCode: string) => {
+  const fetchPages = async () => {
     try {
       setIsLoading(true);
-      let query = supabase.from('custom_pages').select('*');
       
-      console.log(`Fetching pages for language: ${langCode}`);
-      
-      if (langCode === 'it') {
-        // Per l'italiano, escludiamo tutti i percorsi che iniziano con codici lingua
-        // o che sono esattamente un codice lingua
-        query = query
-          .not('path', 'like', '/en/%')
-          .not('path', 'like', '/fr/%') 
-          .not('path', 'like', '/es/%')
-          .not('path', 'like', '/de/%')
-          .not('path', 'eq', '/en')
-          .not('path', 'eq', '/fr')
-          .not('path', 'eq', '/es')
-          .not('path', 'eq', '/de');
-      } else {
-        // Per altre lingue, ottieni solo pagine che iniziano con il codice lingua
-        // o che sono esattamente quel codice lingua
-        query = query.or(`path.eq./${langCode},path.like./${langCode}/%`);
-      }
-
-      const { data, error } = await query.order('created_at', { ascending: false });
+      // Fetch only Italian pages (excluding pages with language prefixes)
+      const { data, error } = await supabase
+        .from('custom_pages')
+        .select('*')
+        .not('path', 'like', '/en/%')
+        .not('path', 'like', '/fr/%')
+        .not('path', 'like', '/es/%')
+        .not('path', 'like', '/de/%')
+        .not('path', 'eq', '/en')
+        .not('path', 'eq', '/fr')
+        .not('path', 'eq', '/es')
+        .not('path', 'eq', '/de')
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
       if (data) {
         const formattedPages = data.map(page => formatPageData(page));
-        console.log(`Fetched ${formattedPages.length} pages for language: ${langCode}`);
-        if (formattedPages.length > 0) {
-          console.log("First page sample:", formattedPages[0]?.title, formattedPages[0]?.path);
-        } else {
-          console.log("No pages found for language:", langCode);
-        }
         setPages(formattedPages);
       }
 
@@ -121,24 +105,17 @@ export const useAdminPages = () => {
   };
 
   useEffect(() => {
-    fetchPages(currentLanguage);
-  }, [currentLanguage]);
+    fetchPages();
+  }, []);
 
   const confirmDeletePage = async (pageToDelete: PageData) => {
     if (!pageToDelete) return;
     
     try {
       setIsDeleting(true);
-      const isItalianPage = !pageToDelete.path.match(/^\/[a-z]{2}($|\/)/);
-      
       await deletePageAndTranslations(pageToDelete.path);
-      await fetchPages(currentLanguage);
-      
-      if (isItalianPage) {
-        toast.success("Pagina italiana e tutte le sue traduzioni eliminate con successo");
-      } else {
-        toast.success("Pagina tradotta eliminata con successo");
-      }
+      await fetchPages();
+      toast.success("Pagina eliminata con successo");
     } catch (error) {
       console.error("Error in confirmDelete:", error);
       toast.error("Errore nell'eliminazione della pagina");
@@ -151,8 +128,6 @@ export const useAdminPages = () => {
     pages,
     parentPages,
     isLoading,
-    currentLanguage,
-    setCurrentLanguage,
     isDeleting,
     fetchPages,
     confirmDeletePage
