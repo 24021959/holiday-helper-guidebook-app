@@ -7,6 +7,7 @@ import LoadingView from "@/components/LoadingView";
 import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
 import { Link } from "react-router-dom";
+import FilteredIconNav from "@/components/FilteredIconNav";
 
 const Menu: React.FC = () => {
   const { headerSettings, loading, error } = useHeaderSettings();
@@ -16,7 +17,7 @@ const Menu: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col min-h-screen">
       <Header 
         logoUrl={headerSettings.logoUrl || undefined}
         backgroundColor={headerSettings.headerColor}
@@ -41,17 +42,9 @@ const Menu: React.FC = () => {
         </div>
       </div>
       
-      <div className="flex-1 flex flex-col items-center justify-center p-4">
-        <div className="text-center">
-          <h3 className="text-xl font-bold text-gray-800 mb-3">Menu</h3>
-          <p className="text-gray-600 mb-6">
-            Questa è la pagina del menu. Il contenuto verrà caricato qui.
-          </p>
-          <Link to="/home">
-            <Button>Torna alla Home</Button>
-          </Link>
-        </div>
-      </div>
+      <main className="flex-1 container mx-auto p-4">
+        <FilteredIconNav parentPath={null} />
+      </main>
       
       <Footer />
     </div>
