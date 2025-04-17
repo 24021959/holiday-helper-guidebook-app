@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext } from 'react';
 import { Language } from '@/types/translation.types';
 
@@ -8,6 +9,7 @@ type TranslationContextType = {
   translateBulk: (texts: string[]) => Promise<string[]>;
   translatePage: (pageContent: string, pageTitle: string) => Promise<{ title: string; content: string; }>;
   translateSequential: (pageContent: string, pageTitle: string, targetLangs: Language[]) => Promise<Record<Language, { title: string; content: string; }>>;
+  translateAndCloneMenu: (targetLang: Language, progressCallback?: (completed: number, currentPage?: string) => void) => Promise<void>;
   t: (text: string) => string;
 };
 
@@ -24,6 +26,7 @@ const defaultContext: TranslationContextType = {
     es: { title, content },
     de: { title, content }
   }),
+  translateAndCloneMenu: async () => {},
   t: (text: string) => text,
 };
 
@@ -55,8 +58,15 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return { it: { title: pageTitle, content: pageContent } };
   };
 
-  const translateAndCloneMenu = async () => {
+  const translateAndCloneMenu = async (
+    targetLang: Language, 
+    progressCallback?: (completed: number, currentPage?: string) => void
+  ) => {
     console.log("Funzione non disponibile nella versione solo italiana");
+  };
+
+  const t = (text: string): string => {
+    return text;
   };
 
   const value = {
@@ -67,6 +77,7 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     translatePage,
     translateSequential,
     translateAndCloneMenu,
+    t
   };
 
   return (
