@@ -21,6 +21,7 @@ const Home: React.FC = () => {
   
   // Automatically save the home page when the component mounts
   useEffect(() => {
+    // Ensure the home page is saved in all languages
     saveHomePageToDatabase();
   }, []);
 
