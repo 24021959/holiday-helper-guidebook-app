@@ -48,7 +48,7 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
     setShowTranslateDialog(true);
   };
 
-  // Correggo la funzione per restituire una Promise
+  // Correzione: Modificata la funzione per restituire una Promise<void>
   const confirmTranslation = async (): Promise<void> => {
     if (!translatingPage) return Promise.resolve();
     
@@ -90,7 +90,7 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
       }
       
       setShowTranslateDialog(false);
-      return Promise.resolve(); // Aggiungo un return esplicito
+      return Promise.resolve();
     } catch (error) {
       console.error("Errore durante la traduzione:", error);
       toast.error("Si è verificato un errore durante la traduzione");
