@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -11,7 +10,6 @@ import LanguageFlags from '@/components/home/LanguageFlags';
 import HeroImage from '@/components/home/HeroImage';
 import ContentSection from '@/components/home/ContentSection';
 import ErrorDisplay from '@/components/home/ErrorDisplay';
-import { toast } from "sonner";
 
 const Home: React.FC = () => {
   const { headerSettings, loading, error, refreshHeaderSettings } = useHeaderSettings();
@@ -19,7 +17,7 @@ const Home: React.FC = () => {
   const { language, setLanguage } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { saveHomePageToDatabase, isSaving } = useHomePageSaver();
+  const { isSaving } = useHomePageSaver();
   
   // Rilevamento lingua dall'URL e impostazione del contesto
   useEffect(() => {
@@ -97,20 +95,6 @@ const Home: React.FC = () => {
     }
   };
 
-  const handleForceSaveTranslations = async () => {
-    try {
-      toast.info("Forzando il salvataggio delle traduzioni...");
-      await saveHomePageToDatabase(true); // Passa true per mostrare i toast
-      toast.success("Traduzioni della Home page forzate con successo");
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
-    } catch (error) {
-      console.error("Error forcing translations:", error);
-      toast.error("Errore durante il salvataggio forzato delle traduzioni");
-    }
-  };
-
   if (loading || isSaving) {
     return <LoadingView message="Caricamento..." />;
   }
@@ -121,10 +105,8 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Language Flags at the top */}
       <LanguageFlags currentLanguage={language} onSelectLanguage={handleSelectLanguage} />
       
-      {/* Header with settings from database */}
       <Header 
         backgroundColor={headerSettings.headerColor || "bg-white"}
         logoUrl={headerSettings.logoUrl || undefined}
@@ -132,26 +114,9 @@ const Home: React.FC = () => {
         showAdminButton={true}
       />
       
-      {/* Hero Image - Responsive with appropriate aspect ratio */}
       <HeroImage imageUrl={heroImage} altText="La nostra struttura" />
       
-      {/* Content Area */}
       <ContentSection onExploreMenu={handleGoToMenu} />
-      
-      {/* Debug button - only in development */}
-      {process.env.NODE_ENV !== 'production' && (
-        <div className="bg-amber-50 border-t border-amber-200 p-3">
-          <div className="max-w-lg mx-auto flex flex-col gap-2">
-            <p className="text-amber-800 text-sm">Strumenti di debug:</p>
-            <button 
-              onClick={handleForceSaveTranslations}
-              className="bg-amber-600 hover:bg-amber-700 text-white py-2 px-4 rounded text-sm"
-            >
-              Forza salvataggio traduzioni Home
-            </button>
-          </div>
-        </div>
-      )}
       
       <Footer />
     </div>
