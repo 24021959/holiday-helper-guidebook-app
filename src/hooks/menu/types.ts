@@ -1,4 +1,3 @@
-
 export interface IconData {
   id: string;
   path: string;
@@ -14,4 +13,15 @@ export interface IconData {
 export interface MenuIconsProps {
   parentPath: string | null;
   refreshTrigger?: number;
+}
+
+export interface LanguageStats {
+  totalPages: number;
+  translatedPages: number;
+}
+
+export interface TranslationProgress {
+  total: number;
+  completed: number;
+  currentPage?: string;
 }

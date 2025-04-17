@@ -9,46 +9,13 @@ import { Trash2, AlertTriangle } from "lucide-react";
 import { usePageDeletion } from "@/hooks/page/usePageDeletion";
 import { useNavigate } from "react-router-dom";
 
-// Define a mapping of keywords to icons
-const keywordToIconMap: Record<string, string> = {
-  home: "Home",
-  casa: "Home",
-  info: "Info",
-  informazioni: "Info",
-  contatti: "Phone",
-  telefono: "Phone",
-  email: "Mail",
-  menu: "Menu",
-  ristorante: "Utensils",
-  cibo: "Utensils",
-  mappa: "MapPin",
-  posizione: "MapPin",
-  eventi: "Calendar",
-  gallery: "Image",
-  galleria: "Image",
-  foto: "Image",
-  servizi: "LayoutGrid",
-  attività: "Activity",
-  attivita: "Activity",
-  escursioni: "Mountain",
-  sport: "Dumbbell",
-  piscina: "Waves",
-  spiaggia: "Umbrella",
-  mare: "Ship",
-  // Default fallback
-  default: "FileText"
-};
-
 const AdminManage = () => {
   const [needsIndexCleanup, setNeedsIndexCleanup] = useState(false);
   const navigate = useNavigate();
   
   const {
     pages,
-    parentPages,
     isLoading,
-    currentLanguage,
-    setCurrentLanguage,
     isDeleting,
     fetchPages,
     confirmDeletePage
@@ -61,7 +28,6 @@ const AdminManage = () => {
       const indexPage = pages.find(p => p.path === '/');
       const homePage = pages.find(p => p.path === '/home');
       
-      // If we have both an index page (/) and a home page (/home)
       if (indexPage && homePage) {
         setNeedsIndexCleanup(true);
       } else {
@@ -74,23 +40,16 @@ const AdminManage = () => {
     const success = await deleteIndexPage();
     if (success) {
       setNeedsIndexCleanup(false);
-      // Refresh the pages list
-      await fetchPages(currentLanguage);
+      await fetchPages();
       toast.success("Pagina Index eliminata con successo. Ora /home è la pagina principale.");
     }
   };
 
   const handleView = (page: PageData) => {
-    const isHomePath = page.path === "/" || page.path === "/home" || page.path.endsWith("/home");
-    
-    // For home page, open the actual path with the language prefix
+    const isHomePath = page.path === "/" || page.path === "/home";
     if (isHomePath) {
-      // Ensure we're using the correct language path
-      const pageLanguage = page.path.match(/^\/([a-z]{2})\//);
-      const url = pageLanguage ? `/${pageLanguage[1]}` : "/";
-      window.open(url, '_blank');
+      window.open("/", '_blank');
     } else {
-      // For other pages, use the exact path as is in the preview
       window.open(`/preview${page.path}`, '_blank');
     }
   };
@@ -139,8 +98,6 @@ const AdminManage = () => {
 
       <PagesManagementView
         pages={pages}
-        currentLanguage={currentLanguage}
-        onLanguageChange={setCurrentLanguage}
         isDeleting={isDeleting}
         onDeletePage={confirmDeletePage}
         onViewPage={handleView}
