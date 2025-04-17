@@ -135,8 +135,70 @@ export const usePageDeletion = () => {
     }
   };
 
+  /**
+   * Deletes the old Index page (the one with just language selection)
+   */
+  const deleteIndexPage = async () => {
+    try {
+      setIsDeleting(true);
+      console.log("Attempting to delete the Index page");
+      
+      // Find the Index page (not the /home path)
+      const { data: indexPages, error: findError } = await supabase
+        .from('custom_pages')
+        .select('id, path')
+        .eq('path', '/');
+        
+      if (findError) {
+        console.error("Error finding Index page:", findError);
+        throw findError;
+      }
+      
+      if (indexPages && indexPages.length > 0) {
+        // Delete the Index page
+        for (const page of indexPages) {
+          console.log(`Deleting Index page with ID: ${page.id}`);
+          
+          const { error: deleteError } = await supabase
+            .from('custom_pages')
+            .delete()
+            .eq('id', page.id);
+            
+          if (deleteError) {
+            console.error("Error deleting Index page:", deleteError);
+            throw deleteError;
+          }
+        }
+        
+        // Also delete any menu icon for the Index page
+        const { error: menuError } = await supabase
+          .from('menu_icons')
+          .delete()
+          .eq('path', '/');
+          
+        if (menuError) {
+          console.error("Error deleting menu icon for Index page:", menuError);
+          // Don't throw here, just log the error and continue
+        }
+        
+        toast.success("Pagina Index eliminata con successo");
+        return true;
+      } else {
+        console.log("No Index page found to delete.");
+        return false;
+      }
+    } catch (error) {
+      console.error("Error deleting Index page:", error);
+      toast.error("Errore nell'eliminazione della pagina Index");
+      return false;
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return {
     isDeleting,
-    deletePageAndTranslations
+    deletePageAndTranslations,
+    deleteIndexPage
   };
 };

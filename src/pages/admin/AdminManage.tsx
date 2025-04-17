@@ -1,11 +1,14 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { PageData } from "@/types/page.types";
 import { useAdminPages } from "@/hooks/admin/useAdminPages";
 import { toast } from "sonner";
 import EditPageForm from "@/components/admin/EditPageForm";
 import { useRouter } from "@/lib/next-router-mock";
 import { PagesManagementView } from "@/components/admin/manage/PagesManagementView";
+import { Button } from "@/components/ui/button";
+import { Trash2, AlertTriangle } from "lucide-react";
+import { usePageDeletion } from "@/hooks/page/usePageDeletion";
 
 // Define a mapping of keywords to icons
 const keywordToIconMap: Record<string, string> = {
@@ -39,6 +42,7 @@ const keywordToIconMap: Record<string, string> = {
 
 const AdminManage = () => {
   const [editingPage, setEditingPage] = useState<PageData | null>(null);
+  const [needsIndexCleanup, setNeedsIndexCleanup] = useState(false);
   const router = useRouter();
   
   const {
@@ -51,6 +55,33 @@ const AdminManage = () => {
     fetchPages,
     confirmDeletePage
   } = useAdminPages();
+
+  const { deleteIndexPage } = usePageDeletion();
+
+  // Check if we have both / and /home pages
+  useEffect(() => {
+    if (pages && pages.length > 0) {
+      const indexPage = pages.find(p => p.path === '/');
+      const homePage = pages.find(p => p.path === '/home');
+      
+      // If we have both an index page (/) and a home page (/home)
+      if (indexPage && homePage) {
+        setNeedsIndexCleanup(true);
+      } else {
+        setNeedsIndexCleanup(false);
+      }
+    }
+  }, [pages]);
+
+  const handleDeleteIndexPage = async () => {
+    const success = await deleteIndexPage();
+    if (success) {
+      setNeedsIndexCleanup(false);
+      // Refresh the pages list
+      await fetchPages(currentLanguage);
+      toast.success("Pagina Index eliminata con successo. Ora /home è la pagina principale.");
+    }
+  };
 
   const handleView = (page: PageData) => {
     // For home page, open the actual root URL
@@ -81,6 +112,29 @@ const AdminManage = () => {
 
   return (
     <div className="p-6">
+      {needsIndexCleanup && (
+        <div className="mb-6 p-4 border border-amber-300 bg-amber-50 rounded-lg">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-medium text-amber-800">Rilevate due pagine home</h3>
+              <p className="text-amber-700 text-sm mt-1">
+                Sono state rilevate sia una pagina Index (/) che una pagina Home (/home). 
+                Si consiglia di rimuovere la vecchia pagina Index per evitare confusione.
+              </p>
+              <Button 
+                variant="outline" 
+                className="mt-3 bg-white text-amber-700 border-amber-300 hover:bg-amber-100"
+                onClick={handleDeleteIndexPage}
+              >
+                <Trash2 className="h-4 w-4 mr-2" /> 
+                Elimina pagina Index (/)
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {editingPage ? (
         <EditPageForm 
           selectedPage={editingPage}
