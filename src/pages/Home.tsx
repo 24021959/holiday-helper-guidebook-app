@@ -97,8 +97,8 @@ const Home: React.FC = () => {
         showAdminButton={true}
       />
       
-      {/* Hero Image */}
-      <div className="w-full h-64 md:h-96 bg-gray-200 relative overflow-hidden">
+      {/* Hero Image - Full width, controlled height */}
+      <div className="w-full h-[500px] relative overflow-hidden">
         <img 
           src={heroImage} 
           alt="Hero" 
