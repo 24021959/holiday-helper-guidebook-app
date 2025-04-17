@@ -35,6 +35,13 @@ export const TranslateDialog: React.FC<TranslateDialogProps> = ({
   setIsTranslatingAll,
   onConfirm,
 }) => {
+  // Set isTranslatingAll to true by default when dialog opens
+  React.useEffect(() => {
+    if (isOpen) {
+      setIsTranslatingAll(true);
+    }
+  }, [isOpen, setIsTranslatingAll]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
