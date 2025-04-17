@@ -2,12 +2,18 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import TranslatedText from '@/components/TranslatedText';
+import { toast } from 'sonner';
 
 type ContentSectionProps = {
   onExploreMenu: () => void;
 };
 
 const ContentSection: React.FC<ContentSectionProps> = ({ onExploreMenu }) => {
+  const handleExploreClick = () => {
+    toast.info("Caricamento menu...");
+    onExploreMenu();
+  };
+  
   return (
     <main className="flex-1 container mx-auto px-4 py-8">
       <div className="max-w-3xl mx-auto">
@@ -24,10 +30,9 @@ const ContentSection: React.FC<ContentSectionProps> = ({ onExploreMenu }) => {
           </p>
         </div>
         
-        {/* Menu Button */}
         <div className="flex justify-center mt-8 mb-12">
           <Button 
-            onClick={onExploreMenu} 
+            onClick={handleExploreClick} 
             className="px-8 py-6 text-lg bg-emerald-600 hover:bg-emerald-700"
           >
             <TranslatedText text="Esplora il nostro Menu" />

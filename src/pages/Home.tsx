@@ -14,7 +14,11 @@ const Home: React.FC = () => {
   const { headerSettings, loading, error, refreshHeaderSettings } = useHeaderSettings();
   const [heroImage] = useState('/lovable-uploads/6d1eebb5-61dd-4e37-99c7-4c67721ca126.png');
   const navigate = useNavigate();
-  const { isSaving } = useHomePageSaver();
+  const { isSaving, saveHomePageToDatabase } = useHomePageSaver();
+  
+  useEffect(() => {
+    saveHomePageToDatabase();
+  }, []);
   
   const handleGoToMenu = () => {
     navigate('/menu');

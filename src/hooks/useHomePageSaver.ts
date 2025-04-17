@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
 import { useHomeTranslator } from "./home/useHomeTranslator";
 import { createHomeContent, DEFAULT_HOME_IMAGE, saveHomePage, saveMenuIcon } from "@/utils/homePageUtils";
 import { Language } from "@/types/translation.types";
+import { toast } from "sonner";
 
 export const useHomePageSaver = () => {
   const [isSaving, setIsSaving] = useState(false);
@@ -13,6 +13,7 @@ export const useHomePageSaver = () => {
   const saveHomePageToDatabase = async () => {
     try {
       setIsSaving(true);
+      console.log("Iniziando il salvataggio della home page");
 
       // Check if home page exists in Italian
       const { data: existingPage } = await supabase
@@ -32,7 +33,7 @@ export const useHomePageSaver = () => {
           DEFAULT_HOME_IMAGE,
           targetLangs
         );
-        return;
+        return existingPage.id;
       }
 
       // Create Italian home page if it doesn't exist
@@ -56,9 +57,11 @@ export const useHomePageSaver = () => {
       const targetLangs: Language[] = ['en', 'fr', 'es', 'de'];
       await translateAndSaveHome(homeTitle, homeContent, DEFAULT_HOME_IMAGE, targetLangs);
       
+      console.log("Home page salvata con successo");
       return pageId;
     } catch (error) {
       console.error("Error saving home page:", error);
+      toast.error("Errore nel salvare la home page");
       return null;
     } finally {
       setIsSaving(false);
@@ -70,4 +73,3 @@ export const useHomePageSaver = () => {
     saveHomePageToDatabase
   };
 };
-
