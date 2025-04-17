@@ -48,7 +48,7 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
     setShowTranslateDialog(true);
   };
 
-  // Fix: make this function return a Promise to match the expected type
+  // Fix: make this function async to return a Promise<void>
   const confirmTranslation = async (): Promise<void> => {
     if (!translatingPage) return;
     

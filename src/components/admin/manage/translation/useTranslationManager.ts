@@ -8,29 +8,34 @@ import { LanguageStats, TranslationProgress } from "@/hooks/menu/types";
 
 export const useTranslationManager = () => {
   const { translateAndCloneMenu } = useTranslation();
+  // Fix: add 'it' property to all Language records
   const [isTranslating, setIsTranslating] = useState<Record<Language, boolean>>({
     en: false,
     fr: false,
     es: false,
-    de: false
+    de: false,
+    it: false
   });
   const [translated, setTranslated] = useState<Record<Language, boolean>>({
     en: false,
     fr: false,
     es: false,
-    de: false
+    de: false,
+    it: false
   });
   const [stats, setStats] = useState<Record<Language, LanguageStats>>({
     en: { totalPages: 0, translatedPages: 0 },
     fr: { totalPages: 0, translatedPages: 0 },
     es: { totalPages: 0, translatedPages: 0 },
-    de: { totalPages: 0, translatedPages: 0 }
+    de: { totalPages: 0, translatedPages: 0 },
+    it: { totalPages: 0, translatedPages: 0 }
   });
   const [translationProgress, setTranslationProgress] = useState<Record<Language, TranslationProgress>>({
     en: { total: 0, completed: 0 },
     fr: { total: 0, completed: 0 },
     es: { total: 0, completed: 0 },
-    de: { total: 0, completed: 0 }
+    de: { total: 0, completed: 0 },
+    it: { total: 0, completed: 0 }
   });
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
@@ -54,18 +59,22 @@ export const useTranslationManager = () => {
       
       const italianCount = italianPages?.length || 0;
       
+      // Fix: include 'it' in all records
       const newStats: Record<Language, LanguageStats> = {
         en: { totalPages: italianCount, translatedPages: 0 },
         fr: { totalPages: italianCount, translatedPages: 0 },
         es: { totalPages: italianCount, translatedPages: 0 },
-        de: { totalPages: italianCount, translatedPages: 0 }
+        de: { totalPages: italianCount, translatedPages: 0 },
+        it: { totalPages: italianCount, translatedPages: italianCount }
       };
       
+      // Fix: include 'it' in all records
       const newProgress: Record<Language, TranslationProgress> = {
         en: { total: italianCount, completed: 0 },
         fr: { total: italianCount, completed: 0 },
         es: { total: italianCount, completed: 0 },
-        de: { total: italianCount, completed: 0 }
+        de: { total: italianCount, completed: 0 },
+        it: { total: italianCount, completed: italianCount }
       };
       
       for (const lang of ['en', 'fr', 'es', 'de'] as Language[]) {
@@ -98,7 +107,7 @@ export const useTranslationManager = () => {
 
   const handleTranslateMenu = async (language: Language) => {
     try {
-      if (language === 'it' as any) {
+      if (language === 'it') {
         toast.error("Non è necessario tradurre il menu in italiano (lingua base)");
         return;
       }
