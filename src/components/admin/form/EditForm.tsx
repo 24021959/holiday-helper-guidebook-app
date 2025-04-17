@@ -47,7 +47,8 @@ export const EditForm: React.FC<EditFormProps> = ({
     initialPageType
   } = useEditFormState({
     selectedPage,
-    handleTranslateAndCreate
+    handleTranslateAndCreate,
+    onPageUpdated
   });
   
   // Initialize the form with the selected page values
@@ -77,9 +78,9 @@ export const EditForm: React.FC<EditFormProps> = ({
   }, [selectedPage, setSelectedIcon, setUploadedImage, form, initialPageType]);
 
   // Wrap the submit handler to ensure it correctly processes the form values
-  const onSubmit = form.handleSubmit((data) => {
+  const onSubmit = (data: z.infer<typeof formSchema>) => {
     handleFormSubmit(data);
-  });
+  };
 
   return (
     <div>
@@ -92,7 +93,7 @@ export const EditForm: React.FC<EditFormProps> = ({
       
       <FormProvider {...form}>
         <Form {...form}>
-          <form onSubmit={onSubmit} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <EditFormTypeSection 
               pageType={pageType}
               setPageType={setPageType}

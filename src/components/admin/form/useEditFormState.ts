@@ -13,11 +13,13 @@ interface UseEditFormStateProps {
     pageImages: ImageItem[], 
     onSuccess: () => void
   ) => Promise<void>;
+  onPageUpdated?: (pages: PageData[]) => void;
 }
 
 export const useEditFormState = ({ 
   selectedPage, 
-  handleTranslateAndCreate 
+  handleTranslateAndCreate,
+  onPageUpdated
 }: UseEditFormStateProps) => {
   const [currentTab, setCurrentTab] = useState<string>("content");
   const [isTranslating, setIsTranslating] = useState(false);
@@ -63,6 +65,9 @@ export const useEditFormState = ({
         pageImages,
         () => {
           toast.success("Modifiche salvate con successo");
+          if (onPageUpdated) {
+            onPageUpdated([]);
+          }
         }
       );
     } catch (error) {

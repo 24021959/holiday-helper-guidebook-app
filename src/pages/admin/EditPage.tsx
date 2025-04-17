@@ -74,22 +74,6 @@ const EditPage = () => {
     );
   }
 
-  // Map of keywords to icons, consistent with the admin section
-  const keywordToIconMap = {
-    home: "Home",
-    casa: "Home",
-    info: "Info",
-    contatti: "Phone",
-    telefono: "Phone",
-    menu: "Menu",
-    ristorante: "Utensils",
-    mappa: "Map",
-    eventi: "Calendar",
-    galleria: "Image",
-    servizi: "LayoutGrid",
-    default: "FileText",
-  };
-
   return (
     <div className="p-6">
       <div className="mb-6">
