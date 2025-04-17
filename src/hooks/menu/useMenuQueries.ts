@@ -4,86 +4,128 @@ import { Language } from "@/types/translation.types";
 
 export const useMenuQueries = () => {
   const fetchRootPagesForLanguage = async (language: Language) => {
-    if (language === 'it') {
-      const { data: rootPages, error: rootError } = await supabase
-        .from('custom_pages')
-        .select('id, title, path, icon, parent_path, published')
-        .is('parent_path', null)
-        .eq('published', true)
-        .not('path', 'like', '/en/%')
-        .not('path', 'like', '/fr/%')
-        .not('path', 'like', '/es/%')
-        .not('path', 'like', '/de/%');
-        
-      return { data: rootPages, error: rootError };
-    } else {
-      // For other languages, load only pages with language prefix
-      const { data: langPages, error: langError } = await supabase
-        .from('custom_pages')
-        .select('id, title, path, icon, parent_path, published')
-        .is('parent_path', null)
-        .eq('published', true)
-        .like('path', `/${language}/%`);
-        
-      return { data: langPages, error: langError };
+    try {
+      console.log(`Fetching root pages for language: ${language}`);
+      
+      if (language === 'it') {
+        const { data: rootPages, error: rootError } = await supabase
+          .from('custom_pages')
+          .select('id, title, path, icon, parent_path, published')
+          .is('parent_path', null)
+          .eq('published', true)
+          .not('path', 'like', '/en/%')
+          .not('path', 'like', '/fr/%')
+          .not('path', 'like', '/es/%')
+          .not('path', 'like', '/de/%');
+          
+        console.log('Root pages for IT:', rootPages);
+        return { data: rootPages, error: rootError };
+      } else {
+        // For other languages, load only pages with language prefix
+        const { data: langPages, error: langError } = await supabase
+          .from('custom_pages')
+          .select('id, title, path, icon, parent_path, published')
+          .is('parent_path', null)
+          .eq('published', true)
+          .like('path', `/${language}/%`);
+          
+        console.log(`Pages for ${language}:`, langPages);
+        return { data: langPages, error: langError };
+      }
+    } catch (err) {
+      console.error('Error fetching root pages:', err);
+      return { data: null, error: err };
     }
   };
 
   const fetchHomePageForLanguage = async (language: Language) => {
-    const path = language === 'it' ? '/home' : `/${language}`;
-    const { data: homePage } = await supabase
-      .from('custom_pages')
-      .select('id, title, path, icon, parent_path, published')
-      .eq('path', path)
-      .eq('published', true)
-      .maybeSingle();
+    try {
+      let path = language === 'it' ? '/home' : `/${language}`;
+      console.log(`Fetching home page with path: ${path}`);
       
-    return homePage;
+      const { data: homePage, error } = await supabase
+        .from('custom_pages')
+        .select('id, title, path, icon, parent_path, published')
+        .eq('path', path)
+        .eq('published', true)
+        .maybeSingle();
+        
+      console.log('Home page result:', homePage, error);
+      return homePage;
+    } catch (err) {
+      console.error('Error fetching home page:', err);
+      return null;
+    }
   };
 
   const fetchSubPages = async (parentPath: string) => {
-    const { data: subPages, error: subPagesError } = await supabase
-      .from('custom_pages')
-      .select('id, title, path, icon, parent_path, published')
-      .ilike('parent_path', parentPath)
-      .eq('published', true);
+    try {
+      console.log(`Fetching subpages for parent: ${parentPath}`);
       
-    return { data: subPages, error: subPagesError };
+      const { data: subPages, error: subPagesError } = await supabase
+        .from('custom_pages')
+        .select('id, title, path, icon, parent_path, published')
+        .eq('parent_path', parentPath)
+        .eq('published', true);
+        
+      console.log('Subpages result:', subPages);
+      return { data: subPages, error: subPagesError };
+    } catch (err) {
+      console.error('Error fetching subpages:', err);
+      return { data: null, error: err };
+    }
   };
 
   const fetchMenuIcons = async (parentPath: string | null, language: Language) => {
-    let query = supabase
-      .from('menu_icons')
-      .select('*')
-      .eq('published', true);
+    try {
+      console.log(`Fetching menu icons for parent: ${parentPath}, language: ${language}`);
       
-    if (parentPath !== null) {
-      query = query.eq('parent_path', parentPath);
-    } else if (language !== 'it') {
-      query = query.or(`path.eq./${language},path.like./${language}/%`);
-    } else {
-      query = query
-        .not('path', 'like', '/en/%')
-        .not('path', 'like', '/fr/%')
-        .not('path', 'like', '/es/%')
-        .not('path', 'like', '/de/%')
-        .not('path', 'eq', '/en')
-        .not('path', 'eq', '/fr')
-        .not('path', 'eq', '/es')
-        .not('path', 'eq', '/de');
+      let query = supabase
+        .from('menu_icons')
+        .select('*')
+        .eq('published', true);
+        
+      if (parentPath !== null) {
+        query = query.eq('parent_path', parentPath);
+      } else if (language !== 'it') {
+        query = query.or(`path.eq./${language},path.like./${language}/%`);
+      } else {
+        query = query
+          .not('path', 'like', '/en/%')
+          .not('path', 'like', '/fr/%')
+          .not('path', 'like', '/es/%')
+          .not('path', 'like', '/de/%')
+          .not('path', 'eq', '/en')
+          .not('path', 'eq', '/fr')
+          .not('path', 'eq', '/es')
+          .not('path', 'eq', '/de');
+      }
+      
+      const result = await query;
+      console.log('Menu icons result:', result);
+      return result;
+    } catch (err) {
+      console.error('Error fetching menu icons:', err);
+      return { data: null, error: err };
     }
-    
-    return await query;
   };
 
   const checkForChildren = async (path: string) => {
-    const { count, error: countError } = await supabase
-      .from('custom_pages')
-      .select('id', { count: 'exact', head: true })
-      .eq('parent_path', path)
-      .eq('published', true);
+    try {
+      console.log(`Checking for children of: ${path}`);
       
-    return { count, error: countError };
+      const { count, error: countError } = await supabase
+        .from('custom_pages')
+        .select('id', { count: 'exact', head: true })
+        .eq('parent_path', path)
+        .eq('published', true);
+        
+      console.log(`Children count for ${path}:`, count);
+      return { count, error: countError };
+    } catch (err) {
+      console.error('Error checking for children:', err);
+      return { count: 0, error: err };
+    }
   };
 
   return {

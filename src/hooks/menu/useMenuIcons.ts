@@ -20,6 +20,7 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: MenuIconsProps)
 
   const loadIcons = useCallback(async () => {
     try {
+      console.log(`Loading icons for: ${parentPath || 'root'}, language: ${language}`);
       setIsLoading(true);
       setError(null);
       setHasConnectionError(false);
@@ -31,49 +32,78 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: MenuIconsProps)
 
       if (parentPath === null) {
         // Load root level pages
+        console.log("Loading root level pages");
         const { data: rootPages, error: rootError } = await queries.fetchRootPagesForLanguage(language);
         
-        if (rootError) throw rootError;
+        if (rootError) {
+          console.error("Root pages error:", rootError);
+          throw rootError;
+        }
 
         if (rootPages && rootPages.length > 0) {
+          console.log(`Found ${rootPages.length} root pages`);
           pageIcons = rootPages.map(processPageData);
           
           // Check for home page
-          const hasHomePage = pageIcons.some(icon => icon.path === (language === 'it' ? '/home' : `/${language}`));
+          const hasHomePage = pageIcons.some(icon => 
+            icon.path === (language === 'it' ? '/home' : `/${language}`)
+          );
+          
+          console.log("Has home page:", hasHomePage);
           if (!hasHomePage) {
             const homePage = await queries.fetchHomePageForLanguage(language);
             if (homePage) {
+              console.log("Adding home page to icons");
               pageIcons.push(processPageData(homePage));
             }
+          }
+        } else {
+          console.log("No root pages found, trying menu icons");
+          // Try to load menu icons as fallback
+          const { data: menuIconsData, error: menuIconsError } = await queries.fetchMenuIcons(null, language);
+          
+          if (!menuIconsError && menuIconsData && menuIconsData.length > 0) {
+            console.log(`Found ${menuIconsData.length} menu icons`);
+            pageIcons = menuIconsData.map(processMenuIconData);
           }
         }
       } else {
         // Load subpages
+        console.log(`Loading subpages for: ${parentPath}`);
         const { data: subPages, error: subPagesError } = await queries.fetchSubPages(parentPath);
         
-        if (subPagesError) throw subPagesError;
+        if (subPagesError) {
+          console.error("Subpages error:", subPagesError);
+          throw subPagesError;
+        }
 
         if (subPages && subPages.length > 0) {
+          console.log(`Found ${subPages.length} subpages`);
           pageIcons = subPages.map(processPageData);
         } else {
+          console.log("No subpages found, trying menu icons");
           // Try menu icons as fallback
           const { data: menuIconsData, error: menuIconsError } = await queries.fetchMenuIcons(parentPath, language);
           
           if (!menuIconsError && menuIconsData && menuIconsData.length > 0) {
+            console.log(`Found ${menuIconsData.length} menu icons`);
             pageIcons = menuIconsData.map(processMenuIconData);
           }
         }
       }
 
       if (pageIcons.length > 0) {
+        console.log(`Processing ${pageIcons.length} icons`);
         const processedIcons = await checkParentStatus(pageIcons);
         const uniqueIcons = Array.from(
           new Map(processedIcons.map(icon => [icon.path, icon])).values()
         );
         
+        console.log(`Loaded ${uniqueIcons.length} unique icons`);
         setIcons(uniqueIcons);
         cacheIcons(cacheKey, uniqueIcons);
       } else {
+        console.log("No icons found");
         setIcons([]);
       }
     } catch (error) {
