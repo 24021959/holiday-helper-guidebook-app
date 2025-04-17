@@ -59,7 +59,7 @@ export const useEditorPreview = (content: string, images: ImageDetail[]) => {
           </figure>
         `;
         
-        formatted = formatted.replace(`[IMAGE_${index}]`, imageHtml);
+        formatted = formatted.replace(`[IMMAGINE]`, imageHtml);
       });
       
       // Convert markdown-like formatting to HTML

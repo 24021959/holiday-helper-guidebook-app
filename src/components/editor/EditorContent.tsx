@@ -1,8 +1,7 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Textarea } from "@/components/ui/textarea";
 import { ImageDetail } from '@/types/image.types';
-import TranslatedText from '@/components/TranslatedText';
 
 interface EditorContentProps {
   content: string;
@@ -40,7 +39,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
     while ((match = regex.exec(content)) !== null) {
       try {
         const imageData = JSON.parse(match[0]);
-        processed = processed.replace(match[0], `[IMAGE_${index}]`);
+        processed = processed.replace(match[0], `[IMMAGINE]`);
         index++;
       } catch (e) {
         console.error("Failed to parse image data:", e);
@@ -90,7 +89,24 @@ export const EditorContent: React.FC<EditorContentProps> = ({
           <Textarea
             ref={textareaRef}
             value={processedContent}
-            onChange={(e) => onContentChange(e.target.value)}
+            onChange={(e) => {
+              // Preserve original image markers when saving changes
+              let newContent = e.target.value;
+              const originalImages = [];
+              const regex = /\{\"type\":\"image\",.*?\}/g;
+              let match;
+              
+              while ((match = regex.exec(content)) !== null) {
+                originalImages.push(match[0]);
+              }
+              
+              // Replace [IMMAGINE] placeholders with original image data
+              originalImages.forEach((imgData, idx) => {
+                newContent = newContent.replace('[IMMAGINE]', imgData);
+              });
+              
+              onContentChange(newContent);
+            }}
             onSelect={onSelect}
             onClick={onSelect}
             className="w-full h-full min-h-[400px] resize-none border-0 focus-visible:ring-0 bg-transparent relative z-10"

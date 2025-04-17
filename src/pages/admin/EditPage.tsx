@@ -5,7 +5,7 @@ import { PageData } from "@/types/page.types";
 import { toast } from "sonner";
 import { useAdminPages } from "@/hooks/admin/useAdminPages";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,6 +29,9 @@ const EditPage = () => {
   const { isLoading } = useAdminPages();
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Strumenti di formattazione testo
+  const [selectedText, setSelectedText] = useState<{ start: number; end: number; text: string; } | null>(null);
 
   // Inizializza il form
   const form = useForm<z.infer<typeof formSchema>>({
@@ -69,6 +72,11 @@ const EditPage = () => {
 
   const handleImageUpdate = (imageUrl: string) => {
     setUploadedImage(imageUrl);
+  };
+
+  const handleTextFormat = (format: string) => {
+    // La formattazione del testo sarà gestita dall'editor stesso
+    console.log("Formato applicato:", format);
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -177,14 +185,82 @@ const EditPage = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Contenuto</FormLabel>
-                      <FormControl>
-                        <Editor
-                          value={field.value || ""}
-                          onChange={field.onChange}
-                          initialEditMode="preview"
-                          forcePreviewOnly={true}
-                        />
-                      </FormControl>
+                      <div className="border rounded-md p-2 mb-2">
+                        <div className="flex flex-wrap gap-2 py-2 border-b">
+                          <Button 
+                            type="button"
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleTextFormat('bold')}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Bold className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            type="button"
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleTextFormat('italic')}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Italic className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            type="button"
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleTextFormat('underline')}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Underline className="h-4 w-4" />
+                          </Button>
+                          <div className="h-6 border-r border-gray-300 mx-2"></div>
+                          <Button 
+                            type="button"
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleTextFormat('align-left')}
+                            className="h-8 w-8 p-0"
+                          >
+                            <AlignLeft className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            type="button"
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleTextFormat('align-center')}
+                            className="h-8 w-8 p-0"
+                          >
+                            <AlignCenter className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            type="button"
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleTextFormat('align-right')}
+                            className="h-8 w-8 p-0"
+                          >
+                            <AlignRight className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            type="button"
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleTextFormat('align-justify')}
+                            className="h-8 w-8 p-0"
+                          >
+                            <AlignJustify className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <FormControl>
+                          <Editor
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                            initialEditMode="preview"
+                            forcePreviewOnly={true}
+                          />
+                        </FormControl>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
