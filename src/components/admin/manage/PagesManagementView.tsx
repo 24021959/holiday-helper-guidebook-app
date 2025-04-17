@@ -7,15 +7,8 @@ import { PagesList } from "./PagesList";
 import { DeletePageDialog } from "./DeletePageDialog";
 import { usePageTranslation } from "@/hooks/page/usePageTranslation";
 import { toast } from "sonner";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogDescription,
-  DialogFooter
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { IndexCleanupBanner } from "./components/IndexCleanupBanner";
+import { TranslateDialog } from "./components/TranslateDialog";
 import { Language } from "@/types/translation.types";
 
 interface PagesManagementViewProps {
@@ -50,14 +43,6 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
     setShowDeleteDialog(true);
   };
 
-  const confirmDelete = async (): Promise<void> => {
-    if (deletingPage) {
-      onDeletePage(deletingPage);
-      setShowDeleteDialog(false);
-      setDeletingPage(null);
-    }
-  };
-
   const handleTranslate = (page: PageData) => {
     setTranslatingPage(page);
     setShowTranslateDialog(true);
@@ -67,7 +52,6 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
     if (!translatingPage) return;
     
     try {
-      // Se è selezionata una singola lingua
       if (!isTranslatingAll) {
         toast.info(`Avvio traduzione di "${translatingPage.title}" in ${targetLanguage.toUpperCase()}...`);
         
@@ -85,7 +69,6 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
         
         toast.success(`Pagina tradotta con successo in ${targetLanguage.toUpperCase()}`);
       } else {
-        // Se sono selezionate tutte le lingue
         const targetLanguages: Language[] = ["en", "fr", "es", "de"];
         
         toast.info(`Avvio traduzione di "${translatingPage.title}" in tutte le lingue...`);
@@ -137,79 +120,26 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
         onOpenChange={setShowDeleteDialog}
         page={deletingPage}
         isDeleting={isDeleting}
-        onConfirm={confirmDelete}
+        onConfirm={() => {
+          if (deletingPage) {
+            onDeletePage(deletingPage);
+            setShowDeleteDialog(false);
+            setDeletingPage(null);
+          }
+        }}
       />
 
-      <Dialog open={showTranslateDialog} onOpenChange={setShowTranslateDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Traduci pagina</DialogTitle>
-            <DialogDescription>
-              {isTranslatingAll 
-                ? "La pagina verrà tradotta in tutte le lingue (EN, FR, ES, DE) in sequenza" 
-                : `Scegli in quale lingua vuoi tradurre la pagina "${translatingPage?.title}"`}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex flex-col gap-3 my-4">
-            {!isTranslatingAll && (
-              <div className="grid grid-cols-2 gap-3">
-                <Button 
-                  variant={targetLanguage === "en" ? "default" : "outline"}
-                  onClick={() => setTargetLanguage("en")}
-                  className={targetLanguage === "en" ? "border-2 border-blue-600" : ""}
-                >
-                  🇬🇧 English
-                </Button>
-                <Button 
-                  variant={targetLanguage === "fr" ? "default" : "outline"}
-                  onClick={() => setTargetLanguage("fr")}
-                  className={targetLanguage === "fr" ? "border-2 border-blue-600" : ""}
-                >
-                  🇫🇷 Français
-                </Button>
-                <Button 
-                  variant={targetLanguage === "es" ? "default" : "outline"}
-                  onClick={() => setTargetLanguage("es")}
-                  className={targetLanguage === "es" ? "border-2 border-blue-600" : ""}
-                >
-                  🇪🇸 Español
-                </Button>
-                <Button 
-                  variant={targetLanguage === "de" ? "default" : "outline"}
-                  onClick={() => setTargetLanguage("de")}
-                  className={targetLanguage === "de" ? "border-2 border-blue-600" : ""}
-                >
-                  🇩🇪 Deutsch
-                </Button>
-              </div>
-            )}
-            
-            <Button 
-              variant="outline" 
-              onClick={() => setIsTranslatingAll(!isTranslatingAll)}
-              className={isTranslatingAll ? "bg-amber-100 border-amber-400 text-amber-800" : ""}
-            >
-              {isTranslatingAll 
-                ? "✅ Tradurre in tutte le lingue (sequenzialmente)" 
-                : "Tradurre in tutte le lingue (sequenzialmente)"}
-            </Button>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowTranslateDialog(false)}>
-              Annulla
-            </Button>
-            <Button 
-              onClick={confirmTranslation}
-              disabled={isTranslating}
-              className="bg-amber-600 hover:bg-amber-700"
-            >
-              {isTranslating ? "Traduzione in corso..." : "Traduci"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <TranslateDialog 
+        isOpen={showTranslateDialog}
+        onOpenChange={setShowTranslateDialog}
+        page={translatingPage}
+        isTranslating={isTranslating}
+        targetLanguage={targetLanguage}
+        setTargetLanguage={setTargetLanguage}
+        isTranslatingAll={isTranslatingAll}
+        setIsTranslatingAll={setIsTranslatingAll}
+        onConfirm={confirmTranslation}
+      />
     </>
   );
 };
