@@ -5,6 +5,8 @@ import { LanguageTabs } from "./LanguageTabs";
 import { LanguageInfoBanner } from "./LanguageInfoBanner";
 import { PagesList } from "./PagesList";
 import { DeletePageDialog } from "./DeletePageDialog";
+import { usePageTranslation } from "@/hooks/page/usePageTranslation";
+import { toast } from "sonner";
 
 interface PagesManagementViewProps {
   pages: PageData[];
@@ -27,6 +29,7 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
 }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deletingPage, setDeletingPage] = useState<PageData | null>(null);
+  const { isTranslating, translatePages } = usePageTranslation();
 
   const handleDeleteClick = (page: PageData) => {
     setDeletingPage(page);
@@ -38,6 +41,28 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
       onDeletePage(deletingPage);
       setShowDeleteDialog(false);
       setDeletingPage(null);
+    }
+  };
+
+  const handleTranslate = async (page: PageData) => {
+    try {
+      toast.info(`Avvio traduzione di "${page.title}" in tutte le lingue...`);
+      
+      await translatePages(
+        page.content,
+        page.title,
+        page.path,
+        page.imageUrl || null,
+        page.icon || "FileText",
+        page.isSubmenu ? "submenu" : (page.is_parent ? "parent" : "generic"),
+        page.parentPath || null,
+        page.pageImages || []
+      );
+      
+      toast.success("Pagina tradotta con successo in tutte le lingue");
+    } catch (error) {
+      console.error("Errore durante la traduzione:", error);
+      toast.error("Si è verificato un errore durante la traduzione");
     }
   };
 
@@ -58,7 +83,9 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
         onView={onViewPage}
         onDelete={handleDeleteClick}
         onEdit={onEditPage}
+        onTranslate={currentLanguage === 'it' ? handleTranslate : undefined}
         isDeleting={isDeleting}
+        currentLanguage={currentLanguage}
       />
 
       <DeletePageDialog 

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useTranslation } from "@/context/TranslationContext";
 import { toast } from "sonner";
 import { usePageSaving } from "./usePageSaving";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Hook per la gestione delle traduzioni delle pagine
@@ -81,6 +82,19 @@ export const usePageTranslation = () => {
           console.log(`Creating translated page: ${lang}, path: ${translatedPath}, parentPath: ${translatedParentPath || 'none'}`);
           console.log(`Translated title: "${translations[lang].title}"`);
           console.log(`Translated content (preview): "${translations[lang].content.substring(0, 50)}..."`);
+          
+          // Check if translation already exists
+          const { data: existingPage } = await supabase
+            .from('custom_pages')
+            .select('id')
+            .eq('path', translatedPath)
+            .maybeSingle();
+            
+          if (existingPage) {
+            console.log(`Updating existing translation for ${lang}`);
+          } else {
+            console.log(`Creating new translation for ${lang}`);
+          }
           
           await saveNewPage(
             translations[lang].title,
