@@ -5,7 +5,6 @@ import { PageTypeBadge } from "./PageTypeBadge";
 import { Button } from "@/components/ui/button";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 
 interface PagesListProps {
   pages: PageData[];
@@ -91,12 +90,6 @@ export const PagesList: React.FC<PagesListProps> = ({
               <div className="md:col-span-2">
                 <div className="text-sm text-gray-500 mb-1">Percorso:</div>
                 <code className="bg-gray-100 px-2 py-1 rounded text-sm">{page.path}</code>
-                {page.parentPath && (
-                  <div className="mt-2">
-                    <div className="text-sm text-gray-500 mb-1">Percorso del genitore:</div>
-                    <code className="bg-gray-100 px-2 py-1 rounded text-sm">{page.parentPath}</code>
-                  </div>
-                )}
               </div>
               <div>
                 {page.imageUrl && (
@@ -110,14 +103,6 @@ export const PagesList: React.FC<PagesListProps> = ({
                   </div>
                 )}
               </div>
-            </div>
-            <Separator className="my-4" />
-            <div className="line-clamp-3 text-sm text-gray-600">
-              {page.content ? (
-                page.content.replace(/<[^>]*>/g, ' ').substring(0, 200) + '...'
-              ) : (
-                <span className="italic text-gray-400">Nessun contenuto</span>
-              )}
             </div>
           </CardContent>
         </Card>

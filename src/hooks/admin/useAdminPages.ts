@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { PageData } from "@/types/page.types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { usePageCreation } from "../usePageCreation";
+import { usePageDeletion } from "../page/usePageDeletion";
 
 export const useAdminPages = () => {
   const [pages, setPages] = useState<PageData[]>([]);
@@ -11,7 +11,7 @@ export const useAdminPages = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [currentLanguage, setCurrentLanguage] = useState('it');
   const [isDeleting, setIsDeleting] = useState(false);
-  const { deletePageAndTranslations } = usePageCreation({ onPageCreated: setPages });
+  const { deletePageAndTranslations } = usePageDeletion();
 
   const fetchPages = async (langCode: string) => {
     try {
@@ -19,12 +19,18 @@ export const useAdminPages = () => {
       let query = supabase.from('custom_pages').select('*');
       
       if (langCode === 'it') {
+        // Per l'italiano, escludiamo i percorsi con prefissi di lingua
         query = query.not('path', 'like', '/en/%')
                      .not('path', 'like', '/fr/%')
                      .not('path', 'like', '/es/%')
                      .not('path', 'like', '/de/%');
       } else {
+        // Per altre lingue, includiamo solo i percorsi con il prefisso della lingua selezionata
         query = query.like('path', `/${langCode}/%`);
+        
+        // Aggiungiamo anche la ricerca di /langCode/home per includere la home tradotta
+        const homePathPattern = `/${langCode}/home`;
+        query = query.or(`path.eq.${homePathPattern}`);
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });

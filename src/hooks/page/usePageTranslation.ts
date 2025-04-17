@@ -46,9 +46,16 @@ export const usePageTranslation = () => {
         targetLangs
       );
       
+      // Special handling for Home page
+      const isHomePage = finalPath === "/" || finalPath === "/home";
+      
       for (const lang of targetLangs) {
         if (translations[lang]) {
-          const translatedPath = `/${lang}${finalPath}`;
+          // If this is the home page, use a special path format
+          let translatedPath = isHomePage 
+            ? `/${lang}/home` 
+            : `/${lang}${finalPath}`;
+            
           let translatedParentPath = null;
           
           if (pageType === "submenu" && parentPath) {

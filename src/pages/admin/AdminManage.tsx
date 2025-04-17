@@ -4,7 +4,6 @@ import { PageData } from "@/types/page.types";
 import { useAdminPages } from "@/hooks/admin/useAdminPages";
 import { toast } from "sonner";
 import EditPageForm from "@/components/admin/EditPageForm";
-import { useRouter } from "@/lib/next-router-mock";
 import { PagesManagementView } from "@/components/admin/manage/PagesManagementView";
 import { Button } from "@/components/ui/button";
 import { Trash2, AlertTriangle } from "lucide-react";
@@ -43,7 +42,6 @@ const keywordToIconMap: Record<string, string> = {
 const AdminManage = () => {
   const [editingPage, setEditingPage] = useState<PageData | null>(null);
   const [needsIndexCleanup, setNeedsIndexCleanup] = useState(false);
-  const router = useRouter();
   
   const {
     pages,
@@ -84,9 +82,13 @@ const AdminManage = () => {
   };
 
   const handleView = (page: PageData) => {
-    // For home page, open the actual root URL
-    if (page.path === "/" || page.path.endsWith("/home")) {
-      window.open("/", '_blank');
+    const isHomePath = page.path === "/" || page.path === "/home" || page.path.endsWith("/home");
+    
+    // For home page, open the actual root URL with the language prefix if needed
+    if (isHomePath) {
+      const lang = page.path.match(/^\/([a-z]{2})\//);
+      const url = lang ? `/${lang[1]}` : "/";
+      window.open(url, '_blank');
     } else {
       window.open(`/preview${page.path}`, '_blank');
     }
