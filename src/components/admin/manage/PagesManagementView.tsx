@@ -48,9 +48,9 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
     setShowTranslateDialog(true);
   };
 
-  // Fix: make this function async to return a Promise<void>
+  // Fix the async function to properly return a Promise<void>
   const confirmTranslation = async (): Promise<void> => {
-    if (!translatingPage) return;
+    if (!translatingPage) return Promise.resolve();
     
     try {
       if (!isTranslatingAll) {
@@ -85,12 +85,16 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
           translatingPage.pageImages || [],
           targetLanguages
         );
+        
+        toast.success(`Pagina tradotta con successo in tutte le lingue`);
       }
       
       setShowTranslateDialog(false);
+      return Promise.resolve();
     } catch (error) {
       console.error("Errore durante la traduzione:", error);
       toast.error("Si è verificato un errore durante la traduzione");
+      return Promise.reject(error);
     }
   };
 

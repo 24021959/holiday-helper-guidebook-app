@@ -16,6 +16,8 @@ export const translateText = async (
   if (cached) return cached;
   
   try {
+    console.log(`Translating to ${targetLang}: "${text.substring(0, 30)}..."`);
+    
     const { data, error } = await supabase.functions.invoke('translate', {
       body: { 
         text, 
@@ -23,15 +25,20 @@ export const translateText = async (
       }
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Translation error from edge function:", error);
+      throw error;
+    }
     
     if (data && data.translatedText) {
+      console.log(`Translation successful: "${data.translatedText.substring(0, 30)}..."`);
       return data.translatedText;
     }
     
-    throw new Error('No translation returned');
+    throw new Error('No translation returned from edge function');
   } catch (error) {
     console.error('Translation error:', error);
+    console.log('Using fallback translation service...');
     return translateWithFallback(text, 'it', targetLang);
   }
 };
@@ -62,6 +69,8 @@ export const translateBulkTexts = async (
   }
 
   try {
+    console.log(`Bulk translating ${textsToTranslate.length} texts to ${targetLang}`);
+    
     const { data, error } = await supabase.functions.invoke('translate', {
       body: { 
         bulkTranslation: textsToTranslate, 
@@ -69,10 +78,16 @@ export const translateBulkTexts = async (
       }
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Bulk translation error from edge function:", error);
+      throw error;
+    }
 
     if (data?.translatedTexts && Array.isArray(data.translatedTexts)) {
       let translatedIndex = 0;
+      
+      console.log(`Bulk translation successful, received ${data.translatedTexts.length} translations`);
+      
       return texts.map((text, index) => {
         if (results[index] !== null) {
           return results[index] as string;
@@ -81,9 +96,22 @@ export const translateBulkTexts = async (
       });
     }
     
-    throw new Error('Invalid translation response');
+    throw new Error('Invalid translation response from edge function');
   } catch (error) {
     console.error('Bulk translation error:', error);
-    return texts;
+    console.log('Using individual fallback translations...');
+    
+    // Translate each text individually using fallback
+    const translatedTexts = await Promise.all(
+      textsToTranslate.map(text => translateWithFallback(text, 'it', targetLang))
+    );
+    
+    let translatedIndex = 0;
+    return texts.map((text, index) => {
+      if (results[index] !== null) {
+        return results[index] as string;
+      }
+      return translatedTexts[translatedIndex++] || text;
+    });
   }
 };

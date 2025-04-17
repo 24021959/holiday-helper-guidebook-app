@@ -16,9 +16,14 @@ serve(async (req) => {
   }
 
   try {
-    const { text, targetLang, bulkTranslation } = await req.json();
+    const requestData = await req.json();
+    const { text, targetLang, bulkTranslation } = requestData;
+    
+    console.log(`Translation request received for ${targetLang}`);
+    console.log(`Is bulk translation: ${!!bulkTranslation}`);
     
     if ((!text && !bulkTranslation) || !targetLang) {
+      console.error("Missing required parameters");
       return new Response(
         JSON.stringify({ error: 'Text/content and target language are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -35,7 +40,7 @@ serve(async (req) => {
       Translate each of the following texts from Italian to ${targetLang} accurately.
       Maintain the original formatting, including any HTML tags.
       Ensure the translation sounds natural and is appropriate for web context.
-      Respond with a JSON array of translated texts in the same order as the input.`;
+      Respond with a JSON array of translated texts in the same order as the input, inside a 'translations' field.`;
       
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -66,14 +71,18 @@ serve(async (req) => {
 
       try {
         const content = data.choices[0].message.content;
+        console.log(`Response received: ${content.substring(0, 100)}...`);
+        
         const parsedContent = JSON.parse(content);
         
         if (Array.isArray(parsedContent.translations)) {
+          console.log(`Successfully parsed ${parsedContent.translations.length} translations`);
           return new Response(
             JSON.stringify({ translatedTexts: parsedContent.translations }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         } else {
+          console.error("Invalid response format, 'translations' array not found");
           throw new Error('Invalid response format from translation');
         }
       } catch (parseError) {
@@ -85,6 +94,8 @@ serve(async (req) => {
       }
     } else {
       // Handle single text translation (original functionality)
+      console.log(`Processing single text translation to ${targetLang}: "${text.substring(0, 30)}..."`);
+      
       // Istruzioni specifiche per il modello di traduzione
       const systemPrompt = `Sei un traduttore professionale.
       La tua unica attività è tradurre il seguente testo dall'italiano a ${targetLang}.
@@ -121,6 +132,7 @@ serve(async (req) => {
       }
 
       const translatedText = data.choices[0].message.content.trim();
+      console.log(`Translation successful: "${translatedText.substring(0, 30)}..."`);
 
       return new Response(
         JSON.stringify({ translatedText }),

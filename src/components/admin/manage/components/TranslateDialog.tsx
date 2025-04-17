@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { PageData } from "@/types/page.types";
 import { Language } from "@/types/translation.types";
@@ -21,7 +21,7 @@ interface TranslateDialogProps {
   setTargetLanguage: (lang: Language) => void;
   isTranslatingAll: boolean;
   setIsTranslatingAll: (value: boolean) => void;
-  onConfirm: () => void;
+  onConfirm: () => Promise<void>;
 }
 
 export const TranslateDialog: React.FC<TranslateDialogProps> = ({
@@ -35,12 +35,21 @@ export const TranslateDialog: React.FC<TranslateDialogProps> = ({
   setIsTranslatingAll,
   onConfirm,
 }) => {
-  // Set isTranslatingAll to true by default when dialog opens
-  React.useEffect(() => {
+  // Always default to translating all languages when dialog opens
+  useEffect(() => {
     if (isOpen) {
       setIsTranslatingAll(true);
     }
   }, [isOpen, setIsTranslatingAll]);
+
+  // Handle the confirmation with proper async/await
+  const handleConfirm = async () => {
+    try {
+      await onConfirm();
+    } catch (error) {
+      console.error("Error during translation confirmation:", error);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -104,7 +113,7 @@ export const TranslateDialog: React.FC<TranslateDialogProps> = ({
             Annulla
           </Button>
           <Button 
-            onClick={onConfirm}
+            onClick={handleConfirm}
             disabled={isTranslating}
             className="bg-amber-600 hover:bg-amber-700"
           >

@@ -40,6 +40,7 @@ export const usePageTranslation = () => {
       
       console.log(`Translating content: "${content.substring(0, 50)}..." and title: "${title}" to ${targetLang}`);
       
+      // Ensure we're using the right method to translate content
       const { title: translatedTitle, content: translatedContent } = await translatePageContent(content, title);
       
       console.log(`Translated title: "${translatedTitle}"`);
@@ -55,6 +56,7 @@ export const usePageTranslation = () => {
         
       // Make sure we're not duplicating language prefixes
       translatedPath = translatedPath.replace(/\/[a-z]{2}\/[a-z]{2}\//, `/${targetLang}/`);
+      translatedPath = translatedPath.replace(/^\/[a-z]{2}\//, `/${targetLang}/`);
       
       let translatedParentPath = null;
       
@@ -84,6 +86,7 @@ export const usePageTranslation = () => {
         console.log(`Creating new translation for ${targetLang}`);
       }
       
+      // Make sure we save the translated content, not the original content
       await saveNewPage(
         translatedTitle,
         translatedContent,
@@ -136,6 +139,7 @@ export const usePageTranslation = () => {
     try {
       setIsTranslating(true);
       const totalLanguages = targetLanguages.length;
+      let successCount = 0;
       
       for (let i = 0; i < totalLanguages; i++) {
         const lang = targetLanguages[i];
@@ -154,6 +158,8 @@ export const usePageTranslation = () => {
             lang
           );
           
+          successCount++;
+          
           // Aggiungiamo una breve pausa tra le traduzioni
           if (i < totalLanguages - 1) {
             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -165,8 +171,13 @@ export const usePageTranslation = () => {
         }
       }
       
-      toast.success("Traduzioni completate con successo!");
-      return true;
+      if (successCount > 0) {
+        toast.success(`Traduzioni completate con successo: ${successCount}/${totalLanguages}`);
+        return true;
+      } else {
+        toast.error("Nessuna traduzione completata con successo");
+        return false;
+      }
     } catch (error) {
       console.error("Error in translation sequence:", error);
       toast.error("Errore durante la sequenza di traduzioni");
