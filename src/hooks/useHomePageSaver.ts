@@ -17,7 +17,7 @@ export const useHomePageSaver = () => {
       // Check if home page already exists in Italian
       const { data: existingPage } = await supabase
         .from('custom_pages')
-        .select('id')
+        .select('id, title, content')
         .eq('path', '/home')
         .maybeSingle();
 
@@ -25,12 +25,13 @@ export const useHomePageSaver = () => {
         console.log("La pagina Home in italiano è già stata salvata");
         
         // Check if we need to translate and save in other languages
-        await translateAndSaveHomeInAllLanguages();
+        await translateAndSaveHomeInAllLanguages(existingPage.title, existingPage.content);
         return;
       }
 
       const pageId = uuidv4();
       const homeImageUrl = "/lovable-uploads/6d1eebb5-61dd-4e37-99c7-4c67721ca126.png";
+      const homeTitle = "Home";
       
       // Content for the home page
       const homeContent = `
@@ -53,7 +54,7 @@ export const useHomePageSaver = () => {
         .from('custom_pages')
         .insert({
           id: pageId,
-          title: "Home",
+          title: homeTitle,
           content: homeContent,
           path: "/home",
           image_url: homeImageUrl,
@@ -71,7 +72,7 @@ export const useHomePageSaver = () => {
         .from('menu_icons')
         .insert({
           path: "/home",
-          label: "Home",
+          label: homeTitle,
           icon: "Home",
           bg_color: 'bg-blue-200',
           is_submenu: false,
@@ -85,7 +86,7 @@ export const useHomePageSaver = () => {
       toast.success("Pagina Home salvata con successo in italiano");
       
       // Now translate and save in other languages
-      await translateAndSaveHomeInAllLanguages();
+      await translateAndSaveHomeInAllLanguages(homeTitle, homeContent);
       
       return pageId;
 
@@ -98,36 +99,35 @@ export const useHomePageSaver = () => {
     }
   };
   
-  const translateAndSaveHomeInAllLanguages = async () => {
+  const translateAndSaveHomeInAllLanguages = async (originalTitle: string, originalContent: string) => {
     try {
-      // Get the Italian home page content for translation
-      const { data: italianHomePage, error } = await supabase
-        .from('custom_pages')
-        .select('title, content, image_url, icon')
-        .eq('path', '/home')
-        .single();
-        
-      if (error || !italianHomePage) {
-        console.error("Italian home page not found:", error);
-        return;
-      }
-      
       // Temporarily remove no-translation flag to allow translation
       const wasNoTranslation = document.body.hasAttribute('data-no-translation');
       if (wasNoTranslation) {
         document.body.removeAttribute('data-no-translation');
       }
       
+      // Get image URL for all translated pages
+      const { data: imageData } = await supabase
+        .from('custom_pages')
+        .select('image_url, icon')
+        .eq('path', '/home')
+        .single();
+        
+      const imageUrl = imageData?.image_url || "/lovable-uploads/6d1eebb5-61dd-4e37-99c7-4c67721ca126.png";
+      const icon = imageData?.icon || "Home";
+      
       // Target languages to translate to
       const targetLangs: Language[] = ['en', 'fr', 'es', 'de'];
       
       console.log("Starting home page translations...");
-      console.log("Original content sample:", italianHomePage.content.substring(0, 100));
+      console.log("Original content sample:", originalContent.substring(0, 100));
+      console.log("Original title:", originalTitle);
       
       // Translate content to all languages sequentially
       const translations = await translateSequential(
-        italianHomePage.content,
-        italianHomePage.title,
+        originalContent,
+        originalTitle,
         targetLangs
       );
       
@@ -154,8 +154,8 @@ export const useHomePageSaver = () => {
             title: translations[lang].title,
             content: translations[lang].content,
             path: langPath,  // Root path for each language
-            image_url: italianHomePage.image_url,
-            icon: italianHomePage.icon,
+            image_url: imageUrl,
+            icon: icon,
             is_parent: false,
             is_submenu: false,
             published: true,
@@ -164,37 +164,51 @@ export const useHomePageSaver = () => {
             
           if (existingTranslation) {
             // Update existing translation
-            await supabase
+            const { error: updateError } = await supabase
               .from('custom_pages')
               .update(translationData)
               .eq('id', existingTranslation.id);
+              
+            if (updateError) {
+              console.error(`Error updating ${lang} translation:`, updateError);
+              continue;
+            }
               
             console.log(`Updated home page in ${lang} with translated content`);
           } else {
             // Insert new translation with a unique ID
             const pageId = uuidv4();
-            await supabase
+            const { error: insertError } = await supabase
               .from('custom_pages')
               .insert({
                 id: pageId,
                 ...translationData
               });
               
+            if (insertError) {
+              console.error(`Error inserting ${lang} translation:`, insertError);
+              continue;
+            }
+              
             console.log(`Created new home page in ${lang} with translated content`);
               
             // Add menu icon for translated home
-            await supabase
+            const { error: iconError } = await supabase
               .from('menu_icons')
               .insert({
                 path: langPath,
                 label: translations[lang].title,
-                icon: italianHomePage.icon,
+                icon: icon,
                 bg_color: 'bg-blue-200',
                 is_submenu: false,
                 published: true,
                 is_parent: false,
                 updated_at: new Date().toISOString()
               });
+              
+            if (iconError) {
+              console.error(`Error creating menu icon for ${lang}:`, iconError);
+            }
           }
         }
       }

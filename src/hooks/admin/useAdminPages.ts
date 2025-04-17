@@ -43,7 +43,11 @@ export const useAdminPages = () => {
       if (data) {
         const formattedPages = data.map(page => formatPageData(page));
         console.log(`Fetched ${formattedPages.length} pages for language: ${langCode}`);
-        console.log("First page sample:", formattedPages[0]?.title, formattedPages[0]?.path);
+        if (formattedPages.length > 0) {
+          console.log("First page sample:", formattedPages[0]?.title, formattedPages[0]?.path);
+        } else {
+          console.log("No pages found for language:", langCode);
+        }
         setPages(formattedPages);
       }
 

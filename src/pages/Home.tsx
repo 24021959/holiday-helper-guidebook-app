@@ -25,13 +25,15 @@ const Home: React.FC = () => {
   useEffect(() => {
     const initializeHomePage = async () => {
       try {
+        // Ensure the home page is saved and translated in all languages
+        console.log("Initializing home page and translations...");
+        
         // Disable no-translation flag temporarily to ensure translations work
         const wasNoTranslation = document.body.hasAttribute('data-no-translation');
         if (wasNoTranslation) {
           document.body.removeAttribute('data-no-translation');
         }
         
-        // Ensure the home page is saved and translated in all languages
         await saveHomePageToDatabase();
         toast.success("Pagine Home verificate e tradotte con successo");
         
@@ -123,6 +125,20 @@ const Home: React.FC = () => {
     }
   };
 
+  const handleForceSaveTranslations = async () => {
+    try {
+      toast.info("Forzando il salvataggio delle traduzioni...");
+      await saveHomePageToDatabase();
+      toast.success("Traduzioni della Home page forzate con successo");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (error) {
+      console.error("Error forcing translations:", error);
+      toast.error("Errore durante il salvataggio forzato delle traduzioni");
+    }
+  };
+
   if (loading || isSaving) {
     return <LoadingView message="Caricamento..." />;
   }
@@ -149,6 +165,21 @@ const Home: React.FC = () => {
       
       {/* Content Area */}
       <ContentSection onExploreMenu={handleGoToMenu} />
+      
+      {/* Debug button - only in development */}
+      {process.env.NODE_ENV !== 'production' && (
+        <div className="bg-amber-50 border-t border-amber-200 p-3">
+          <div className="max-w-lg mx-auto flex flex-col gap-2">
+            <p className="text-amber-800 text-sm">Strumenti di debug:</p>
+            <button 
+              onClick={handleForceSaveTranslations}
+              className="bg-amber-600 hover:bg-amber-700 text-white py-2 px-4 rounded text-sm"
+            >
+              Forza salvataggio traduzioni Home
+            </button>
+          </div>
+        </div>
+      )}
       
       <Footer />
     </div>
