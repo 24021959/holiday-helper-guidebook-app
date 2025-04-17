@@ -36,6 +36,7 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
   };
 
   const handleEditClick = (page: PageData) => {
+    console.log("Modifica pagina:", page.title);
     // Navigate to the create page with edit mode enabled and the page data
     navigate(`/admin/create`, { 
       state: { 
@@ -69,7 +70,7 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
         pages={pages}
         onView={onViewPage}
         onDelete={handleDeleteClick}
-        onEdit={onEditPage}
+        onEdit={handleEditClick}
         isDeleting={isDeleting}
       />
 

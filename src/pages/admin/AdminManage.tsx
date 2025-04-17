@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { PageData } from "@/types/page.types";
 import { useAdminPages } from "@/hooks/admin/useAdminPages";
@@ -93,8 +94,9 @@ const AdminManage = () => {
   };
 
   const handleEdit = (page: PageData) => {
+    console.log("Navigating to edit page:", page.title);
     // Navigate to create page with edit mode and page data
-    navigate(`/admin/create`, { 
+    navigate("/admin/create", { 
       state: { 
         editMode: true, 
         pageToEdit: page 
