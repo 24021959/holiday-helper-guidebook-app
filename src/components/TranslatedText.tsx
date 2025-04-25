@@ -7,6 +7,9 @@ interface TranslatedTextProps {
   className?: string;
   disableAutoTranslation?: boolean;
   dangerouslySetInnerHTML?: boolean;
+  translations?: {
+    [key: string]: string;
+  };
 }
 
 const TranslatedText: React.FC<TranslatedTextProps> = ({ 
@@ -14,7 +17,8 @@ const TranslatedText: React.FC<TranslatedTextProps> = ({
   as: Component = "span", 
   className = "",
   disableAutoTranslation = false,
-  dangerouslySetInnerHTML = false
+  dangerouslySetInnerHTML = false,
+  translations
 }) => {
   if (dangerouslySetInnerHTML) {
     return (
@@ -27,7 +31,11 @@ const TranslatedText: React.FC<TranslatedTextProps> = ({
   }
 
   return (
-    <Component className={className} data-no-translation={disableAutoTranslation}>
+    <Component 
+      className={className} 
+      data-no-translation={disableAutoTranslation}
+      data-translations={translations ? JSON.stringify(translations) : undefined}
+    >
       {text}
     </Component>
   );
