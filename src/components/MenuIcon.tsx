@@ -17,6 +17,8 @@ const MenuIcon: React.FC<MenuIconProps> = ({ icon, index, onClick }) => {
     ? 'border-2 border-emerald-300 bg-gradient-to-br from-white to-emerald-50'
     : 'bg-white';
     
+  const displayTitle = icon.title || icon.label || "";
+  
   return (
     <div 
       key={icon.id}
@@ -32,9 +34,14 @@ const MenuIcon: React.FC<MenuIconProps> = ({ icon, index, onClick }) => {
         <IconRenderer iconName={icon.icon} />
       </div>
       <span className="text-center text-gray-700 font-medium text-lg">
-        <TranslatedText 
-          text={icon.title || icon.label || ""}
-        />
+        {icon.translations ? (
+          <TranslatedText 
+            text={displayTitle}
+            translations={icon.translations}
+          />
+        ) : (
+          <TranslatedText text={displayTitle} />
+        )}
       </span>
     </div>
   );

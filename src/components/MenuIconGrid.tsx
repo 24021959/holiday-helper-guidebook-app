@@ -3,7 +3,6 @@ import React from "react";
 import MenuIcon from "./MenuIcon";
 import EmptyIconGrid from "./menu/EmptyIconGrid";
 import { IconData } from "@/hooks/menu/types";
-import { Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface MenuIconGridProps {
@@ -52,4 +51,3 @@ const MenuIconGrid: React.FC<MenuIconGridProps> = ({ icons, onIconClick }) => {
 };
 
 export default MenuIconGrid;
-

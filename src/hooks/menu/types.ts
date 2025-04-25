@@ -1,13 +1,17 @@
+
 export interface IconData {
   id: string;
   path: string;
-  label: string;
+  label?: string;
   title?: string;
   icon: string;
-  parent_path: string | null;
+  parent_path?: string | null;
   bg_color?: string;
   published?: boolean;
   is_parent?: boolean;
+  translations?: {
+    [key: string]: string;
+  };
 }
 
 export interface MenuIconsProps {
