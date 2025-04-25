@@ -74,7 +74,6 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ pageRoute }) => {
           const pageImages: ImageItem[] = [];
           let processedContent = pageData.content;
           
-          // Estrazione delle immagini dal contenuto
           const contentImageRegex = /<!-- IMAGE-CONTENT-\d+ -->\n({.*?})\n\n/gs;
           let contentMatch;
           while ((contentMatch = contentImageRegex.exec(processedContent)) !== null) {

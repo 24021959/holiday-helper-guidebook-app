@@ -147,5 +147,7 @@ export const useEditorPreview = (content: string, images: ImageDetail[]) => {
     setFormattedPreview(formatContent());
   }, [content, images]);
 
-  return { formattedPreview };
+  return {
+    formattedPreview
+  };
 };

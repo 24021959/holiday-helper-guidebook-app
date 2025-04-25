@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { toast } from "sonner";
 import { ImageDetail } from '@/types/image.types';
@@ -90,25 +89,23 @@ export const useEditorContent = (content: string, onChange: (content: string) =>
     updateHistory(newContent);
   };
 
-  const handleInsertPhone = (phoneNumber?: string, label?: string) => {
-    const phoneNum = phoneNumber || window.prompt("Inserisci il numero di telefono (formato: +39 123 456 7890):");
-    if (!phoneNum) return;
+  const handleInsertPhone = (phoneNumber: string, label?: string) => {
+    if (!phoneNumber) return;
     
-    const displayLabel = label || window.prompt("Inserisci l'etichetta per il numero di telefono:", phoneNum) || phoneNum;
+    const displayLabel = label || phoneNumber;
     
-    const formattedPhone = phoneNum.replace(/\s+/g, '');
+    const formattedPhone = phoneNumber.replace(/\s+/g, '');
     insertAtCursor(`[PHONE:${formattedPhone}:${displayLabel}]`);
     
     toast.success("Numero di telefono aggiunto con successo");
   };
 
-  const handleInsertMap = (mapUrl?: string, label?: string) => {
-    const url = mapUrl || window.prompt("Inserisci l'URL di Google Maps:");
-    if (!url) return;
+  const handleInsertMap = (mapUrl: string, label?: string) => {
+    if (!mapUrl) return;
     
-    const displayLabel = label || window.prompt("Inserisci l'etichetta per la posizione:", "Visualizza su Google Maps") || "Visualizza su Google Maps";
+    const displayLabel = label || "Visualizza su Google Maps";
     
-    insertAtCursor(`[MAP:${url}:${displayLabel}]`);
+    insertAtCursor(`[MAP:${mapUrl}:${displayLabel}]`);
     
     toast.success("Link a Google Maps aggiunto con successo");
   };
@@ -116,17 +113,17 @@ export const useEditorContent = (content: string, onChange: (content: string) =>
   const handleInsertImage = (imageDetail: ImageDetail) => {
     if (cursorPosition === null) return;
     
-    const imageMarkup = JSON.stringify({
+    const imageData = JSON.stringify({
       type: "image",
       url: imageDetail.url,
       position: imageDetail.position,
-      caption: imageDetail.caption || "",
-      width: imageDetail.width || "50%"
+      width: imageDetail.width,
+      caption: imageDetail.caption || ""
     });
     
     const newContent = 
       content.substring(0, cursorPosition) + 
-      "\n\n" + imageMarkup + "\n\n" + 
+      "\n" + imageData + "\n" + 
       content.substring(cursorPosition);
     
     onChange(newContent);
@@ -134,7 +131,6 @@ export const useEditorContent = (content: string, onChange: (content: string) =>
     toast.success("Immagine aggiunta con successo");
   };
 
-  // Update history when content changes
   const updateHistory = (newContent: string) => {
     if (newContent !== editHistory[historyIndex]) {
       const newHistory = editHistory.slice(0, historyIndex + 1);
