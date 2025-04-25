@@ -20,6 +20,7 @@ import RoadsideAssistance from "./pages/RoadsideAssistance";
 import Restaurants from "./pages/restaurants/Restaurants";
 import Pizzerias from "./pages/restaurants/Pizzerias";
 import TraditionalTrattorias from "./pages/restaurants/TraditionalTrattorias";
+import HotelServices from "./pages/hotel-services/HotelServices";
 
 function App() {
   return (
@@ -72,6 +73,20 @@ function App() {
           <Route path="/es/:parent/:child" element={<PreviewPage />} />
           <Route path="/de/:path" element={<PreviewPage />} />
           <Route path="/de/:parent/:child" element={<PreviewPage />} />
+
+          {/* Hotel Services Routes */}
+          <Route path="/hotel-services" element={<HotelServices />} />
+          <Route path="/hotel-services/:subpage" element={<PreviewPage />} />
+          
+          {/* Hotel Services Routes with language prefixes */}
+          <Route path="/en/hotel-services" element={<HotelServices />} />
+          <Route path="/en/hotel-services/:subpage" element={<PreviewPage />} />
+          <Route path="/fr/hotel-services" element={<HotelServices />} />
+          <Route path="/fr/hotel-services/:subpage" element={<PreviewPage />} />
+          <Route path="/es/hotel-services" element={<HotelServices />} />
+          <Route path="/es/hotel-services/:subpage" element={<PreviewPage />} />
+          <Route path="/de/hotel-services" element={<HotelServices />} />
+          <Route path="/de/hotel-services/:subpage" element={<PreviewPage />} />
           
           {/* Catch-all for unmatched routes */}
           <Route path="*" element={<NotFound />} />
