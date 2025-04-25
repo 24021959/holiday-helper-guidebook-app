@@ -28,10 +28,12 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     console.log("FilteredIconNav - Icons loaded:", icons.length);
   }, [currentPath, parentPath, icons.length]);
 
-  if (error) {
+  // Mostra errore solo se non ci sono icone
+  if (error && icons.length === 0) {
     return <ErrorDisplay error={error} onRetry={refreshIcons} />;
   }
   
+  // Mostra il loading solo se non ci sono ancora icone
   if (isLoading && icons.length === 0) {
     return <LoadingIndicator />;
   }

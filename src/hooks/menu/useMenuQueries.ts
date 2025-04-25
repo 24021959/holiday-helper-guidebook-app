@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Language } from "@/types/translation.types";
 
@@ -12,7 +13,8 @@ export const useMenuQueries = () => {
         .eq('published', true);
 
       if (language === 'it') {
-        query.or(`path.eq./home,and(is_parent.is.null,not.path.like./%/%)`)
+        // Query corretta con parentesi appropriate per le condizioni OR
+        query.or('path.eq./home,or(is_parent.is.null,not.path.like./%/%)') 
           .not('path', 'like', '/en/%')
           .not('path', 'like', '/fr/%')
           .not('path', 'like', '/es/%')
