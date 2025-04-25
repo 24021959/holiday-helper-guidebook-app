@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageData } from "@/types/page.types";
 import { toast } from "sonner";
 import { usePageDeletion } from "../page/usePageDeletion";
@@ -9,6 +9,11 @@ export const useAdminPages = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const { deletePageAndTranslations } = usePageDeletion();
   const { pages, parentPages, isLoading, fetchPages } = usePagesQuery();
+
+  // Add useEffect to fetch pages on component mount
+  useEffect(() => {
+    fetchPages();
+  }, []);
 
   const confirmDeletePage = async (pageToDelete: PageData) => {
     if (!pageToDelete) return;

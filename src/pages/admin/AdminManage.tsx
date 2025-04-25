@@ -37,11 +37,16 @@ const AdminManage = () => {
   }, [pages]);
 
   const handleDeleteIndexPage = async () => {
-    const success = await deleteIndexPage();
-    if (success) {
-      setNeedsIndexCleanup(false);
-      await fetchPages();
-      toast.success("Pagina Index eliminata con successo. Ora /home è la pagina principale.");
+    try {
+      const success = await deleteIndexPage();
+      if (success) {
+        setNeedsIndexCleanup(false);
+        await fetchPages();
+        toast.success("Pagina Index eliminata con successo. Ora /home è la pagina principale.");
+      }
+    } catch (error) {
+      console.error("Error deleting index page:", error);
+      toast.error("Errore durante l'eliminazione della pagina index");
     }
   };
 
@@ -71,6 +76,9 @@ const AdminManage = () => {
     );
   }
 
+  // Debug output
+  console.log("Pages loaded:", pages?.length || 0);
+
   return (
     <div className="p-6">
       {needsIndexCleanup && (
@@ -97,7 +105,7 @@ const AdminManage = () => {
       )}
 
       <PagesManagementView
-        pages={pages}
+        pages={pages || []}
         isDeleting={isDeleting}
         onDeletePage={confirmDeletePage}
         onViewPage={handleView}

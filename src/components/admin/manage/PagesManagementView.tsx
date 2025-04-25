@@ -4,6 +4,8 @@ import { PageData } from "@/types/page.types";
 import { PagesList } from "./PagesList";
 import { DeletePageDialog } from "./DeletePageDialog";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 interface PagesManagementViewProps {
   pages: PageData[];
@@ -22,20 +24,32 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
 }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deletingPage, setDeletingPage] = useState<PageData | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleDeleteClick = (page: PageData) => {
     setDeletingPage(page);
     setShowDeleteDialog(true);
   };
 
+  // Debug information
+  const italianPages = pages?.filter(p => 
+    !p.path.startsWith('/en/') && 
+    !p.path.startsWith('/fr/') && 
+    !p.path.startsWith('/es/') && 
+    !p.path.startsWith('/de/')
+  );
+
   return (
     <>
-      <div className="mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Gestione Pagine in Italiano</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-semibold text-gray-800">Gestione Pagine in Italiano</h2>
+        <div className="text-sm text-gray-500">
+          {italianPages?.length || 0} pagine trovate
+        </div>
       </div>
 
       <PagesList 
-        pages={pages}
+        pages={italianPages || []}
         currentLanguage="it"
         onView={onViewPage}
         onDelete={handleDeleteClick}

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageData } from "@/types/page.types";
 import { toast } from "sonner";
@@ -14,6 +14,7 @@ export const usePagesQuery = () => {
   const fetchPages = async () => {
     try {
       setIsLoading(true);
+      console.log("Fetching pages from database...");
       
       // First, get the home page
       const { data: homeData, error: homeError } = await supabase
@@ -22,16 +23,25 @@ export const usePagesQuery = () => {
         .eq('path', '/home')
         .maybeSingle();
 
-      if (homeError) throw homeError;
+      if (homeError) {
+        console.error("Error fetching home page:", homeError);
+        throw homeError;
+      }
 
       // Then get all other pages
-      const { data: regularPages, error } = await supabase
+      const { data: regularPages, error: pagesError } = await supabase
         .from('custom_pages')
         .select('*')
         .neq('path', '/home')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (pagesError) {
+        console.error("Error fetching regular pages:", pagesError);
+        throw pagesError;
+      }
+
+      console.log("Home page:", homeData);
+      console.log("Regular pages:", regularPages?.length || 0);
 
       // Combine home page with other pages if it exists
       const allPages = [];
@@ -43,16 +53,23 @@ export const usePagesQuery = () => {
       }
 
       setPages(allPages);
+      console.log("Total pages loaded:", allPages.length);
 
       // Get all parent pages for dropdown selections
-      const { data: allData } = await supabase
+      const { data: allData, error: parentError } = await supabase
         .from('custom_pages')
         .select('*')
         .eq('is_parent', true);
       
+      if (parentError) {
+        console.error("Error fetching parent pages:", parentError);
+        // Don't throw here, just log the error
+      }
+      
       if (allData) {
         const allParentPages = allData.map(page => formatPageData(page));
         setParentPages(allParentPages);
+        console.log("Parent pages loaded:", allParentPages.length);
       }
     } catch (error) {
       console.error("Error fetching pages:", error);
