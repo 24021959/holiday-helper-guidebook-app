@@ -7,7 +7,7 @@ import LoadingView from "@/components/LoadingView";
 import TranslatedText from "@/components/TranslatedText";
 import PageNavigation from "@/components/PageNavigation";
 import { Button } from "@/components/ui/button";
-import { Phone, Car } from "lucide-react";
+import { Phone, Truck } from "lucide-react";
 
 const RoadsideAssistance: React.FC = () => {
   const { headerSettings, loading } = useHeaderSettings();
@@ -34,8 +34,8 @@ const RoadsideAssistance: React.FC = () => {
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="space-y-6">
             <div className="flex items-center gap-4">
-              <div className="bg-[#FFDEE2] rounded-full p-3">
-                <Car className="w-12 h-12 text-red-600" />
+              <div className="bg-[#FDE1D3] rounded-full p-3">
+                <Truck className="w-12 h-12 text-orange-600" />
               </div>
               <div>
                 <h2 className="text-xl font-semibold">
