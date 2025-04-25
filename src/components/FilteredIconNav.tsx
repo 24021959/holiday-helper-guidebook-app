@@ -27,16 +27,17 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     console.log("[FilteredIconNav] Current path:", currentPath);
     console.log("[FilteredIconNav] Is home page:", isHomePage);
     console.log("[FilteredIconNav] Parent path:", parentPath);
-    console.log("[FilteredIconNav] Icons to display:", icons);
-  }, [currentPath, parentPath, icons.length, isHomePage]);
+    console.log("[FilteredIconNav] Raw icons:", icons);
+  }, [currentPath, parentPath, icons, isHomePage]);
 
-  // Filter out subpages on homepage
+  // Filter out subpages on homepage - only show root level items
   const filteredIcons = isHomePage 
-    ? icons.filter(icon => !icon.path.includes('/pizzerias') && 
-                          !icon.path.includes('/traditional') && 
-                          !icon.path.includes('/restaurants') &&
-                          !icon.parent_path)
+    ? icons.filter(icon => !icon.parent_path)
     : icons;
+
+  useEffect(() => {
+    console.log("[FilteredIconNav] Filtered icons to display:", filteredIcons);
+  }, [filteredIcons]);
 
   // Show error only if no icons
   if (error && filteredIcons.length === 0) {

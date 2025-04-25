@@ -8,7 +8,7 @@ export const useMenuQueries = () => {
 
   const fetchRootPagesAndHome = async (language: Language) => {
     try {
-      console.log(`[fetchRootPagesAndHome] Starting query for language: ${language}, isHomePage: ${isHomePage}`);
+      console.log(`[fetchRootPagesAndHome] Starting query for language: ${language}`);
       
       let query = supabase
         .from('custom_pages')
@@ -25,15 +25,6 @@ export const useMenuQueries = () => {
           .not('path', 'like', '/de/%');
       } else {
         query = query.like('path', `/${language}/%`);
-      }
-
-      // Finally exclude specific paths when on home page
-      if (isHomePage) {
-        query = query
-          .not('path', 'in', ['/home', `/${language}/home`])
-          .not('path', 'like', '/pizzerias')
-          .not('path', 'like', '/traditional')
-          .not('path', 'like', '/restaurants');
       }
 
       const { data: pages, error } = await query;
@@ -76,14 +67,6 @@ export const useMenuQueries = () => {
           .not('path', 'like', '/fr/%')
           .not('path', 'like', '/es/%')
           .not('path', 'like', '/de/%');
-      }
-
-      // Add home page specific filtering
-      if (isHomePage) {
-        query = query
-          .not('path', 'like', '/pizzerias%')
-          .not('path', 'like', '/traditional%')
-          .not('path', 'like', '/restaurants%');
       }
       
       const result = await query;
