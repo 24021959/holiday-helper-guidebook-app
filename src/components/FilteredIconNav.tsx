@@ -22,8 +22,10 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
   
   const currentPath = useCurrentPath();
   const currentLanguage = useCurrentLanguagePath();
+  
+  // Corrected home page detection to properly handle language-prefixed paths
   const isHomePage = currentPath === '/home' || currentPath === '/' || 
-    currentPath.endsWith('/home') || currentPath.match(/^\/[a-z]{2}\/home$/);
+    currentPath.endsWith('/home') || /^\/[a-z]{2}\/home$/.test(currentPath);
   
   useEffect(() => {
     console.log("[FilteredIconNav] Current path:", currentPath);

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Language } from "@/types/translation.types";
 import { useCurrentPath, useCurrentLanguagePath } from "@/hooks/useCurrentPath";
@@ -5,7 +6,8 @@ import { useCurrentPath, useCurrentLanguagePath } from "@/hooks/useCurrentPath";
 export const useMenuQueries = () => {
   const currentPath = useCurrentPath();
   const currentLanguage = useCurrentLanguagePath();
-  const isHomePage = currentPath === '/home' || currentPath === '/' || currentPath.endsWith('/home');
+  const isHomePage = currentPath === '/home' || currentPath === '/' || 
+    currentPath.endsWith('/home') || /^\/[a-z]{2}\/home$/.test(currentPath);
 
   const fetchRootPagesAndHome = async (language: Language) => {
     try {
@@ -17,7 +19,7 @@ export const useMenuQueries = () => {
         .eq('published', true)
         .is('parent_path', null);
       
-      // Apply language filtering
+      // Applica filtri lingua
       if (language === 'it') {
         query = query
           .not('path', 'like', '/en/%')
@@ -25,7 +27,7 @@ export const useMenuQueries = () => {
           .not('path', 'like', '/es/%')
           .not('path', 'like', '/de/%');
       } else {
-        query = query.like('path', `/${language}/%`);
+        query = query.or(`path.like./%,path.like./${language}/%`);
       }
 
       const { data: pages, error } = await query;
@@ -88,16 +90,17 @@ export const useMenuQueries = () => {
         .select('*')
         .eq('published', true);
 
-      // First filter by parent path
+      // Prima filtra per parent_path
       if (parentPath === null) {
         query = query.is('parent_path', null);
       } else {
         query = query.eq('parent_path', parentPath);
       }
         
-      // Then apply language filtering
+      // Poi applica i filtri lingua
       if (language !== 'it') {
-        query = query.like('path', `/${language}/%`);
+        // Per lingue diverse dall'italiano, includi sia i path generici che quelli specifici per quella lingua
+        query = query.or(`path.like./%,path.like./${language}/%`);
       } else {
         query = query
           .not('path', 'like', '/en/%')

@@ -29,7 +29,7 @@ const IconNav: React.FC<IconNavProps> = ({
         console.log("Navigation to submenu for parent:", icon.path);
         let pathForSubmenu = icon.path.startsWith('/') ? icon.path.substring(1) : icon.path;
         
-        // If we have a language prefix and it's not Italian, include it in the submenu path
+        // Se abbiamo un prefisso lingua e non è italiano, includiamolo nel percorso submenu
         if (language !== 'it' && !pathForSubmenu.startsWith(language)) {
           navigate(`/submenu/${language}/${pathForSubmenu}`);
         } else {
@@ -38,16 +38,16 @@ const IconNav: React.FC<IconNavProps> = ({
         return;
       }
       
-      // For system routes, navigate with language prefix
+      // Per route di sistema, navighiamo mantenendo il prefisso lingua
       const systemRoutes = ['/menu', '/admin', '/home', '/login', '/welcome'];
-      if (systemRoutes.includes(icon.path)) {
+      if (systemRoutes.some(route => icon.path === route || icon.path.endsWith(route))) {
         console.log("Navigation to system route:", icon.path);
         const localizedPath = addLanguageToPath(icon.path, language);
         navigate(localizedPath);
         return;
       }
       
-      // For direct content navigation
+      // Per navigazione diretta ai contenuti
       console.log("Navigation to content page:", icon.path);
       navigate(icon.path, { 
         state: { 
