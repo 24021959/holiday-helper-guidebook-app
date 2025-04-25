@@ -1,10 +1,10 @@
 
 import React from "react";
-import NavigateBack from "./NavigateBack";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
-import { Home } from "lucide-react";
+import { Home, ArrowLeft } from "lucide-react";
 import { useTranslation } from "@/context/TranslationContext";
+import TranslatedText from "./TranslatedText";
 
 interface BackToMenuProps {
   showBackButton?: boolean;
@@ -15,16 +15,13 @@ const BackToMenu: React.FC<BackToMenuProps> = ({ showBackButton = true }) => {
   const navigate = useNavigate();
   const { language } = useTranslation();
   
-  // Verifica se siamo nella home page
   const isHomePage = location.pathname === '/home' || 
                     location.pathname === `/${language}/home` ||
                     location.pathname === '/';
   
-  // Verifica se siamo in una sottopagina o pagina con contenuto
   const isInSubmenu = location.pathname.startsWith('/submenu/');
   const hasParentPath = location.state?.parentPath;
   
-  // Gestore per il pulsante home
   const handleHomeClick = () => {
     if (language === 'it') {
       navigate('/home');
@@ -33,14 +30,33 @@ const BackToMenu: React.FC<BackToMenuProps> = ({ showBackButton = true }) => {
     }
   };
   
+  const handleBack = () => {
+    if (hasParentPath) {
+      navigate(-1);
+    } else if (isInSubmenu) {
+      if (language === 'it') {
+        navigate('/home');
+      } else {
+        navigate(`/${language}/home`);
+      }
+    } else {
+      navigate(-1);
+    }
+  };
+  
   return (
     <div className="flex items-center gap-2">
-      {/* Mostra il pulsante indietro solo nelle sottopagine o pagine con parent */}
-      {(showBackButton && (isInSubmenu || hasParentPath)) && (
-        <NavigateBack />
+      {(showBackButton && (isInSubmenu || hasParentPath || !isHomePage)) && (
+        <Button
+          variant="ghost"
+          className="p-2 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
+          onClick={handleBack}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          <TranslatedText text="Back" />
+        </Button>
       )}
       
-      {/* Mostra il pulsante home se NON siamo nella home page */}
       {!isHomePage && (
         <Button 
           variant="ghost" 

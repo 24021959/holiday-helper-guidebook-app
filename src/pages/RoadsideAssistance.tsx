@@ -5,8 +5,9 @@ import Footer from "@/components/Footer";
 import { useHeaderSettings } from "@/hooks/useHeaderSettings";
 import LoadingView from "@/components/LoadingView";
 import TranslatedText from "@/components/TranslatedText";
-import { Phone, Car } from "lucide-react";
+import PageNavigation from "@/components/PageNavigation";
 import { Button } from "@/components/ui/button";
+import { Phone, Car } from "lucide-react";
 
 const RoadsideAssistance: React.FC = () => {
   const { headerSettings, loading } = useHeaderSettings();
@@ -22,6 +23,8 @@ const RoadsideAssistance: React.FC = () => {
         backgroundColor={headerSettings.headerColor}
         establishmentName={headerSettings.establishmentName}
       />
+      
+      <PageNavigation title="Roadside Assistance" />
       
       <main className="flex-1 container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-6">
