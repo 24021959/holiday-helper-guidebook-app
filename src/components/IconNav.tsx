@@ -3,6 +3,7 @@ import React from "react";
 import MenuIconGrid from "./MenuIconGrid";
 import { IconData } from "@/hooks/menu/types";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "@/context/TranslationContext";
 
 interface IconNavProps {
   parentPath: string | null;
@@ -16,6 +17,7 @@ const IconNav: React.FC<IconNavProps> = ({
   icons
 }) => {
   const navigate = useNavigate();
+  const { language } = useTranslation();
 
   const handleIconClick = (icon: IconData) => {
     console.log("Clicked on icon:", icon);
@@ -27,7 +29,13 @@ const IconNav: React.FC<IconNavProps> = ({
         
         // Extract path without initial slash for the URL parameter
         let pathParam = icon.path.startsWith('/') ? icon.path.substring(1) : icon.path;
-        navigate(`/submenu/${pathParam}`);
+        
+        // For language-specific paths, use the language prefix
+        if (language !== 'it' && !pathParam.startsWith(language)) {
+          navigate(`/submenu/${pathParam}`);
+        } else {
+          navigate(`/submenu/${pathParam}`);
+        }
         return;
       }
       

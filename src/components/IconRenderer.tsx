@@ -27,14 +27,19 @@ const IconRenderer: React.FC<IconRendererProps> = ({
       case "large": return "w-16 h-16";
       case "medium":
       default:
-        return "w-14 h-14";
+        return "w-12 h-12";
     }
   };
 
   const iconSize = getSizeClass();
   const fullClassName = `${iconSize} ${className}`;
   
-  switch (iconName) {
+  // Make sure we have a valid iconName
+  const safeIconName = iconName || "FileText";
+  
+  console.log("Rendering icon:", safeIconName, "with size:", iconSize);
+  
+  switch (safeIconName) {
     case 'FileText': return <FileText className={fullClassName} />;
     case 'Image': return <Image className={fullClassName} />;
     case 'MessageCircle': return <MessageCircle className={fullClassName} />;

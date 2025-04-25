@@ -22,6 +22,10 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
   
   const currentPath = useCurrentPath();
   
+  console.log("FilteredIconNav - Current path:", currentPath);
+  console.log("FilteredIconNav - Parent path:", parentPath);
+  console.log("FilteredIconNav - Icons loaded:", icons.length);
+  
   if (isLoading) {
     return <LoadingIndicator />;
   }
