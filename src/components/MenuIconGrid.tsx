@@ -3,6 +3,8 @@ import React from "react";
 import MenuIcon from "./MenuIcon";
 import EmptyIconGrid from "./menu/EmptyIconGrid";
 import { IconData } from "@/hooks/menu/types";
+import { Home } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface MenuIconGridProps {
   icons: IconData[];
@@ -10,13 +12,34 @@ interface MenuIconGridProps {
 }
 
 const MenuIconGrid: React.FC<MenuIconGridProps> = ({ icons, onIconClick }) => {
-  if (icons.length === 0) {
+  const navigate = useNavigate();
+  
+  // Aggiungiamo l'icona della casa come prima icona
+  const welcomeIcon: IconData = {
+    id: "welcome",
+    title: "Benvenuto",
+    path: "/welcome",
+    icon: "Home",
+    is_parent: false,
+    translations: {
+      it: "Benvenuto",
+      en: "Welcome",
+      fr: "Bienvenue",
+      es: "Bienvenido",
+      de: "Willkommen"
+    }
+  };
+
+  if (icons.length === 0 && !welcomeIcon) {
     return <EmptyIconGrid />;
   }
 
+  // Aggiungiamo l'icona della casa all'inizio dell'array
+  const allIcons = [welcomeIcon, ...icons];
+
   return (
     <div className="grid grid-cols-2 gap-4 md:grid-cols-3 h-full">
-      {icons.map((icon, index) => (
+      {allIcons.map((icon, index) => (
         <MenuIcon 
           key={icon.id} 
           icon={icon} 
@@ -29,3 +52,4 @@ const MenuIconGrid: React.FC<MenuIconGridProps> = ({ icons, onIconClick }) => {
 };
 
 export default MenuIconGrid;
+
