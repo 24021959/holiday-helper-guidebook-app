@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import { useHeaderSettings } from "@/hooks/useHeaderSettings";
 import LoadingView from "@/components/LoadingView";
 import TranslatedText from "@/components/TranslatedText";
+import BackToMenu from "@/components/BackToMenu";
 
 const Wifi: React.FC = () => {
   const { headerSettings, loading } = useHeaderSettings();
@@ -20,6 +21,13 @@ const Wifi: React.FC = () => {
         backgroundColor={headerSettings.headerColor}
         establishmentName={headerSettings.establishmentName}
       />
+      
+      <div className="bg-gradient-to-r from-emerald-100 to-teal-100 py-3 px-4 shadow-sm flex items-center">
+        <BackToMenu />
+        <h1 className="text-xl font-medium text-emerald-800 flex-1 text-center pr-6">
+          <TranslatedText text="WiFi Connection" />
+        </h1>
+      </div>
       
       <main className="flex-1 container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-6">
