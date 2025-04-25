@@ -13,32 +13,13 @@ interface MenuIconGridProps {
 const MenuIconGrid: React.FC<MenuIconGridProps> = ({ icons, onIconClick }) => {
   const navigate = useNavigate();
   
-  // Aggiungiamo l'icona della casa come prima icona
-  const welcomeIcon: IconData = {
-    id: "welcome",
-    title: "Benvenuto",
-    path: "/welcome",
-    icon: "Home",
-    is_parent: false,
-    translations: {
-      it: "Benvenuto",
-      en: "Welcome",
-      fr: "Bienvenue",
-      es: "Bienvenido",
-      de: "Willkommen"
-    }
-  };
-
-  if (icons.length === 0 && !welcomeIcon) {
+  if (icons.length === 0) {
     return <EmptyIconGrid />;
   }
 
-  // Aggiungiamo l'icona della casa all'inizio dell'array
-  const allIcons = [welcomeIcon, ...icons];
-
   return (
     <div className="grid grid-cols-2 gap-4 md:grid-cols-3 h-full">
-      {allIcons.map((icon, index) => (
+      {icons.map((icon, index) => (
         <MenuIcon 
           key={icon.id} 
           icon={icon} 

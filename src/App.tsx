@@ -19,6 +19,9 @@ import Wifi from "./pages/Wifi";
 import WhereToEat from "./pages/WhereToEat";
 import Taxi from "./pages/Taxi";
 import RoadsideAssistance from "./pages/RoadsideAssistance";
+import Restaurants from "./pages/restaurants/Restaurants";
+import Pizzerias from "./pages/restaurants/Pizzerias";
+import TraditionalTrattorias from "./pages/restaurants/TraditionalTrattorias";
 
 function App() {
   return (
@@ -36,6 +39,11 @@ function App() {
           <Route path="/where-to-eat" element={<WhereToEat />} />
           <Route path="/taxi" element={<Taxi />} />
           <Route path="/roadside-assistance" element={<RoadsideAssistance />} />
+          
+          {/* Restaurant pages */}
+          <Route path="/restaurants" element={<Restaurants />} />
+          <Route path="/pizzerias" element={<Pizzerias />} />
+          <Route path="/traditional" element={<TraditionalTrattorias />} />
           
           {/* Admin routes */}
           <Route path="/admin/edit" element={<EditPage />} />

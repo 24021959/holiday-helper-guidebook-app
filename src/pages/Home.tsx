@@ -35,7 +35,8 @@ const Home: React.FC = () => {
       </div>
       
       <main className="flex-1 container mx-auto p-4">
-        <FilteredIconNav parentPath={null} />
+        <h1 className="text-2xl font-bold mb-6 text-center">Il nostro menu di servizi</h1>
+        <FilteredIconNav parentPath={null} refreshTrigger={1} />
       </main>
       
       <Footer />
@@ -44,4 +45,3 @@ const Home: React.FC = () => {
 };
 
 export default Home;
-

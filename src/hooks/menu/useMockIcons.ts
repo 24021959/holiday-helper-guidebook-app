@@ -83,6 +83,54 @@ export const useMockIcons = () => {
           es: "Asistencia en Carretera",
           de: "Pannenhilfe"
         }
+      },
+      {
+        id: "restaurants",
+        path: "/restaurants",
+        label: "Ristoranti",
+        title: "Ristoranti",
+        icon: "UtensilsCrossed",
+        parent_path: "/where-to-eat",
+        is_parent: false,
+        translations: {
+          it: "Ristoranti",
+          en: "Restaurants",
+          fr: "Restaurants",
+          es: "Restaurantes",
+          de: "Restaurants"
+        }
+      },
+      {
+        id: "pizzerias",
+        path: "/pizzerias",
+        label: "Pizzerie",
+        title: "Pizzerie",
+        icon: "Utensils",
+        parent_path: "/where-to-eat",
+        is_parent: false,
+        translations: {
+          it: "Pizzerie",
+          en: "Pizzerias",
+          fr: "Pizzerias",
+          es: "Pizzerías",
+          de: "Pizzerien"
+        }
+      },
+      {
+        id: "traditional",
+        path: "/traditional",
+        label: "Trattorie Tipiche",
+        title: "Trattorie Tipiche",
+        icon: "Utensils",
+        parent_path: "/where-to-eat",
+        is_parent: false,
+        translations: {
+          it: "Trattorie Tipiche",
+          en: "Traditional Trattorias",
+          fr: "Trattorias Traditionnelles",
+          es: "Tratorías Tradicionales",
+          de: "Traditionelle Trattorien"
+        }
       }
     ];
   };
