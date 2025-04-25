@@ -1,12 +1,13 @@
+
 import React from "react";
+import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useHeaderSettings } from "@/hooks/useHeaderSettings";
 import LoadingView from "@/components/LoadingView";
 import TranslatedText from "@/components/TranslatedText";
 import BackToMenu from "@/components/BackToMenu";
-import { Link } from "react-router-dom";
-import { Running, Mountain, Waves } from "lucide-react";
+import { Bike, Mountain, Trophy } from "lucide-react";
 
 const SportsActivities: React.FC = () => {
   const { headerSettings, loading } = useHeaderSettings();
@@ -27,14 +28,14 @@ const SportsActivities: React.FC = () => {
       id: "horse-riding",
       title: "Equitazione",
       path: "/sports/horse-riding",
-      icon: <Running className="w-12 h-12 text-amber-600" />,
+      icon: <Trophy className="w-12 h-12 text-amber-600" />,
       description: "Percorsi a cavallo tra natura e storia"
     },
     {
       id: "water-sports",
       title: "Sport Acquatici",
       path: "/sports/water-sports",
-      icon: <Waves className="w-12 h-12 text-cyan-600" />,
+      icon: <Bike className="w-12 h-12 text-cyan-600" />,
       description: "Attività acquatiche per tutti i livelli"
     }
   ];
