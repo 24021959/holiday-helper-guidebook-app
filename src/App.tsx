@@ -1,4 +1,3 @@
-
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
@@ -31,6 +30,12 @@ import SportsActivities from "./pages/sports/SportsActivities";
 import Trekking from "./pages/sports/Trekking";
 import HorseRiding from "./pages/sports/HorseRiding";
 import WaterSports from "./pages/sports/WaterSports";
+import Places from "./pages/places/Places";
+import Beaches from "./pages/places/Beaches";
+import Castles from "./pages/places/Castles";
+import Cities from "./pages/places/Cities";
+import Museums from "./pages/places/Museums";
+import Churches from "./pages/places/Churches";
 
 function App() {
   return (
@@ -131,6 +136,41 @@ function App() {
           <Route path="/de/sports/trekking" element={<Trekking />} />
           <Route path="/de/sports/horse-riding" element={<HorseRiding />} />
           <Route path="/de/sports/water-sports" element={<WaterSports />} />
+          
+          <Route path="/places" element={<Places />} />
+          <Route path="/places/beaches" element={<Beaches />} />
+          <Route path="/places/castles" element={<Castles />} />
+          <Route path="/places/cities" element={<Cities />} />
+          <Route path="/places/museums" element={<Museums />} />
+          <Route path="/places/churches" element={<Churches />} />
+          
+          <Route path="/en/places" element={<Places />} />
+          <Route path="/en/places/beaches" element={<Beaches />} />
+          <Route path="/en/places/castles" element={<Castles />} />
+          <Route path="/en/places/cities" element={<Cities />} />
+          <Route path="/en/places/museums" element={<Museums />} />
+          <Route path="/en/places/churches" element={<Churches />} />
+          
+          <Route path="/fr/places" element={<Places />} />
+          <Route path="/fr/places/beaches" element={<Beaches />} />
+          <Route path="/fr/places/castles" element={<Castles />} />
+          <Route path="/fr/places/cities" element={<Cities />} />
+          <Route path="/fr/places/museums" element={<Museums />} />
+          <Route path="/fr/places/churches" element={<Churches />} />
+          
+          <Route path="/es/places" element={<Places />} />
+          <Route path="/es/places/beaches" element={<Beaches />} />
+          <Route path="/es/places/castles" element={<Castles />} />
+          <Route path="/es/places/cities" element={<Cities />} />
+          <Route path="/es/places/museums" element={<Museums />} />
+          <Route path="/es/places/churches" element={<Churches />} />
+          
+          <Route path="/de/places" element={<Places />} />
+          <Route path="/de/places/beaches" element={<Beaches />} />
+          <Route path="/de/places/castles" element={<Castles />} />
+          <Route path="/de/places/cities" element={<Cities />} />
+          <Route path="/de/places/museums" element={<Museums />} />
+          <Route path="/de/places/churches" element={<Churches />} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>

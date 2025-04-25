@@ -1,3 +1,4 @@
+
 import React from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -6,36 +7,50 @@ import LoadingView from "@/components/LoadingView";
 import TranslatedText from "@/components/TranslatedText";
 import BackToMenu from "@/components/BackToMenu";
 import { Link } from "react-router-dom";
-import { Mountain, Building, Waves } from "lucide-react";
+import { Map, Palmtree, Building, Landmark } from "lucide-react";
 
-const SportsActivities: React.FC = () => {
+const Places: React.FC = () => {
   const { headerSettings, loading } = useHeaderSettings();
 
   if (loading) {
     return <LoadingView />;
   }
 
-  const sportsCategories = [
+  const placeCategories = [
     {
-      id: "trekking",
-      title: "Trekking",
-      path: "/sports/trekking",
-      icon: <Mountain className="w-12 h-12 text-emerald-600" />,
-      description: "Esplora i sentieri naturalistici della zona"
+      id: "beaches",
+      title: "Spiagge",
+      path: "/places/beaches",
+      icon: <Palmtree className="w-12 h-12 text-yellow-600" />,
+      description: "Scopri le più belle spiagge della zona"
     },
     {
-      id: "horse-riding",
-      title: "Equitazione",
-      path: "/sports/horse-riding",
+      id: "castles",
+      title: "Castelli",
+      path: "/places/castles",
+      icon: <Building className="w-12 h-12 text-gray-600" />,
+      description: "Visita i castelli storici del territorio"
+    },
+    {
+      id: "cities",
+      title: "Città",
+      path: "/places/cities",
+      icon: <Building className="w-12 h-12 text-blue-600" />,
+      description: "Esplora le città più affascinanti della regione"
+    },
+    {
+      id: "museums",
+      title: "Musei",
+      path: "/places/museums",
       icon: <Building className="w-12 h-12 text-amber-600" />,
-      description: "Percorsi a cavallo tra natura e storia"
+      description: "Immergiti nella cultura nei nostri musei"
     },
     {
-      id: "water-sports",
-      title: "Sport Acquatici",
-      path: "/sports/water-sports",
-      icon: <Waves className="w-12 h-12 text-cyan-600" />,
-      description: "Attività acquatiche per tutti i livelli"
+      id: "churches",
+      title: "Chiese",
+      path: "/places/churches",
+      icon: <Landmark className="w-12 h-12 text-purple-600" />,
+      description: "Visita le chiese storiche del territorio"
     }
   ];
 
@@ -47,20 +62,20 @@ const SportsActivities: React.FC = () => {
         establishmentName={headerSettings.establishmentName}
       />
       
-      <div className="bg-gradient-to-r from-emerald-100 to-teal-100 py-3 px-4 shadow-sm flex items-center">
+      <div className="bg-gradient-to-r from-blue-100 to-sky-100 py-3 px-4 shadow-sm flex items-center">
         <BackToMenu showBackButton={false} />
-        <h1 className="text-xl font-medium text-emerald-800 flex-1 text-center pr-6">
-          <TranslatedText text="Attività Sportive" />
+        <h1 className="text-xl font-medium text-blue-800 flex-1 text-center pr-6">
+          <TranslatedText text="Cosa Visitare" />
         </h1>
       </div>
       
       <main className="flex-1 container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-6">
-          <TranslatedText text="Scopri le Nostre Attività Sportive" />
+          <TranslatedText text="Scopri i Luoghi da Visitare" />
         </h1>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {sportsCategories.map((category) => (
+          {placeCategories.map((category) => (
             <Link 
               key={category.id} 
               to={category.path}
@@ -85,4 +100,4 @@ const SportsActivities: React.FC = () => {
   );
 };
 
-export default SportsActivities;
+export default Places;
