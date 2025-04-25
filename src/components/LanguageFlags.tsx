@@ -44,14 +44,13 @@ const FlagItem = ({ code, currentLanguage, onClick }: FlagItemProps) => {
     <Button
       variant={currentLanguage === code ? "default" : "outline"}
       onClick={onClick}
-      className={`w-full flex items-center justify-center gap-2 ${
+      className={`w-full flex items-center justify-center ${
         currentLanguage === code 
           ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-300' 
           : 'hover:bg-emerald-50'
       }`}
     >
       <span className="text-2xl">{flagMap[code].emoji}</span>
-      <span className="font-medium">{flagMap[code].alt}</span>
     </Button>
   );
 };
