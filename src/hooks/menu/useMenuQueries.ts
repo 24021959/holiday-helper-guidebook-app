@@ -1,7 +1,11 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Language } from "@/types/translation.types";
+import { useCurrentPath } from "@/hooks/useCurrentPath";
 
 export const useMenuQueries = () => {
+  const currentPath = useCurrentPath();
+  const isHomePage = currentPath === '/home' || currentPath === '/' || currentPath.endsWith('/home');
+
   const fetchRootPagesAndHome = async (language: Language) => {
     try {
       console.log(`Recupero pagine root e home per lingua: ${language}`);
@@ -11,6 +15,11 @@ export const useMenuQueries = () => {
         .select('id, title, path, icon, parent_path, published')
         .eq('published', true)
         .is('parent_path', null);  // Solo pagine root
+
+      // Add condition to exclude home path when on home page
+      if (isHomePage) {
+        query.not('path', 'in', ['/home', `/${language}/home`]);
+      }
 
       if (language === 'it') {
         query.not('path', 'like', '/%/%')  // Esclude sottopagine

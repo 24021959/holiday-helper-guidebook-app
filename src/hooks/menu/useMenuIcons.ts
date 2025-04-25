@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { IconData, MenuIconsProps } from "./types";
@@ -8,6 +7,7 @@ import { useIconProcessor } from "./useIconProcessor";
 import { useTranslation } from "@/context/TranslationContext";
 import { useMockIcons } from "./useMockIcons";
 import { useConnectionRetry } from "./useConnectionRetry";
+import { useCurrentPath } from "@/hooks/useCurrentPath";
 
 export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: MenuIconsProps) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -20,6 +20,8 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: MenuIconsProps)
   const { processPageData, processMenuIconData, checkParentStatus } = useIconProcessor();
   const { language } = useTranslation();
   const { getMockIcons } = useMockIcons();
+  const currentPath = useCurrentPath();
+  const isHomePage = currentPath === '/home' || currentPath === '/' || currentPath.endsWith('/home');
 
   const loadIcons = useCallback(async () => {
     // Previene chiamate multiple contemporanee
@@ -36,7 +38,6 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: MenuIconsProps)
       const cacheKey = `icons_${parentPath || 'root'}_${language}_${refreshTrigger}`;
       const cachedIcons = getCachedIcons(cacheKey);
       
-      // Impostiamo subito le icone dalla cache se disponibili
       if (cachedIcons && cachedIcons.length > 0) {
         console.log(`Uso ${cachedIcons.length} icone dalla cache mentre carico i dati freschi`);
         setIcons(cachedIcons);
@@ -46,7 +47,6 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: MenuIconsProps)
       let pageIcons: IconData[] = [];
       
       if (parentPath === null) {
-        // Per le root pages, usiamo la query combinata
         const { icons: rootIcons, error: rootError } = await queries.fetchRootPagesAndHome(language);
         
         if (rootError) {
@@ -57,14 +57,12 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: MenuIconsProps)
         if (rootIcons && rootIcons.length > 0) {
           pageIcons = rootIcons.map(processPageData);
         } else {
-          // Se non ci sono root pages, proviamo con le menu_icons
           const { data: menuIconsData } = await queries.fetchMenuIcons(null, language);
           if (menuIconsData && menuIconsData.length > 0) {
             pageIcons = menuIconsData.map(processMenuIconData);
           }
         }
       } else {
-        // Per le sottopagine, usiamo la query specifica
         const { data: subPages, error: subPagesError } = await queries.fetchSubPages(parentPath);
         
         if (subPagesError) {
@@ -77,19 +75,21 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: MenuIconsProps)
       }
 
       if (pageIcons.length > 0) {
-        // Verifichiamo lo stato parent di ogni icona
         const processedIcons = await checkParentStatus(pageIcons);
         
-        // Eliminiamo i duplicati basati sul path
+        // Filter out home icon when on home page
+        const filteredIcons = isHomePage 
+          ? processedIcons.filter(icon => !icon.path.endsWith('/home'))
+          : processedIcons;
+        
         const uniqueIcons = Array.from(
-          new Map(processedIcons.map(icon => [icon.path, icon])).values()
+          new Map(filteredIcons.map(icon => [icon.path, icon])).values()
         );
         
         setIcons(uniqueIcons);
         cacheIcons(cacheKey, uniqueIcons);
         setError(null);
       } else {
-        // Se non ci sono icone e non abbiamo già caricato dalla cache
         if (!cachedIcons || cachedIcons.length === 0) {
           const mockIcons = getMockIcons();
           setIcons(mockIcons);
@@ -111,7 +111,7 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: MenuIconsProps)
       loadingRef.current = false;
       setIsLoading(false);
     }
-  }, [parentPath, refreshTrigger, language]);
+  }, [parentPath, refreshTrigger, language, isHomePage]);
 
   const { hasConnectionError, setHasConnectionError, retryCount, setRetryCount } = 
     useConnectionRetry(loadIcons);
