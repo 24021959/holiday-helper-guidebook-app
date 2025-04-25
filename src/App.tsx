@@ -36,6 +36,10 @@ import Castles from "./pages/places/Castles";
 import Cities from "./pages/places/Cities";
 import Museums from "./pages/places/Museums";
 import Churches from "./pages/places/Churches";
+import Emergency from "./pages/Emergency";
+import Pharmacies from "./pages/Pharmacies";
+import Contacts from "./pages/Contacts";
+import Supermarkets from "./pages/Supermarkets";
 
 function App() {
   return (
@@ -171,6 +175,31 @@ function App() {
           <Route path="/de/places/cities" element={<Cities />} />
           <Route path="/de/places/museums" element={<Museums />} />
           <Route path="/de/places/churches" element={<Churches />} />
+          
+          <Route path="/emergency" element={<Emergency />} />
+          <Route path="/pharmacies" element={<Pharmacies />} />
+          <Route path="/contacts" element={<Contacts />} />
+          <Route path="/supermarkets" element={<Supermarkets />} />
+          
+          <Route path="/en/emergency" element={<Emergency />} />
+          <Route path="/en/pharmacies" element={<Pharmacies />} />
+          <Route path="/en/contacts" element={<Contacts />} />
+          <Route path="/en/supermarkets" element={<Supermarkets />} />
+          
+          <Route path="/fr/emergency" element={<Emergency />} />
+          <Route path="/fr/pharmacies" element={<Pharmacies />} />
+          <Route path="/fr/contacts" element={<Contacts />} />
+          <Route path="/fr/supermarkets" element={<Supermarkets />} />
+          
+          <Route path="/es/emergency" element={<Emergency />} />
+          <Route path="/es/pharmacies" element={<Pharmacies />} />
+          <Route path="/es/contacts" element={<Contacts />} />
+          <Route path="/es/supermarkets" element={<Supermarkets />} />
+          
+          <Route path="/de/emergency" element={<Emergency />} />
+          <Route path="/de/pharmacies" element={<Pharmacies />} />
+          <Route path="/de/contacts" element={<Contacts />} />
+          <Route path="/de/supermarkets" element={<Supermarkets />} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>
