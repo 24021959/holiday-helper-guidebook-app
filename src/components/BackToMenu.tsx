@@ -24,12 +24,12 @@ const BackToMenu: React.FC<BackToMenuProps> = ({ showBackButton = true }) => {
   const isInSubmenu = location.pathname.startsWith('/submenu/');
   const hasParentPath = location.state?.parentPath;
   
-  // Gestore per il pulsante home
+  // Gestore per il pulsante home che porta al menu
   const handleHomeClick = () => {
     if (language === 'it') {
-      navigate('/home');
+      navigate('/menu');
     } else {
-      navigate(`/${language}/home`);
+      navigate(`/${language}/menu`);
     }
   };
   
@@ -40,7 +40,7 @@ const BackToMenu: React.FC<BackToMenuProps> = ({ showBackButton = true }) => {
         <NavigateBack />
       )}
       
-      {/* Mostra il pulsante home solo se NON siamo nella home page */}
+      {/* Mostra il pulsante home se NON siamo nella home page */}
       {!isHomePage && (
         <Button 
           variant="ghost" 

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Language } from "@/types/translation.types";
 
@@ -11,17 +10,17 @@ export const useMenuQueries = () => {
         .from('custom_pages')
         .select('id, title, path, icon, parent_path, published')
         .eq('published', true)
-        .is('parent_path', null);  // Assicuriamoci di prendere solo le pagine root
+        .is('parent_path', null);  // Solo pagine root
 
       if (language === 'it') {
-        query.or('path.eq./home,path.eq./menu')
+        query.not('path', 'like', '/%/%')  // Esclude sottopagine
           .not('path', 'like', '/en/%')
           .not('path', 'like', '/fr/%')
           .not('path', 'like', '/es/%')
           .not('path', 'like', '/de/%');
       } else {
-        query.or(`path.eq./${language},path.like./${language}/%,path.eq./${language}/home`)
-          .is('parent_path', null);  // Enfatizziamo ancora che vogliamo solo pagine root anche per le lingue straniere
+        query.or(`path.eq./${language},path.like./${language}/%`)
+          .not('path', 'like', `/${language}/%/%`); // Esclude sottopagine nella lingua corrente
       }
 
       const { data: pages, error } = await query;
@@ -31,15 +30,8 @@ export const useMenuQueries = () => {
         return { icons: [], error };
       }
 
-      // Ordina le pagine mettendo home all'inizio
-      const sortedPages = pages?.sort((a, b) => {
-        if (a.path === '/home' || a.path === `/${language}/home`) return -1;
-        if (b.path === '/home' || b.path === `/${language}/home`) return 1;
-        return 0;
-      });
-
       console.log(`Caricate ${pages?.length || 0} pagine root`);
-      return { icons: sortedPages || [], error: null };
+      return { icons: pages || [], error: null };
     } catch (err) {
       console.error('Errore query pagine:', err);
       return { icons: [], error: err };
