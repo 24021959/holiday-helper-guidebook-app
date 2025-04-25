@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Language } from "@/types/translation.types";
 import { useCurrentPath } from "@/hooks/useCurrentPath";
@@ -9,14 +8,15 @@ export const useMenuQueries = () => {
 
   const fetchRootPagesAndHome = async (language: Language) => {
     try {
-      console.log(`Fetching root pages and home for language: ${language}`);
+      console.log(`[fetchRootPagesAndHome] Starting query for language: ${language}, isHomePage: ${isHomePage}`);
       
       let query = supabase
         .from('custom_pages')
         .select('id, title, path, icon, parent_path, published')
-        .eq('published', true);
-
-      // First apply language filtering
+        .eq('published', true)
+        .is('parent_path', null); // First ensure we only get root pages
+      
+      // Then apply language filtering
       if (language === 'it') {
         query = query
           .not('path', 'like', '/en/%')
@@ -27,26 +27,71 @@ export const useMenuQueries = () => {
         query = query.like('path', `/${language}/%`);
       }
 
-      // Then filter for root pages only
-      query = query.is('parent_path', null);
-      
-      // Finally exclude home path when on home page
+      // Finally exclude specific paths when on home page
       if (isHomePage) {
-        query = query.not('path', 'in', ['/home', `/${language}/home`]);
+        query = query
+          .not('path', 'in', ['/home', `/${language}/home`])
+          .not('path', 'like', '/pizzerias')
+          .not('path', 'like', '/traditional')
+          .not('path', 'like', '/restaurants');
       }
 
       const { data: pages, error } = await query;
       
       if (error) {
-        console.error('Error fetching pages:', error);
+        console.error('[fetchRootPagesAndHome] Error fetching pages:', error);
         return { icons: [], error };
       }
 
-      console.log(`Loaded ${pages?.length || 0} root pages:`, pages);
+      console.log(`[fetchRootPagesAndHome] Loaded ${pages?.length || 0} root pages:`, pages);
       return { icons: pages || [], error: null };
     } catch (err) {
-      console.error('Error in query:', err);
+      console.error('[fetchRootPagesAndHome] Error in query:', err);
       return { icons: [], error: err };
+    }
+  };
+
+  const fetchMenuIcons = async (parentPath: string | null, language: Language) => {
+    try {
+      console.log(`[fetchMenuIcons] Starting query - parent: ${parentPath}, language: ${language}`);
+      
+      let query = supabase
+        .from('menu_icons')
+        .select('*')
+        .eq('published', true);
+
+      // First filter by parent path
+      if (parentPath === null) {
+        query = query.is('parent_path', null);
+      } else {
+        query = query.eq('parent_path', parentPath);
+      }
+        
+      // Then apply language filtering
+      if (language !== 'it') {
+        query = query.like('path', `/${language}/%`);
+      } else {
+        query = query
+          .not('path', 'like', '/en/%')
+          .not('path', 'like', '/fr/%')
+          .not('path', 'like', '/es/%')
+          .not('path', 'like', '/de/%');
+      }
+
+      // Add home page specific filtering
+      if (isHomePage) {
+        query = query
+          .not('path', 'like', '/pizzerias%')
+          .not('path', 'like', '/traditional%')
+          .not('path', 'like', '/restaurants%');
+      }
+      
+      const result = await query;
+      console.log('[fetchMenuIcons] Menu icons result:', result);
+      return result;
+    } catch (err) {
+      console.error('[fetchMenuIcons] Error fetching menu icons:', err);
+      return { data: null, error: err };
     }
   };
 
@@ -83,42 +128,6 @@ export const useMenuQueries = () => {
     } catch (err) {
       console.error('Error checking for children:', err);
       return { count: 0, error: err };
-    }
-  };
-
-  const fetchMenuIcons = async (parentPath: string | null, language: Language) => {
-    try {
-      console.log(`Fetching menu icons for parent: ${parentPath}, language: ${language}`);
-      
-      let query = supabase
-        .from('menu_icons')
-        .select('*')
-        .eq('published', true);
-        
-      // First apply language filtering
-      if (language !== 'it') {
-        query = query.like('path', `/${language}/%`);
-      } else {
-        query = query
-          .not('path', 'like', '/en/%')
-          .not('path', 'like', '/fr/%')
-          .not('path', 'like', '/es/%')
-          .not('path', 'like', '/de/%');
-      }
-
-      // Then apply parent path filtering
-      if (parentPath !== null) {
-        query = query.eq('parent_path', parentPath);
-      } else {
-        query = query.is('parent_path', null);
-      }
-      
-      const result = await query;
-      console.log('Menu icons result:', result);
-      return result;
-    } catch (err) {
-      console.error('Error fetching menu icons:', err);
-      return { data: null, error: err };
     }
   };
 
