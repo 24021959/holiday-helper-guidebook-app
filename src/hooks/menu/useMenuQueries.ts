@@ -19,11 +19,12 @@ export const useMenuQueries = () => {
 
       // Add condition to exclude home path when on home page
       if (isHomePage) {
-        query.not('path', 'in', ['/home', `/${language}/home`]);
+        query = query.not('path', 'in', ['/home', `/${language}/home`]);
       }
 
       // Filter by language and ensure no subpages
       if (language === 'it') {
+        // For Italian, exclude other language paths and subpages
         query = query
           .not('path', 'like', '/%/%')  // Exclude all subpages
           .not('path', 'like', '/en/%')
@@ -31,9 +32,12 @@ export const useMenuQueries = () => {
           .not('path', 'like', '/es/%')
           .not('path', 'like', '/de/%');
       } else {
+        // For non-Italian languages, use specific filtering
+        // First get paths that start with the language
         query = query
-          .and(`path.like./${language}/%,path.neq./${language}`) // Match language prefix but not just the language path
-          .not('path', 'like', `/${language}/%/%`); // Exclude subpages for current language
+          .like('path', `/${language}/%`)
+          // And exclude subpages (paths with multiple slashes)
+          .not('path', 'like', `/${language}/%/%`);
       }
 
       const { data: pages, error } = await query;
@@ -101,12 +105,13 @@ export const useMenuQueries = () => {
       } else if (language !== 'it') {
         // For non-Italian languages, only get root level icons for that language
         query = query
-          .and(`path.like./${language}/%,path.neq./${language}`)
+          .like('path', `/${language}/%`)
+          // Exclude subpages (paths with multiple slashes)
           .not('path', 'like', `/${language}/%/%`);
       } else {
         // For Italian, exclude other language paths and subpages
         query = query
-          .not('path', 'like', '/%/%')
+          .not('path', 'like', '/%/%')  // Exclude all subpages
           .not('path', 'like', '/en/%')
           .not('path', 'like', '/fr/%')
           .not('path', 'like', '/es/%')
