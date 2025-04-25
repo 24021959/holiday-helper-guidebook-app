@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 import Index from "./pages/Index";
@@ -14,6 +15,10 @@ import { TranslationProvider } from "./context/TranslationContext";
 import { Toaster } from "sonner";
 import ChatbotBubble from "./components/ChatbotBubble";
 import EditPage from "./pages/admin/EditPage";
+import Wifi from "./pages/Wifi";
+import WhereToEat from "./pages/WhereToEat";
+import Taxi from "./pages/Taxi";
+import RoadsideAssistance from "./pages/RoadsideAssistance";
 
 function App() {
   return (
@@ -27,6 +32,10 @@ function App() {
           <Route path="/admin/*" element={<AdminLayout />} />
           <Route path="/welcome" element={<Welcome />} />
           <Route path="/storia" element={<Storia />} />
+          <Route path="/wifi" element={<Wifi />} />
+          <Route path="/where-to-eat" element={<WhereToEat />} />
+          <Route path="/taxi" element={<Taxi />} />
+          <Route path="/roadside-assistance" element={<RoadsideAssistance />} />
           
           {/* Admin routes */}
           <Route path="/admin/edit" element={<EditPage />} />
