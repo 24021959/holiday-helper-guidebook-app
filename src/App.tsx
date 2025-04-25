@@ -1,8 +1,6 @@
-
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 import Index from "./pages/Index";
-import Menu from "./pages/Menu";
 import Home from "./pages/Home";
 import SubMenu from "./pages/SubMenu";
 import Login from "./pages/Login";
@@ -53,9 +51,6 @@ function App() {
           <Route path="/fr" element={<Home />} />
           <Route path="/es" element={<Home />} />
           <Route path="/de" element={<Home />} />
-          
-          {/* Menu routes */}
-          <Route path="/menu" element={<Menu />} />
           
           {/* SubMenu routes with improved path handling */}
           <Route path="/submenu/:parentPath" element={<SubMenu />} />

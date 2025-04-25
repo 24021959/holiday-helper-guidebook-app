@@ -64,9 +64,9 @@ export const LanguageFlags: React.FC = () => {
     toast.success(`Lingua cambiata in ${code.toUpperCase()}`);
     
     if (code === 'it') {
-      navigate('/menu');
+      navigate('/home');
     } else {
-      navigate(`/${code}/menu`);
+      navigate(`/${code}/home`);
     }
   };
 
