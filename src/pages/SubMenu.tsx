@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -34,7 +33,6 @@ const SubMenu: React.FC = () => {
   const isMobile = useIsMobile();
   const { language: currentLanguage, setLanguage } = useTranslation();
   
-  // Construct the parent path based on parameters
   const effectiveParentPath = (() => {
     if (language && path) {
       return `/${language}/${path}`;
@@ -47,7 +45,6 @@ const SubMenu: React.FC = () => {
   console.log("SubMenu - URL params:", { parentPath, language, path });
   console.log("SubMenu - Effective parent path:", effectiveParentPath);
   
-  // Set language from URL parameters if available
   useEffect(() => {
     if (language && ['it', 'en', 'fr', 'es', 'de'].includes(language)) {
       if (language !== currentLanguage) {
@@ -57,14 +54,12 @@ const SubMenu: React.FC = () => {
     }
   }, [language, currentLanguage, setLanguage]);
   
-  // Handle path with special characters (like accented letters)
   const decodedPath = effectiveParentPath ? decodeURIComponent(effectiveParentPath) : null;
   
   console.log("SubMenu - Rendering with params:", {
     parentPath, language, path, effectiveParentPath, decodedPath
   });
   
-  // Load parent page details
   const fetchPageDetails = useCallback(async () => {
     if (!decodedPath) return;
     
@@ -73,7 +68,6 @@ const SubMenu: React.FC = () => {
       
       console.log("SubMenu - Fetching page details for path:", decodedPath);
       
-      // Try with exact match first
       let { data: pageData, error: pageError } = await supabase
         .from('custom_pages')
         .select('id, title, path')
@@ -81,7 +75,6 @@ const SubMenu: React.FC = () => {
         .eq('published', true)
         .maybeSingle();
 
-      // If no exact match, try case-insensitive match
       if (!pageData && !pageError) {
         console.log("No exact path match, trying case-insensitive match");
         const { data: fuzzyPageData, error: fuzzyError } = await supabase
@@ -134,7 +127,6 @@ const SubMenu: React.FC = () => {
 
   return (
     <div className={`flex flex-col h-screen ${isMobile ? 'w-full p-0 m-0 max-w-none' : ''}`}>
-      {/* Header with customized settings */}
       <Header 
         logoUrl={headerSettings.logoUrl || undefined}
         backgroundColor={headerSettings.headerColor}
@@ -142,7 +134,6 @@ const SubMenu: React.FC = () => {
         showAdminButton={false}
       />
       
-      {/* Submenu title with home button only (no back button) */}
       <div className="bg-gradient-to-r from-emerald-100 to-teal-100 py-3 px-4 shadow-sm flex items-center">
         <BackToMenu showBackButton={false} />
         <h1 className="text-xl font-medium text-emerald-800 flex-1 text-center pr-6">
@@ -150,14 +141,12 @@ const SubMenu: React.FC = () => {
         </h1>
       </div>
       
-      {/* Main container with icons that takes all available space */}
       <div className="flex-1 flex flex-col overflow-auto">
         {error ? (
           <ErrorView 
             message={error || "Error loading submenu"}
             onRefresh={handleRefresh}
             onAlternativeAction={() => {
-              // Return to main menu in current language
               if (currentLanguage === 'it') {
                 navigate('/menu');
               } else {
@@ -169,13 +158,11 @@ const SubMenu: React.FC = () => {
         ) : (
           <FilteredIconNav 
             parentPath={decodedPath} 
-            onRefresh={handleRefresh}
             refreshTrigger={refreshTrigger}
           />
         )}
       </div>
       
-      {/* Footer */}
       <Footer />
     </div>
   );

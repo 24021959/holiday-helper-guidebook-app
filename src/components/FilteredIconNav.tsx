@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import IconNav from "./IconNav";
 import { useMenuIcons } from "@/hooks/menu/useMenuIcons";
 import LoadingIndicator from "./LoadingIndicator";
@@ -20,16 +20,7 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     refreshTrigger
   });
   
-  // Dati debug
   const currentPath = useCurrentPath();
-  
-  useEffect(() => {
-    console.log(`FilteredIconNav montato con parentPath: ${parentPath}`);
-    
-    return () => {
-      console.log(`FilteredIconNav smontato con parentPath: ${parentPath}`);
-    };
-  }, [parentPath]);
   
   if (isLoading) {
     return <LoadingIndicator />;
@@ -38,8 +29,6 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
   if (error) {
     return <ErrorDisplay error={error} onRetry={refreshIcons} />;
   }
-  
-  console.log(`Rendering ${icons.length} icons for path: ${parentPath || 'root'}`);
   
   return (
     <div className="flex-1">
