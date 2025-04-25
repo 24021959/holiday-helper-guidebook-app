@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { IconData, MenuIconsProps } from "./types";
 import { useMenuQueries } from "./useMenuQueries";
@@ -13,46 +13,50 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: MenuIconsProps)
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [icons, setIcons] = useState<IconData[]>([]);
+  const loadingRef = useRef(false);
   
   const queries = useMenuQueries();
   const { getCachedIcons, cacheIcons } = useIconCache();
   const { processPageData, processMenuIconData, checkParentStatus } = useIconProcessor();
   const { language } = useTranslation();
   const { getMockIcons } = useMockIcons();
-  
+
   const loadIcons = useCallback(async () => {
+    // Previene chiamate multiple contemporanee
+    if (loadingRef.current) {
+      console.log("Caricamento già in corso, skip");
+      return;
+    }
+
     try {
-      console.log(`Loading icons for: ${parentPath || 'root'}, language: ${language}`);
-      setIsLoading(true);
+      console.log(`Caricamento icone per: ${parentPath || 'root'}, lingua: ${language}`);
+      loadingRef.current = true;
       setError(null);
       
       const cacheKey = `icons_${parentPath || 'root'}_${language}_${refreshTrigger}`;
       const cachedIcons = getCachedIcons(cacheKey);
       
       if (cachedIcons && cachedIcons.length > 0) {
-        console.log(`Using ${cachedIcons.length} cached icons while loading fresh data`);
+        console.log(`Uso ${cachedIcons.length} icone dalla cache mentre carico i dati freschi`);
         setIcons(cachedIcons);
+        setIsLoading(false);
       }
-      
-      let pageIcons: IconData[] = [];
 
+      let pageIcons: IconData[] = [];
+      
       if (parentPath === null) {
-        const { data: rootPages, error: rootError } = await queries.fetchRootPagesForLanguage(language);
+        const { icons: rootIcons, error: rootError } = await queries.fetchRootPagesAndHome(language);
         
         if (rootError) {
-          console.error("Root pages error:", rootError);
+          console.error("Errore caricamento root pages:", rootError);
           throw rootError;
         }
 
-        if (rootPages && rootPages.length > 0) {
-          pageIcons = rootPages.map(processPageData);
-          const homePage = await queries.fetchHomePageForLanguage(language);
-          if (homePage) {
-            pageIcons.push(processPageData(homePage));
-          }
+        if (rootIcons && rootIcons.length > 0) {
+          pageIcons = rootIcons.map(processPageData);
         } else {
-          const { data: menuIconsData, error: menuIconsError } = await queries.fetchMenuIcons(null, language);
-          if (!menuIconsError && menuIconsData && menuIconsData.length > 0) {
+          const { data: menuIconsData } = await queries.fetchMenuIcons(null, language);
+          if (menuIconsData && menuIconsData.length > 0) {
             pageIcons = menuIconsData.map(processMenuIconData);
           }
         }
@@ -63,14 +67,7 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: MenuIconsProps)
           throw subPagesError;
         }
 
-        if (subPages && subPages.length > 0) {
-          pageIcons = subPages.map(processPageData);
-        } else {
-          const { data: menuIconsData, error: menuIconsError } = await queries.fetchMenuIcons(parentPath, language);
-          if (!menuIconsError && menuIconsData && menuIconsData.length > 0) {
-            pageIcons = menuIconsData.map(processMenuIconData);
-          }
-        }
+        pageIcons = subPages ? subPages.map(processPageData) : [];
       }
 
       if (pageIcons.length > 0) {
@@ -80,29 +77,27 @@ export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: MenuIconsProps)
         );
         setIcons(uniqueIcons);
         cacheIcons(cacheKey, uniqueIcons);
-      } else {
+      } else if (!cachedIcons || cachedIcons.length === 0) {
         const mockIcons = getMockIcons();
         setIcons(mockIcons);
         cacheIcons(cacheKey, mockIcons);
       }
+
+      setIsLoading(false);
     } catch (error: any) {
-      console.error("Error in loadIcons:", error);
-      const errorMsg = error?.message || "Error loading menu. Try again later.";
+      console.error("Errore in loadIcons:", error);
+      const errorMsg = error?.message || "Errore caricamento menu. Riprova più tardi.";
       setError(errorMsg);
       
-      const cacheKey = `icons_${parentPath || 'root'}_${language}_${refreshTrigger-1}`;
-      const cachedIcons = getCachedIcons(cacheKey);
-      
-      if (cachedIcons && cachedIcons.length > 0) {
-        setIcons(cachedIcons);
-      } else {
+      if (!icons.length) {
         const mockIcons = getMockIcons();
         setIcons(mockIcons);
       }
     } finally {
+      loadingRef.current = false;
       setIsLoading(false);
     }
-  }, [parentPath, refreshTrigger, language, queries, processPageData, processMenuIconData, checkParentStatus, cacheIcons, getCachedIcons]);
+  }, [parentPath, refreshTrigger, language]);
 
   const { hasConnectionError, setHasConnectionError, retryCount, setRetryCount } = useConnectionRetry(loadIcons);
 

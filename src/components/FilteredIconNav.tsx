@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import IconNav from "./IconNav";
 import { useMenuIcons } from "@/hooks/menu/useMenuIcons";
 import LoadingIndicator from "./LoadingIndicator";
@@ -22,16 +22,18 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
   
   const currentPath = useCurrentPath();
   
-  console.log("FilteredIconNav - Current path:", currentPath);
-  console.log("FilteredIconNav - Parent path:", parentPath);
-  console.log("FilteredIconNav - Icons loaded:", icons.length);
-  
-  if (isLoading) {
-    return <LoadingIndicator />;
-  }
-  
+  useEffect(() => {
+    console.log("FilteredIconNav - Current path:", currentPath);
+    console.log("FilteredIconNav - Parent path:", parentPath);
+    console.log("FilteredIconNav - Icons loaded:", icons.length);
+  }, [currentPath, parentPath, icons.length]);
+
   if (error) {
     return <ErrorDisplay error={error} onRetry={refreshIcons} />;
+  }
+  
+  if (isLoading && icons.length === 0) {
+    return <LoadingIndicator />;
   }
   
   return (
