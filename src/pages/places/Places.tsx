@@ -1,4 +1,3 @@
-
 import React from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -7,7 +6,7 @@ import LoadingView from "@/components/LoadingView";
 import TranslatedText from "@/components/TranslatedText";
 import BackToMenu from "@/components/BackToMenu";
 import { Link } from "react-router-dom";
-import { Map, Palmtree, Building, Landmark } from "lucide-react";
+import { Map } from "lucide-react";
 
 const Places: React.FC = () => {
   const { headerSettings, loading } = useHeaderSettings();
@@ -81,8 +80,8 @@ const Places: React.FC = () => {
               to={category.path}
               className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow flex flex-col items-center text-center"
             >
-              <div className="mb-4">
-                {category.icon}
+              <div className="mb-4 bg-[#E5DEFF] rounded-full p-3">
+                <Map className="w-12 h-12 text-purple-600" />
               </div>
               <h2 className="text-xl font-semibold mb-2">
                 <TranslatedText text={category.title} />

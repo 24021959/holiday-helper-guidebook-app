@@ -13,7 +13,7 @@ const RoadsideAssistance: React.FC = () => {
   const { headerSettings, loading } = useHeaderSettings();
 
   if (loading) {
-    return <LoadingView />;
+    return <LoadingView fullScreen={true} />;
   }
 
   return (
@@ -34,7 +34,9 @@ const RoadsideAssistance: React.FC = () => {
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="space-y-6">
             <div className="flex items-center gap-4">
-              <Car className="w-8 h-8 text-red-600" />
+              <div className="bg-[#FFDEE2] rounded-full p-3">
+                <Car className="w-12 h-12 text-red-600" />
+              </div>
               <div>
                 <h2 className="text-xl font-semibold">
                   <TranslatedText text="24/7 Emergency Service" />
