@@ -11,14 +11,12 @@ interface MenuIconGridProps {
 }
 
 const MenuIconGrid: React.FC<MenuIconGridProps> = ({ icons, onIconClick }) => {
-  const navigate = useNavigate();
-  
   if (icons.length === 0) {
     return <EmptyIconGrid />;
   }
 
   return (
-    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 h-full">
+    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 h-full">
       {icons.map((icon, index) => (
         <MenuIcon 
           key={icon.id} 

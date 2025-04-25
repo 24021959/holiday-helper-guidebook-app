@@ -5,7 +5,7 @@ import { useAdminPages } from "@/hooks/admin/useAdminPages";
 import { toast } from "sonner";
 import { PagesManagementView } from "@/components/admin/manage/PagesManagementView";
 import { Button } from "@/components/ui/button";
-import { Trash2, AlertTriangle } from "lucide-react";
+import { PlusCircle, RefreshCw } from "lucide-react";
 import { usePageDeletion } from "@/hooks/page/usePageDeletion";
 import { useNavigate } from "react-router-dom";
 
@@ -24,6 +24,7 @@ const AdminManage = () => {
   const { deleteIndexPage } = usePageDeletion();
 
   useEffect(() => {
+    // Controllo per la presenza di pagine duplicate (index e home)
     if (pages && pages.length > 0) {
       const indexPage = pages.find(p => p.path === '/');
       const homePage = pages.find(p => p.path === '/home');
@@ -50,6 +51,11 @@ const AdminManage = () => {
     }
   };
 
+  const handleRefresh = () => {
+    fetchPages();
+    toast.info("Aggiornamento lista pagine...");
+  };
+
   const handleView = (page: PageData) => {
     const isHomePath = page.path === "/" || page.path === "/home";
     if (isHomePath) {
@@ -60,12 +66,15 @@ const AdminManage = () => {
   };
 
   const handleEdit = (page: PageData) => {
-    console.log("Navigating to edit page:", page.title);
     navigate("/admin/edit", { 
       state: { 
         pageToEdit: page 
       } 
     });
+  };
+
+  const handleAddNewPage = () => {
+    navigate("/admin/create");
   };
 
   if (isLoading) {
@@ -76,15 +85,32 @@ const AdminManage = () => {
     );
   }
 
-  // Debug output
-  console.log("Pages loaded:", pages?.length || 0);
-
   return (
     <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center gap-4">
+          <Button 
+            className="bg-emerald-600 hover:bg-emerald-700" 
+            onClick={handleAddNewPage}
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Crea nuova pagina
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            onClick={handleRefresh} 
+            className="border-emerald-200"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Aggiorna
+          </Button>
+        </div>
+      </div>
+      
       {needsIndexCleanup && (
         <div className="mb-6 p-4 border border-amber-300 bg-amber-50 rounded-lg">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
             <div className="flex-1">
               <h3 className="font-medium text-amber-800">Rilevate due pagine home</h3>
               <p className="text-amber-700 text-sm mt-1">
@@ -96,7 +122,6 @@ const AdminManage = () => {
                 className="mt-3 bg-white text-amber-700 border-amber-300 hover:bg-amber-100"
                 onClick={handleDeleteIndexPage}
               >
-                <Trash2 className="h-4 w-4 mr-2" /> 
                 Elimina pagina Index (/)
               </Button>
             </div>
