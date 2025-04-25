@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Language } from "@/types/translation.types";
 import { useCurrentPath } from "@/hooks/useCurrentPath";
@@ -10,26 +11,29 @@ export const useMenuQueries = () => {
     try {
       console.log(`Recupero pagine root e home per lingua: ${language}`);
       
-      const query = supabase
+      let query = supabase
         .from('custom_pages')
         .select('id, title, path, icon, parent_path, published')
         .eq('published', true)
-        .is('parent_path', null);  // Solo pagine root
+        .is('parent_path', null);  // Solo pagine root e no sottopagine
 
       // Add condition to exclude home path when on home page
       if (isHomePage) {
         query.not('path', 'in', ['/home', `/${language}/home`]);
       }
 
+      // Filter by language and ensure no subpages
       if (language === 'it') {
-        query.not('path', 'like', '/%/%')  // Esclude sottopagine
+        query = query
+          .not('path', 'like', '/%/%')  // Exclude all subpages
           .not('path', 'like', '/en/%')
           .not('path', 'like', '/fr/%')
           .not('path', 'like', '/es/%')
           .not('path', 'like', '/de/%');
       } else {
-        query.or(`path.eq./${language},path.like./${language}/%`)
-          .not('path', 'like', `/${language}/%/%`); // Esclude sottopagine nella lingua corrente
+        query = query
+          .and(`path.like./${language}/%,path.neq./${language}`) // Match language prefix but not just the language path
+          .not('path', 'like', `/${language}/%/%`); // Exclude subpages for current language
       }
 
       const { data: pages, error } = await query;
@@ -95,17 +99,18 @@ export const useMenuQueries = () => {
       if (parentPath !== null) {
         query = query.eq('parent_path', parentPath);
       } else if (language !== 'it') {
-        query = query.or(`path.eq./${language},path.like./${language}/%`);
-      } else {
+        // For non-Italian languages, only get root level icons for that language
         query = query
+          .and(`path.like./${language}/%,path.neq./${language}`)
+          .not('path', 'like', `/${language}/%/%`);
+      } else {
+        // For Italian, exclude other language paths and subpages
+        query = query
+          .not('path', 'like', '/%/%')
           .not('path', 'like', '/en/%')
           .not('path', 'like', '/fr/%')
           .not('path', 'like', '/es/%')
-          .not('path', 'like', '/de/%')
-          .not('path', 'eq', '/en')
-          .not('path', 'eq', '/fr')
-          .not('path', 'eq', '/es')
-          .not('path', 'eq', '/de');
+          .not('path', 'like', '/de/%');
       }
       
       const result = await query;
