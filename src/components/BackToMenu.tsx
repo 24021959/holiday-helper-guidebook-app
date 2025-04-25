@@ -15,11 +15,16 @@ const BackToMenu: React.FC<BackToMenuProps> = ({ showBackButton = true }) => {
   const navigate = useNavigate();
   const { language } = useTranslation();
   
-  // Check if we're in a submenu or content page
+  // Verifica se siamo nella home page
+  const isHomePage = location.pathname === '/home' || 
+                    location.pathname === `/${language}/home` ||
+                    location.pathname === '/';
+  
+  // Verifica se siamo in una sottopagina o pagina con contenuto
   const isInSubmenu = location.pathname.startsWith('/submenu/');
   const hasParentPath = location.state?.parentPath;
   
-  // Handler for home button
+  // Gestore per il pulsante home
   const handleHomeClick = () => {
     if (language === 'it') {
       navigate('/home');
@@ -30,20 +35,22 @@ const BackToMenu: React.FC<BackToMenuProps> = ({ showBackButton = true }) => {
   
   return (
     <div className="flex items-center gap-2">
-      {/* Show back button only in submenus or pages with parent */}
+      {/* Mostra il pulsante indietro solo nelle sottopagine o pagine con parent */}
       {(showBackButton && (isInSubmenu || hasParentPath)) && (
         <NavigateBack />
       )}
       
-      {/* Always show home button */}
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        onClick={handleHomeClick}
-        className="rounded-full h-8 w-8 bg-white/80 hover:bg-white"
-      >
-        <Home className="h-4 w-4 text-emerald-600" />
-      </Button>
+      {/* Mostra il pulsante home solo se NON siamo nella home page */}
+      {!isHomePage && (
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={handleHomeClick}
+          className="rounded-full h-8 w-8 bg-white/80 hover:bg-white"
+        >
+          <Home className="h-4 w-4 text-emerald-600" />
+        </Button>
+      )}
     </div>
   );
 };

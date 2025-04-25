@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Language } from "@/types/translation.types";
 
@@ -10,16 +11,17 @@ export const useMenuQueries = () => {
         .from('custom_pages')
         .select('id, title, path, icon, parent_path, published')
         .eq('published', true)
-        .is('parent_path', null);
+        .is('parent_path', null);  // Assicuriamoci di prendere solo le pagine root
 
       if (language === 'it') {
-        query.or('path.eq./home,or(is_parent.is.null,not.path.like./%/%)')
+        query.or('path.eq./home,path.eq./menu')
           .not('path', 'like', '/en/%')
           .not('path', 'like', '/fr/%')
           .not('path', 'like', '/es/%')
           .not('path', 'like', '/de/%');
       } else {
-        query.or(`path.eq./${language},path.like./${language}/%,path.eq./${language}/home`);
+        query.or(`path.eq./${language},path.like./${language}/%,path.eq./${language}/home`)
+          .is('parent_path', null);  // Enfatizziamo ancora che vogliamo solo pagine root anche per le lingue straniere
       }
 
       const { data: pages, error } = await query;
@@ -117,7 +119,7 @@ export const useMenuQueries = () => {
   return {
     fetchRootPagesAndHome,
     fetchSubPages,
-    fetchMenuIcons,
-    checkForChildren
+    checkForChildren,
+    fetchMenuIcons
   };
 };
