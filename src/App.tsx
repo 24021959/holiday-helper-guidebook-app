@@ -1,3 +1,5 @@
+
+import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 import Index from "./pages/Index";
@@ -25,6 +27,10 @@ import Rentals from "./pages/rentals/Rentals";
 import VehicleRentals from "./pages/rentals/VehicleRentals";
 import BikeRentals from "./pages/rentals/BikeRentals";
 import BoatRentals from "./pages/rentals/BoatRentals";
+import SportsActivities from "./pages/sports/SportsActivities";
+import Trekking from "./pages/sports/Trekking";
+import HorseRiding from "./pages/sports/HorseRiding";
+import WaterSports from "./pages/sports/WaterSports";
 
 function App() {
   return (
@@ -103,6 +109,28 @@ function App() {
           <Route path="/de/rentals/vehicles" element={<VehicleRentals />} />
           <Route path="/de/rentals/bikes" element={<BikeRentals />} />
           <Route path="/de/rentals/boats" element={<BoatRentals />} />
+          
+          <Route path="/sports" element={<SportsActivities />} />
+          <Route path="/sports/trekking" element={<Trekking />} />
+          <Route path="/sports/horse-riding" element={<HorseRiding />} />
+          <Route path="/sports/water-sports" element={<WaterSports />} />
+          
+          <Route path="/en/sports" element={<SportsActivities />} />
+          <Route path="/en/sports/trekking" element={<Trekking />} />
+          <Route path="/en/sports/horse-riding" element={<HorseRiding />} />
+          <Route path="/en/sports/water-sports" element={<WaterSports />} />
+          <Route path="/fr/sports" element={<SportsActivities />} />
+          <Route path="/fr/sports/trekking" element={<Trekking />} />
+          <Route path="/fr/sports/horse-riding" element={<HorseRiding />} />
+          <Route path="/fr/sports/water-sports" element={<WaterSports />} />
+          <Route path="/es/sports" element={<SportsActivities />} />
+          <Route path="/es/sports/trekking" element={<Trekking />} />
+          <Route path="/es/sports/horse-riding" element={<HorseRiding />} />
+          <Route path="/es/sports/water-sports" element={<WaterSports />} />
+          <Route path="/de/sports" element={<SportsActivities />} />
+          <Route path="/de/sports/trekking" element={<Trekking />} />
+          <Route path="/de/sports/horse-riding" element={<HorseRiding />} />
+          <Route path="/de/sports/water-sports" element={<WaterSports />} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>
