@@ -4,6 +4,7 @@ import NavigateBack from "./NavigateBack";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Home } from "lucide-react";
+import { useTranslation } from "@/context/TranslationContext";
 
 interface BackToMenuProps {
   showBackButton?: boolean;
@@ -12,20 +13,29 @@ interface BackToMenuProps {
 const BackToMenu: React.FC<BackToMenuProps> = ({ showBackButton = true }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { language } = useTranslation();
+  
+  // Check if we're in a submenu or content page
+  const isInSubmenu = location.pathname.startsWith('/submenu/');
+  const hasParentPath = location.state?.parentPath;
   
   // Handler for home button
   const handleHomeClick = () => {
-    navigate('/menu');
+    if (language === 'it') {
+      navigate('/home');
+    } else {
+      navigate(`/${language}/home`);
+    }
   };
-  
-  // Determine if we're in a submenu view
-  const isInSubmenu = location.pathname.startsWith('/submenu/');
   
   return (
     <div className="flex items-center gap-2">
-      {/* Only show the back button if not in submenu or if specifically requested */}
-      {(showBackButton && !isInSubmenu) && <NavigateBack />}
+      {/* Show back button only in submenus or pages with parent */}
+      {(showBackButton && (isInSubmenu || hasParentPath)) && (
+        <NavigateBack />
+      )}
       
+      {/* Always show home button */}
       <Button 
         variant="ghost" 
         size="icon" 

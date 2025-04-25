@@ -7,6 +7,7 @@ import LoadingView from "@/components/LoadingView";
 import ErrorDisplay from "@/components/home/ErrorDisplay";
 import { LanguageFlags } from "@/components/LanguageFlags";
 import FilteredIconNav from "@/components/FilteredIconNav";
+import BackToMenu from "@/components/BackToMenu";
 
 const Home: React.FC = () => {
   const { headerSettings, loading, error, refreshHeaderSettings } = useHeaderSettings();
@@ -29,7 +30,8 @@ const Home: React.FC = () => {
       />
       
       <div className="border-b border-gray-100 shadow-sm">
-        <div className="container mx-auto py-4 px-4">
+        <div className="container mx-auto py-4 px-4 flex justify-between items-center">
+          <BackToMenu showBackButton={false} />
           <LanguageFlags />
         </div>
       </div>

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Language } from "@/types/translation.types";
 
@@ -10,11 +9,11 @@ export const useMenuQueries = () => {
       const query = supabase
         .from('custom_pages')
         .select('id, title, path, icon, parent_path, published')
-        .eq('published', true);
+        .eq('published', true)
+        .is('parent_path', null);
 
       if (language === 'it') {
-        // Query corretta con parentesi appropriate per le condizioni OR
-        query.or('path.eq./home,or(is_parent.is.null,not.path.like./%/%)') 
+        query.or('path.eq./home,or(is_parent.is.null,not.path.like./%/%)')
           .not('path', 'like', '/en/%')
           .not('path', 'like', '/fr/%')
           .not('path', 'like', '/es/%')
@@ -37,7 +36,7 @@ export const useMenuQueries = () => {
         return 0;
       });
 
-      console.log(`Caricate ${sortedPages?.length || 0} pagine`);
+      console.log(`Caricate ${pages?.length || 0} pagine root`);
       return { icons: sortedPages || [], error: null };
     } catch (err) {
       console.error('Errore query pagine:', err);
