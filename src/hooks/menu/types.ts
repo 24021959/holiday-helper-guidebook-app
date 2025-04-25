@@ -2,21 +2,13 @@
 export interface IconData {
   id: string;
   path: string;
-  label?: string;
-  title?: string;
+  parent_path: string | null;
+  label: string;
   icon: string;
-  parent_path?: string | null;
-  bg_color?: string;
-  published?: boolean;
+  bg_color: string;
+  published: boolean;
+  is_submenu?: boolean;
   is_parent?: boolean;
-  translations?: {
-    [key: string]: string;
-  };
-}
-
-export interface MenuIconsProps {
-  parentPath: string | null;
-  refreshTrigger?: number;
 }
 
 export interface LanguageStats {
@@ -28,11 +20,4 @@ export interface TranslationProgress {
   total: number;
   completed: number;
   currentPage?: string;
-}
-
-export interface MenuIconsHookResult {
-  icons: IconData[];
-  isLoading: boolean;
-  error: string | null;
-  refreshIcons: () => void;
 }

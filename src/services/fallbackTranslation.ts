@@ -1,15 +1,33 @@
 
-export async function translateWithFallback(text: string, sourceLang: string, targetLang: string): Promise<string> {
+import { Language } from '@/types/translation.types';
+
+// This is a simple fallback translation service when the main service fails
+export const translateWithFallback = async (
+  text: string, 
+  fromLang: 'it' | string, 
+  toLang: Language
+): Promise<string> => {
   try {
-    const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`);
+    // Public translation API as fallback
+    const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.substring(0, 1000))}&langpair=${fromLang}|${toLang}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Fallback translation failed with status: ${response.status}`);
+    }
+
     const data = await response.json();
     
-    if (data && data.responseData && data.responseData.translatedText) {
+    if (data?.responseData?.translatedText) {
       return data.responseData.translatedText;
     }
-    return text;
+    
+    throw new Error('No translation in response');
   } catch (error) {
-    console.error('Translation API error:', error);
+    console.error('Fallback translation error:', error);
+    // Return original text if fallback fails
     return text;
   }
-}
+};
