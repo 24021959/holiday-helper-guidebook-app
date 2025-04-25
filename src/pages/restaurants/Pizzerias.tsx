@@ -5,8 +5,7 @@ import Footer from "@/components/Footer";
 import { useHeaderSettings } from "@/hooks/useHeaderSettings";
 import LoadingView from "@/components/LoadingView";
 import TranslatedText from "@/components/TranslatedText";
-import { ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import BackToMenu from "@/components/BackToMenu";
 
 const Pizzerias: React.FC = () => {
   const { headerSettings, loading } = useHeaderSettings();
@@ -22,6 +21,13 @@ const Pizzerias: React.FC = () => {
         backgroundColor={headerSettings.headerColor}
         establishmentName={headerSettings.establishmentName}
       />
+      
+      <div className="bg-gradient-to-r from-emerald-100 to-teal-100 py-3 px-4 shadow-sm flex items-center">
+        <BackToMenu parentPath="/restaurants" />
+        <h1 className="text-xl font-medium text-emerald-800 flex-1 text-center pr-6">
+          <TranslatedText text="Pizzerie" />
+        </h1>
+      </div>
       
       <main className="flex-1 container mx-auto px-4 py-8">
         <Link to="/where-to-eat" className="inline-flex items-center mb-6">

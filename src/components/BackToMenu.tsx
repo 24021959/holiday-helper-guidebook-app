@@ -8,20 +8,21 @@ import TranslatedText from "./TranslatedText";
 
 interface BackToMenuProps {
   showBackButton?: boolean;
+  parentPath?: string;
 }
 
-const BackToMenu: React.FC<BackToMenuProps> = ({ showBackButton = true }) => {
+const BackToMenu: React.FC<BackToMenuProps> = ({ 
+  showBackButton = true,
+  parentPath 
+}) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { language } = useTranslation();
   
-  const isHomePage = location.pathname === '/home' || 
-                    location.pathname === `/${language}/home` ||
-                    location.pathname === '/';
+  // Determina se siamo in una sottopagina
+  const isSubPage = parentPath || location.pathname.split('/').filter(Boolean).length > 1;
   
-  const isInSubmenu = location.pathname.startsWith('/submenu/');
-  const hasParentPath = location.state?.parentPath;
-  
+  // Gestisce il ritorno alla home
   const handleHomeClick = () => {
     if (language === 'it') {
       navigate('/home');
@@ -30,15 +31,10 @@ const BackToMenu: React.FC<BackToMenuProps> = ({ showBackButton = true }) => {
     }
   };
   
+  // Gestisce il ritorno alla pagina precedente
   const handleBack = () => {
-    if (hasParentPath) {
-      navigate(-1);
-    } else if (isInSubmenu) {
-      if (language === 'it') {
-        navigate('/home');
-      } else {
-        navigate(`/${language}/home`);
-      }
+    if (parentPath) {
+      navigate(parentPath);
     } else {
       navigate(-1);
     }
@@ -46,7 +42,7 @@ const BackToMenu: React.FC<BackToMenuProps> = ({ showBackButton = true }) => {
   
   return (
     <div className="flex items-center gap-2">
-      {(showBackButton && (isInSubmenu || hasParentPath || !isHomePage)) && (
+      {showBackButton && isSubPage && (
         <Button
           variant="ghost"
           className="p-2 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
@@ -57,16 +53,14 @@ const BackToMenu: React.FC<BackToMenuProps> = ({ showBackButton = true }) => {
         </Button>
       )}
       
-      {!isHomePage && (
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={handleHomeClick}
-          className="rounded-full h-8 w-8 bg-white/80 hover:bg-white"
-        >
-          <Home className="h-4 w-4 text-emerald-600" />
-        </Button>
-      )}
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        onClick={handleHomeClick}
+        className="rounded-full h-8 w-8 bg-white/80 hover:bg-white"
+      >
+        <Home className="h-4 w-4 text-emerald-600" />
+      </Button>
     </div>
   );
 };
