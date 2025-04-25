@@ -1,9 +1,10 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Language } from "@/types/translation.types";
-import { useCurrentPath } from "@/hooks/useCurrentPath";
+import { useCurrentPath, useCurrentLanguagePath } from "@/hooks/useCurrentPath";
 
 export const useMenuQueries = () => {
   const currentPath = useCurrentPath();
+  const currentLanguage = useCurrentLanguagePath();
   const isHomePage = currentPath === '/home' || currentPath === '/' || currentPath.endsWith('/home');
 
   const fetchRootPagesAndHome = async (language: Language) => {
@@ -12,11 +13,11 @@ export const useMenuQueries = () => {
       
       let query = supabase
         .from('custom_pages')
-        .select('id, title, path, icon, parent_path, published')
+        .select('id, title, path, icon, parent_path, published, translations')
         .eq('published', true)
-        .is('parent_path', null); // First ensure we only get root pages
+        .is('parent_path', null);
       
-      // Then apply language filtering
+      // Apply language filtering
       if (language === 'it') {
         query = query
           .not('path', 'like', '/en/%')
@@ -39,42 +40,6 @@ export const useMenuQueries = () => {
     } catch (err) {
       console.error('[fetchRootPagesAndHome] Error in query:', err);
       return { icons: [], error: err };
-    }
-  };
-
-  const fetchMenuIcons = async (parentPath: string | null, language: Language) => {
-    try {
-      console.log(`[fetchMenuIcons] Starting query - parent: ${parentPath}, language: ${language}`);
-      
-      let query = supabase
-        .from('menu_icons')
-        .select('*')
-        .eq('published', true);
-
-      // First filter by parent path
-      if (parentPath === null) {
-        query = query.is('parent_path', null);
-      } else {
-        query = query.eq('parent_path', parentPath);
-      }
-        
-      // Then apply language filtering
-      if (language !== 'it') {
-        query = query.like('path', `/${language}/%`);
-      } else {
-        query = query
-          .not('path', 'like', '/en/%')
-          .not('path', 'like', '/fr/%')
-          .not('path', 'like', '/es/%')
-          .not('path', 'like', '/de/%');
-      }
-      
-      const result = await query;
-      console.log('[fetchMenuIcons] Menu icons result:', result);
-      return result;
-    } catch (err) {
-      console.error('[fetchMenuIcons] Error fetching menu icons:', err);
-      return { data: null, error: err };
     }
   };
 
@@ -111,6 +76,42 @@ export const useMenuQueries = () => {
     } catch (err) {
       console.error('Error checking for children:', err);
       return { count: 0, error: err };
+    }
+  };
+
+  const fetchMenuIcons = async (parentPath: string | null, language: Language) => {
+    try {
+      console.log(`[fetchMenuIcons] Starting query - parent: ${parentPath}, language: ${language}`);
+      
+      let query = supabase
+        .from('menu_icons')
+        .select('*')
+        .eq('published', true);
+
+      // First filter by parent path
+      if (parentPath === null) {
+        query = query.is('parent_path', null);
+      } else {
+        query = query.eq('parent_path', parentPath);
+      }
+        
+      // Then apply language filtering
+      if (language !== 'it') {
+        query = query.like('path', `/${language}/%`);
+      } else {
+        query = query
+          .not('path', 'like', '/en/%')
+          .not('path', 'like', '/fr/%')
+          .not('path', 'like', '/es/%')
+          .not('path', 'like', '/de/%');
+      }
+      
+      const result = await query;
+      console.log('[fetchMenuIcons] Menu icons result:', result);
+      return result;
+    } catch (err) {
+      console.error('[fetchMenuIcons] Error fetching menu icons:', err);
+      return { data: null, error: err };
     }
   };
 

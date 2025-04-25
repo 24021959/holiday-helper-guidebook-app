@@ -4,6 +4,7 @@ import MenuIconGrid from "./MenuIconGrid";
 import { IconData } from "@/hooks/menu/types";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@/context/TranslationContext";
+import { addLanguageToPath } from "@/utils/translationUtils";
 
 interface IconNavProps {
   parentPath: string | null;
@@ -26,24 +27,23 @@ const IconNav: React.FC<IconNavProps> = ({
       // Check if this is a parent page (has subpages)
       if (icon.is_parent) {
         console.log("Navigation to submenu for parent:", icon.path);
+        let pathForSubmenu = icon.path.startsWith('/') ? icon.path.substring(1) : icon.path;
         
-        // Extract path without initial slash for the URL parameter
-        let pathParam = icon.path.startsWith('/') ? icon.path.substring(1) : icon.path;
-        
-        // For language-specific paths, use the language prefix
-        if (language !== 'it' && !pathParam.startsWith(language)) {
-          navigate(`/submenu/${pathParam}`);
+        // If we have a language prefix and it's not Italian, include it in the submenu path
+        if (language !== 'it' && !pathForSubmenu.startsWith(language)) {
+          navigate(`/submenu/${language}/${pathForSubmenu}`);
         } else {
-          navigate(`/submenu/${pathParam}`);
+          navigate(`/submenu/${pathForSubmenu}`);
         }
         return;
       }
       
-      // For system routes, navigate directly
+      // For system routes, navigate with language prefix
       const systemRoutes = ['/menu', '/admin', '/home', '/login', '/welcome'];
       if (systemRoutes.includes(icon.path)) {
         console.log("Navigation to system route:", icon.path);
-        navigate(icon.path);
+        const localizedPath = addLanguageToPath(icon.path, language);
+        navigate(localizedPath);
         return;
       }
       

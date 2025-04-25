@@ -4,7 +4,7 @@ import IconNav from "./IconNav";
 import { useMenuIcons } from "@/hooks/menu/useMenuIcons";
 import LoadingIndicator from "./LoadingIndicator";
 import ErrorDisplay from "./ErrorDisplay";
-import { useCurrentPath } from "@/hooks/useCurrentPath";
+import { useCurrentPath, useCurrentLanguagePath } from "@/hooks/useCurrentPath";
 
 interface FilteredIconNavProps {
   parentPath: string | null;
@@ -21,14 +21,17 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
   });
   
   const currentPath = useCurrentPath();
-  const isHomePage = currentPath === '/home' || currentPath === '/' || currentPath.endsWith('/home');
+  const currentLanguage = useCurrentLanguagePath();
+  const isHomePage = currentPath === '/home' || currentPath === '/' || 
+    currentPath.endsWith('/home') || currentPath.match(/^\/[a-z]{2}\/home$/);
   
   useEffect(() => {
     console.log("[FilteredIconNav] Current path:", currentPath);
+    console.log("[FilteredIconNav] Current language:", currentLanguage);
     console.log("[FilteredIconNav] Is home page:", isHomePage);
     console.log("[FilteredIconNav] Parent path:", parentPath);
     console.log("[FilteredIconNav] Raw icons:", icons);
-  }, [currentPath, parentPath, icons, isHomePage]);
+  }, [currentPath, parentPath, icons, isHomePage, currentLanguage]);
 
   // Filter out subpages on homepage - only show root level items
   const filteredIcons = isHomePage 
@@ -39,12 +42,10 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     console.log("[FilteredIconNav] Filtered icons to display:", filteredIcons);
   }, [filteredIcons]);
 
-  // Show error only if no icons
   if (error && filteredIcons.length === 0) {
     return <ErrorDisplay error={error} onRetry={refreshIcons} />;
   }
   
-  // Show loading only if no icons yet
   if (isLoading && filteredIcons.length === 0) {
     return <LoadingIndicator />;
   }
