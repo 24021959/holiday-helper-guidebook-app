@@ -39,48 +39,52 @@ const IconRenderer: React.FC<IconRendererProps> = ({
   
   console.log("Rendering icon:", safeIconName, "with size:", iconSize);
   
-  switch (safeIconName) {
-    case 'FileText': return <FileText className={fullClassName} />;
-    case 'Image': return <Image className={fullClassName} />;
-    case 'MessageCircle': return <MessageCircle className={fullClassName} />;
-    case 'Info': return <Info className={fullClassName} />;
-    case 'Map': return <Map className={fullClassName} />;
-    case 'Utensils': return <Utensils className={fullClassName} />;
-    case 'Landmark': return <Landmark className={fullClassName} />;
-    case 'Hotel': return <Hotel className={fullClassName} />;
-    case 'Wifi': return <Wifi className={fullClassName} />;
-    case 'Bus': return <Bus className={fullClassName} />;
-    case 'ShoppingBag': return <ShoppingBag className={fullClassName} />;
-    case 'Calendar': return <Calendar className={fullClassName} />;
-    case 'Phone': return <Phone className={fullClassName} />;
-    case 'Coffee': return <Coffee className={fullClassName} />;
-    case 'Book': return <Book className={fullClassName} />;
-    case 'Home': return <Home className={fullClassName} />;
-    case 'Bike': return <Bike className={fullClassName} />;
-    case 'Camera': return <Camera className={fullClassName} />;
-    case 'Globe': return <Globe className={fullClassName} />;
-    case 'Mountain': return <Mountain className={fullClassName} />;
-    case 'MapPin': return <MapPin className={fullClassName} />;
-    case 'Newspaper': return <Newspaper className={fullClassName} />;
-    case 'Music': return <Music className={fullClassName} />;
-    case 'Heart': return <Heart className={fullClassName} />;
-    case 'Trees': return <Trees className={fullClassName} />;
-    case 'Users': return <Users className={fullClassName} />;
-    case 'ShoppingCart': return <ShoppingCart className={fullClassName} />;
-    case 'Car': return <Car className={fullClassName} />;
-    case 'Building': return <Building className={fullClassName} />;
-    case 'Palmtree': return <Palmtree className={fullClassName} />;
-    case 'UtensilsCrossed': return <UtensilsCrossed className={fullClassName} />;
-    case 'Bed': return <Bed className={fullClassName} />;
-    case 'Shirt': return <Shirt className={fullClassName} />;
-    case 'Key': return <Key className={fullClassName} />;
-    case 'PawPrint': return <PawPrint className={fullClassName} />;
-    case 'PartyPopper': return <PartyPopper className={fullClassName} />;
-    case 'Trophy': return <Trophy className={fullClassName} />;
-    case 'Plane': return <Plane className={fullClassName} />;
-    case 'Train': return <Train className={fullClassName} />;
-    case 'Loader': return <Loader2 className={`${fullClassName} animate-spin`} />;
-    default: return <FileText className={fullClassName} />;
+  // Handle icon name casing - make it match exactly what's imported from lucide-react
+  switch (safeIconName.toLowerCase()) {
+    case 'filetext': return <FileText className={fullClassName} />;
+    case 'image': return <Image className={fullClassName} />;
+    case 'messagecircle': return <MessageCircle className={fullClassName} />;
+    case 'info': return <Info className={fullClassName} />;
+    case 'map': return <Map className={fullClassName} />;
+    case 'utensils': return <Utensils className={fullClassName} />;
+    case 'landmark': return <Landmark className={fullClassName} />;
+    case 'hotel': return <Hotel className={fullClassName} />;
+    case 'wifi': return <Wifi className={fullClassName} />;
+    case 'bus': return <Bus className={fullClassName} />;
+    case 'shoppingbag': return <ShoppingBag className={fullClassName} />;
+    case 'calendar': return <Calendar className={fullClassName} />;
+    case 'phone': return <Phone className={fullClassName} />;
+    case 'coffee': return <Coffee className={fullClassName} />;
+    case 'book': return <Book className={fullClassName} />;
+    case 'home': return <Home className={fullClassName} />;
+    case 'bike': return <Bike className={fullClassName} />;
+    case 'camera': return <Camera className={fullClassName} />;
+    case 'globe': return <Globe className={fullClassName} />;
+    case 'mountain': return <Mountain className={fullClassName} />;
+    case 'mappin': return <MapPin className={fullClassName} />;
+    case 'newspaper': return <Newspaper className={fullClassName} />;
+    case 'music': return <Music className={fullClassName} />;
+    case 'heart': return <Heart className={fullClassName} />;
+    case 'trees': return <Trees className={fullClassName} />;
+    case 'users': return <Users className={fullClassName} />;
+    case 'shoppingcart': return <ShoppingCart className={fullClassName} />;
+    case 'car': return <Car className={fullClassName} />;
+    case 'building': return <Building className={fullClassName} />;
+    case 'palmtree': return <Palmtree className={fullClassName} />;
+    case 'utensilscrossed': return <UtensilsCrossed className={fullClassName} />;
+    case 'bed': return <Bed className={fullClassName} />;
+    case 'shirt': return <Shirt className={fullClassName} />;
+    case 'key': return <Key className={fullClassName} />;
+    case 'pawprint': return <PawPrint className={fullClassName} />;
+    case 'partypopper': return <PartyPopper className={fullClassName} />;
+    case 'trophy': return <Trophy className={fullClassName} />;
+    case 'plane': return <Plane className={fullClassName} />;
+    case 'train': return <Train className={fullClassName} />;
+    case 'loader': return <Loader2 className={`${fullClassName} animate-spin`} />;
+    // Add debugging case to see what icon name was received
+    default:
+      console.warn(`Unknown icon name: "${safeIconName}"`);
+      return <FileText className={fullClassName} />;
   }
 };
 

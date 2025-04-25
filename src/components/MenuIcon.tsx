@@ -31,7 +31,7 @@ const MenuIcon: React.FC<MenuIconProps> = ({ icon, index, onClick }) => {
       onClick={() => onClick(icon)}
     >
       <div className="p-3 mb-4 rounded-full bg-gray-50 text-emerald-600">
-        <IconRenderer iconName={icon.icon || "FileText"} />
+        <IconRenderer iconName={icon.icon || "FileText"} size="medium" />
       </div>
       <span className="text-center text-gray-700 font-medium text-lg">
         {icon.translations ? (
