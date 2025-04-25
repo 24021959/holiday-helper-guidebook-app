@@ -21,7 +21,9 @@ export const useIconProcessor = () => {
       icon: page.icon || 'FileText',
       parent_path: page.parent_path || null,
       is_parent: !!page.is_parent,
-      translations: {} // Verrà riempito dinamicamente
+      bg_color: page.bg_color || 'bg-white',
+      published: page.published ?? true,
+      translations: page.translations || {}
     };
   }, []);
   
@@ -38,7 +40,9 @@ export const useIconProcessor = () => {
       icon: menuIcon.icon || 'FileText',
       parent_path: menuIcon.parent_path || null,
       is_parent: !!menuIcon.is_parent,
-      translations: {} // Verrà riempito dinamicamente
+      bg_color: menuIcon.bg_color || 'bg-white',
+      published: menuIcon.published ?? true,
+      translations: menuIcon.translations || {}
     };
   }, []);
   
