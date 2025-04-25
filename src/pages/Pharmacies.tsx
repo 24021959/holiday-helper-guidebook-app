@@ -55,7 +55,7 @@ const Pharmacies: React.FC = () => {
                 className="bg-white rounded-lg shadow-md p-6 flex items-center"
               >
                 <div className="mr-6 bg-[#F2FCE2] rounded-full p-3">
-                  <Cross className="w-12 h-12 text-green-600" />
+                  <Cross className="w-12 h-12 text-emerald-600" />
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold mb-2">{pharmacy.name}</h3>

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { 
   Book, Home, FileText, Image, MessageCircle, Info, Map, 
@@ -6,7 +5,7 @@ import {
   Phone, Coffee, Bike, Camera, Globe, Mountain, MapPin, Newspaper,
   Music, Heart, Trees, Users, ShoppingCart, Car, Building, Palmtree,
   UtensilsCrossed, Bed, Shirt, Key, PawPrint, PartyPopper, Trophy,
-  Plane, Train, Loader2
+  Plane, Train, Loader2, Ambulance, Cross, Truck
 } from "lucide-react";
 
 interface IconRendererProps {
@@ -20,7 +19,6 @@ const IconRenderer: React.FC<IconRendererProps> = ({
   size = "medium",
   className = "" 
 }) => {
-  // Determina la dimensione dell'icona in base al parametro size
   const getSizeClass = () => {
     switch (size) {
       case "small": return "w-6 h-6";
@@ -34,13 +32,14 @@ const IconRenderer: React.FC<IconRendererProps> = ({
   const iconSize = getSizeClass();
   const fullClassName = `${iconSize} ${className}`;
   
-  // Make sure we have a valid iconName
   const safeIconName = iconName || "FileText";
   
   console.log("Rendering icon:", safeIconName, "with size:", iconSize);
   
-  // Handle icon name casing - make it match exactly what's imported from lucide-react
   switch (safeIconName.toLowerCase()) {
+    case 'ambulance': return <Ambulance className={fullClassName} />;
+    case 'cross': return <Cross className={fullClassName} />;
+    case 'truck': return <Truck className={fullClassName} />;
     case 'filetext': return <FileText className={fullClassName} />;
     case 'image': return <Image className={fullClassName} />;
     case 'messagecircle': return <MessageCircle className={fullClassName} />;
@@ -81,7 +80,6 @@ const IconRenderer: React.FC<IconRendererProps> = ({
     case 'plane': return <Plane className={fullClassName} />;
     case 'train': return <Train className={fullClassName} />;
     case 'loader': return <Loader2 className={`${fullClassName} animate-spin`} />;
-    // Add debugging case to see what icon name was received
     default:
       console.warn(`Unknown icon name: "${safeIconName}"`);
       return <FileText className={fullClassName} />;

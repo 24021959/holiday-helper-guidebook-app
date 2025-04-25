@@ -1,4 +1,3 @@
-
 import { useKeywordToIconMap } from "@/hooks/useKeywordToIconMap";
 
 // Funzione per identificare l'icona più appropriata basandosi sul titolo della pagina
@@ -32,6 +31,12 @@ export const identifyIconFromTitle = (title: string, keywordToIconMap: Record<st
   if (lowerTitle.includes("servizi esterni")) return "Mountain";
   if (lowerTitle.includes("soccorso") || lowerTitle.includes("stradale")) return "Bike";
   
+  // Direct mappings for specific pages
+  if (lowerTitle.includes("emergenza") || lowerTitle.includes("emergency")) return "Ambulance";
+  if (lowerTitle.includes("farmacia")) return "Cross";
+  if (lowerTitle.includes("soccorso stradale")) return "Truck";
+  if (lowerTitle.includes("sport")) return "Bike";
+
   // Controlla parole chiave nella mappatura
   for (const [keyword, iconName] of Object.entries(keywordToIconMap)) {
     if (lowerTitle.includes(keyword)) {
@@ -45,12 +50,11 @@ export const identifyIconFromTitle = (title: string, keywordToIconMap: Record<st
 
 // Colori pastello migliorati con migliore contrasto per il testo
 export const pastelColors = [
-  { bg: "bg-[#F2FCE2]", text: "text-emerald-700" },  // verde chiaro
+  { bg: "bg-[#FFDEE2]", text: "text-rose-700" },     // soft pink for emergency
+  { bg: "bg-[#F2FCE2]", text: "text-emerald-700" },  // soft green for pharmacy
+  { bg: "bg-[#FDE1D3]", text: "text-orange-700" },   // soft peach for roadside
+  { bg: "bg-[#D3E4FD]", text: "text-blue-700" },     // soft blue for sports
   { bg: "bg-[#FEF7CD]", text: "text-amber-700" },    // giallo chiaro
-  { bg: "bg-[#FFE5D3]", text: "text-orange-700" },   // arancione chiaro
   { bg: "bg-[#E5DEFF]", text: "text-indigo-700" },   // viola chiaro
-  { bg: "bg-[#FFDEE2]", text: "text-rose-700" },     // rosa chiaro
-  { bg: "bg-[#D8F3FF]", text: "text-blue-700" },     // azzurro chiaro
-  { bg: "bg-[#D3E4FD]", text: "text-blue-700" },     // blu chiaro
   { bg: "bg-[#F1F0FB]", text: "text-slate-700" },    // grigio chiaro
 ];
