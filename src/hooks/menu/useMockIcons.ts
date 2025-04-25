@@ -1,141 +1,90 @@
-
 import { IconData } from "./types";
 
 export const useMockIcons = () => {
   const getMockIcons = (): IconData[] => {
     return [
       {
-        id: "welcome",
-        path: "/welcome",
-        label: "Benvenuto",
-        title: "Benvenuto",
+        id: "1",
+        path: "/home",
+        parent_path: null,
+        label: "Home",
         icon: "Home",
-        parent_path: null,
+        bg_color: "bg-blue-200",
+        published: true,
         is_parent: false,
         translations: {
-          it: "Benvenuto",
-          en: "Welcome",
-          fr: "Bienvenue",
-          es: "Bienvenido",
-          de: "Willkommen"
+          en: "Home",
+          fr: "Accueil",
+          es: "Inicio",
+          de: "Startseite"
         }
       },
       {
-        id: "wifi",
-        path: "/wifi",
-        label: "WiFi",
-        title: "WiFi",
-        icon: "Wifi",
+        id: "2",
+        path: "/menu",
         parent_path: null,
-        is_parent: false,
-        translations: {
-          it: "WiFi",
-          en: "WiFi",
-          fr: "WiFi",
-          es: "WiFi",
-          de: "WiFi"
-        }
-      },
-      {
-        id: "where-to-eat",
-        path: "/where-to-eat",
-        label: "Dove Mangiare",
-        title: "Dove Mangiare",
-        icon: "Utensils",
-        parent_path: null,
+        label: "Menu",
+        icon: "Menu",
+        bg_color: "bg-green-200",
+        published: true,
         is_parent: true,
         translations: {
-          it: "Dove Mangiare",
-          en: "Where to Eat",
-          fr: "Où Manger",
-          es: "Dónde Comer",
-          de: "Wo Essen"
+          en: "Menu",
+          fr: "Menu",
+          es: "Menú",
+          de: "Speisekarte"
         }
       },
       {
-        id: "taxi",
-        path: "/taxi",
-        label: "Taxi",
-        title: "Taxi",
-        icon: "Car",
+        id: "3",
+        path: "/admin",
         parent_path: null,
+        label: "Admin",
+        icon: "Settings",
+        bg_color: "bg-red-200",
+        published: true,
         is_parent: false,
         translations: {
-          it: "Taxi",
-          en: "Taxi",
-          fr: "Taxi",
-          es: "Taxi",
-          de: "Taxi"
+          en: "Admin",
+          fr: "Admin",
+          es: "Admin",
+          de: "Admin"
         }
       },
       {
-        id: "roadside",
-        path: "/roadside-assistance",
-        label: "Soccorso Stradale",
-        title: "Soccorso Stradale",
-        icon: "Car",
+        id: "4",
+        path: "/submenu/example",
+        parent_path: "/menu",
+        label: "Example Submenu",
+        icon: "FileText",
+        bg_color: "bg-yellow-200",
+        published: true,
+        is_parent: false,
+        translations: {
+          en: "Example Submenu",
+          fr: "Sous-menu d'exemple",
+          es: "Submenú de ejemplo",
+          de: "Beispiel Untermenü"
+        }
+      },
+      {
+        id: "5",
+        path: "/contact",
         parent_path: null,
+        label: "Contact",
+        icon: "Mail",
+        bg_color: "bg-purple-200",
+        published: true,
         is_parent: false,
         translations: {
-          it: "Soccorso Stradale",
-          en: "Roadside Assistance",
-          fr: "Assistance Routière",
-          es: "Asistencia en Carretera",
-          de: "Pannenhilfe"
-        }
-      },
-      {
-        id: "restaurants",
-        path: "/restaurants",
-        label: "Ristoranti",
-        title: "Ristoranti",
-        icon: "UtensilsCrossed",
-        parent_path: "/where-to-eat",
-        is_parent: false,
-        translations: {
-          it: "Ristoranti",
-          en: "Restaurants",
-          fr: "Restaurants",
-          es: "Restaurantes",
-          de: "Restaurants"
-        }
-      },
-      {
-        id: "pizzerias",
-        path: "/pizzerias",
-        label: "Pizzerie",
-        title: "Pizzerie",
-        icon: "Utensils",
-        parent_path: "/where-to-eat",
-        is_parent: false,
-        translations: {
-          it: "Pizzerie",
-          en: "Pizzerias",
-          fr: "Pizzerias",
-          es: "Pizzerías",
-          de: "Pizzerien"
-        }
-      },
-      {
-        id: "traditional",
-        path: "/traditional",
-        label: "Trattorie Tipiche",
-        title: "Trattorie Tipiche",
-        icon: "Utensils",
-        parent_path: "/where-to-eat",
-        is_parent: false,
-        translations: {
-          it: "Trattorie Tipiche",
-          en: "Traditional Trattorias",
-          fr: "Trattorias Traditionnelles",
-          es: "Tratorías Tradicionales",
-          de: "Traditionelle Trattorien"
+          en: "Contact",
+          fr: "Contact",
+          es: "Contacto",
+          de: "Kontakt"
         }
       }
     ];
   };
 
-  return {
-    getMockIcons
-  };
+  return { getMockIcons };
 };

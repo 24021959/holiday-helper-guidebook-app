@@ -1,12 +1,12 @@
 
 import React from "react";
-import { ExclamationTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export const WarningBanner: React.FC = () => {
   return (
-    <Alert variant="warning" className="bg-amber-50 border-amber-200 mb-6">
-      <ExclamationTriangle className="h-4 w-4 text-amber-600" />
+    <Alert className="bg-amber-50 border-amber-200 mb-6">
+      <AlertTriangle className="h-4 w-4 text-amber-600" />
       <AlertTitle className="text-amber-800">Attenzione</AlertTitle>
       <AlertDescription className="text-amber-700">
         <p>

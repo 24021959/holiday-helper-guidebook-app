@@ -1,4 +1,3 @@
-
 export interface IconData {
   id: string;
   path: string;
@@ -9,6 +8,8 @@ export interface IconData {
   published: boolean;
   is_submenu?: boolean;
   is_parent?: boolean;
+  title?: string;
+  translations?: Record<string, string>;
 }
 
 export interface LanguageStats {

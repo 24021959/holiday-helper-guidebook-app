@@ -12,12 +12,11 @@ interface MenuIconProps {
 }
 
 const MenuIcon: React.FC<MenuIconProps> = ({ icon, index, onClick }) => {
-  // Color scheme based on parent status
   const colorClasses = icon.is_parent 
     ? 'border-2 border-emerald-300 bg-gradient-to-br from-white to-emerald-50'
     : 'bg-white';
     
-  const displayTitle = icon.title || icon.label || "";
+  const displayTitle = icon.title || icon.label;
   
   return (
     <div 
@@ -34,14 +33,7 @@ const MenuIcon: React.FC<MenuIconProps> = ({ icon, index, onClick }) => {
         <IconRenderer iconName={icon.icon || "FileText"} size="medium" />
       </div>
       <span className="text-center text-gray-700 font-medium text-lg">
-        {icon.translations ? (
-          <TranslatedText 
-            text={displayTitle}
-            translations={icon.translations}
-          />
-        ) : (
-          <TranslatedText text={displayTitle} />
-        )}
+        <TranslatedText text={displayTitle} translations={icon.translations} />
       </span>
     </div>
   );

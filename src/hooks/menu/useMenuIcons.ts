@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { IconData, MenuIconsProps } from "./types";
+import { IconData } from "./types";
 import { useMenuQueries } from "./useMenuQueries";
 import { useIconCache } from "./useIconCache";
 import { useIconProcessor } from "./useIconProcessor";
@@ -8,6 +8,11 @@ import { useTranslation } from "@/context/TranslationContext";
 import { useMockIcons } from "./useMockIcons";
 import { useConnectionRetry } from "./useConnectionRetry";
 import { useCurrentPath } from "@/hooks/useCurrentPath";
+
+interface MenuIconsProps {
+  parentPath: string | null;
+  refreshTrigger?: number;
+}
 
 export const useMenuIcons = ({ parentPath, refreshTrigger = 0 }: MenuIconsProps) => {
   const [isLoading, setIsLoading] = useState(true);
