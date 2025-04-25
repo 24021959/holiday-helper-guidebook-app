@@ -1,4 +1,3 @@
-
 import React from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -6,6 +5,8 @@ import { useHeaderSettings } from "@/hooks/useHeaderSettings";
 import LoadingView from "@/components/LoadingView";
 import TranslatedText from "@/components/TranslatedText";
 import BackToMenu from "@/components/BackToMenu";
+import { Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 const Pizzerias: React.FC = () => {
   const { headerSettings, loading } = useHeaderSettings();
