@@ -99,7 +99,7 @@ const FilteredIconNav: React.FC<FilteredIconNavProps> = ({
     );
   }
 
-  if (icons.length === 0) {
+  if (!icons || icons.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
         <h3 className="text-xl font-semibold text-gray-800 mb-2">Menu vuoto</h3>

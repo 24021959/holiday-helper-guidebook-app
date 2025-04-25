@@ -4,11 +4,7 @@ import { Button } from '@/components/ui/button';
 import TranslatedText from '@/components/TranslatedText';
 import { Link } from 'react-router-dom';
 
-type ContentSectionProps = {
-  onExploreMenu: () => void;
-};
-
-const ContentSection: React.FC<ContentSectionProps> = ({ onExploreMenu }) => {
+const ContentSection: React.FC = () => {
   return (
     <main className="flex-1 container mx-auto px-4 py-8">
       <div className="max-w-3xl mx-auto">

@@ -8,9 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
 import { Link } from "react-router-dom";
 import FilteredIconNav from "@/components/FilteredIconNav";
+import { useTranslation } from "@/context/TranslationContext";
 
 const Menu: React.FC = () => {
   const { headerSettings, loading, error } = useHeaderSettings();
+  const { language } = useTranslation();
 
   if (loading) {
     return <LoadingView message="Caricamento menu..." fullScreen={true} />;
@@ -43,7 +45,7 @@ const Menu: React.FC = () => {
       </div>
       
       <main className="flex-1 container mx-auto p-4">
-        <FilteredIconNav parentPath={null} />
+        <FilteredIconNav parentPath={null} refreshTrigger={Date.now()} />
       </main>
       
       <Footer />

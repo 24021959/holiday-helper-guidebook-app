@@ -26,10 +26,6 @@ const Home: React.FC = () => {
     
     saveHome();
   }, []);
-  
-  const handleGoToMenu = () => {
-    console.log("Placeholder for navigation - using direct Link now");
-  };
 
   if (loading || isSaving) {
     return <LoadingView message="Caricamento..." />;
@@ -50,7 +46,7 @@ const Home: React.FC = () => {
       
       <HeroImage imageUrl={heroImage} altText="La nostra struttura" />
       
-      <ContentSection onExploreMenu={handleGoToMenu} />
+      <ContentSection />
       
       <Footer />
     </div>
