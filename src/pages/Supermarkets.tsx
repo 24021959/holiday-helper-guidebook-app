@@ -6,7 +6,7 @@ import { useHeaderSettings } from "@/hooks/useHeaderSettings";
 import LoadingView from "@/components/LoadingView";
 import TranslatedText from "@/components/TranslatedText";
 import BackToMenu from "@/components/BackToMenu";
-import { Store, MapPin } from "lucide-react";
+import { UtensilsCrossed, MapPin } from "lucide-react";
 
 const Supermarkets: React.FC = () => {
   const { headerSettings, loading } = useHeaderSettings();
@@ -55,8 +55,8 @@ const Supermarkets: React.FC = () => {
                 key={index} 
                 className="bg-white rounded-lg shadow-md p-6 flex items-center"
               >
-                <div className="mr-6 bg-amber-100 rounded-full p-3">
-                  <Store className="w-12 h-12 text-amber-600" />
+                <div className="mr-6 bg-[#FEF7CD] rounded-full p-3">
+                  <UtensilsCrossed className="w-12 h-12 text-amber-600" />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold mb-2">{market.name}</h3>

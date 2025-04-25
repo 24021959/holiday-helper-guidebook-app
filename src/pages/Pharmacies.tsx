@@ -6,7 +6,7 @@ import { useHeaderSettings } from "@/hooks/useHeaderSettings";
 import LoadingView from "@/components/LoadingView";
 import TranslatedText from "@/components/TranslatedText";
 import BackToMenu from "@/components/BackToMenu";
-import { Pharmacy } from "lucide-react";
+import { Cross } from "lucide-react";
 
 const Pharmacies: React.FC = () => {
   const { headerSettings, loading } = useHeaderSettings();
@@ -55,8 +55,8 @@ const Pharmacies: React.FC = () => {
                 key={index} 
                 className="bg-white rounded-lg shadow-md p-6 flex items-center"
               >
-                <div className="mr-6 bg-green-100 rounded-full p-3">
-                  <Pharmacy className="w-12 h-12 text-green-600" />
+                <div className="mr-6 bg-[#F2FCE2] rounded-full p-3">
+                  <Cross className="w-12 h-12 text-green-600" />
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold mb-2">{pharmacy.name}</h3>

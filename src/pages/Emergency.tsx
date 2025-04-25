@@ -19,7 +19,7 @@ const Emergency: React.FC = () => {
     {
       title: "Emergenza Medica",
       number: "118",
-      icon: <Ambulance className="w-12 h-12 text-red-600" />
+      icon: <Ambulance className="w-12 h-12 text-rose-600" />
     },
     {
       title: "Carabinieri",
@@ -59,7 +59,7 @@ const Emergency: React.FC = () => {
               key={index} 
               className="bg-white rounded-lg shadow-md p-6 flex flex-col items-center text-center"
             >
-              <div className="mb-4">
+              <div className="mb-4 bg-[#FFDEE2] rounded-full p-3">
                 {contact.icon}
               </div>
               <h3 className="text-xl font-semibold mb-2">
