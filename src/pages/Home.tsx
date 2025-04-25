@@ -1,33 +1,17 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useHeaderSettings } from "@/hooks/useHeaderSettings";
 import LoadingView from "@/components/LoadingView";
-import { useHomePageSaver } from '@/hooks/useHomePageSaver';
-import HeroImage from '@/components/home/HeroImage';
-import ContentSection from '@/components/home/ContentSection';
-import ErrorDisplay from '@/components/home/ErrorDisplay';
+import ErrorDisplay from "@/components/home/ErrorDisplay";
+import { LanguageFlags } from "@/components/LanguageFlags";
+import FilteredIconNav from "@/components/FilteredIconNav";
 
 const Home: React.FC = () => {
   const { headerSettings, loading, error, refreshHeaderSettings } = useHeaderSettings();
-  const [heroImage] = useState('/lovable-uploads/6d1eebb5-61dd-4e37-99c7-4c67721ca126.png');
-  const { isSaving, saveHomePageToDatabase } = useHomePageSaver();
-  
-  useEffect(() => {
-    const saveHome = async () => {
-      try {
-        await saveHomePageToDatabase();
-        console.log("Home page saved successfully");
-      } catch (err) {
-        console.error("Error saving home page:", err);
-      }
-    };
-    
-    saveHome();
-  }, []);
 
-  if (loading || isSaving) {
+  if (loading) {
     return <LoadingView message="Caricamento..." />;
   }
 
@@ -44,9 +28,17 @@ const Home: React.FC = () => {
         showAdminButton={true}
       />
       
-      <HeroImage imageUrl={heroImage} altText="La nostra struttura" />
+      {/* Language Selection Section */}
+      <div className="border-b border-gray-100 shadow-sm">
+        <div className="container mx-auto py-4 px-4">
+          <LanguageFlags />
+        </div>
+      </div>
       
-      <ContentSection />
+      {/* Main Content with Grid Menu */}
+      <main className="flex-1 container mx-auto p-4">
+        <FilteredIconNav parentPath={null} />
+      </main>
       
       <Footer />
     </div>
